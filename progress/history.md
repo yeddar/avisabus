@@ -20,3 +20,7 @@
   sentidos por extremos/orientación del trazado (gtfs_import AC-23…AC-27, T-03b) y la resolución
   del destino del SAE contra todos los headsigns de la parada (stop_arrivals_api AC-06).
 - `shape_dist_traveled` disponible en metros (útil para `position_estimation`).
+
+## 2026-10-31 · Bloque 1 · spec_draft → spec_approved (CP-1)
+- La persona aprueba las specs de project_scaffold, gtfs_import, stop_tokens_qr,
+  sae_arrivals_source, occupancy_sensor y stop_arrivals_api (versión 1.0).

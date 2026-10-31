@@ -18,7 +18,7 @@
       "order": 1,
       "block": 1,
       "title": "Esqueleto de backend y frontend, herramientas de calidad y primitivas comunes",
-      "status": "spec_draft",
+      "status": "spec_approved",
       "depends_on": [],
       "requirements": [
         "RNF-09",
@@ -37,7 +37,7 @@
       "order": 2,
       "block": 1,
       "title": "Importación y reimportación del GTFS de EMT, líneas comerciales y servicios activos",
-      "status": "spec_draft",
+      "status": "spec_approved",
       "depends_on": [
         "project_scaffold"
       ],
@@ -61,7 +61,7 @@
       "order": 3,
       "block": 1,
       "title": "Tokens firmados de parada y generación de QR por CLI",
-      "status": "spec_draft",
+      "status": "spec_approved",
       "depends_on": [
         "gtfs_import"
       ],
@@ -82,7 +82,7 @@
       "order": 4,
       "block": 1,
       "title": "Fuente de tiempos de llegada del SAE: cliente, normalización, caché, grabación y replay",
-      "status": "spec_draft",
+      "status": "spec_approved",
       "depends_on": [
         "project_scaffold"
       ],
@@ -108,7 +108,7 @@
       "order": 5,
       "block": 1,
       "title": "Sensor de ocupación simulado y clasificación por niveles",
-      "status": "spec_draft",
+      "status": "spec_approved",
       "depends_on": [
         "project_scaffold",
         "gtfs_import"
@@ -130,7 +130,7 @@
       "order": 6,
       "block": 1,
       "title": "API de parada y llegadas: sentido, viaje asociado, ocupación y respaldo por horario",
-      "status": "spec_draft",
+      "status": "spec_approved",
       "depends_on": [
         "gtfs_import",
         "stop_tokens_qr",
