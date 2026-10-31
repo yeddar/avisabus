@@ -4,15 +4,18 @@
 
 **Fecha:** 2026-10-31
 **Fase:** Implementación — Bloque 1 (Cimientos y datos)
-**Feature en curso:** `stop_tokens_qr` (`implementing`); después `occupancy_sensor`
+**Feature en curso:** `stop_tokens_qr` — `spec_blocked` (CP-3 en T-04); `occupancy_sensor` sin empezar
 
 ## Último paso
 PR #10 (`gtfs_import`) y PR #11 (spec `gtfs_import` v1.3 —documenta S-1…S-3, sin cambios de
 código— y `stop_arrivals_api` v1.2 —AC-18/T-05b, cruce de medianoche—) fusionadas. La persona
 validó los sentidos derivados. Empieza `stop_tokens_qr` en `feat/stop_tokens_qr`.
+`stop_tokens_qr`: T-01…T-03 hechas (c5bc0c0, 89808c2, e30bd75); T-04 codificada según el design
+(6c73adb) pero detenida por B-01 (`progress/impl_stop_tokens_qr.md`). T-05…T-07 sin empezar.
 
 ## Siguiente paso
-1. `stop_tokens_qr` → reviewer → PR contra `develop` (sin fusionar).
+1. **La persona decide el CP-3 de `stop_tokens_qr`** (B-01, B-02) → spec-writer → CP-1 → reanudar
+   desde T-04 → reviewer → PR contra `develop` (sin fusionar).
 2. `occupancy_sensor` (rama `feat/occupancy_sensor` desde `develop`) → reviewer → PR.
 3. `sae_arrivals_source`: **preguntar a la persona antes de empezar E-01** (requiere red y la
    grabación de 15 min en la parada 508 en hora punta, `stop_508_peak`).
@@ -37,7 +40,16 @@ validó los sentidos derivados. Empieza `stop_tokens_qr` en `feat/stop_tokens_qr
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Ninguno. (Sentidos de `gtfs_import` validados por la persona el 2026-10-31.)
+- **CP-3 · stop_tokens_qr B-01** — design §5: la etiqueta PNG usa "la fuente por defecto de Pillow o
+  DejaVuSans si está disponible". La fuente por defecto de Pillow 13 (Aileron) no tiene glifos para
+  `àèéíòóúçñ…` (comprobado) y DejaVuSans no está en macOS ni en imágenes Docker slim → 620 de
+  1 117 nombres de parada saldrían mal ("Val□ncia"); incumple AC-07/AC-09 en PNG (SVG no afectado).
+  Propuestas: (rec.) incluir `DejaVuSans.ttf` (~750 KB, licencia libre) en
+  `adapters/outbound/qr/fonts/` y usarla siempre + test de cobertura de glifos sobre `gtfs_mini`;
+  o lista de fuentes del sistema con fallo explícito + `fonts-dejavu-core` en `deployment_rpi`.
+- **CP-3 · stop_tokens_qr B-02 (menor)** — `segno.make(..., error="m")` sube el nivel a Q/H por
+  `boost_error=True`; AC-12 exige M. Implementado con `boost_error=False`. Propuesta: que el design
+  lo diga explícitamente, o AC-12 "al menos M".
 
 ## Bloqueos
-Ninguno.
+- B-01 y B-02 de `stop_tokens_qr` (arriba).

@@ -89,3 +89,8 @@
 
 ## 2026-10-31 · stop_tokens_qr · spec_approved → implementing
 - Sin exploración (tasks.md: "No necesaria"). Rama `feat/stop_tokens_qr` desde `develop`.
+
+## 2026-10-31 · stop_tokens_qr · implementing → spec_blocked (CP-3)
+- T-01…T-03 hechas; T-04 detenida. B-01: la fuente por defecto de Pillow 13 no tiene glifos con
+  tilde/cedilla/eñe (620/1 117 nombres afectados) y DejaVuSans no está garantizada → etiqueta PNG
+  incumple AC-07/AC-09. B-02 (menor): `boost_error` de segno vs nivel M exacto de AC-12.
