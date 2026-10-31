@@ -379,7 +379,7 @@ GROUP BY st.stop_id, tr.line, tr.direction_id, tr.headsign
 
 
 class SqliteNetworkRepository:
-    """`NetworkRepository` (and `DirectionReportSource`) over the active feed version."""
+    """`NetworkRepository` (and `FeedInfoSource`) over the active feed version."""
 
     def __init__(self, engine: Engine) -> None:
         self._engine = engine
@@ -567,6 +567,12 @@ class SqliteNetworkRepository:
                 .order_by(sp.c.sequence)
             )
             return [ShapePoint(r.lat, r.lon, r.sequence, r.dist) for r in rows]
+
+    def active_timezone(self) -> str | None:
+        with self._engine.connect() as conn:
+            return conn.execute(
+                select(t.feed_version.c.timezone).where(t.feed_version.c.is_active == 1)
+            ).scalar()
 
     def direction_report(self) -> list[DirectionReport]:
         with self._engine.connect() as conn:

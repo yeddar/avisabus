@@ -163,7 +163,13 @@ class DirectionReport:
     """(shape_id, trip_count), most frequent first."""
 
 
-class DirectionReportSource(Protocol):
+class FeedInfoSource(Protocol):
+    """Extra data of the active feed for `avisabus gtfs info` (not part of `NetworkRepository`)."""
+
+    def active_timezone(self) -> str | None:
+        """`agency_timezone` of the active feed, `None` if there is no active feed."""
+        ...
+
     def direction_report(self) -> list[DirectionReport]:
         """Every (line, direction) of the active feed, lines in natural order."""
         ...
