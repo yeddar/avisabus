@@ -98,6 +98,9 @@ def _container(
 
     monkeypatch.setattr(occupancy_cli, "build_cli_container", build)
     monkeypatch.setattr(occupancy_cli, "configure_logging", lambda _level: None)
+    # The CLI builds `Settings()`: with a secret, stop_tokens_qr does not log its dev-secret
+    # warning, which would otherwise be printed before the `--list` output.
+    monkeypatch.setenv("AVISABUS_STOP_TOKEN_SECRET", "x" * 32)
     yield
 
 
