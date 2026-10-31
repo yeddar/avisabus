@@ -1,6 +1,6 @@
 # Esqueleto del proyecto — design
 
-> Feature: `project_scaffold` · Versión: 1.0 · Estado: APPROVED
+> Feature: `project_scaffold` · Versión: 1.1 · Estado: DRAFT
 > Requisitos: RNF-09, RNF-10, RNF-11, RNF-13 · Casos de uso: — · Depende de: —
 
 ## 1. Resumen
@@ -105,12 +105,19 @@ class FakeClock:
 ```python
 # config.py
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="AVISABUS_", env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_prefix="AVISABUS_", env_file=("../.env", ".env"),
+                                      extra="ignore")
     env: Literal["dev", "test", "prod"] = "dev"
     log_level: str = "INFO"
     database_url: str = "sqlite:///../data/avisabus.sqlite"
     public_base_url: str = "http://localhost:5173"
 ```
+
+**Fichero `.env` (v1.1, AC-23).** Hay un único `.env` de referencia en la **raíz** del repositorio
+(lo crea `./init.sh setup` desde `.env.example` y lo usará Docker Compose en `deployment_rpi`).
+El backend se ejecuta desde `backend/`, por eso `env_file = ("../.env", ".env")`: pydantic-settings
+carga ambos si existen y **el último prevalece**, así que `backend/.env` (opcional, para ajustes
+locales) se impone a la raíz, y las variables de entorno del proceso se imponen a los dos.
 
 ```python
 # adapters/inbound/http/app.py
@@ -169,6 +176,7 @@ Mientras `domain` y `application` estén vacíos, la cobertura se mide igualment
 ```ini
 [importlinter]
 root_package = avisabus
+include_external_packages = True
 
 [importlinter:contract:layers]
 name = Hexagonal layers
@@ -192,6 +200,9 @@ forbidden_modules = fastapi
     structlog
     avisabus.config
 ```
+
+`include_external_packages = True` es obligatorio: sin él import-linter no puede evaluar un
+contrato `forbidden` que incluye librerías externas (v1.1, hallazgo H-02).
 
 `avisabus.config` y `avisabus.logging` quedan fuera de las capas (los usan adaptadores y `main`).
 

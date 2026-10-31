@@ -18,7 +18,7 @@
       "order": 1,
       "block": 1,
       "title": "Esqueleto de backend y frontend, herramientas de calidad y primitivas comunes",
-      "status": "done",
+      "status": "spec_draft",
       "depends_on": [],
       "requirements": [
         "RNF-09",
@@ -30,7 +30,7 @@
       "spec": "specs/project_scaffold/",
       "needs_exploration": false,
       "review_cycles": 0,
-      "passes": true
+      "passes": false
     },
     {
       "id": "gtfs_import",
