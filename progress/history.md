@@ -38,3 +38,10 @@
 
 ## 2026-10-31 · project_scaffold · spec_draft → spec_approved (v1.1, CP-1)
 - La persona aprueba la spec v1.1. Pendiente: implementar T-13 y T-14 y revisión (ciclo 2).
+
+## 2026-10-31 · project_scaffold v1.1 · spec_approved → implementing → in_review → done
+- Implementadas solo T-13 (AC-23: `.env` único en la raíz, con prioridad de `backend/.env` y del
+  entorno) y T-14 en `feat/project_scaffold-v1.1`; `./init.sh verify` en verde.
+- Revisión ciclo 2: APPROVED sin bloqueantes. Cierra H-02 y H-03. Nuevos no bloqueantes: H-09
+  (la CLI aún no usa `Settings`), H-10 (aislamiento de los tests de AC-09), H-11 (`../.env` en Docker).
+- Rama remota `main` borrada a petición de la persona (estaba contenida en `develop`; sin datos GTFS).
