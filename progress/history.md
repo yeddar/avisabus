@@ -76,3 +76,8 @@
 ## 2026-10-31 · occupancy_sensor · spec_approved → implementing
 - Sin exploración (tasks.md: "No necesaria"). Rama `feat/occupancy_sensor` desde `develop`.
   (`stop_tokens_qr` queda en `spec_blocked` en su rama, a la espera de la spec v1.1.)
+
+## 2026-11-01 · occupancy_sensor · implementing → in_review → done
+- T-01…T-06 implementadas; `./init.sh verify` en verde (422 tests, cobertura 99,44 %).
+- Revisión ciclo 1: APPROVED sin bloqueantes. Problemas de spec no bloqueantes SP-01 (AC-11 vs
+  proporciones fijas de forzado con umbrales no por defecto) y SP-02 (firma de `progress`).

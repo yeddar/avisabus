@@ -108,7 +108,7 @@
       "order": 5,
       "block": 1,
       "title": "Sensor de ocupación simulado y clasificación por niveles",
-      "status": "implementing",
+      "status": "done",
       "depends_on": [
         "project_scaffold",
         "gtfs_import"
@@ -123,7 +123,7 @@
       "spec": "specs/occupancy_sensor/",
       "needs_exploration": false,
       "review_cycles": 0,
-      "passes": false
+      "passes": true
     },
     {
       "id": "stop_arrivals_api",
