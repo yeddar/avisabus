@@ -1,0 +1,544 @@
+{
+  "project": "avisabus",
+  "schema_version": 1,
+  "statuses": [
+    "pending",
+    "spec_draft",
+    "spec_approved",
+    "spec_blocked",
+    "exploring",
+    "implementing",
+    "in_review",
+    "changes_requested",
+    "done"
+  ],
+  "features": [
+    {
+      "id": "project_scaffold",
+      "order": 1,
+      "block": 1,
+      "title": "Esqueleto de backend y frontend, herramientas de calidad y primitivas comunes",
+      "status": "spec_draft",
+      "depends_on": [],
+      "requirements": [
+        "RNF-09",
+        "RNF-10",
+        "RNF-11",
+        "RNF-13"
+      ],
+      "use_cases": [],
+      "spec": "specs/project_scaffold/",
+      "needs_exploration": false,
+      "review_cycles": 0,
+      "passes": false
+    },
+    {
+      "id": "gtfs_import",
+      "order": 2,
+      "block": 1,
+      "title": "Importación y reimportación del GTFS de EMT, líneas comerciales y servicios activos",
+      "status": "spec_draft",
+      "depends_on": [
+        "project_scaffold"
+      ],
+      "requirements": [
+        "RF-01",
+        "RF-02",
+        "RF-03",
+        "RF-04",
+        "RF-32"
+      ],
+      "use_cases": [
+        "CU-11"
+      ],
+      "spec": "specs/gtfs_import/",
+      "needs_exploration": true,
+      "review_cycles": 0,
+      "passes": false
+    },
+    {
+      "id": "stop_tokens_qr",
+      "order": 3,
+      "block": 1,
+      "title": "Tokens firmados de parada y generación de QR por CLI",
+      "status": "spec_draft",
+      "depends_on": [
+        "gtfs_import"
+      ],
+      "requirements": [
+        "RF-05",
+        "RNF-07"
+      ],
+      "use_cases": [
+        "CU-12"
+      ],
+      "spec": "specs/stop_tokens_qr/",
+      "needs_exploration": false,
+      "review_cycles": 0,
+      "passes": false
+    },
+    {
+      "id": "sae_arrivals_source",
+      "order": 4,
+      "block": 1,
+      "title": "Fuente de tiempos de llegada del SAE: cliente, normalización, caché, grabación y replay",
+      "status": "spec_draft",
+      "depends_on": [
+        "project_scaffold"
+      ],
+      "requirements": [
+        "RF-07",
+        "RF-08",
+        "RF-11",
+        "RF-35",
+        "RNF-08",
+        "RNF-10",
+        "RNF-13"
+      ],
+      "use_cases": [
+        "CU-01"
+      ],
+      "spec": "specs/sae_arrivals_source/",
+      "needs_exploration": true,
+      "review_cycles": 0,
+      "passes": false
+    },
+    {
+      "id": "occupancy_sensor",
+      "order": 5,
+      "block": 1,
+      "title": "Sensor de ocupación simulado y clasificación por niveles",
+      "status": "spec_draft",
+      "depends_on": [
+        "project_scaffold",
+        "gtfs_import"
+      ],
+      "requirements": [
+        "RF-14",
+        "RF-15"
+      ],
+      "use_cases": [
+        "CU-01"
+      ],
+      "spec": "specs/occupancy_sensor/",
+      "needs_exploration": false,
+      "review_cycles": 0,
+      "passes": false
+    },
+    {
+      "id": "stop_arrivals_api",
+      "order": 6,
+      "block": 1,
+      "title": "API de parada y llegadas: sentido, viaje asociado, ocupación y respaldo por horario",
+      "status": "spec_draft",
+      "depends_on": [
+        "gtfs_import",
+        "stop_tokens_qr",
+        "sae_arrivals_source",
+        "occupancy_sensor"
+      ],
+      "requirements": [
+        "RF-06",
+        "RF-09",
+        "RF-11",
+        "RF-15",
+        "RF-32",
+        "RNF-01",
+        "RNF-08"
+      ],
+      "use_cases": [
+        "CU-01"
+      ],
+      "spec": "specs/stop_arrivals_api/",
+      "needs_exploration": true,
+      "review_cycles": 0,
+      "passes": false
+    },
+    {
+      "id": "frontend_i18n",
+      "order": 7,
+      "block": 2,
+      "title": "i18n castellano/valenciano, selector de idioma y base de accesibilidad del frontend",
+      "status": "pending",
+      "depends_on": [
+        "project_scaffold"
+      ],
+      "requirements": [
+        "RF-31",
+        "RF-32",
+        "RNF-03",
+        "RNF-15"
+      ],
+      "use_cases": [
+        "CU-06"
+      ],
+      "spec": "specs/frontend_i18n/",
+      "needs_exploration": false,
+      "review_cycles": 0,
+      "passes": false
+    },
+    {
+      "id": "passenger_stop_view",
+      "order": 8,
+      "block": 2,
+      "title": "Vista de parada del pasajero con refresco y ocupación",
+      "status": "pending",
+      "depends_on": [
+        "stop_arrivals_api",
+        "frontend_i18n"
+      ],
+      "requirements": [
+        "RF-06",
+        "RF-10",
+        "RF-15",
+        "RNF-01",
+        "RNF-03",
+        "RNF-04",
+        "RNF-05",
+        "RNF-14"
+      ],
+      "use_cases": [
+        "CU-01"
+      ],
+      "spec": "specs/passenger_stop_view/",
+      "needs_exploration": false,
+      "review_cycles": 0,
+      "passes": false
+    },
+    {
+      "id": "position_estimation",
+      "order": 9,
+      "block": 2,
+      "title": "Estimación de posición del autobús y API de trazado/posición",
+      "status": "pending",
+      "depends_on": [
+        "gtfs_import",
+        "stop_arrivals_api"
+      ],
+      "requirements": [
+        "RF-12"
+      ],
+      "use_cases": [
+        "CU-02"
+      ],
+      "spec": "specs/position_estimation/",
+      "needs_exploration": false,
+      "review_cycles": 0,
+      "passes": false
+    },
+    {
+      "id": "passenger_map_view",
+      "order": 10,
+      "block": 2,
+      "title": "Mapa con trazado y posición estimada",
+      "status": "pending",
+      "depends_on": [
+        "passenger_stop_view",
+        "position_estimation"
+      ],
+      "requirements": [
+        "RF-13",
+        "RNF-03",
+        "RNF-14"
+      ],
+      "use_cases": [
+        "CU-02"
+      ],
+      "spec": "specs/passenger_map_view/",
+      "needs_exploration": false,
+      "review_cycles": 0,
+      "passes": false
+    },
+    {
+      "id": "realtime_events",
+      "order": 11,
+      "block": 3,
+      "title": "Publicador de eventos en memoria y WebSockets de pasajero y conductor",
+      "status": "pending",
+      "depends_on": [
+        "project_scaffold"
+      ],
+      "requirements": [
+        "RF-28",
+        "RNF-02"
+      ],
+      "use_cases": [],
+      "spec": "specs/realtime_events/",
+      "needs_exploration": false,
+      "review_cycles": 0,
+      "passes": false
+    },
+    {
+      "id": "alert_create",
+      "order": 12,
+      "block": 3,
+      "title": "Crear aviso: unicidad, rate limit, asignación y estado sin conductor",
+      "status": "pending",
+      "depends_on": [
+        "stop_arrivals_api",
+        "realtime_events"
+      ],
+      "requirements": [
+        "RF-16",
+        "RF-17",
+        "RF-19",
+        "RF-20",
+        "RF-23",
+        "RNF-06",
+        "RNF-07"
+      ],
+      "use_cases": [
+        "CU-03"
+      ],
+      "spec": "specs/alert_create/",
+      "needs_exploration": false,
+      "review_cycles": 0,
+      "passes": false
+    },
+    {
+      "id": "alert_cancel",
+      "order": 13,
+      "block": 3,
+      "title": "Cancelar aviso",
+      "status": "pending",
+      "depends_on": [
+        "alert_create"
+      ],
+      "requirements": [
+        "RF-22",
+        "RNF-06"
+      ],
+      "use_cases": [
+        "CU-04"
+      ],
+      "spec": "specs/alert_cancel/",
+      "needs_exploration": false,
+      "review_cycles": 0,
+      "passes": false
+    },
+    {
+      "id": "alert_expiry",
+      "order": 14,
+      "block": 3,
+      "title": "Caducidad de avisos: vigilante de paso (SAE) y tiempo máximo",
+      "status": "pending",
+      "depends_on": [
+        "alert_create"
+      ],
+      "requirements": [
+        "RF-21",
+        "RNF-06"
+      ],
+      "use_cases": [
+        "CU-07"
+      ],
+      "spec": "specs/alert_expiry/",
+      "needs_exploration": false,
+      "review_cycles": 0,
+      "passes": false
+    },
+    {
+      "id": "passenger_alert_ui",
+      "order": 15,
+      "block": 3,
+      "title": "UI de aviso: crear, cancelar, estado y perfil de accesibilidad local",
+      "status": "pending",
+      "depends_on": [
+        "passenger_stop_view",
+        "alert_create",
+        "alert_cancel",
+        "alert_expiry"
+      ],
+      "requirements": [
+        "RF-16",
+        "RF-17",
+        "RF-18",
+        "RF-22",
+        "RF-23",
+        "RNF-03",
+        "RNF-04"
+      ],
+      "use_cases": [
+        "CU-03",
+        "CU-04",
+        "CU-05",
+        "CU-07"
+      ],
+      "spec": "specs/passenger_alert_ui/",
+      "needs_exploration": false,
+      "review_cycles": 0,
+      "passes": false
+    },
+    {
+      "id": "driver_codes_cli",
+      "order": 16,
+      "block": 4,
+      "title": "CLI de códigos de conductor: crear, listar, revocar",
+      "status": "pending",
+      "depends_on": [
+        "project_scaffold"
+      ],
+      "requirements": [
+        "RF-33",
+        "RNF-07"
+      ],
+      "use_cases": [
+        "CU-13"
+      ],
+      "spec": "specs/driver_codes_cli/",
+      "needs_exploration": false,
+      "review_cycles": 0,
+      "passes": false
+    },
+    {
+      "id": "driver_session",
+      "order": 17,
+      "block": 4,
+      "title": "Turno del conductor: inicio, posición, próximas paradas, fin y expiración",
+      "status": "pending",
+      "depends_on": [
+        "gtfs_import",
+        "driver_codes_cli"
+      ],
+      "requirements": [
+        "RF-24",
+        "RF-25",
+        "RF-26",
+        "RF-30",
+        "RNF-06",
+        "RNF-07"
+      ],
+      "use_cases": [
+        "CU-08",
+        "CU-10"
+      ],
+      "spec": "specs/driver_session/",
+      "needs_exploration": false,
+      "review_cycles": 0,
+      "passes": false
+    },
+    {
+      "id": "driver_demand",
+      "order": 18,
+      "block": 4,
+      "title": "Demanda del conductor: snapshot, entrega de avisos y alerta de capacidad",
+      "status": "pending",
+      "depends_on": [
+        "realtime_events",
+        "alert_create",
+        "driver_session"
+      ],
+      "requirements": [
+        "RF-23",
+        "RF-27",
+        "RF-28",
+        "RF-29",
+        "RNF-02"
+      ],
+      "use_cases": [
+        "CU-09"
+      ],
+      "spec": "specs/driver_demand/",
+      "needs_exploration": false,
+      "review_cycles": 0,
+      "passes": false
+    },
+    {
+      "id": "driver_ui",
+      "order": 19,
+      "block": 4,
+      "title": "UI del conductor en tablet: acceso, línea/sentido y vista de demanda",
+      "status": "pending",
+      "depends_on": [
+        "frontend_i18n",
+        "driver_demand"
+      ],
+      "requirements": [
+        "RF-24",
+        "RF-25",
+        "RF-27",
+        "RF-28",
+        "RF-29",
+        "RF-30",
+        "RF-31",
+        "RNF-03",
+        "RNF-05"
+      ],
+      "use_cases": [
+        "CU-08",
+        "CU-09",
+        "CU-10"
+      ],
+      "spec": "specs/driver_ui/",
+      "needs_exploration": false,
+      "review_cycles": 0,
+      "passes": false
+    },
+    {
+      "id": "driver_gps_simulator",
+      "order": 20,
+      "block": 4,
+      "title": "Simulador de recorrido del conductor (CLI)",
+      "status": "pending",
+      "depends_on": [
+        "driver_session"
+      ],
+      "requirements": [
+        "RF-34"
+      ],
+      "use_cases": [
+        "CU-14"
+      ],
+      "spec": "specs/driver_gps_simulator/",
+      "needs_exploration": false,
+      "review_cycles": 0,
+      "passes": false
+    },
+    {
+      "id": "deployment_rpi",
+      "order": 21,
+      "block": 5,
+      "title": "Despliegue en Raspberry Pi: compose, contenedor web, imágenes multiarquitectura",
+      "status": "pending",
+      "depends_on": [
+        "project_scaffold"
+      ],
+      "requirements": [
+        "RNF-07",
+        "RNF-11"
+      ],
+      "use_cases": [],
+      "spec": "specs/deployment_rpi/",
+      "needs_exploration": false,
+      "review_cycles": 0,
+      "passes": false
+    },
+    {
+      "id": "nfr_validation",
+      "order": 22,
+      "block": 5,
+      "title": "Validación de requisitos no funcionales: carga, accesibilidad y tiempos",
+      "status": "pending",
+      "depends_on": [
+        "passenger_map_view",
+        "passenger_alert_ui",
+        "driver_ui",
+        "driver_gps_simulator",
+        "deployment_rpi"
+      ],
+      "requirements": [
+        "RNF-01",
+        "RNF-02",
+        "RNF-03",
+        "RNF-04",
+        "RNF-05",
+        "RNF-12"
+      ],
+      "use_cases": [],
+      "spec": "specs/nfr_validation/",
+      "needs_exploration": false,
+      "review_cycles": 0,
+      "passes": false
+    }
+  ]
+}
