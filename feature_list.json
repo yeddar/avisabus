@@ -108,7 +108,7 @@
       "order": 5,
       "block": 1,
       "title": "Sensor de ocupación simulado y clasificación por niveles",
-      "status": "spec_approved",
+      "status": "implementing",
       "depends_on": [
         "project_scaffold",
         "gtfs_import"
