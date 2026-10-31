@@ -2,12 +2,16 @@
 
 Error correction level M (`boost_error=False`, so segno never raises it) and a quiet zone of
 4 modules (AC-12). Long stop names are wrapped into several lines (layout is a local decision).
+The PNG label is always drawn with the bundled DejaVu Sans (`fonts/`, with its licence), never
+with system fonts, so every stop name renders the same on any machine (AC-13).
 """
 
+import functools
 import html
 import io
 import math
 import textwrap
+from importlib import resources
 
 import segno
 from PIL import Image, ImageDraw, ImageFont
@@ -26,9 +30,11 @@ PNG_TITLE_RATIO = 0.065
 PNG_SUBTITLE_RATIO = 0.052
 """Font sizes of the PNG label relative to the QR side (40 px and 32 px for 615 px)."""
 
-_FONT_CANDIDATES = ("DejaVuSans.ttf",)
+FONT_PACKAGE = "avisabus.adapters.outbound.qr"
+FONT_FILE = "fonts/DejaVuSans.ttf"
+"""DejaVu Sans 2.37, shipped as package data next to `fonts/LICENSE-DejaVu.txt`."""
 
-Font = ImageFont.FreeTypeFont | ImageFont.ImageFont
+Font = ImageFont.FreeTypeFont
 
 
 class SegnoQrRenderer:
@@ -109,13 +115,13 @@ def _render_png(qr: segno.QRCode, label: QrLabel) -> bytes:
     return out.getvalue()
 
 
+@functools.cache
+def _font_bytes() -> bytes:
+    return resources.files(FONT_PACKAGE).joinpath(FONT_FILE).read_bytes()
+
+
 def _font(size: int) -> Font:
-    for name in _FONT_CANDIDATES:
-        try:
-            return ImageFont.truetype(name, size)
-        except OSError:
-            continue
-    return ImageFont.load_default(size=size)
+    return ImageFont.truetype(io.BytesIO(_font_bytes()), size)
 
 
 def _line_height(font: Font) -> int:

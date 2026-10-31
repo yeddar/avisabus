@@ -1,14 +1,18 @@
 """`SegnoQrRenderer`: SVG and PNG with label, decoded back with zxing-cpp."""
 
+import csv
+from importlib import resources
 from typing import Any
 
 import pytest
 import segno
-from PIL import Image, ImageChops
+from fontTools.ttLib import TTFont
+from PIL import Image, ImageChops, ImageFont
 
 from avisabus.adapters.outbound.qr import segno_renderer
 from avisabus.adapters.outbound.qr.segno_renderer import SegnoQrRenderer
 from avisabus.domain.ports.qr import QrFormat, QrLabel, QrRenderer, QrRequest
+from tests.support.gtfs import GTFS_MINI
 from tests.support.qr import decode_image, decode_svg, open_png, parse_svg, svg_text_lines
 
 URL = "http://localhost:5173/p/508?t=83Rg_QTPgamZSDGo9T168g"
@@ -159,3 +163,58 @@ def test_png_has_a_quiet_zone_of_4_modules() -> None:
     left, top, right, bottom = _dark_bbox(image.crop((0, 0, width, width)))
     assert (left, top) == (QUIET_ZONE * module_px, QUIET_ZONE * module_px)
     assert (right, bottom) == (width - QUIET_ZONE * module_px, width - QUIET_ZONE * module_px)
+
+
+FONTS = resources.files("avisabus.adapters.outbound.qr") / "fonts"
+
+
+def _gtfs_mini_stop_names() -> list[str]:
+    with (GTFS_MINI / "stops.txt").open(encoding="utf-8-sig", newline="") as fh:
+        return [row["stop_name"] for row in csv.DictReader(fh)]
+
+
+@pytest.mark.spec("stop_tokens_qr.AC-13")
+def test_bundled_font_has_a_glyph_for_every_character_of_gtfs_mini_stop_names() -> None:
+    characters = set("".join(_gtfs_mini_stop_names()))
+    # The fixture does exercise the characters Pillow's default font cannot draw.
+    assert {"à", "è", "é", "í", "ò", "ó", "ñ", "ç", "·", "À", "Á"} <= characters
+    cmap = TTFont(FONTS / "DejaVuSans.ttf").getBestCmap()
+    missing = sorted(c for c in characters if ord(c) not in cmap)
+    assert missing == []
+
+
+@pytest.mark.spec("stop_tokens_qr.AC-13")
+def test_dejavu_license_is_shipped_next_to_the_font() -> None:
+    license_text = (FONTS / "LICENSE-DejaVu.txt").read_text(encoding="utf-8")
+    assert "Bitstream Vera Fonts Copyright" in license_text
+    assert "DejaVu changes are in public domain" in license_text
+
+
+@pytest.mark.spec("stop_tokens_qr.AC-13")
+def test_png_label_is_always_drawn_with_the_bundled_font(monkeypatch: pytest.MonkeyPatch) -> None:
+    bundled = (FONTS / "DejaVuSans.ttf").read_bytes()
+    loaded: list[bytes] = []
+    real_truetype = ImageFont.truetype
+
+    def spy(font: Any, size: float, *args: Any, **kwargs: Any) -> ImageFont.FreeTypeFont:
+        loaded.append(font.getvalue() if hasattr(font, "getvalue") else font)
+        return real_truetype(font, size, *args, **kwargs)
+
+    def no_default(*_args: Any, **_kwargs: Any) -> None:
+        raise AssertionError("Pillow's default font must not be used")
+
+    monkeypatch.setattr(segno_renderer.ImageFont, "truetype", spy)
+    monkeypatch.setattr(segno_renderer.ImageFont, "load_default", no_default)
+    _render("png", QrLabel(title="Pasarel·la", subtitle="Parada 347"))
+    assert loaded
+    assert all(font == bundled for font in loaded)
+
+
+@pytest.mark.spec("stop_tokens_qr.AC-13")
+def test_png_label_draws_distinct_accented_letters() -> None:
+    # A font without these glyphs draws the same "missing glyph" box for all of them.
+    bands = []
+    for title in ("Valencia", "València", "Valéncia", "Calassanç", "Calassanc"):
+        image = open_png(_render("png", QrLabel(title=title, subtitle="Parada 1"))).convert("L")
+        bands.append(image.crop((0, image.width, image.width, image.height)).tobytes())
+    assert len(set(bands)) == len(bands)

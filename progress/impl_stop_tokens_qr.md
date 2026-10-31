@@ -1,17 +1,16 @@
 # Implementación: stop_tokens_qr
-Spec: specs/stop_tokens_qr/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Agente: implementer · Fecha: 2026-10-31
+Spec: specs/stop_tokens_qr/ (v1.1, APPROVED) · Ciclo de revisión: 0 · Agente: implementer · Fecha: 2026-11-01
 
-> **Detenida en T-04 por el bloqueo B-01 (CP-3).** T-04 está implementada tal como dice el design
-> y sus tests pasan, pero la etiqueta PNG no puede mostrar bien los nombres reales con la fuente
-> que permite el design. T-05 y T-06 no se han empezado.
+> Retomada en T-04 tras la spec v1.1 (PR #12), que resuelve los bloqueos B-01 y B-02. La rama se
+> rebasó sobre `develop`, así que los hashes de T-01 a T-04 son los posteriores al rebase.
 
 ## Tareas
-- [x] T-01 Configuración del secreto, validación por entorno y advertencia de desarrollo (AC-04, AC-05) (commit c5bc0c0)
-- [x] T-02 `StopTokenSigner` y `HmacStopTokenSigner` (AC-01, AC-02, AC-03) (commit 89808c2)
-- [x] T-03 `build_stop_url` (AC-06) (commit e30bd75)
-- [ ] T-04 `QrRenderer` y `SegnoQrRenderer` (AC-07, AC-09, AC-12). **Bloqueada por B-01** (y B-02
-      menor). El código sigue el design al pie de la letra y está en el commit de T-04. Falta cerrar
-      la fuente de la etiqueta PNG.
+- [x] T-01 Configuración del secreto, validación por entorno y advertencia de desarrollo (AC-04, AC-05) (commit dbe22bd)
+- [x] T-02 `StopTokenSigner` y `HmacStopTokenSigner` (AC-01, AC-02, AC-03) (commit 6d57ee2)
+- [x] T-03 `build_stop_url` (AC-06) (commit 9663d6f)
+- [x] T-04 `QrRenderer` y `SegnoQrRenderer` (AC-07, AC-09, AC-12, AC-13) (commits 24c5d2b y T04HASH:
+      el primero, de la v1.0, con el renderer; el segundo, de la v1.1, con la fuente incluida, su
+      licencia y el test de cobertura de caracteres)
 - [ ] T-05 Caso de uso `GenerateStopQrCodes` (AC-08, AC-10, AC-11)
 - [ ] T-06 CLI `avisabus qr generate` (AC-07 – AC-11)
 - [ ] T-07 Verificación completa
@@ -45,54 +44,46 @@ Spec: specs/stop_tokens_qr/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Agente:
 - **Etiqueta PNG (maquetación, §9):** la escala es `ceil(600 / módulos)`, así que el QR mide
   ≥ 600 px de lado. Los tamaños de letra son proporcionales al lado (40/32 px para 615 px). El
   título se parte por palabras midiendo con la fuente real.
+- **Fuente de la etiqueta PNG (v1.1, AC-13):** `SegnoQrRenderer` lee
+  `adapters/outbound/qr/fonts/DejaVuSans.ttf` con `importlib.resources` (bytes cacheados una vez
+  por proceso) y crea cada tamaño con `ImageFont.truetype(BytesIO(...))`. Ya no hay búsqueda en
+  el sistema ni vuelta a `ImageFont.load_default`.
+- **Origen de la fuente:** release oficial del proyecto DejaVu, **versión 2.37**,
+  `https://github.com/dejavu-fonts/dejavu-fonts/releases/download/version_2_37/dejavu-fonts-ttf-2.37.tar.bz2`
+  (SHA-256 del archivo `fa9ca4d1…46e17d7`). Se han copiado sin cambios:
+  - `ttf/DejaVuSans.ttf` como `fonts/DejaVuSans.ttf` (757 076 bytes, SHA-256 `7da195a7…ed848954`);
+  - `LICENSE` como `fonts/LICENSE-DejaVu.txt` (8 816 bytes, SHA-256 `7a083b13…e5958a93`): licencia
+    de Bitstream Vera y Arev; los cambios de DejaVu son de dominio público.
+- **Dato del paquete:** hatchling ya metía los ficheros de `src/avisabus/` en la rueda. Aun así,
+  se declaran explícitamente en `pyproject.toml` (`[tool.hatch.build.targets.wheel] artifacts`),
+  como pide el design §5. Comprobación manual (en el scratchpad, fuera del repositorio): la rueda
+  y el sdist contienen los dos ficheros, y una rueda instalada en un venv limpio genera un PNG con
+  la fuente incluida.
+- **Test de cobertura de caracteres (AC-13):** con `fontTools` (nueva dependencia de desarrollo),
+  usando el `cmap` de la fuente. El test comprueba también que `gtfs_mini` contiene los caracteres
+  problemáticos (`à è é í ò ó ñ ç · À Á`), para que no pase en vacío. Los tests de AC-13 van en
+  `tests/integration/test_segno_renderer.py`, el fichero que fija T-04, para que el comando de
+  verificación de la tarea los ejecute. Se añaden dos tests de comportamiento:
+  - un espía de `ImageFont.truetype` / `load_default` (solo se carga la fuente incluida);
+  - "València", "Valéncia", "Valencia", "Calassanç" y "Calassanc" producen bandas distintas. Con
+    una fuente sin esos glifos, è y é salen con la misma caja de sustitución. Este test fallaba
+    con el código de la v1.0.
 - **Decodificación en tests:** `zxing-cpp` (tiene rueda para macOS arm64). zxing solo lee
   imágenes raster, así que `tests/support/qr.py` rasteriza el `<path>` de segno (trazos `h`
   por fila) a una imagen y la decodifica. No hace falta cairo ni otra dependencia nativa.
-- **Dependencias nuevas:** `segno` y `pillow` (runtime), `zxing-cpp` (dev).
+- **Dependencias nuevas:** `segno` y `pillow` (runtime), `zxing-cpp` y `fonttools` (dev).
 
 ## Bloqueos
 
-### B-01 — La fuente por defecto de Pillow no muestra las letras acentuadas de los nombres de parada (CP-3)
-- **Spec:** design §5 dice "Pillow añade una banda inferior blanca con el texto (fuente por
-  defecto de Pillow o DejaVuSans si está disponible)". AC-07 y AC-09 exigen que la etiqueta
-  muestre "el nombre de la parada (tal como viene en el GTFS)".
-- **Realidad:**
-  - La fuente por defecto de Pillow 13 (`ImageFont.load_default(size)` → *Aileron Regular*) no
-    tiene glyph para ninguno de estos caracteres:
-    `à è é í ï ò ó ú ü ç ñ À È É Í Ï Ò Ó Ú Ü Ç Ñ ª º`. Comprobado comparando cada máscara con la
-    de un carácter inexistente.
-  - En el feed real (`data/gtfs/emt/stops.txt`), **620 de 1117** nombres de parada llevan alguno
-    de estos caracteres: `· À Á Ò à á ç è é í ï ñ ò ó ú ü`.
-  - Ejemplo: "Institut Obrer de València…" sale impreso como "Val□ncia".
-  - DejaVuSans no viene con macOS ni con las imágenes Docker *slim*, así que el design solo
-    funciona donde DejaVuSans ya está instalada (p. ej. Debian con `fonts-dejavu-core`).
-  - Los tests actuales no lo detectan: comprueban dimensiones, decodificación y que haya texto en
-    la banda, no qué glyphs se dibujan.
-- **Impacto:** en el PNG, más de la mitad de las paradas tendrían el nombre mal escrito en el
-  cartel. El SVG no se ve afectado: el visor o la impresora usan una fuente `sans-serif` del
-  sistema.
-- **Propuesta (para el spec-writer / la persona):**
-  1. *(Recomendada)* Incluir DejaVuSans.ttf en el paquete
-     (`adapters/outbound/qr/fonts/`, unos 750 KB, licencia libre Bitstream Vera/DejaVu) y usarla
-     siempre para el PNG. El resultado es igual en cualquier máquina y se puede probar. Añadir un
-     AC o una línea de verificación: "la fuente de la etiqueta PNG tiene glyph para todos los
-     caracteres de los nombres de `gtfs_mini`", con un test unitario de cobertura de glyphs.
-  2. *(Alternativa)* Buscar varias fuentes del sistema (DejaVuSans, LiberationSans, Arial,
-     Helvetica). Si ninguna cubre el texto, fallar con un error explícito en vez de usar Aileron.
-     Exigir `fonts-dejavu-core` en la imagen de `deployment_rpi`. Es menos determinista y en CI
-     depende de la máquina.
+Ninguno abierto.
 
-### B-02 — `boost_error` de segno frente a "nivel M" (menor; lo propongo para la misma revisión de spec)
-- design §5 indica `segno.make(content, error="m", micro=False)`. Con el valor por defecto de
-  segno (`boost_error=True`), la librería **sube** el nivel a Q o H si cabe en la misma versión.
-  Ejemplo: una URL de 44 caracteres sale con nivel Q. AC-12 exige "corrección de errores nivel M".
-- He implementado `boost_error=False`, que cumple AC-12 a la letra. Los tests comprueban el nivel
-  con zxing en una URL que segno subiría a Q por defecto.
-- **Propuesta:** que design §5 diga explícitamente `boost_error=False`, o que AC-12 diga "nivel M
-  como mínimo" si se prefiere aprovechar el boost. Con la URL de producción típica (≈ 50
-  caracteres) el resultado actual es M en ambos casos.
+- **B-01 — RESUELTO en la spec v1.1.** La fuente por defecto de Pillow no tenía glifos para las
+  letras acentuadas: 620 de las 1 117 paradas del feed real estaban afectadas. AC-13 y design §5
+  piden ahora la fuente DejaVu Sans incluida en el paquete, con su licencia, y un test de
+  cobertura de caracteres. Implementado en T-04 (v1.1).
+- **B-02 — RESUELTO en la spec v1.1.** `boost_error` de segno frente al nivel M. AC-12 exige
+  ahora exactamente M, y design §5 pide `boost_error=False`. La v1.0 ya lo implementaba así, y los
+  tests lo comprueban con una URL que segno subiría a Q.
 
 ## Verificación
-Pendiente. No se ha ejecutado `./init.sh verify` porque la feature está detenida en T-04. Al
-detenerse, `uv run pytest`, `ruff check`, `ruff format --check`, `mypy` y `lint-imports` pasan:
-267 tests, cobertura de `domain` + `application` 99,31 %.
+Pendiente (T-07).
