@@ -106,3 +106,8 @@
 ## 2026-11-01 · stop_tokens_qr · implementing → in_review → done
 - T-04 (fuente DejaVu 2.37 incluida + licencia + test de cobertura), T-05…T-07; `./init.sh verify` en verde.
 - Revisión ciclo 1: APPROVED sin bloqueantes; no bloqueantes H-01…H-03 y propuestas de spec S-01…S-03.
+
+## 2026-11-01 · stop_tokens_qr · integración con occupancy_sensor (rebase de la PR #14)
+- PR #13 fusionada; `feat/stop_tokens_qr` rebasada sobre `develop`. Conflictos de código resueltos
+  conservando ambas features; fix solo de tests (0128582) por el aviso del secreto de desarrollo en
+  tests de `occupancy_sensor` que comparan stdout.
