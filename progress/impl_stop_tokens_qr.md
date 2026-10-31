@@ -11,7 +11,7 @@ Spec: specs/stop_tokens_qr/ (v1.1, APPROVED) · Ciclo de revisión: 0 · Agente:
 - [x] T-04 `QrRenderer` y `SegnoQrRenderer` (AC-07, AC-09, AC-12, AC-13) (commits 24c5d2b y T04HASH:
       el primero, de la v1.0, con el renderer; el segundo, de la v1.1, con la fuente incluida, su
       licencia y el test de cobertura de caracteres)
-- [ ] T-05 Caso de uso `GenerateStopQrCodes` (AC-08, AC-10, AC-11)
+- [x] T-05 Caso de uso `GenerateStopQrCodes` (AC-08, AC-10, AC-11) (commit T05HASH)
 - [ ] T-06 CLI `avisabus qr generate` (AC-07 – AC-11)
 - [ ] T-07 Verificación completa
 
@@ -68,6 +68,16 @@ Spec: specs/stop_tokens_qr/ (v1.1, APPROVED) · Ciclo de revisión: 0 · Agente:
   - "València", "Valéncia", "Valencia", "Calassanç" y "Calassanc" producen bandas distintas. Con
     una fuente sin esos glifos, è y é salen con la misma caja de sustitución. Este test fallaba
     con el código de la v1.0.
+- **`GenerateStopQrCodes.execute` es síncrono**, como fija design §3 (`def execute`), porque
+  `NetworkRepository` es síncrono. La convención general (casos de uso con I/O `async`) cede ante
+  la spec.
+- **Parada repetida en `--stop` (AC-08, "un fichero por parada"):** se genera una sola vez, en el
+  orden de su primera aparición. Es lectura literal del AC, no un comportamiento nuevo. Las
+  inexistentes se listan en `missing_stop_ids` en el orden en que se pidieron.
+- **`NoActiveFeedError`** (en `domain/errors.py`, subclase de `DomainError`) no lleva argumentos,
+  y su mensaje fijo ("no active GTFS feed") no incluye identificadores.
+- **`--all`** usa el orden de `NetworkRepository.list_stop_ids()`: `stop_id` ordenado como
+  texto en el adaptador SQLite.
 - **Decodificación en tests:** `zxing-cpp` (tiene rueda para macOS arm64). zxing solo lee
   imágenes raster, así que `tests/support/qr.py` rasteriza el `<path>` de segno (trazos `h`
   por fila) a una imagen y la decodifica. No hace falta cairo ni otra dependencia nativa.

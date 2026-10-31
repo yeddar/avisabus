@@ -11,3 +11,10 @@ class UnknownLineError(DomainError):
     def __init__(self, line: str) -> None:
         self.line = line
         super().__init__("unknown line")
+
+
+class NoActiveFeedError(DomainError):
+    """No GTFS feed has been imported yet, so there is no active network to read."""
+
+    def __init__(self) -> None:
+        super().__init__("no active GTFS feed")
