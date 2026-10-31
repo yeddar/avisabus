@@ -56,3 +56,8 @@
   formas por sentido (AC-29), solo líneas con viajes (AC-28), recorte de `trip_headsign` (AC-07),
   línea 98 en `gtfs_mini`. `stop_arrivals_api` v1.1: E-01 pregunta por los destinos del SAE en
   las circulares.
+
+## 2026-10-31 · gtfs_import v1.1 · spec_approved → implementing → spec_blocked (CP-3)
+- T-01…T-03b implementadas (AC-07, AC-08, AC-14, AC-19, AC-20, AC-24/25 en unit).
+- B-01 en T-04: con la fecha de referencia del design §8 (2026-11-04), `gtfs_mini` no incluye el
+  `route_id` 1055 de la 98 (solo fines de semana) → AC-24/AC-29 incumplibles para la 98.
