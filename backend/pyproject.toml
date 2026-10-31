@@ -13,6 +13,8 @@ dependencies = [
     "structlog",
     "httpx",
     "sqlalchemy>=2",
+    "segno>=1.6.6",
+    "pillow>=13.0.0",
 ]
 
 [project.scripts]
@@ -28,6 +30,7 @@ dev = [
     "mypy",
     "import-linter",
     "hypothesis>=6.170.14",
+    "zxing-cpp>=3.1.1",
 ]
 
 [build-system]
