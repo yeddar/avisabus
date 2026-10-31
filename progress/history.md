@@ -81,3 +81,11 @@
 - T-01…T-06 implementadas; `./init.sh verify` en verde (422 tests, cobertura 99,44 %).
 - Revisión ciclo 1: APPROVED sin bloqueantes. Problemas de spec no bloqueantes SP-01 (AC-11 vs
   proporciones fijas de forzado con umbrales no por defecto) y SP-02 (firma de `progress`).
+
+## 2026-10-31 · gtfs_import v1.3 / stop_arrivals_api v1.2 · specs (PR #11) · validación de sentidos
+- La persona valida los sentidos derivados de `gtfs_import` (PR #10 fusionada).
+- `gtfs_import` v1.3 documenta S-1…S-3 (sin cambios de código; sigue `done`). `stop_arrivals_api`
+  v1.2 añade AC-18/T-05b (horarios del día de servicio siguiente si la ventana cruza la medianoche).
+
+## 2026-10-31 · stop_tokens_qr · spec_approved → implementing
+- Sin exploración (tasks.md: "No necesaria"). Rama `feat/stop_tokens_qr` desde `develop`.
