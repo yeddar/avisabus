@@ -1,11 +1,31 @@
 # Datos locales: feed GTFS real, base de datos (no se versionan)
 data/
 
+# Configuración local (las variables se documentan en .env.example)
+.env
+
+# Bases de datos SQLite
+*.sqlite
+*.sqlite-*
+
 # Python
-__pycache__/
+**/.venv/
+**/__pycache__/
 *.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+
+# Node / frontend
+**/node_modules/
+**/dist/
+**/dev-dist/
+coverage/
+playwright-report/
+test-results/
+blob-report/
 
 # Sistema
 .DS_Store
-
-# El resto de entradas las añade project_scaffold (T-01, AC-20)
