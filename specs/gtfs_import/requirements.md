@@ -1,6 +1,6 @@
 # Importación del GTFS — requirements
 
-> Feature: `gtfs_import` · Versión: 1.0 · Estado: DRAFT
+> Feature: `gtfs_import` · Versión: 1.0 · Estado: APPROVED
 > Requisitos: RF-01, RF-02, RF-03, RF-04, RF-32 · Casos de uso: CU-11 · Depende de: project_scaffold
 
 ## Contexto

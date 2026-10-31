@@ -1,6 +1,6 @@
 # Fuente de llegadas del SAE — design
 
-> Feature: `sae_arrivals_source` · Versión: 1.0 · Estado: DRAFT
+> Feature: `sae_arrivals_source` · Versión: 1.0 · Estado: APPROVED
 > Requisitos: RF-07, RF-08, RF-11, RF-35, RNF-08, RNF-10, RNF-13 · Casos de uso: CU-01 · Depende de: project_scaffold
 
 ## 1. Resumen

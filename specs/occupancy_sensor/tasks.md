@@ -1,6 +1,6 @@
 # Sensor de ocupación — tasks
 
-> Feature: `occupancy_sensor` · Versión: 1.0 · Estado: DRAFT
+> Feature: `occupancy_sensor` · Versión: 1.0 · Estado: APPROVED
 > Requisitos: RF-14, RF-15 · Casos de uso: CU-01 · Depende de: project_scaffold, gtfs_import
 
 ## Exploración

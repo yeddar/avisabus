@@ -1,6 +1,6 @@
 # API de parada y llegadas — requirements
 
-> Feature: `stop_arrivals_api` · Versión: 1.0 · Estado: DRAFT
+> Feature: `stop_arrivals_api` · Versión: 1.0 · Estado: APPROVED
 > Requisitos: RF-06, RF-09, RF-11, RF-15, RF-32, RNF-01, RNF-08 · Casos de uso: CU-01 · Depende de: gtfs_import, stop_tokens_qr, sae_arrivals_source, occupancy_sensor
 
 ## Contexto
