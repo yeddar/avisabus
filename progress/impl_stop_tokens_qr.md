@@ -12,7 +12,7 @@ Spec: specs/stop_tokens_qr/ (v1.1, APPROVED) · Ciclo de revisión: 0 · Agente:
       el primero, de la v1.0, con el renderer; el segundo, de la v1.1, con la fuente incluida, su
       licencia y el test de cobertura de caracteres)
 - [x] T-05 Caso de uso `GenerateStopQrCodes` (AC-08, AC-10, AC-11) (commit T05HASH)
-- [ ] T-06 CLI `avisabus qr generate` (AC-07 – AC-11)
+- [x] T-06 CLI `avisabus qr generate` (AC-07 – AC-11) (commit T06HASH)
 - [ ] T-07 Verificación completa
 
 ## Decisiones locales
@@ -78,6 +78,33 @@ Spec: specs/stop_tokens_qr/ (v1.1, APPROVED) · Ciclo de revisión: 0 · Agente:
   y su mensaje fijo ("no active GTFS feed") no incluye identificadores.
 - **`--all`** usa el orden de `NetworkRepository.list_stop_ids()`: `stop_id` ordenado como
   texto en el adaptador SQLite.
+- **Cableado de la CLI:** `CliContainer` (`adapters/inbound/cli/container.py`) gana el campo
+  `generate_stop_qr_codes`: `SqliteNetworkRepository`, `HmacStopTokenSigner` con
+  `Settings.stop_token_secret_bytes()`, `SegnoQrRenderer` y `public_base_url`. `main.py` registra
+  `qr_app`. Son los dos únicos ficheros de otras features que se tocan, y solo para añadir
+  (el contenedor es el punto de composición de la CLI y los tests lo sustituyen). Ojo: la rama de
+  `occupancy_sensor` probablemente también toca `container.py` y `main.py`, además de `config.py`.
+- **`index.csv`** se escribe siempre (también con una sola `--stop`), como dice design §3:
+  - con las paradas generadas, en el orden del caso de uso;
+  - si todas las pedidas faltan, solo con la cabecera (exit 2);
+  - con `csv` estándar: UTF-8 sin BOM y fin de línea `\r\n` (RFC 4180);
+  - en la columna `file`, el nombre del fichero relativo al directorio de salida.
+
+  Los ficheros existentes se sobrescriben.
+- **Sin feed (AC-11):** el mensaje es el mismo que en `gtfs info` y se imprime por stderr. Se sale
+  con 1 **antes** de crear el directorio de salida, así que no se crea nada. Los mensajes
+  `ERROR: parada X no existe` también van a stderr. Al terminar se imprime un resumen por stdout
+  ("QR generados: N en DIR (índice: …)").
+- **`--stop` y `--all`:** deben indicarse uno de los dos, no ambos (sinopsis del design). Si no,
+  `typer.BadParameter`: error de uso estándar de Click, que termina con código 2 antes de abrir la
+  BD y sin escribir nada. El design no fija código para un uso incorrecto. El 2 coincide con el de
+  "parada inexistente", pero es el estándar de Click para errores de uso.
+- **`--format`** es un `StrEnum` (`svg`, `png`) para que typer valide el valor. El resto de valores
+  los rechaza Click como error de uso.
+- **Test `--all`:** compara los nombres del índice con `stops.txt` de `gtfs_mini` aplicando
+  `clean_name`, la misma normalización que la importación (gtfs_import RF-32: solo se quitan los
+  espacios de los extremos; la parada 2009 tiene un espacio final en el feed). La BD de los tests
+  de la CLI se importa una vez por módulo en un directorio temporal, porque el comando solo lee.
 - **Decodificación en tests:** `zxing-cpp` (tiene rueda para macOS arm64). zxing solo lee
   imágenes raster, así que `tests/support/qr.py` rasteriza el `<path>` de segno (trazos `h`
   por fila) a una imagen y la decodifica. No hace falta cairo ni otra dependencia nativa.

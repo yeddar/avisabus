@@ -13,6 +13,9 @@ from avisabus.adapters.outbound.persistence.sqlite_network import (
 from avisabus.adapters.outbound.persistence.sqlite_occupancy_override import (
     SqliteOccupancyOverrideRepository,
 )
+from avisabus.adapters.outbound.qr.segno_renderer import SegnoQrRenderer
+from avisabus.adapters.outbound.security.hmac_stop_token import HmacStopTokenSigner
+from avisabus.application.generate_stop_qr_codes import GenerateStopQrCodes
 from avisabus.application.get_feed_info import GetFeedInfo
 from avisabus.application.import_gtfs_feed import ImportGtfsFeed
 from avisabus.application.set_occupancy_override import (
@@ -32,6 +35,7 @@ class CliContainer:
     set_occupancy_override: SetOccupancyOverride
     clear_occupancy_override: ClearOccupancyOverride
     list_occupancy_overrides: ListOccupancyOverrides
+    generate_stop_qr_codes: GenerateStopQrCodes
 
     def close(self) -> None:
         self.engine.dispose()
@@ -62,4 +66,10 @@ def build_cli_container(settings: Settings, clock: Clock) -> CliContainer:
         ),
         clear_occupancy_override=ClearOccupancyOverride(network=network, overrides=overrides),
         list_occupancy_overrides=ListOccupancyOverrides(overrides=overrides, clock=clock),
+        generate_stop_qr_codes=GenerateStopQrCodes(
+            network=network,
+            signer=HmacStopTokenSigner(settings.stop_token_secret_bytes()),
+            renderer=SegnoQrRenderer(),
+            public_base_url=settings.public_base_url,
+        ),
     )
