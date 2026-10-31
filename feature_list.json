@@ -159,7 +159,7 @@
       "order": 7,
       "block": 2,
       "title": "i18n castellano/valenciano, selector de idioma y base de accesibilidad del frontend",
-      "status": "pending",
+      "status": "spec_draft",
       "depends_on": [
         "project_scaffold"
       ],
@@ -167,6 +167,7 @@
         "RF-31",
         "RF-32",
         "RNF-03",
+        "RNF-14",
         "RNF-15"
       ],
       "use_cases": [
@@ -182,7 +183,7 @@
       "order": 8,
       "block": 2,
       "title": "Vista de parada del pasajero con refresco y ocupación",
-      "status": "pending",
+      "status": "spec_draft",
       "depends_on": [
         "stop_arrivals_api",
         "frontend_i18n"
@@ -191,6 +192,7 @@
         "RF-06",
         "RF-10",
         "RF-15",
+        "RF-32",
         "RNF-01",
         "RNF-03",
         "RNF-04",
@@ -210,13 +212,14 @@
       "order": 9,
       "block": 2,
       "title": "Estimación de posición del autobús y API de trazado/posición",
-      "status": "pending",
+      "status": "spec_draft",
       "depends_on": [
         "gtfs_import",
         "stop_arrivals_api"
       ],
       "requirements": [
-        "RF-12"
+        "RF-12",
+        "RNF-01"
       ],
       "use_cases": [
         "CU-02"
@@ -231,21 +234,23 @@
       "order": 10,
       "block": 2,
       "title": "Mapa con trazado y posición estimada",
-      "status": "pending",
+      "status": "spec_draft",
       "depends_on": [
         "passenger_stop_view",
         "position_estimation"
       ],
       "requirements": [
         "RF-13",
+        "RNF-01",
         "RNF-03",
+        "RNF-05",
         "RNF-14"
       ],
       "use_cases": [
         "CU-02"
       ],
       "spec": "specs/passenger_map_view/",
-      "needs_exploration": false,
+      "needs_exploration": true,
       "review_cycles": 0,
       "passes": false
     },
