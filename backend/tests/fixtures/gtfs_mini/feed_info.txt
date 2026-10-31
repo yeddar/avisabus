@@ -1,0 +1,2 @@
+feed_publisher_name,feed_publisher_url,feed_lang,default_lang,feed_start_date,feed_end_date,feed_version,feed_contact_email,feed_contact_url
+EMT Valencia,https://www.emtvalencia.es,ca,en,20261016,20261122,23-10-2026,atencioalaciutadania@emtvalencia.es,https://www.emtvalencia.es

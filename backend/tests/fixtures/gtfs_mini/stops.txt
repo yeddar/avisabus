@@ -1,0 +1,179 @@
+stop_id,stop_code,stop_name,stop_desc,stop_lat,stop_lon,zone_id,stop_url,location_type,parent_station,wheelchair_boarding
+64,64,Vall de la Ballestera - Campanar,Vall de la Ballestera 1 - VALÈNCIA,39.4808906489389,-0.393684986539343,,,0,,0
+157,157,Blasco Ibáñez - Gascó Oliag,Blasco Ibáñez 25 - VALÈNCIA,39.4771903854985,-0.357628377042021,,,0,,0
+158,158,Blasco Ibáñez - Facultat de Psicologia,Blasco Ibáñez 21 DUP. - VALÈNCIA,39.4779194726762,-0.360060859276868,,,0,,0
+160,160,Blasco Ibáñez (imparell) - Hospitals,Blasco Ibáñez 17 - VALÈNCIA,39.4789048394776,-0.36343598431311,,,0,,0
+162,162,Blasco Ibáñez - Jaume Roig,Blasco Ibáñez 7 - VALÈNCIA,39.4795680038677,-0.365549666790116,,,0,,0
+163,163,Blasco Ibáñez - Jardí de Monforte,Blasco Ibáñez 2 - VALÈNCIA,39.4788524158214,-0.365665405397575,,,0,,0
+164,164,Blasco Ibáñez - Rectorat,Blasco Ibáñez BARDISSA CENTRAL(J.ROIG) - VALÈNCIA,39.4790674235598,-0.365093523227765,,,0,,0
+165,165,Blasco Ibáñez (parell) - Hospitals,Blasco Ibáñez 18 - VALÈNCIA,39.478112896758,-0.363160500267464,,,0,,0
+166,166,Blasco Ibáñez - Facultat de Geografia,Blasco Ibáñez 28 - VALÈNCIA,39.4775901297358,-0.361381914452936,,,0,,0
+167,167,Blasco Ibáñez - Facultat de Filologia,Blasco Ibáñez 32 - VALÈNCIA,39.4769298063058,-0.359158695416252,,,0,,0
+171,171,Cavanilles - Primat Reig,Cabanilles 7 - VALÈNCIA,39.483979496011,-0.364173078427249,,,0,,0
+172,172,Cavanilles - Álvaro de Bazán,Cabanilles 18 (DAVANT) - VALÈNCIA,39.4819517703158,-0.365174084052521,,,0,,0
+173,173,Cavanilles - Vivers,Cabanilles 2 (DAVANT) - VALÈNCIA,39.4798904636725,-0.366197002723236,,,0,,0
+174,174,Jaume Roig - Álvaro de Bazán,Jaume Roig 12 - VALÈNCIA,39.4812704233996,-0.363910441597527,,,0,,0
+175,175,Jaume Roig - Primat Reig,Jaume Roig 26 - VALÈNCIA,39.4831954988556,-0.362985398813211,,,0,,0
+177,177,Emili Baró - Metro Benimaclet,Emili Baró 14 - VALÈNCIA,39.4851199368186,-0.362050106987938,,,0,,0
+178,178,Emili Baró - Manuel Castellanos,Emili Baró 40 - VALÈNCIA,39.4865961998704,-0.361397025007829,,,0,,0
+179,179,Emili Baró - Francesc Martínez,Emili Baró 58 - VALÈNCIA,39.4882296696036,-0.360591262939952,,,0,,0
+186,186,Primat Reig - Jaume Roig,Primat Reig 70 - VALÈNCIA,39.4840739863448,-0.363380326453222,,,0,,0
+188,188,Primat Reig - Campus Universitari,Primat Reig 108 - VALÈNCIA,39.4801859378094,-0.358104063352953,,,0,,0
+192,192,Primat Reig - Camí Vera,Primat Reig 181 - VALÈNCIA,39.4803150840453,-0.357935418906495,,,0,,0
+194,194,Primat Reig - Emili Baró,Primat Reig 123 - VALÈNCIA,39.4842369131319,-0.363221269502899,,,0,,0
+219,219,Aragó - Passeig de l'Albereda,Aragó 3 - VALÈNCIA,39.4694375503949,-0.360091218178871,,,0,,0
+223,223,Vivers - General Elio,General Elío 2 - VALÈNCIA,39.4779269240001,-0.366970047032652,,,0,,0
+224,224,Vivers,General Elío REIXA VIVERS - VALÈNCIA,39.4773620381967,-0.367506170132449,,,0,,0
+338,338,Museu de Belles Arts,Sant Pius V 3 - VALÈNCIA,39.4790094275649,-0.371349025696354,,,0,,0
+341,341,Pont de Fusta,Cronista Rivelles 1 FGV - VALÈNCIA,39.4808327306242,-0.373986948661651,,,0,,0
+342,342,Guadalaviar - Sagunt,Guadalaviar 2 - VALÈNCIA,39.4818695863257,-0.375423757869737,,,0,,0
+343,343,El Pla de la Saïdia - Constitució,El Pla de la Saïdia 2 - VALÈNCIA,39.4828328578202,-0.37744693064284,,,0,,0
+344,344,Escola Oficial d'Idiomes,El Pla de la Saïdia 18 - VALÈNCIA,39.4829023250833,-0.381185860576464,,,0,,0
+345,345,Menéndez Pidal (parell) - Pare Ferrís,Menéndez Pidal 2 - VALÈNCIA,39.4816190059087,-0.384547372037258,,,0,,0
+346,346,Estació d'autobusos,Menéndez Pidal 14 - VALÈNCIA,39.4802119148825,-0.387708751728686,,,0,,0
+347,347,Menéndez Pidal - Pasarel·la,Menéndez Pidal PETRIL RIU - VALÈNCIA,39.4790462734356,-0.390091254302063,,,0,,0
+348,348,Estació d'autobusos (riu),Menéndez Pidal 14 (DAVANT RIU) - VALÈNCIA,39.4799083099609,-0.387802307280915,,,0,,0
+349,349,Menéndez Pidal (imparell) - Pare Ferrís,Menéndez Pidal 1 (DAVANT) - VALÈNCIA,39.4814951349031,-0.384302724356909,,,0,,0
+350,350,Escola Oficial d'Idiomes (riu),El Pla de la Saïdia 18 (DAVANT) - VALÈNCIA,39.4826614865218,-0.38148068925425,,,0,,0
+351,351,El Pla de la Saïdia (riu) - Constitució,El Pla de la Saïdia 13 (DAVANT) - VALÈNCIA,39.4828192214762,-0.379532034381401,,,0,,0
+352,352,Guadalaviar - Pont dels Serrans,Guadalaviar 2 (DAVANT) - VALÈNCIA,39.4816431961679,-0.375359515702762,,,0,,0
+358,358,Joaquim Ballester (parell) - Ricardo Micó,Joaquim Ballester DAVANT JARDÍ - VALÈNCIA,39.4829902963513,-0.38969616948663,,,0,,0
+359,359,Joaquim Ballester - Campanar,Joaquim Ballester 45 (LA FE) - VALÈNCIA,39.4818601195536,-0.392099876342407,,,0,,0
+361,361,Joaquim Ballester (imparell) - Ricardo Micó,Joaquim Ballester JARDÍ - VALÈNCIA,39.482694775011,-0.389747251178929,,,0,,0
+415,415,Vall de la Ballestera (parell) - Mestre Rodrigo,Vall de la Ballestera 34 - VALÈNCIA,39.4791507970912,-0.398171371826421,,,0,,0
+481,481,Linares - Pérez Galdós,Linares 4 - VALÈNCIA,39.4689271210648,-0.392274269735104,,,0,,0
+482,482,Parc de l'Oest - Germans Rivas,Cid S/N (JUNT L TOTANA) - VALÈNCIA,39.4683797148544,-0.395690293154098,,,0,,0
+483,483,Cid - Burgos,Cid 76 - VALÈNCIA,39.468918197516,-0.399860484380886,,,0,,0
+484,484,Cid - Passatge Vidal,Cid 108 - VALÈNCIA,39.4696097030463,-0.40320986752957,,,0,,0
+485,485,Cid - Nou d'Octubre,Cid S/N (JARDÍ 9 D'OCTUBRE) - VALÈNCIA,39.4701331738682,-0.405578505214021,,,0,,0
+486,486,Cid - Particular,Cid 152 (SEAT) - VALÈNCIA,39.469869705622,-0.411555924713199,,,0,,0
+487,487,Cid - Pere Maria Orts,Cid 160 - VALÈNCIA,39.4696675818973,-0.414160510069403,,,0,,0
+488,488,Avinguda del Cid,Cid 180 - VALÈNCIA,39.4697106505291,-0.41610763147755,,,0,,0
+495,495,Cid - Marconi,Cid 85 - VALÈNCIA,39.4692333277099,-0.413211062431302,,,0,,0
+496,496,Cid - Casa de la Misericòrdia,Cid 65 - VALÈNCIA,39.4695769232471,-0.409895524535674,,,0,,0
+500,500,La Fontsanta,Escultor Salzillo 10 - VALÈNCIA,39.4657442810475,-0.409652621557445,,,0,,0
+501,501,Colònia Espanyola de Mèxic - Casa de la Misericòrdia,Colònia Espanyola de Mèxic 5 (IMPAR)(HORARI COL.LEGI) - VALÈNCIA,39.4645868828956,-0.409112292027334,,,0,,0
+504,504,Tres Creus (imparell) - Hospital General,Tres Creus 7 - VALÈNCIA,39.4687807792608,-0.405713688737946,,,0,,0
+506,506,Cid - Josep Maestre,Cid 51 - VALÈNCIA,39.4690543082837,-0.402435993943532,,,0,,0
+507,507,Central de Policia Local de València,Cid 41 - VALÈNCIA,39.4686086767235,-0.399829436359634,,,0,,0
+508,508,Parc de l'Oest - Enguera,Cid JARDÍ ENGUERA - VALÈNCIA,39.4679406744483,-0.395681359902679,,,0,,0
+686,686,Marqués del Túria (imparell) - Plaça Cánovas,Marqués del Túria BARDISSA CÁNOVAS (IMPAR) - VALÈNCIA,39.4684889802844,-0.365818583873912,,,0,,0
+687,687,Marqués del Túria - Jorge Juan,Marqués del Túria 59 - VALÈNCIA,39.4677157798943,-0.367603501614684,,,0,,0
+688,688,Marqués del Túria - Hernán Cortés,Marqués del Túria 35 - VALÈNCIA,39.466398814644,-0.37072857870054,,,0,,0
+689,689,Marqués del Túria - Russafa,Marqués del Túria 7 - VALÈNCIA,39.4652200545103,-0.373500067385325,,,0,,0
+690,690,Germanies - Castelló,Germanies 16 - VALÈNCIA,39.4644240857376,-0.375192898812884,,,0,,0
+691,691,Plaça d'Espanya - Ermita,Ermita 1 (RAMON I CAJAL) - VALÈNCIA,39.4652067251471,-0.381153949575508,,,0,,0
+692,692,Ramón y Cajal (parell) - Jesús,Ramón i Cajal 28 - VALÈNCIA,39.4676090089531,-0.382815607954594,,,0,,0
+693,693,Ferran el Catòlic (parell) - Àngel Guimerà,Ferran El Catòlic 10 - VALÈNCIA,39.4701539084812,-0.384660964959617,,,0,,0
+694,694,Ferran el Catòlic - Juan de Mena,Ferran El Catòlic 36 - VALÈNCIA,39.472298630383,-0.386165396809009,,,0,,0
+695,695,Ferran el Catòlic (parell) - Jardí Botànic,Ferran El Catòlic 70 - VALÈNCIA,39.4749431899549,-0.388011431027884,,,0,,0
+696,696,Ferran el Catòlic (imparell)  - Metro Túria,Ferran El Catòlic 85 - VALÈNCIA,39.4769303766281,-0.389999272154186,,,0,,0
+697,697,Ferran el Catòlic (imparell) - Jardí Botànic,Ferran El Catòlic 67 - VALÈNCIA,39.4753485391983,-0.388891251648826,,,0,,0
+700,700,Cid - Hospital General,Cid S/N - VALÈNCIA,39.4695115981806,-0.405752755084496,,,0,,0
+701,701,Ferran el Catòlic - Gabriel Miró,Ferran El Catòlic 37 - VALÈNCIA,39.4726450929378,-0.386957690052239,,,0,,0
+702,702,Ferran el Catòlic (imparell) - Àngel Guimerà,Ferran El Catòlic 9 - VALÈNCIA,39.470051698918,-0.385078709592618,,,0,,0
+703,703,Àngel Guimerà - Ferran el Catòlic (central),Ferran El Catòlic BARDISSA CENTRAL - VALÈNCIA,39.4704385082065,-0.385134023800673,,,0,,0
+704,704,Ramón y Cajal - Prefectura Policia Nacional,Ramón i Cajal 61 - VALÈNCIA,39.4685528244354,-0.384003489742491,,,0,,0
+705,705,Ramón y Cajal (imparell) - Jesús,Ramón i Cajal 39 - VALÈNCIA,39.4671396787126,-0.382984101874642,,,0,,0
+708,708,Germanies - Sevilla,Germanies 13 - VALÈNCIA,39.4644453169566,-0.374662789242961,,,0,,0
+709,709,Marqués del Túria - Gregori Maians,Marqués del Túria 6 - VALÈNCIA,39.4652962946643,-0.372386971231353,,,0,,0
+710,710,Marqués del Túria - Mestre Gozalbo,Marqués del Túria 40 - VALÈNCIA,39.4665117247475,-0.369483718314716,,,0,,0
+711,711,Marqués del Túria - Joaquín Costa,Marqués del Túria 62 - VALÈNCIA,39.467433757903,-0.367293371069679,,,0,,0
+712,712,Marqués del Túria (parell) - Plaça Cánovas,Marqués del Túria BARDISSA CÁNOVAS (PAR) - VALÈNCIA,39.468145353836,-0.365597821344637,,,0,,0
+746,746,Àngel Guimerà - Bon Ordre,Àngel Guimerà 42 (ACCÉS) - VALÈNCIA,39.4697897831907,-0.388106933808865,,,0,,0
+760,760,Sant Josep de Calassanç - Alberic,Sant Josep de Calassanç 11 - VALÈNCIA,39.4665335982708,-0.387794540443935,,,0,,0
+761,761,Sant Francesc de Borja - Jesús,Sant Francesc de Borja 5 - VALÈNCIA,39.4659818098065,-0.38465736911621,,,0,,0
+773,773,Plaça del Temple,Poeta Llorente JARDÍ - VALÈNCIA,39.4769686731428,-0.371162757115094,,,0,,0
+816,816,Sant Vicent Màrtir - Espanya,Sant Vicent Màrtir 91 - VALÈNCIA,39.466566854957,-0.380983952824692,,,0,,0
+833,833,Vall de la Ballestera - Pius XII,Vall de la Ballestera 2ACC - VALÈNCIA,39.4811163031066,-0.393618531056264,,,0,,0
+855,855,Orxata - Mestre Serrano,"Orxata,  de  l' 41 - ALBORAIA",39.4959506051539,-0.354132660829782,,,0,,0
+866,866,Catalunya - Santa Cruz de la Zarza,Catalunya 16 - VALÈNCIA,39.4789132020709,-0.354146506504317,,,0,,0
+1020,1020,Metro Alameda,Albereda 14 (DAVANT JARDÍ VIA CENTRAL) - VALÈNCIA,39.474207058361,-0.365086519076336,,,0,,0
+1021,1021,Pla del Real,Albereda 1(DAVANT JARDÍ VIA CENTRAL) - VALÈNCIA,39.4762107241445,-0.366729816674263,,,0,,0
+1035,1035,Aragó - Finlàndia,Aragó 22 (DAVANT INSTITUT) - VALÈNCIA,39.4709219926619,-0.358522514059762,,,0,,0
+1041,1041,Plaça d'Espanya (imparell) - Ramón y Cajal,Ramón i Cajal 25 - VALÈNCIA,39.4659720228398,-0.382154003959401,,,0,,0
+1054,1054,Aragó - Saragossa,Aragó 4 - VALÈNCIA,39.4686498340796,-0.359977246065488,,,0,,0
+1055,1055,Aragó - Ernest Ferrer,Aragó 34 - VALÈNCIA,39.4728188990153,-0.356996622206953,,,0,,0
+1057,1057,Estadi de Mestalla (front),Aragó 42 (ACCÉS) - VALÈNCIA,39.4749516000556,-0.355950781933368,,,0,,0
+1083,1083,Aragó - Amadeu de Savoia,Aragó 25 - VALÈNCIA,39.4726482356367,-0.357689977844285,,,0,,0
+1085,1085,Aragó - Xile,Aragó 16 - VALÈNCIA,39.4701728811634,-0.358289503628534,,,0,,0
+1231,1231,Dolores Marqués - Metro Benimaclet,Dolores Marqués 1 - VALÈNCIA,39.4856123080116,-0.363398649616135,,,0,,0
+1232,1232,Dolores Marqués - Reverend José María Pinazo,Dolores Marqués 13 - VALÈNCIA,39.4866716902546,-0.362841260097846,,,0,,0
+1233,1233,Dolores Marqués - Assagador d'Alboraia,Dolores Marqués 27 - VALÈNCIA,39.488240694204,-0.362046438222555,,,0,,0
+1239,1239,Primat Reig - Xàbia,Primat Reig 187 (DAVANT) - VALÈNCIA,39.4790370042129,-0.356553842713472,,,0,,0
+1254,1254,Cid - Aiora,Cid 11 - VALÈNCIA,39.4673002377939,-0.391879475532206,,,0,,0
+1268,1268,Tres Creus (parell) - Hospital General,Tres Creus 2 (CARRIL BUS) - VALÈNCIA,39.4682964558997,-0.406421623456784,,,0,,0
+1274,1274,Tres Creus - Mercat de Castella,Tres Creus 10 - VALÈNCIA,39.4662217281617,-0.406402586397175,,,0,,0
+1278,1278,Àngel Guimerà - Ferran el Catòlic,Àngel Guimerà 10 - VALÈNCIA,39.4703573818644,-0.384505371005064,,,0,,0
+1307,1307,Tres Creus - Llombai,Tres Creus 49 - VALÈNCIA,39.4646006044341,-0.405386868607826,,,0,,0
+1318,1318,Molinell (parell) - Alboraia,Molinell 8 - VALÈNCIA,39.4849965554311,-0.36950099228692,,,0,,0
+1361,1361,Tarongers - Metro La Carrasca,"Tarongers, dels DAVANT CIÈNCIES SOCIALS. - VALÈNCIA",39.4798244784042,-0.34463037869967,,,0,,0
+1489,1489,Tarongers - Facultat de Magisteri,"Tarongers, dels S/N - VALÈNCIA",39.4801816889282,-0.347159113738047,,,0,,0
+1490,1490,Tarongers - Escola d'Edificació,"Tarongers, dels S/N - VALÈNCIA",39.480695459385,-0.34766704885071,,,0,,0
+1520,1520,Sant Agustí,Sant Agustí 2 - VALÈNCIA,39.4684775392302,-0.380549150437247,,,0,,0
+1551,1551,Tarongers (imparell)  - Metro La Cadena,"Tarongers, dels 43 - VALÈNCIA",39.4753017374296,-0.32905164159065,,,0,,0
+1552,1552,Marí Blas de Lezo - Felip de Gauna,Marí Blas de Lezo 30 - VALÈNCIA,39.4722149687986,-0.334054973155544,,,0,,0
+1574,1574,Ferran el Catòlic (parell) - Metro Túria,Ferran El Catòlic s/n - VALÈNCIA,39.4771238771447,-0.389624582318513,,,0,,0
+1584,1584,Joaquim Ballester - Pare Ferrís,Joaquim Ballester 8 - VALÈNCIA,39.4846305121677,-0.386569234827174,,,0,,0
+1661,1661,Pío Baroja - Bioparc,Pio Baroja S/N CARRIL BUS - VALÈNCIA,39.4762215069761,-0.406383085980662,,,0,,0
+1662,1662,Vall de la Ballestera - Pío Baroja,Vall de la Ballestera 60 - VALÈNCIA,39.4786179774081,-0.404095922839444,,,0,,0
+1679,1679,Primat Reig - Cuenca Tramoyeres,Primat Reig 151 - VALÈNCIA,39.4822846860095,-0.360474552354459,,,0,,0
+1694,1694,Primat Reig - Doctor Gómez Ferrer,Primat Reig 96 - VALÈNCIA,39.4818122301691,-0.360317090580977,,,0,,0
+1749,1749,Lluís Peixó - Comte Melito,Lluís Peixó S/N - VALÈNCIA,39.4753829447277,-0.333466202054936,,,0,,0
+1753,1753,Lluís Peixó - Tarongers,Lluís Peixó SOLAR - VALÈNCIA,39.475238951871,-0.333710031069088,,,0,,0
+1754,1754,Marí Blas de Lezo - Camí del Cabanyal,Marí Blas de Lezo 51 ACC. - VALÈNCIA,39.4724280910343,-0.334274065444248,,,0,,0
+1755,1755,Estació del Cabanyal (front),Marí Blas de Lezo 17 - VALÈNCIA,39.4708654148068,-0.334748639112398,,,0,,0
+1806,1806,Molinell (imparell) - Alboraia,Molinell 1 - VALÈNCIA,39.4851680505518,-0.370351985256173,,,0,,0
+1807,1807,Argenter Suárez - Ministre Luis Mayans,Argenter Suárez 16 - VALÈNCIA,39.4854159308175,-0.372977761984102,,,0,,0
+1808,1808,Ruaya (parell) - Visitació,Ruaya 42 - VALÈNCIA,39.4855417906125,-0.377130568866582,,,0,,0
+1809,1809,Metro Reus - Poeta Fernández Heredia,Reus 31 - VALÈNCIA,39.485711590107,-0.379929961100929,,,0,,0
+1810,1810,Reus - Periodista Llorente,Reus 16 (DAVANT) - VALÈNCIA,39.4857947093353,-0.383548803750497,,,0,,0
+1812,1812,Joaquim Ballester (imparell) - Pare Ferrís,Joaquim Ballester 3 - VALÈNCIA,39.4848743755116,-0.385408574061794,,,0,,0
+1813,1813,Metro Reus - Alqueria de l'Estrella,Reus 20 ACC - VALÈNCIA,39.4857536079312,-0.382890441541685,,,0,,0
+1814,1814,Reus - Poeta Fernández Heredia,Reus 32 ACC - VALÈNCIA,39.485567211083,-0.379462405598265,,,0,,0
+1815,1815,Ruaya (imparell) - Visitació,Ruaya 23 - VALÈNCIA,39.4853615994698,-0.376461206401343,,,0,,0
+1816,1816,Argenter Suárez - Miraculosa,Argenter Suárez 11 - VALÈNCIA,39.4852990280312,-0.372916228553479,,,0,,0
+1841,1841,Valladolid - Vinaròs,Valladolid 4 - VALÈNCIA,39.4895737431608,-0.362462575090443,,,0,,0
+1842,1842,Valladolid - Dolores Marqués,Valladolid 5 ACC - VALÈNCIA,39.489715577571,-0.362428866753854,,,0,,0
+1895,1895,Catalunya - Clariano,Catalunya 21 (DAVANT) - VALÈNCIA,39.4808687903738,-0.351855282288638,,,0,,0
+1896,1896,Tarongers - Facultat de Dret,"Tarongers, dels 6 - VALÈNCIA",39.4792019570423,-0.343698802950183,,,0,,0
+1897,1897,Tarongers - Facultat d'Economia,"Tarongers, dels 10 ACC - VALÈNCIA",39.4781700671001,-0.340083281921396,,,0,,0
+1898,1898,Tarongers (parell) - Metro Beteró,"Tarongers, dels S/N (JUNT APARCAMENT) - VALÈNCIA",39.476917579065,-0.335845181262783,,,0,,0
+1900,1900,Tarongers - Institut Tecnològic,"Tarongers, dels 8 (DAVANT) - VALÈNCIA",39.4785234729495,-0.33990711501552,,,0,,0
+1901,1901,Catalunya - Direcció General de Salut Pública,Catalunya 21 - VALÈNCIA,39.4812609625552,-0.352406440429521,,,0,,0
+1902,1902,Catalunya - Guàrdia Civil,Catalunya S/N (JARDÍ) - VALÈNCIA,39.4796983495518,-0.354269785335861,,,0,,0
+1918,1918,Tarongers (imparell) - Metro Beteró,"Tarongers, dels S/N - VALÈNCIA",39.4770894226237,-0.335148044956621,,,0,,0
+1961,1961,Alfauir - Germans Machado,Alfahuir 49 - VALÈNCIA,39.4935415607519,-0.359156568659,,,0,,0
+1968,1968,Plaça d'Espanya (parell) - Ramón y Cajal,Ramón i Cajal 18 - VALÈNCIA,39.4664499335122,-0.381949950002788,,,0,,0
+1988,1988,Alfauir - Cercle de Belles Arts,Alfahuir 42 - VALÈNCIA,39.4910041984658,-0.362629532605319,,,0,,0
+1989,1989,Alfauir - Centre de Salut,Alfahuir 47 ACC (DAVANT) - VALÈNCIA,39.4928957515449,-0.359624009087856,,,0,,0
+1990,1990,Alfauir - Estadi Ciutat de València,Alfahuir 41 - VALÈNCIA,39.4921253189587,-0.361644448714812,,,0,,0
+1991,1991,Alfauir - Arquitecte Tolsà,Alfahuir 27 ACC - VALÈNCIA,39.4907314049802,-0.364099330974152,,,0,,0
+1999,1999,Tres Forques - Casa Misericòrdia,Tres Forques 149 ACC. - VALÈNCIA,39.4631135600538,-0.408786515886968,,,0,,0
+2009,2009,Tres Creus - Músic Ayllón ,Tres Creus 31 - VALÈNCIA,39.4667999703202,-0.405629336684934,,,0,,0
+2030,2030,Alboraia,"Orxata,  de  l' 37 (DAVANT) - ALBORAIA",39.4959179262585,-0.35456367245772,,,0,,0
+2032,2032,Torres dels Serrans - Les Corts,Comte de Trénor 4-6 - VALÈNCIA,39.4787552200671,-0.374353591573173,,,0,,0
+2066,2066,Hospital 9 d'Octubre,Vall de la Ballestera 65 - VALÈNCIA,39.4784319815393,-0.402821122368005,,,0,,0
+2070,2070,Ciutat Administrativa 9 d'Octubre - Cieza,Nou D'Octubre 8 ACC - VALÈNCIA,39.4717716482467,-0.405490590049662,,,0,,0
+2071,2071,Ciutat Administrativa 9 d'Octubre - Lluís Lamarca,Nou D'Octubre S/N CONSELLERIES - VALÈNCIA,39.4710086974194,-0.405101205419611,,,0,,0
+2094,2094,Molinell (parell) - Pintor Genaro Lahuerta,Molinell 24 ACC - VALÈNCIA,39.4848320944657,-0.367053125880754,,,0,,0
+2095,2095,Molinell (imparell) - Pintor Genaro Lahuerta,Molinell 21 - VALÈNCIA,39.4849353659343,-0.36693447717782,,,0,,0
+2096,2096,Pío Baroja - Front Bioparc,Pio Baroja 2ACC - VALÈNCIA,39.4760708452805,-0.40598490920655,,,0,,0
+2097,2097,Vall de la Ballestera (imparell) - Mestre Rodrigo,Vall de la Ballestera 37 - VALÈNCIA,39.4791554687043,-0.397790086641626,,,0,,0
+2098,2098,Hospital 9 d'Octubre (front),Vall de la Ballestera 42 - VALÈNCIA,39.4784736928499,-0.400406583377476,,,0,,0
+2210,2210,Sant Vicent Màrtir - Ànimes,Sant Vicent Màrtir 63-65-67 - VALÈNCIA,39.4693610237108,-0.378922926273389,,,0,,0
+2213,2213,Estadi de Mestalla,Aragó 35 - VALÈNCIA,39.4753840941096,-0.356501298049684,,,0,,0
+2219,2219,Plaça de l'Ajuntament - Barques,Ajuntament 21-22 - VALÈNCIA,39.4701034323566,-0.375857787612168,,,0,,0
+2220,2220,Llotja - Mercat Central,Ajuntament 9 (DAVANT) ILLETA - VALÈNCIA,39.4721217564428,-0.376821697775168,,,0,,0
+2221,2221,Plaça de l'Ajuntament - Correus,Ajuntament S/N - VALÈNCIA,39.469946737583,-0.375948191329323,,,0,,0
+2222,2222,Plaça de la Reina,la Pau S/N - VALÈNCIA,39.4736105249751,-0.375816365862231,,,0,,0
+2227,2227,Carrer de la Pau,la Pau 25 - VALÈNCIA,39.4731322500328,-0.372180508434161,,,0,,0
+2229,2229,Estació del Cabanyal,Marí Blas de Lezo 16ACC - VALÈNCIA,39.4705552072931,-0.334646537304726,,,0,,0
+2257,2257,Palau de Justícia,Palau de Justícia 1 - VALÈNCIA,39.4720086697351,-0.369218148109148,,,0,,0
+2270,2270,Tarongers (parell) - Metro La Cadena,"Tarongers, dels 38 ACC - VALÈNCIA",39.475064791748,-0.329222219366592,,,0,,0
+2271,2271,Passeig Marítim - Hospital Malva-rosa,Passeig Marítim 133 ACC - VALÈNCIA,39.4744063580763,-0.324743566668989,,,0,,0
+2277,2277,Xàtiva - Institut Lluís Vives,Xàtiva 5 ACC - VALÈNCIA,39.4679992185698,-0.378354564971826,,,0,,0
+2281,2281,Pintor Sorolla,Pintor Sorolla 26 - VALÈNCIA,39.4713789240356,-0.371312772253265,,,0,,0
+2314,2314,Periodista Azzati - Plaça de l'Ajuntament,Periodista Azzati 3 - VALÈNCIA,39.4694437985447,-0.377626893673759,,,0,,0
+2372,2372,Plaça d'Espanya - Albacete,Pintor Benedito S/N - VALÈNCIA,39.4655774281271,-0.38233678839458,,,0,,0
+2404,2404,Tetuan (interior),Tetuan 2 - VALÈNCIA,39.4739889154669,-0.369883941344204,,,0,,0
