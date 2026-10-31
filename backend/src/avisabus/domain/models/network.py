@@ -80,3 +80,22 @@ class FeedVersion:
     start_date: date
     end_date: date
     counts: Mapping[str, int]
+
+
+@dataclass(frozen=True, slots=True)
+class ServiceCalendar:
+    """Row of `calendar.txt`. `weekdays` goes from Monday (index 0) to Sunday (index 6)."""
+
+    service_id: str
+    weekdays: tuple[bool, bool, bool, bool, bool, bool, bool]
+    start_date: date
+    end_date: date
+
+
+@dataclass(frozen=True, slots=True)
+class CalendarException:
+    """Row of `calendar_dates.txt`: `exception_type` 1 adds the service, 2 removes it."""
+
+    service_id: str
+    date: date
+    exception_type: int
