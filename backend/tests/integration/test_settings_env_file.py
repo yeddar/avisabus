@@ -64,6 +64,7 @@ def test_process_environment_takes_precedence_over_both_dotenv_files(
     _write_backend_env(backend_dir, "AVISABUS_LOG_LEVEL=WARNING\n")
     monkeypatch.setenv("AVISABUS_LOG_LEVEL", "ERROR")
     monkeypatch.setenv("AVISABUS_ENV", "prod")
+    monkeypatch.setenv("AVISABUS_STOP_TOKEN_SECRET", "x" * 32)  # required in prod
     settings = Settings()
     assert settings.log_level == "ERROR"
     assert settings.env == "prod"
