@@ -1,0 +1,26 @@
+[importlinter]
+root_package = avisabus
+# Required by import-linter to forbid external packages (contract domain-pure).
+include_external_packages = True
+
+[importlinter:contract:layers]
+name = Hexagonal layers
+type = layers
+layers =
+    avisabus.main
+    avisabus.adapters | avisabus.background
+    avisabus.application
+    avisabus.domain
+
+[importlinter:contract:domain-pure]
+name = Domain has no external dependencies
+type = forbidden
+source_modules = avisabus.domain
+forbidden_modules = fastapi
+    pydantic
+    pydantic_settings
+    sqlalchemy
+    httpx
+    typer
+    structlog
+    avisabus.config

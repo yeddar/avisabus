@@ -24,3 +24,9 @@
 ## 2026-10-31 · Bloque 1 · spec_draft → spec_approved (CP-1)
 - La persona aprueba las specs de project_scaffold, gtfs_import, stop_tokens_qr,
   sae_arrivals_source, occupancy_sensor y stop_arrivals_api (versión 1.0).
+
+## 2026-10-31 · project_scaffold · spec_approved → implementing → in_review → done
+- Implementadas T-01…T-12 (rama `feat/project_scaffold`); `./init.sh verify --e2e` en verde.
+- Revisión ciclo 1: APPROVED sin bloqueantes. Problemas de spec menores para la persona:
+  H-02 (`include_external_packages = True` en `.importlinter`, falta en design §4) y
+  H-03 (`.env` en la raíz no se lee porque el backend arranca desde `backend/`).
