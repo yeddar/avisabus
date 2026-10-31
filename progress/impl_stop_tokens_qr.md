@@ -3,17 +3,18 @@ Spec: specs/stop_tokens_qr/ (v1.1, APPROVED) · Ciclo de revisión: 0 · Agente:
 
 > Retomada en T-04 tras la spec v1.1 (PR #12), que resuelve los bloqueos B-01 y B-02. La rama se
 > rebasó sobre `develop`, así que los hashes de T-01 a T-04 son los posteriores al rebase.
+> Todas las tareas están hechas y `./init.sh verify` pasa: lista para revisión.
 
 ## Tareas
 - [x] T-01 Configuración del secreto, validación por entorno y advertencia de desarrollo (AC-04, AC-05) (commit dbe22bd)
 - [x] T-02 `StopTokenSigner` y `HmacStopTokenSigner` (AC-01, AC-02, AC-03) (commit 6d57ee2)
 - [x] T-03 `build_stop_url` (AC-06) (commit 9663d6f)
-- [x] T-04 `QrRenderer` y `SegnoQrRenderer` (AC-07, AC-09, AC-12, AC-13) (commits 24c5d2b y T04HASH:
+- [x] T-04 `QrRenderer` y `SegnoQrRenderer` (AC-07, AC-09, AC-12, AC-13) (commits 24c5d2b y f451272:
       el primero, de la v1.0, con el renderer; el segundo, de la v1.1, con la fuente incluida, su
       licencia y el test de cobertura de caracteres)
-- [x] T-05 Caso de uso `GenerateStopQrCodes` (AC-08, AC-10, AC-11) (commit T05HASH)
-- [x] T-06 CLI `avisabus qr generate` (AC-07 – AC-11) (commit T06HASH)
-- [ ] T-07 Verificación completa
+- [x] T-05 Caso de uso `GenerateStopQrCodes` (AC-08, AC-10, AC-11) (commit 76c7944)
+- [x] T-06 CLI `avisabus qr generate` (AC-07 – AC-11) (commit 4105f46)
+- [x] T-07 Verificación completa: `./init.sh verify` en verde (commit de progreso que cierra la implementación)
 
 ## Decisiones locales
 - **`ConfigurationError`** se define en `config.py`, junto a `Settings`. El design no dice dónde
@@ -123,4 +124,33 @@ Ninguno abierto.
   tests lo comprueban con una URL que segno subiría a Q.
 
 ## Verificación
-Pendiente (T-07).
+`./init.sh verify` (2026-11-01, rama `feat/stop_tokens_qr`, tras el commit de T-06): **todo en verde**.
+
+| Paso | Resultado |
+|---|---|
+| backend: format (`ruff format --check`) | OK |
+| backend: lint (`ruff check`) | OK — All checks passed |
+| backend: types (`mypy`) | OK — no issues found in 56 source files |
+| backend: architecture (`lint-imports`) | OK — 2 contracts kept, 0 broken |
+| backend: tests (`pytest`, sockets desactivados) | OK — 290 passed, 2 deselected (`slow`); cobertura `domain` + `application` 99,36 % |
+| frontend: format / lint / types / tests / build | OK (7 tests; sin cambios en frontend) |
+| harness: `feature_list.json` | OK |
+| harness: trazabilidad AC→test | OK (AC-01 … AC-13 citados) |
+
+Comandos de tarea:
+- T-04: `uv run pytest tests/integration/test_segno_renderer.py` → 17 passed.
+- T-05: `uv run pytest tests/unit/test_generate_stop_qr_codes.py` → 7 passed.
+- T-06: `uv run pytest tests/integration/test_cli_qr.py` → 12 passed.
+
+Ejecutados solos, el comando de T-04 marca un fallo de cobertura global (38 %) porque `addopts`
+mide `domain` + `application` sobre toda la suite. Les pasaba igual a las tareas anteriores; la
+suite completa la cumple.
+
+Prueba manual de la CLI con la BD en el scratchpad, fuera de `data/`:
+- sin feed → exit 1;
+- tras `gtfs import` de `gtfs_mini`, `--stop 508 --stop 9999 --format png` → `508.png`,
+  `index.csv` y `ERROR: parada 9999 no existe`, exit 2;
+- sin `--stop` ni `--all` → error de uso, exit 2.
+
+Revisión visual de un PNG con "Colònia … Misericòrdia · Pasarel·la Ibáñez Calassanç": todos los
+caracteres salen bien.
