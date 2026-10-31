@@ -1,6 +1,6 @@
 # Importación del GTFS — design
 
-> Feature: `gtfs_import` · Versión: 1.2 · Estado: APPROVED
+> Feature: `gtfs_import` · Versión: 1.3 · Estado: APPROVED
 > Requisitos: RF-01, RF-02, RF-03, RF-04, RF-32 · Casos de uso: CU-11 · Depende de: project_scaffold
 
 ## 1. Resumen
@@ -22,6 +22,7 @@ siempre una versión completa (SQLite en modo WAL permite leer mientras se escri
 | domain | `ports/network.py` | `NetworkRepository` (Protocol) |
 | application | `import_gtfs_feed.py` | `ImportGtfsFeed` (orquesta lector → escritor → activación) |
 | application | `get_feed_info.py` | `GetFeedInfo` |
+| domain | `ports/gtfs_import.py` | Además de lector y escritor: `FeedInfoSource` y `DirectionReport` (datos solo para `gtfs info`, fuera de `NetworkRepository`) |
 | application | `ports` locales | `GtfsFeedReader`, `GtfsFeedWriter` (Protocols en `domain/ports/gtfs_import.py`) |
 | adapters/outbound | `gtfs/reader.py` | `CsvGtfsFeedReader` (dir o zip, UTF-8-sig, streaming) |
 | adapters/outbound | `persistence/db.py` | `create_engine(settings)`, PRAGMAs, `metadata.create_all` |
@@ -74,6 +75,27 @@ uso `async` los llaman directamente. Si una consulta superase ~20 ms, se envolve
 (`agency_timezone`). Se consultan dos días de servicio: `D = at.date()` (segundos
 `[s, s+window]`) y `D-1` (segundos `[s+86400, s+86400+window]`), cada uno con sus servicios
 activos. El "inicio del día de servicio" es mediodía menos 12 h en hora local (definición GTFS).
+
+```python
+# domain/ports/gtfs_import.py — para `avisabus gtfs info` (v1.3, documenta lo implementado)
+class FeedInfoSource(Protocol):
+    def active_timezone(self) -> str | None: ...           # agency_timezone del feed activo
+    def direction_report(self) -> list[DirectionReport]: ...   # AC-26, líneas en orden natural
+
+@dataclass(frozen=True, slots=True)
+class DirectionReport:
+    line: str; direction_id: int; source: DirectionSource; trip_count: int
+    main_shape_id: str; first_stop: StopRef; last_stop: StopRef
+    headsigns: tuple[tuple[str, int], ...]      # (headsign, viajes), más frecuente primero
+    patterns: tuple[tuple[str, int], ...]       # (shape_id, viajes), más frecuente primero
+```
+
+**Vigencia (AC-19):** `today = clock.now().astimezone(ZoneInfo(agency_timezone)).date()`;
+`feed_end_date` es inclusivo: `Expiring(0)` el último día y `Expired(1)` el siguiente.
+
+**Ventana de `scheduled_stop_times`:** ampliada por `stop_arrivals_api` v1.2 (AC-18): se
+consultan todos los días de servicio desde `fecha(at) − 1` hasta `fecha(at + window)` (en la zona
+del feed), no solo `D − 1` y `D`.
 
 ### CLI
 
@@ -245,7 +267,12 @@ Derivados (`build_derived`):
 |---|---|---|
 | Fichero obligatorio ausente | `GtfsValidationError(file=…)` | exit 2, `ERROR: falta stops.txt` |
 | Columna obligatoria ausente | `GtfsValidationError(file=…, column=…)` | exit 2 |
-| Valor inválido (hora, número, fecha) | `GtfsDataError(file, line_number, detail)` | exit 2, versión descartada |
+| Valor inválido (hora, número, fecha, día de `calendar` ≠ 0/1, `exception_type` ≠ 1/2, ID vacío, `agency_timezone` desconocida) | `GtfsDataError(file, line_number, detail)` | exit 2, versión descartada |
+| `route_id` de un viaje que no existe en `routes.txt` | `GtfsDataError` | exit 2, versión descartada |
+| Columna `direction_id` presente con algún valor vacío o distinto de 0/1 | `GtfsDataError` | exit 2, versión descartada. Decisión deliberada (S-3): el feed de EMT no trae la columna; si un feed futuro la trae incompleta, se revisará la spec |
+| Otros errores de integridad (p. ej. IDs duplicados) | (excepción de BD) | exit 2, versión descartada |
+
+La CLI muestra solo el **tipo** del error, nunca su mensaje (`docs/conventions.md` §3).
 | Ruta inexistente / ZIP corrupto | `GtfsValidationError` | exit 2 |
 
 ## 7. Configuración

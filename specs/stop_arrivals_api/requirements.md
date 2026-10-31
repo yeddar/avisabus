@@ -1,6 +1,6 @@
 # API de parada y llegadas — requirements
 
-> Feature: `stop_arrivals_api` · Versión: 1.1 · Estado: APPROVED
+> Feature: `stop_arrivals_api` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-06, RF-09, RF-11, RF-15, RF-32, RNF-01, RNF-08 · Casos de uso: CU-01 · Depende de: gtfs_import, stop_tokens_qr, sae_arrivals_source, occupancy_sensor
 
 ## Contexto
@@ -106,6 +106,13 @@ Es el backend de la vista de parada (CU-01). Une las piezas del bloque 1:
   lista vacía y `source = "REALTIME"`, sin recurrir al horario.
   *Verificación:* integration
 
+- **stop_arrivals_api.AC-18** — CUANDO la ventana de horarios consultada (respaldo por horario o
+  candidatos del emparejamiento de viajes) cruza el cambio de día, EL SISTEMA DEBERÁ incluir las
+  pasadas de todos los días de servicio que caen en la ventana, también las del día de servicio
+  siguiente (p. ej. a las 23:45 con ventana de 90 min, un viaje del día siguiente con hora 00:20).
+  *Verificación:* integration (copia de `gtfs_mini` con un viaje sintético a las 00:20 del día de
+  servicio siguiente)
+
 ### Contrato y rendimiento
 
 - **stop_arrivals_api.AC-16** — LAS RESPUESTAS de ambos endpoints DEBERÁN incluir
@@ -122,7 +129,7 @@ Es el backend de la vista de parada (CU-01). Une las piezas del bloque 1:
 | Requisito | AC |
 |---|---|
 | RF-06 Mostrar parada y líneas desde el QR | AC-01, AC-02, AC-03 |
-| RF-09 Respaldo por horario | AC-13, AC-14 |
+| RF-09 Respaldo por horario | AC-13, AC-14, AC-18 |
 | RF-11 Normalización y líneas fuera del GTFS | AC-04, AC-08, AC-15 |
 | RF-15 Nivel de ocupación y asientos | AC-12 |
 | RF-32 Nombres del GTFS | AC-01, AC-09 |
@@ -138,3 +145,4 @@ Es el backend de la vista de parada (CU-01). Une las piezas del bloque 1:
 |---|---|---|---|
 | 1.0 | 2026-10-31 | Versión inicial aprobada (PR #2) | — |
 | 1.1 | 2026-10-31 | `tasks.md` E-01: pregunta explícita sobre el destino que da el SAE en las circulares C1, C2 y C3. Sin cambios en AC ni en el diseño. | Riesgo señalado en `progress/explore_gtfs_feed.md`. Aprobada por la persona. |
+| 1.2 | 2026-10-31 | AC-18: horarios que cruzan el cambio de día (incluye el día de servicio siguiente). T-05b modifica `SqliteNetworkRepository.scheduled_stop_times` (código de `gtfs_import`). | Hallazgo N-07 de `progress/review_gtfs_import.md`: la consulta solo miraba `D − 1` y `D`. Aprobada por la persona. |

@@ -1,6 +1,6 @@
 # API de parada y llegadas — tasks
 
-> Feature: `stop_arrivals_api` · Versión: 1.1 · Estado: APPROVED
+> Feature: `stop_arrivals_api` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-06, RF-09, RF-11, RF-15, RF-32, RNF-01, RNF-08 · Casos de uso: CU-01 · Depende de: gtfs_import, stop_tokens_qr, sae_arrivals_source, occupancy_sensor
 
 ## Exploración
@@ -50,6 +50,15 @@
   - AC: stop_arrivals_api.AC-13, AC-14
   - Ficheros: `application/scheduled_arrivals.py`, `tests/unit/test_scheduled_arrivals.py`
   - Verificación: `cd backend && uv run pytest tests/unit/test_scheduled_arrivals.py`
+
+- [ ] **T-05b** — Ampliar `SqliteNetworkRepository.scheduled_stop_times` (código de `gtfs_import`,
+  modificación autorizada por esta tarea) para recorrer los días de servicio de `fecha(at) − 1` a
+  `fecha(at + window)`. Test con una copia de `gtfs_mini` (helper `tests/support/gtfs.py`) que
+  añade un viaje a las 00:20 del día de servicio siguiente. Los tests de `gtfs_import` AC-15 deben
+  seguir pasando.
+  - AC: stop_arrivals_api.AC-18
+  - Ficheros: `adapters/outbound/persistence/sqlite_network.py`, `tests/integration/test_network_repository.py`
+  - Verificación: `cd backend && uv run pytest tests/integration/test_network_repository.py`
 
 - [ ] **T-06** — `GetStopArrivals` (enriquecimiento, líneas fuera de red, ocupación, respaldo,
   logs).

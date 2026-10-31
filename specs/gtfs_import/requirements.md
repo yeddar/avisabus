@@ -1,6 +1,6 @@
 # Importación del GTFS — requirements
 
-> Feature: `gtfs_import` · Versión: 1.2 · Estado: APPROVED
+> Feature: `gtfs_import` · Versión: 1.3 · Estado: APPROVED
 > Requisitos: RF-01, RF-02, RF-03, RF-04, RF-32 · Casos de uso: CU-11 · Depende de: project_scaffold
 
 ## Contexto
@@ -88,7 +88,8 @@ La exploración E-01 (`progress/explore_gtfs_feed.md`) confirmó además:
 ### Datos derivados
 
 - **gtfs_import.AC-09** — EL SISTEMA DEBERÁ agrupar los `route_id` en una línea comercial por
-  `route_short_name`, con nombre largo, color y color de texto del `route_id` con más viajes.
+  `route_short_name`, con nombre largo, color y color de texto del `route_id` con más viajes
+  (empate → `route_id` menor en orden lexicográfico de cadena).
   *Verificación:* integration (C2 agrupa dos `route_id` en gtfs_mini)
 - **gtfs_import.AC-10** — EL SISTEMA DEBERÁ calcular, para cada línea y `direction_id`, el
   `headsign` más frecuente entre sus viajes y el `shape_id` más frecuente (forma representativa).
@@ -173,7 +174,9 @@ La exploración E-01 (`progress/explore_gtfs_feed.md`) confirmó además:
 - **gtfs_import.AC-19** — SI faltan 7 días o menos para `feed_end_date`, ENTONCES `gtfs import`
   y `gtfs info` DEBERÁN mostrar una advertencia y EL SISTEMA DEBERÁ registrar el evento de log
   `gtfs.feed_expiring` con los días restantes; SI la fecha ya ha pasado, ENTONCES DEBERÁN mostrar
-  y registrar `gtfs.feed_expired`.
+  y registrar `gtfs.feed_expired`. "Hoy" es la fecha de `clock.now()` en la `agency_timezone` del
+  feed, y `feed_end_date` es el último día válido (ese día: caduca en 0 días; al siguiente:
+  caducado hace 1 día).
   *Verificación:* unit (FakeClock) + integration
 - **gtfs_import.AC-20** — SI no existe `feed_info.txt`, ENTONCES EL SISTEMA DEBERÁ usar como
   vigencia la mínima fecha de inicio y la máxima de fin de `calendar` / `calendar_dates`.
@@ -210,3 +213,4 @@ La exploración E-01 (`progress/explore_gtfs_feed.md`) confirmó además:
 | 1.0 | 2026-10-31 | Versión inicial aprobada (PR #2) | — |
 | 1.1 | 2026-10-31 | Circulares de EMT tratadas como lineales (medios bucles); AC-24 y AC-25 con verificaciones ajustadas; AC-07 incluye `trip_headsign`; AC-28 (solo líneas con viajes); AC-29 (todas las formas por sentido); línea 98 en `gtfs_mini`. | CP-3 tras la exploración E-01 (`progress/explore_gtfs_feed.md`). Aprobada por la persona. |
 | 1.2 | 2026-10-31 | Design §8 y T-04: `gtfs_mini` con `--date 2026-11-09` (lunes + domingo) y límite < 2,5 MB. Design §3: `gtfs import` sin la opción `--yes` (no tenía comportamiento definido). | Bloqueo B-01 del implementer (T-04): con 2026-11-04 faltaba el `route_id` 1055 de la 98, necesario para AC-24 y AC-29. Aprobada por la persona. |
+| 1.3 | 2026-10-31 | Se documenta lo implementado: desempate de AC-09; definición de "hoy" y último día válido en AC-19; `FeedInfoSource`/`DirectionReport` en design §2–§3; errores de datos de design §6 (incluido `direction_id` parcial = error). Nota sobre la ventana de `scheduled_stop_times`, ampliada por `stop_arrivals_api` v1.2. Sin cambios de código en esta feature. | Hallazgos S-1, S-2, S-3 y N-07 de `progress/review_gtfs_import.md`. Aprobada por la persona. |

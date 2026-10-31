@@ -20,6 +20,10 @@ sentidos `derived`, coincidentes con E-01. PR abierta desde `feat/gtfs_import` c
 4. En paralelo (fuera de Claude Code): specs del bloque 2 (PR #7).
 
 ## Pendiente para specs futuras
+- **Bloque 4 (`driver_session`/`driver_ui`):** en C2 y C3 cada sentido agrupa dos medios bucles
+  con destinos distintos; al elegir línea y sentido, el conductor debe ver **todos** los destinos del
+  sentido (no solo el principal), y la comprobación de "fuera de recorrido" debe usar
+  `shapes_for_direction` (todas las formas).
 - **H-01 (privacidad de logs):** criterio de aceptación en `realtime_events` o `alert_create`
   (bloque 3) según la regla nueva de `docs/conventions.md` §3.
 - **H-09:** el primer subcomando de CLI que use configuración debe construir `Settings()`.
