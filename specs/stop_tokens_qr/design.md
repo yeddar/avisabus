@@ -1,6 +1,6 @@
 # Tokens de parada y QR — design
 
-> Feature: `stop_tokens_qr` · Versión: 1.0 · Estado: APPROVED
+> Feature: `stop_tokens_qr` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-05, RNF-07 · Casos de uso: CU-12 · Depende de: gtfs_import
 
 ## 1. Resumen
@@ -91,11 +91,16 @@ verify = len(token) == 22 and hmac.compare_digest(sign(stop_id), token)
 
 ## 5. Renderizado
 
-- `segno.make(content, error="m", micro=False)`; `border=4`.
+- `segno.make(content, error="m", boost_error=False, micro=False)`; `border=4`. `boost_error=False`
+  es obligatorio: por defecto segno sube el nivel a Q/H si cabe, y AC-12 exige exactamente M.
 - SVG: el SVG de segno (escala 10) se incrusta en un SVG contenedor más alto con dos `<text>`
   (título 28 px, subtítulo 22 px, `font-family="sans-serif"`, centrados, texto escapado).
 - PNG: QR a escala que garantice ≥ 600 px de lado; Pillow añade una banda inferior blanca con
-  el texto (fuente por defecto de Pillow o DejaVuSans si está disponible).
+  el texto usando **siempre** la fuente incluida
+  `adapters/outbound/qr/fonts/DejaVuSans.ttf` (cargada con `importlib.resources`), con su
+  licencia en `adapters/outbound/qr/fonts/LICENSE-DejaVu.txt` (AC-13). No se usan fuentes del
+  sistema: el resultado es idéntico en el Mac, en Docker y en la Raspberry Pi. La fuente se
+  declara como dato del paquete para que se incluya en la instalación (`pyproject.toml`).
 
 ## 6. Errores
 
@@ -117,6 +122,8 @@ verify = len(token) == 22 and hmac.compare_digest(sign(stop_id), token)
 - Unit: firma (vector), verificación (casos válidos e inválidos), `compare_digest` (monkeypatch
   para comprobar que se llama), `build_stop_url` (barras), validación de `Settings` por entorno,
   parámetros de segno (doble del renderer o espía).
+- Unit (AC-13): con `fontTools` (dependencia de test) o la API de Pillow, comprobar que la
+  fuente tiene glifo para cada carácter de los nombres de parada de `gtfs_mini`.
 - Integration: CLI con BD importada desde `gtfs_mini` en `tmp_path`; decodificación del QR con
   `zxing-cpp` (dependencia de test; decisión local permitida usar otra librería decodificadora
   pura si `zxing-cpp` no tiene rueda para la plataforma).

@@ -1,6 +1,6 @@
 # Tokens de parada y QR — tasks
 
-> Feature: `stop_tokens_qr` · Versión: 1.0 · Estado: APPROVED
+> Feature: `stop_tokens_qr` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-05, RNF-07 · Casos de uso: CU-12 · Depende de: gtfs_import
 
 ## Exploración
@@ -27,8 +27,10 @@ No necesaria.
   - Verificación: `cd backend && uv run pytest tests/unit/test_stop_url.py`
 
 - [ ] **T-04** — Puerto `QrRenderer` y `SegnoQrRenderer` (SVG con etiqueta, PNG ≥ 600 px con
-  etiqueta, nivel M, borde 4).
-  - AC: stop_tokens_qr.AC-07, AC-09, AC-12
+  etiqueta dibujada con la fuente incluida, nivel exactamente M, borde 4). v1.1: añadir
+  `fonts/DejaVuSans.ttf` y `fonts/LICENSE-DejaVu.txt` como datos del paquete y el test de cobertura
+  de caracteres.
+  - AC: stop_tokens_qr.AC-07, AC-09, AC-12, AC-13
   - Ficheros: `domain/ports/qr.py`, `adapters/outbound/qr/segno_renderer.py`, `tests/integration/test_segno_renderer.py`
   - Verificación: `cd backend && uv run pytest tests/integration/test_segno_renderer.py`
 

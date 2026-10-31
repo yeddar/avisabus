@@ -1,6 +1,6 @@
 # Tokens de parada y QR — requirements
 
-> Feature: `stop_tokens_qr` · Versión: 1.0 · Estado: APPROVED
+> Feature: `stop_tokens_qr` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-05, RNF-07 · Casos de uso: CU-12 · Depende de: gtfs_import
 
 ## Contexto
@@ -71,13 +71,28 @@ después, `alert_create`.
 - **stop_tokens_qr.AC-11** — SI no hay feed importado, ENTONCES LA CLI DEBERÁ indicarlo y
   terminar con código 1 sin generar ficheros.
   *Verificación:* integration
-- **stop_tokens_qr.AC-12** — EL SISTEMA DEBERÁ generar los QR con corrección de errores nivel M
-  y zona de silencio de 4 módulos.
+- **stop_tokens_qr.AC-12** — EL SISTEMA DEBERÁ generar los QR con corrección de errores
+  **exactamente** de nivel M (sin subirlo automáticamente aunque quepa) y zona de silencio de 4
+  módulos.
   *Verificación:* unit (parámetros pasados a la librería)
+
+- **stop_tokens_qr.AC-13** — LA ETIQUETA de los PNG DEBERÁ dibujarse con la fuente DejaVu Sans
+  incluida en el repositorio (no con fuentes del sistema), de modo que se muestren correctamente
+  todos los caracteres de los nombres de parada (`à é í ó ú ç ñ l·l`, etc.); y EL REPOSITORIO
+  DEBERÁ incluir el texto de su licencia junto al fichero de la fuente.
+  *Verificación:* unit (la fuente contiene un glifo para cada carácter de todos los nombres de
+  parada de `gtfs_mini`) + revisión (licencia)
 
 ## Trazabilidad
 
 | Requisito | AC |
 |---|---|
-| RF-05 QR por parada con token firmado | AC-01, AC-06, AC-07, AC-08, AC-09, AC-10, AC-11, AC-12 |
+| RF-05 QR por parada con token firmado | AC-01, AC-06, AC-07, AC-08, AC-09, AC-10, AC-11, AC-12, AC-13 |
 | RNF-07 Seguridad (HMAC, secretos por configuración) | AC-01, AC-02, AC-03, AC-04, AC-05 |
+
+## Historial
+
+| Versión | Fecha | Cambio | Motivo |
+|---|---|---|---|
+| 1.0 | 2026-10-31 | Versión inicial aprobada (PR #2) | — |
+| 1.1 | 2026-10-31 | AC-13: fuente DejaVu Sans incluida en el repositorio para la etiqueta PNG. AC-12: nivel de corrección exactamente M (`boost_error=False`). | Bloqueos B-01 (la fuente por defecto de Pillow no tiene tildes, cedillas ni eñes; 620 de 1 117 paradas afectadas) y B-02 del implementer. Aprobada por la persona. |
