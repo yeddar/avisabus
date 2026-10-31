@@ -1,7 +1,10 @@
 # Esqueleto del proyecto — tasks
 
-> Feature: `project_scaffold` · Versión: 1.0 · Estado: APPROVED
+> Feature: `project_scaffold` · Versión: 1.1 · Estado: DRAFT
 > Requisitos: RNF-09, RNF-10, RNF-11, RNF-13 · Casos de uso: — · Depende de: —
+
+> **v1.1:** las tareas T-01…T-12 se implementaron en la v1.0 (ver
+> `progress/impl_project_scaffold.md`). En esta versión **solo quedan T-13 y T-14**.
 
 ## Exploración
 
@@ -74,3 +77,14 @@ No necesaria.
 - [ ] **T-12** — Verificación completa.
   - AC: project_scaffold.AC-22
   - Verificación: `./init.sh verify --e2e`
+
+- [ ] **T-13** — (v1.1) `Settings` lee `../.env` y `.env` con la prioridad de AC-23; extracto de
+  `.importlinter` ya alineado con el design (no requiere cambios). Actualizar el comentario de
+  `.env.example` sobre dónde vive el fichero.
+  - AC: project_scaffold.AC-23
+  - Ficheros: `backend/src/avisabus/config.py`, `.env.example`, `backend/tests/integration/test_settings_env_file.py`
+  - Verificación: `cd backend && uv run pytest tests/integration/test_settings_env_file.py`
+
+- [ ] **T-14** — Verificación completa (v1.1).
+  - AC: project_scaffold.AC-22, AC-23
+  - Verificación: `./init.sh verify`

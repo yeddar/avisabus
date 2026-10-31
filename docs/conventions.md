@@ -52,6 +52,12 @@
 - **Async:** adaptadores y casos de uso que hacen I/O son `async`; los servicios de dominio son funciones puras síncronas.
 - **Configuración:** `pydantic-settings`, prefijo `AVISABUS_`, todos los valores con default seguro y documentados en `.env.example`.
 - **Logs:** `structlog` en JSON. Nunca registrar `device_id`, código de conductor ni necesidades de accesibilidad asociadas a un identificador.
+- **Excepciones en logs:** ninguna excepción no controlada puede llegar a los logs con su
+  **mensaje**: se registra solo su tipo (y, como mucho, la traza sin el mensaje). Las excepciones
+  de dominio no incluyen identificadores en su mensaje (usan atributos). Starlette relanza las
+  excepciones tras responder 500 y uvicorn las registra completas, así que debe existir un
+  mecanismo explícito (middleware o filtro de logs) que lo impida. Se especifica en la primera
+  feature que maneja identificadores (bloque 3) — hallazgo H-01 de `project_scaffold`.
 - **Nombres:** módulos `snake_case`, clases `PascalCase`, constantes `UPPER_SNAKE`. Adaptadores con sufijo del puerto (`SqliteAlertRepository`, `SaeHttpArrivalsSource`).
 
 ## 4. Frontend (TypeScript / React)

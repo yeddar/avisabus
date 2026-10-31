@@ -30,3 +30,8 @@
 - Revisión ciclo 1: APPROVED sin bloqueantes. Problemas de spec menores para la persona:
   H-02 (`include_external_packages = True` en `.importlinter`, falta en design §4) y
   H-03 (`.env` en la raíz no se lee porque el backend arranca desde `backend/`).
+
+## 2026-10-31 · project_scaffold · done (v1.0) → spec_draft (v1.1)
+- Hallazgos de revisión resueltos por la persona: H-02 (design §4 `include_external_packages`)
+  y H-03 (`.env` único en la raíz, AC-23) → spec v1.1. H-01 → regla nueva en
+  `docs/conventions.md` §3, a especificar en el bloque 3. H-04…H-08 descartados.

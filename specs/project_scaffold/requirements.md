@@ -1,6 +1,6 @@
 # Esqueleto del proyecto — requirements
 
-> Feature: `project_scaffold` · Versión: 1.0 · Estado: APPROVED
+> Feature: `project_scaffold` · Versión: 1.1 · Estado: DRAFT
 > Requisitos: RNF-09, RNF-10, RNF-11, RNF-13 · Casos de uso: — · Depende de: —
 
 ## Contexto
@@ -73,6 +73,11 @@ ninguna funcionalidad de negocio.
 - **project_scaffold.AC-13** — CUANDO se ejecuta `uv run avisabus --help`, LA CLI DEBERÁ
   mostrar la ayuda y terminar con código 0.
   *Verificación:* integration (CliRunner)
+- **project_scaffold.AC-23** — CUANDO el backend o la CLI se ejecutan desde `backend/` y existe
+  un fichero `.env` en la raíz del repositorio, EL SISTEMA DEBERÁ cargar sus variables
+  `AVISABUS_*`; SI además existe `backend/.env`, ENTONCES sus valores DEBERÁN prevalecer sobre los
+  de la raíz, y las variables de entorno del proceso DEBERÁN prevalecer sobre ambos ficheros.
+  *Verificación:* integration (directorios temporales `raíz/` y `raíz/backend/`, `chdir`)
 
 ### Frontend
 
@@ -118,6 +123,13 @@ ninguna funcionalidad de negocio.
 |---|---|
 | RNF-09 Mantenibilidad (hexagonal) | AC-03, AC-04, AC-07 |
 | RNF-10 Testabilidad | AC-05, AC-06, AC-07, AC-08, AC-21 |
-| RNF-11 Despliegue / entorno | AC-01, AC-09, AC-13, AC-14, AC-19, AC-20, AC-22 |
+| RNF-11 Despliegue / entorno | AC-01, AC-09, AC-13, AC-14, AC-19, AC-20, AC-22, AC-23 |
 | RNF-13 Observabilidad | AC-11, AC-12 |
 | RNF-03 / RNF-05 (base) | AC-15, AC-16, AC-17, AC-18 |
+
+## Historial
+
+| Versión | Fecha | Cambio | Motivo |
+|---|---|---|---|
+| 1.0 | 2026-10-31 | Versión inicial aprobada (PR #2) | — |
+| 1.1 | 2026-10-31 | AC-23: `.env` único en la raíz, con prioridad de `backend/.env` y del entorno. Design §4: `include_external_packages = True` en `.importlinter`. | Hallazgos H-03 y H-02 de `progress/review_project_scaffold.md` (ciclo 1) |

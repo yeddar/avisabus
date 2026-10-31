@@ -7,24 +7,23 @@
 **Feature en curso:** ninguna (`project_scaffold` en `done`)
 
 ## Último paso
-`project_scaffold` implementada y aprobada en revisión (ciclo 1), en la rama
-`feat/project_scaffold` (pendiente de PR/merge a `develop`).
+`project_scaffold` v1.0 implementada y aprobada en revisión (ciclo 1), PR #3. La persona decidió
+sobre los hallazgos: H-02 y H-03 (opción a: `.env` único en la raíz) → spec **v1.1** (AC-23,
+T-13, T-14) en `spec_draft`; H-01 → regla en `docs/conventions.md` y criterio en el bloque 3;
+H-04 a H-08 descartados por ahora.
 
 ## Siguiente paso
-1. Merge de `feat/project_scaffold` a `develop`.
-2. `gtfs_import`: exploración E-01 sobre `data/gtfs/emt/` (validar la derivación de sentidos),
-   implementación y revisión. La persona valida la salida de `gtfs info --directions`.
-3. `stop_tokens_qr`, `occupancy_sensor`, `sae_arrivals_source` (requiere red para E-01 y la
-   grabación de la sesión `stop_508_peak`) y `stop_arrivals_api`.
-4. En paralelo (fuera de Claude Code): specs del bloque 2.
+1. La persona fusiona la PR #3 (`feat/project_scaffold`) y aprueba la spec v1.1 (CP-1).
+2. `project_scaffold` v1.1: implementar **solo T-13 y T-14** → revisión (ciclo nuevo).
+3. `gtfs_import`: exploración E-01 sobre `data/gtfs/emt/`, implementación y revisión. La persona
+   valida la salida de `gtfs info --directions`.
+4. `stop_tokens_qr`, `occupancy_sensor`, `sae_arrivals_source` (requiere red para E-01 y la
+   grabación de `stop_508_peak`) y `stop_arrivals_api`.
+5. En paralelo (fuera de Claude Code): specs del bloque 2.
 
-## Decisiones pendientes de la persona (hallazgos de `progress/review_project_scaffold.md`)
-- H-02: añadir `include_external_packages = True` al extracto de `.importlinter` en
-  `specs/project_scaffold/design.md` §4 (el código ya lo lleva; es imprescindible para AC-03).
-- H-03: ubicación del `.env` — `Settings` lo busca en el directorio de trabajo (`backend/`) pero
-  `./init.sh setup` lo copia a la raíz. Decidir (CP-3 o en `deployment_rpi`).
-- H-01: riesgo futuro de privacidad — Uvicorn registra la traza de excepciones no controladas;
-  cubrirlo en la spec de la primera feature que maneje identificadores.
+## Pendiente para specs futuras
+- **H-01 (privacidad de logs):** criterio de aceptación en `realtime_events` o `alert_create`
+  (bloque 3) según la regla nueva de `docs/conventions.md` §3.
 
 ## Notas
 - Cabeceras reales confirmadas (2026-10-31): `trips.txt` **sin `direction_id`** → sentidos
@@ -32,7 +31,7 @@
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Ninguno formal (ver "Decisiones pendientes").
+- **CP-1** · `project_scaffold` v1.1.
 
 ## Bloqueos
 Ninguno.
