@@ -35,3 +35,6 @@
 - Hallazgos de revisión resueltos por la persona: H-02 (design §4 `include_external_packages`)
   y H-03 (`.env` único en la raíz, AC-23) → spec v1.1. H-01 → regla nueva en
   `docs/conventions.md` §3, a especificar en el bloque 3. H-04…H-08 descartados.
+
+## 2026-10-31 · project_scaffold · spec_draft → spec_approved (v1.1, CP-1)
+- La persona aprueba la spec v1.1. Pendiente: implementar T-13 y T-14 y revisión (ciclo 2).

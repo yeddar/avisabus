@@ -1,6 +1,6 @@
 # Esqueleto del proyecto — requirements
 
-> Feature: `project_scaffold` · Versión: 1.1 · Estado: DRAFT
+> Feature: `project_scaffold` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RNF-09, RNF-10, RNF-11, RNF-13 · Casos de uso: — · Depende de: —
 
 ## Contexto
@@ -132,4 +132,4 @@ ninguna funcionalidad de negocio.
 | Versión | Fecha | Cambio | Motivo |
 |---|---|---|---|
 | 1.0 | 2026-10-31 | Versión inicial aprobada (PR #2) | — |
-| 1.1 | 2026-10-31 | AC-23: `.env` único en la raíz, con prioridad de `backend/.env` y del entorno. Design §4: `include_external_packages = True` en `.importlinter`. | Hallazgos H-03 y H-02 de `progress/review_project_scaffold.md` (ciclo 1) |
+| 1.1 | 2026-10-31 | AC-23: `.env` único en la raíz, con prioridad de `backend/.env` y del entorno. Design §4: `include_external_packages = True` en `.importlinter`. | Hallazgos H-03 y H-02 de `progress/review_project_scaffold.md` (ciclo 1). Aprobada por la persona (PR #4/#5) |

@@ -1,6 +1,6 @@
 # Esqueleto del proyecto — design
 
-> Feature: `project_scaffold` · Versión: 1.1 · Estado: DRAFT
+> Feature: `project_scaffold` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RNF-09, RNF-10, RNF-11, RNF-13 · Casos de uso: — · Depende de: —
 
 ## 1. Resumen
