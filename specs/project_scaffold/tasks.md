@@ -1,6 +1,6 @@
 # Esqueleto del proyecto — tasks
 
-> Feature: `project_scaffold` · Versión: 1.1 · Estado: DRAFT
+> Feature: `project_scaffold` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RNF-09, RNF-10, RNF-11, RNF-13 · Casos de uso: — · Depende de: —
 
 > **v1.1:** las tareas T-01…T-12 se implementaron en la v1.0 (ver

@@ -18,7 +18,7 @@
       "order": 1,
       "block": 1,
       "title": "Esqueleto de backend y frontend, herramientas de calidad y primitivas comunes",
-      "status": "spec_draft",
+      "status": "spec_approved",
       "depends_on": [],
       "requirements": [
         "RNF-09",

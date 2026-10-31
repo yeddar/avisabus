@@ -13,7 +13,7 @@ T-13, T-14) en `spec_draft`; H-01 → regla en `docs/conventions.md` y criterio 
 H-04 a H-08 descartados por ahora.
 
 ## Siguiente paso
-1. La persona fusiona la PR #3 (`feat/project_scaffold`) y aprueba la spec v1.1 (CP-1).
+1. ~~PR #3 fusionada; spec v1.1 aprobada (CP-1).~~
 2. `project_scaffold` v1.1: implementar **solo T-13 y T-14** → revisión (ciclo nuevo).
 3. `gtfs_import`: exploración E-01 sobre `data/gtfs/emt/`, implementación y revisión. La persona
    valida la salida de `gtfs info --directions`.
@@ -31,7 +31,7 @@ H-04 a H-08 descartados por ahora.
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-- **CP-1** · `project_scaffold` v1.1.
+Ninguno.
 
 ## Bloqueos
 Ninguno.
