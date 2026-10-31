@@ -12,6 +12,7 @@ dependencies = [
     "typer",
     "structlog",
     "httpx",
+    "sqlalchemy>=2",
 ]
 
 [project.scripts]
