@@ -61,3 +61,8 @@
 - T-01…T-03b implementadas (AC-07, AC-08, AC-14, AC-19, AC-20, AC-24/25 en unit).
 - B-01 en T-04: con la fecha de referencia del design §8 (2026-11-04), `gtfs_mini` no incluye el
   `route_id` 1055 de la 98 (solo fines de semana) → AC-24/AC-29 incumplibles para la 98.
+
+## 2026-10-31 · gtfs_import · spec_blocked → spec_approved (v1.2, CP-1) → implementing
+- CP-3 B-01 resuelto por la persona (PR #9): `gtfs_mini` con `--date 2026-11-09` (lunes + domingo),
+  límite < 2,5 MB; `gtfs import` sin `--yes`. Sin cambios en los AC.
+- `feat/gtfs_import` rebasada sobre `develop`; se reanuda la implementación desde T-04.
