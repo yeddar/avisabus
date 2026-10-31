@@ -1,5 +1,7 @@
-"""Application settings loaded from `AVISABUS_*` environment variables (and an optional `.env`).
+"""Application settings loaded from `AVISABUS_*` environment variables and optional `.env` files.
 
+The backend runs from `backend/`, so the repository-root `.env` is read as `../.env`. Priority
+(highest first): process environment > `backend/.env` > root `.env` > defaults.
 Every variable must be documented in the repository's `.env.example`.
 """
 
@@ -9,7 +11,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="AVISABUS_", env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_prefix="AVISABUS_", env_file=("../.env", ".env"), extra="ignore"
+    )
 
     env: Literal["dev", "test", "prod"] = "dev"
     log_level: str = "INFO"
