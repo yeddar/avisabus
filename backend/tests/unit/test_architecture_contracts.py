@@ -53,6 +53,7 @@ def test_contracts_pass_without_forbidden_imports(tmp_path: Path) -> None:
         "import avisabus.application",
         "import avisabus.adapters",
         "import avisabus.background",
+        "import avisabus.config",
         "import fastapi",
         "import pydantic",
         "import pydantic_settings",

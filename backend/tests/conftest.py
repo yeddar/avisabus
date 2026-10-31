@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 
 import pytest
 
+from avisabus.config import Settings
 from tests.support.fake_clock import FakeClock
 
 DEFAULT_NOW = datetime(2026, 10, 31, 8, 0, tzinfo=UTC)
@@ -12,3 +13,8 @@ DEFAULT_NOW = datetime(2026, 10, 31, 8, 0, tzinfo=UTC)
 @pytest.fixture
 def fake_clock() -> FakeClock:
     return FakeClock(DEFAULT_NOW)
+
+
+@pytest.fixture
+def settings() -> Settings:
+    return Settings(_env_file=None, env="test")  # type: ignore[call-arg]
