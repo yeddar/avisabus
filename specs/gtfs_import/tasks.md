@@ -1,6 +1,6 @@
 # Importación del GTFS — tasks
 
-> Feature: `gtfs_import` · Versión: 1.1 · Estado: APPROVED
+> Feature: `gtfs_import` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-01, RF-02, RF-03, RF-04, RF-32 · Casos de uso: CU-11 · Depende de: project_scaffold
 
 > **v1.1:** E-01 completada (`progress/explore_gtfs_feed.md`, scripts en
@@ -48,7 +48,7 @@
 - [ ] **T-04** — Script `make_gtfs_mini.py` y fixture `gtfs_mini` (líneas 70, 93, 98, C2) con README.
   - AC: gtfs_import.AC-21
   - Ficheros: `backend/scripts/make_gtfs_mini.py`, `backend/tests/fixtures/gtfs_mini/*`
-  - Verificación: `du -sh backend/tests/fixtures/gtfs_mini` < 2 MB; `head` de cada fichero
+  - Verificación: `du -sh backend/tests/fixtures/gtfs_mini` < 2,5 MB; `head` de cada fichero
 
 - [ ] **T-05** — Lector `CsvGtfsFeedReader` (directorio y zip, UTF-8-sig, validación de ficheros y
   columnas, iteración en streaming).

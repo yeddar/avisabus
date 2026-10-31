@@ -1,6 +1,6 @@
 # Importación del GTFS — requirements
 
-> Feature: `gtfs_import` · Versión: 1.1 · Estado: APPROVED
+> Feature: `gtfs_import` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-01, RF-02, RF-03, RF-04, RF-32 · Casos de uso: CU-11 · Depende de: project_scaffold
 
 ## Contexto
@@ -209,3 +209,4 @@ La exploración E-01 (`progress/explore_gtfs_feed.md`) confirmó además:
 |---|---|---|---|
 | 1.0 | 2026-10-31 | Versión inicial aprobada (PR #2) | — |
 | 1.1 | 2026-10-31 | Circulares de EMT tratadas como lineales (medios bucles); AC-24 y AC-25 con verificaciones ajustadas; AC-07 incluye `trip_headsign`; AC-28 (solo líneas con viajes); AC-29 (todas las formas por sentido); línea 98 en `gtfs_mini`. | CP-3 tras la exploración E-01 (`progress/explore_gtfs_feed.md`). Aprobada por la persona. |
+| 1.2 | 2026-10-31 | Design §8 y T-04: `gtfs_mini` con `--date 2026-11-09` (lunes + domingo) y límite < 2,5 MB. Design §3: `gtfs import` sin la opción `--yes` (no tenía comportamiento definido). | Bloqueo B-01 del implementer (T-04): con 2026-11-04 faltaba el `route_id` 1055 de la 98, necesario para AC-24 y AC-29. Aprobada por la persona. |
