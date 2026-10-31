@@ -34,7 +34,7 @@ from avisabus.domain.models.network import (
 from avisabus.domain.ports.network import NetworkRepository
 from avisabus.domain.services.gtfs_time import parse_gtfs_time
 from tests.support.fake_clock import FakeClock
-from tests.support.gtfs import GTFS_MINI, append_rows, copy_gtfs_mini
+from tests.support.gtfs import GTFS_MINI, append_rows, copy_gtfs_mini, read_rows, write_rows
 
 MADRID = ZoneInfo("Europe/Madrid")
 IMPORTED_AT = datetime(2026, 10, 31, 8, 0, tzinfo=UTC)
@@ -357,3 +357,46 @@ def test_direction_report_lists_every_line_direction(repo: SqliteNetworkReposito
     for r in report:
         counts[r.line] += r.trip_count
     assert sum(counts.values()) == 1109
+
+
+# --- trip_line (port extension defined by occupancy_sensor design §3, "Forzado") ---
+
+
+def test_trip_line_is_the_commercial_line_of_every_trip(repo: SqliteNetworkRepository) -> None:
+    port: NetworkRepository = repo
+    for trip_id, row in TRIPS.items():
+        assert port.trip_line(trip_id) == ROUTE_LINES[row["route_id"]]
+
+
+def test_trip_line_groups_route_ids_by_short_name(repo: SqliteNetworkRepository) -> None:
+    c2_routes = {route for route, line in ROUTE_LINES.items() if line == "C2"}
+    assert len(c2_routes) > 1
+    c2_trips = [t for t, row in TRIPS.items() if row["route_id"] in c2_routes]
+    assert {repo.trip_line(t) for t in c2_trips} == {"C2"}
+    assert {TRIPS[t]["route_id"] for t in c2_trips} == c2_routes
+
+
+def test_trip_line_of_an_unknown_trip_is_none(repo: SqliteNetworkRepository) -> None:
+    assert repo.trip_line("ghost") is None
+
+
+def test_trip_line_without_an_active_feed_is_none(tmp_path: Path) -> None:
+    engine = _engine(tmp_path / "empty.sqlite")
+    assert SqliteNetworkRepository(engine).trip_line(next(iter(TRIPS))) is None
+    engine.dispose()
+
+
+async def test_trip_line_only_sees_the_active_feed_version(tmp_path: Path) -> None:
+    engine = _engine(tmp_path / "reimport.sqlite")
+    feed = copy_gtfs_mini(tmp_path / "feed")
+    await _import(engine, feed)
+    trip_id, row = next(iter(TRIPS.items()))
+    for name, column in (("trips.txt", "trip_id"), ("stop_times.txt", "trip_id")):
+        header, *rows = read_rows(feed / name)
+        index = header.index(column)
+        write_rows(feed / name, [header, *(r for r in rows if r[index] != trip_id)])
+    repo = SqliteNetworkRepository(engine)
+    assert repo.trip_line(trip_id) == ROUTE_LINES[row["route_id"]]
+    await _import(engine, feed)
+    assert repo.trip_line(trip_id) is None
+    engine.dispose()

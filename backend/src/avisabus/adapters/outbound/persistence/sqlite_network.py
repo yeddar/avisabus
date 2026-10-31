@@ -558,6 +558,13 @@ class SqliteNetworkRepository:
                 for r in rows
             ]
 
+    def trip_line(self, trip_id: str) -> str | None:
+        tr = t.gtfs_trip
+        with self._engine.connect() as conn:
+            return conn.execute(
+                select(tr.c.line).where(tr.c.feed_version_id == _ACTIVE, tr.c.trip_id == trip_id)
+            ).scalar()
+
     def shape_points(self, shape_id: str) -> list[ShapePoint]:
         sp = t.gtfs_shape_point
         with self._engine.connect() as conn:

@@ -9,6 +9,7 @@ from sqlalchemy.engine import make_url
 from sqlalchemy.pool import StaticPool
 
 from avisabus.adapters.outbound.persistence.network_tables import metadata
+from avisabus.adapters.outbound.persistence.sqlite_occupancy_override import occupancy_metadata
 from avisabus.config import Settings
 
 PRAGMAS = (
@@ -43,4 +44,6 @@ def _apply_pragmas(dbapi_connection: Any, _record: Any) -> None:
 
 
 def init_db(engine: Engine) -> None:
+    """Create the network tables and the `occupancy_override` table (idempotent)."""
     metadata.create_all(engine)
+    occupancy_metadata.create_all(engine)

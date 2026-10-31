@@ -72,3 +72,12 @@
   Feed real: 4,6 s / 75 MB; 42 líneas × 2 sentidos derivados, coincidentes con E-01.
 - Revisión ciclo 1: APPROVED sin bloqueantes. Huecos de spec no bloqueantes S-1…S-3 y
   observaciones N-01…N-07 en `progress/review_gtfs_import.md`. Pendiente: validación de sentidos por la persona.
+
+## 2026-10-31 · occupancy_sensor · spec_approved → implementing
+- Sin exploración (tasks.md: "No necesaria"). Rama `feat/occupancy_sensor` desde `develop`.
+  (`stop_tokens_qr` queda en `spec_blocked` en su rama, a la espera de la spec v1.1.)
+
+## 2026-11-01 · occupancy_sensor · implementing → in_review → done
+- T-01…T-06 implementadas; `./init.sh verify` en verde (422 tests, cobertura 99,44 %).
+- Revisión ciclo 1: APPROVED sin bloqueantes. Problemas de spec no bloqueantes SP-01 (AC-11 vs
+  proporciones fijas de forzado con umbrales no por defecto) y SP-02 (firma de `progress`).

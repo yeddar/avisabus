@@ -48,4 +48,11 @@ class NetworkRepository(Protocol):
 
     def trip_stop_times(self, trip_id: str) -> list[TripStopTime]: ...
 
+    def trip_line(self, trip_id: str) -> str | None:
+        """Commercial line (`route_short_name`) of the trip; `None` if it is not in the feed.
+
+        Port extension defined by occupancy_sensor design §3 ("Forzado").
+        """
+        ...
+
     def shape_points(self, shape_id: str) -> list[ShapePoint]: ...
