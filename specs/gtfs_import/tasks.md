@@ -1,7 +1,10 @@
 # Importación del GTFS — tasks
 
-> Feature: `gtfs_import` · Versión: 1.0 · Estado: APPROVED
+> Feature: `gtfs_import` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-01, RF-02, RF-03, RF-04, RF-32 · Casos de uso: CU-11 · Depende de: project_scaffold
+
+> **v1.1:** E-01 completada (`progress/explore_gtfs_feed.md`, scripts en
+> `progress/explore_gtfs_feed_samples/`). No hace falta repetirla.
 
 ## Exploración
 
@@ -38,11 +41,11 @@
 
 - [ ] **T-03b** — Derivación de sentidos `derive_directions` (pura) con patrones sintéticos:
   lineal ida/vuelta, variante corta, circular horaria/antihoraria, circular degenerada.
-  - AC: gtfs_import.AC-24, AC-25
+  - AC: gtfs_import.AC-24, AC-25 (incluido el desempate lexicográfico de AC-24)
   - Ficheros: `domain/services/direction_derivation.py`, `tests/unit/test_direction_derivation.py`
   - Verificación: `cd backend && uv run pytest tests/unit/test_direction_derivation.py`
 
-- [ ] **T-04** — Script `make_gtfs_mini.py` y fixture `gtfs_mini` (líneas 70, 93, C2) con README.
+- [ ] **T-04** — Script `make_gtfs_mini.py` y fixture `gtfs_mini` (líneas 70, 93, 98, C2) con README.
   - AC: gtfs_import.AC-21
   - Ficheros: `backend/scripts/make_gtfs_mini.py`, `backend/tests/fixtures/gtfs_mini/*`
   - Verificación: `du -sh backend/tests/fixtures/gtfs_mini` < 2 MB; `head` de cada fichero
@@ -60,7 +63,7 @@
 
 - [ ] **T-07** — Escritor `SqliteGtfsFeedWriter`: versión nueva, inserción por lotes, derivados,
   activación atómica, purga y descarte.
-  - AC: gtfs_import.AC-05, AC-06, AC-09, AC-10, AC-11, AC-23, AC-24, AC-25
+  - AC: gtfs_import.AC-05, AC-06, AC-09, AC-10, AC-11, AC-23, AC-24, AC-28, AC-29
   - Ficheros: `adapters/outbound/persistence/sqlite_network.py`, `tests/integration/test_gtfs_writer.py`
   - Verificación: `cd backend && uv run pytest tests/integration/test_gtfs_writer.py`
 
@@ -71,13 +74,13 @@
 
 - [ ] **T-09** — `SqliteNetworkRepository`: todas las consultas del puerto, incluido el caso de
   madrugada (día de servicio anterior).
-  - AC: gtfs_import.AC-12, AC-13, AC-14, AC-15, AC-16, AC-17, AC-27
+  - AC: gtfs_import.AC-12, AC-13, AC-14, AC-15, AC-16, AC-17, AC-27, AC-29
   - Ficheros: `domain/ports/network.py`, `adapters/outbound/persistence/sqlite_network.py`, `tests/integration/test_network_repository.py`
   - Verificación: `cd backend && uv run pytest tests/integration/test_network_repository.py`
 
 - [ ] **T-10** — CLI `gtfs import` y `gtfs info [--directions]` (contenedor de dependencias
   inyectable, códigos de salida, advertencias, log `gtfs.feed_expiring` / `gtfs.feed_expired`).
-  - AC: gtfs_import.AC-01, AC-02, AC-03, AC-04, AC-18, AC-19, AC-26
+  - AC: gtfs_import.AC-01, AC-02, AC-03, AC-04, AC-18, AC-19, AC-26, AC-28
   - Ficheros: `application/get_feed_info.py`, `adapters/inbound/cli/gtfs.py`, `adapters/inbound/cli/container.py`, `tests/integration/test_cli_gtfs.py`
   - Verificación: `cd backend && uv run pytest tests/integration/test_cli_gtfs.py`
 

@@ -37,7 +37,7 @@
       "order": 2,
       "block": 1,
       "title": "Importación y reimportación del GTFS de EMT, líneas comerciales y servicios activos",
-      "status": "spec_blocked",
+      "status": "spec_approved",
       "depends_on": [
         "project_scaffold"
       ],

@@ -50,3 +50,9 @@
 - E-01 (`progress/explore_gtfs_feed.md`): §4.3 da 2 sentidos en las 42 líneas con viajes; ninguna
   circular por la regla de 500 m (C1/C2/C3 partidas en medios bucles) → la integración de AC-25
   con C2 es incumplible. Propuestas: opción A, formas por sentido, recorte de headsigns, línea 98 en `gtfs_mini`.
+
+## 2026-10-31 · gtfs_import · spec_blocked → spec_approved (v1.1, CP-3 + CP-1)
+- La persona resuelve el CP-3 de E-01: circulares de EMT como medios bucles (opción A), todas las
+  formas por sentido (AC-29), solo líneas con viajes (AC-28), recorte de `trip_headsign` (AC-07),
+  línea 98 en `gtfs_mini`. `stop_arrivals_api` v1.1: E-01 pregunta por los destinos del SAE en
+  las circulares.

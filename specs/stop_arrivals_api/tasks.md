@@ -1,6 +1,6 @@
 # API de parada y llegadas — tasks
 
-> Feature: `stop_arrivals_api` · Versión: 1.0 · Estado: APPROVED
+> Feature: `stop_arrivals_api` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-06, RF-09, RF-11, RF-15, RF-32, RNF-01, RNF-08 · Casos de uso: CU-01 · Depende de: gtfs_import, stop_tokens_qr, sae_arrivals_source, occupancy_sensor
 
 ## Exploración
@@ -10,7 +10,13 @@
   parada) a 20 paradas variadas (incluidas 508, 2070, una de cabecera y una de circular C1/C2/C3):
   tabla `línea | destino SAE | headsigns GTFS de esa línea en la parada | ¿un solo sentido?`.
   Proponer entradas de alias y *overrides*, y medir qué porcentaje resuelve el algoritmo de
-  design §3 con `min_score = 0.34`. → `progress/explore_destinations.md`
+  design §3 con `min_score = 0.34`.
+  **Circulares (v1.1):** en el GTFS, C1, C2 y C3 vienen partidas en medios viajes con un destino en
+  cada mitad (`progress/explore_gtfs_feed.md`). Comprobar en paradas de C1, C2 y C3 qué `destino`
+  devuelve el SAE: si coincide con el destino del medio bucle, no hace falta nada; si es genérico
+  (p. ej. "Circular") → proponer cómo resolver el sentido (p. ej. por sentido único en esa parada,
+  que el GTFS garantiza si ningún medio bucle repite parada) o CP-3.
+  → `progress/explore_destinations.md`
 - **E-02** — Tolerancia de emparejamiento: con `stop_508_peak` y `gtfs_mini`, distribución de
   `|arrival_at − scheduled_at|` del mejor candidato; confirmar o proponer otra tolerancia.
   → `progress/explore_destinations.md`
