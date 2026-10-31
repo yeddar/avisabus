@@ -81,3 +81,33 @@
 - T-01…T-06 implementadas; `./init.sh verify` en verde (422 tests, cobertura 99,44 %).
 - Revisión ciclo 1: APPROVED sin bloqueantes. Problemas de spec no bloqueantes SP-01 (AC-11 vs
   proporciones fijas de forzado con umbrales no por defecto) y SP-02 (firma de `progress`).
+
+## 2026-10-31 · gtfs_import v1.3 / stop_arrivals_api v1.2 · specs (PR #11) · validación de sentidos
+- La persona valida los sentidos derivados de `gtfs_import` (PR #10 fusionada).
+- `gtfs_import` v1.3 documenta S-1…S-3 (sin cambios de código; sigue `done`). `stop_arrivals_api`
+  v1.2 añade AC-18/T-05b (horarios del día de servicio siguiente si la ventana cruza la medianoche).
+
+## 2026-10-31 · stop_tokens_qr · spec_approved → implementing
+- Sin exploración (tasks.md: "No necesaria"). Rama `feat/stop_tokens_qr` desde `develop`.
+
+## 2026-10-31 · stop_tokens_qr · implementing → spec_blocked (CP-3)
+- T-01…T-03 hechas; T-04 detenida. B-01: la fuente por defecto de Pillow 13 no tiene glifos con
+  tilde/cedilla/eñe (620/1 117 nombres afectados) y DejaVuSans no está garantizada → etiqueta PNG
+  incumple AC-07/AC-09. B-02 (menor): `boost_error` de segno vs nivel M exacto de AC-12.
+
+## 2026-10-31 · stop_tokens_qr · CP-3 decidido (spec v1.1 pendiente de PR)
+- B-01 → incluir DejaVuSans.ttf y su licencia + test de cobertura de caracteres. B-02 → nivel QR
+  "exactamente M" (`boost_error=False`). La persona prepara la spec v1.1 en una PR aparte.
+
+## 2026-11-01 · stop_tokens_qr · spec_blocked → spec_approved (v1.1, CP-1) → implementing
+- Spec v1.1 (PR #12) resuelve B-01/B-02. `feat/stop_tokens_qr` rebasada sobre `develop`; se
+  reanuda desde T-04. (`occupancy_sensor` cerrada en su rama, PR #13.)
+
+## 2026-11-01 · stop_tokens_qr · implementing → in_review → done
+- T-04 (fuente DejaVu 2.37 incluida + licencia + test de cobertura), T-05…T-07; `./init.sh verify` en verde.
+- Revisión ciclo 1: APPROVED sin bloqueantes; no bloqueantes H-01…H-03 y propuestas de spec S-01…S-03.
+
+## 2026-11-01 · stop_tokens_qr · integración con occupancy_sensor (rebase de la PR #14)
+- PR #13 fusionada; `feat/stop_tokens_qr` rebasada sobre `develop`. Conflictos de código resueltos
+  conservando ambas features; fix solo de tests (0128582) por el aviso del secreto de desarrollo en
+  tests de `occupancy_sensor` que comparan stdout.

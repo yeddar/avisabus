@@ -61,7 +61,7 @@
       "order": 3,
       "block": 1,
       "title": "Tokens firmados de parada y generación de QR por CLI",
-      "status": "spec_approved",
+      "status": "done",
       "depends_on": [
         "gtfs_import"
       ],
@@ -75,7 +75,7 @@
       "spec": "specs/stop_tokens_qr/",
       "needs_exploration": false,
       "review_cycles": 0,
-      "passes": false
+      "passes": true
     },
     {
       "id": "sae_arrivals_source",

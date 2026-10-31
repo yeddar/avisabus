@@ -28,7 +28,9 @@ def _run_main(tmp_path: Path, **env: str) -> subprocess.CompletedProcess[str]:
     workdir.mkdir(parents=True)
     database = tmp_path / "avisabus.sqlite"
     clean = {k: v for k, v in os.environ.items() if not k.startswith("AVISABUS_")}
-    clean.update({"AVISABUS_ENV": "test", "AVISABUS_DATABASE_URL": f"sqlite:///{database}", **env})
+    clean.update({"AVISABUS_ENV": "test", "AVISABUS_DATABASE_URL": f"sqlite:///{database}"})
+    # With a secret, stop_tokens_qr does not log its dev-secret warning on stdout.
+    clean.update({"AVISABUS_STOP_TOKEN_SECRET": "x" * 32, **env})
     return subprocess.run(  # noqa: S603 - fixed interpreter and script
         [sys.executable, "-c", PROBE, str(database)],
         cwd=workdir,

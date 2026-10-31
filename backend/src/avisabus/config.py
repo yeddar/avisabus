@@ -7,10 +7,18 @@ Every variable must be documented in the repository's `.env.example`.
 
 from typing import Literal, Self
 
-from pydantic import Field, model_validator
+import structlog
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from avisabus.domain.models.occupancy import OccupancyThresholds
+
+DEV_STOP_TOKEN_SECRET = b"avisabus-dev-only-secret-do-not-use!"
+"""Fixed stop token secret used in `dev` and `test` when none is configured (never in `prod`)."""
+
+MIN_STOP_TOKEN_SECRET_BYTES = 32
+
+log = structlog.get_logger(__name__)
 
 
 class ConfigurationError(Exception):
@@ -33,6 +41,7 @@ class Settings(BaseSettings):
     occupancy_seed: str = "avisabus"
     occupancy_threshold_medium: float = 0.50
     occupancy_threshold_full: float = 0.85
+    stop_token_secret: SecretStr | None = None
 
     @model_validator(mode="after")
     def _check_occupancy(self) -> Self:
@@ -54,3 +63,28 @@ class Settings(BaseSettings):
         return OccupancyThresholds(
             medium=self.occupancy_threshold_medium, full=self.occupancy_threshold_full
         )
+
+    @model_validator(mode="after")
+    def _check_stop_token_secret(self) -> Self:
+        """Production needs a secret of at least 32 bytes; dev/test fall back to a fixed one."""
+        configured = _secret_length(self.stop_token_secret)
+        if self.env == "prod":
+            if configured < MIN_STOP_TOKEN_SECRET_BYTES:
+                raise ConfigurationError(
+                    "AVISABUS_STOP_TOKEN_SECRET must be set to at least "
+                    f"{MIN_STOP_TOKEN_SECRET_BYTES} bytes when AVISABUS_ENV=prod"
+                )
+        elif configured == 0:
+            log.warning("security.dev_stop_token_secret", env=self.env)
+        return self
+
+    def stop_token_secret_bytes(self) -> bytes:
+        """Secret that signs stop tokens: the configured one or, in dev/test, the fixed one."""
+        if self.stop_token_secret is None or not self.stop_token_secret.get_secret_value():
+            return DEV_STOP_TOKEN_SECRET
+        return self.stop_token_secret.get_secret_value().encode()
+
+
+def _secret_length(secret: SecretStr | None) -> int:
+    """Length in bytes (UTF-8) of the secret; 0 when it is unset or empty."""
+    return 0 if secret is None else len(secret.get_secret_value().encode())

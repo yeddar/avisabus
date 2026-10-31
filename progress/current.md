@@ -2,24 +2,24 @@
 
 > Fichero vivo: lo reescribe el orquestador al final de cada sesión.
 
-**Fecha:** 2026-10-31
+**Fecha:** 2026-11-01
 **Fase:** Implementación — Bloque 1 (Cimientos y datos)
-**Feature en curso:** `stop_tokens_qr` (reanudación desde T-04 en su rama); `occupancy_sensor` en `done` (PR abierta)
+**Feature en curso:** ninguna. `occupancy_sensor` fusionada (PR #13); `stop_tokens_qr` en `done`, PR #14 rebasada, pendiente de fusión
 
 ## Último paso
-PR #10 y #11 fusionadas; la persona validó los sentidos de `gtfs_import`. `stop_tokens_qr`:
-T-01…T-03 hechas, detenida en T-04 por CP-3 (B-01 fuente PNG, B-02 nivel QR), ya decidido por la
-persona; spec v1.1 en PR aparte. Estado detallado en la rama `feat/stop_tokens_qr`. `occupancy_sensor` implementada y
-aprobada en revisión (ciclo 1, `progress/review_occupancy_sensor.md`); PR abierta contra `develop`.
-Spec `stop_tokens_qr` v1.1 fusionada (PR #12).
+PR #13 (`occupancy_sensor`) fusionada. `feat/stop_tokens_qr` rebasada sobre `develop`: conflictos de
+`progress/` resueltos por el orquestador; los de código (`config.py`, `pyproject.toml`/`uv.lock`,
+`domain/errors.py`, `cli/container.py`, `cli/main.py`) por el implementer, conservando ambas features.
+Commit 0128582: tres tests de `occupancy_sensor` que comparan stdout fijan ahora un secreto de token
+(el aviso `security.dev_stop_token_secret` los rompía); solo tests. `./init.sh verify` en verde.
 
 ## Siguiente paso
-1. `stop_tokens_qr`: spec v1.1 fusionada (PR #12) → rebase de `feat/stop_tokens_qr`
-   sobre `develop` → reanudar desde T-04 → reviewer → PR (sin fusionar).
-3. `sae_arrivals_source`: **preguntar a la persona antes de empezar E-01** (requiere red y la
+1. La persona fusiona la PR #14 (`stop_tokens_qr`).
+2. `sae_arrivals_source`: **esperar aviso de la persona** antes de empezar E-01 (requiere red y la
    grabación de 15 min en la parada 508 en hora punta, `stop_508_peak`).
-4. `stop_arrivals_api` (v1.2).
-5. En paralelo (fuera de Claude Code): specs del bloque 2 (PR #7).
+3. `stop_arrivals_api` (v1.2).
+4. Fuera de Claude Code: PR de specs para SP-01 (`occupancy_sensor`), S-01 y H-01 (`stop_tokens_qr`)
+   — la prepara la persona; specs del bloque 2 (PR #7).
 
 ## Pendiente para specs futuras
 - **Bloque 4 (`driver_session`/`driver_ui`):** en C2 y C3 cada sentido agrupa dos medios bucles
@@ -30,6 +30,11 @@ Spec `stop_tokens_qr` v1.1 fusionada (PR #12).
   (bloque 3) según la regla nueva de `docs/conventions.md` §3.
 - **H-09:** el primer subcomando de CLI que use configuración debe construir `Settings()`.
 - **H-11:** en `deployment_rpi`, pasar la configuración con `env_file`/variables de Compose, no `../.env`.
+- **stop_tokens_qr H-01:** el aviso `security.dev_stop_token_secret` sale por stdout sin formato JSON
+  porque `Settings()` se construye antes de `configure_logging` (`cli/qr.py`, `main.py`); solo dev/test.
+- **stop_tokens_qr S-01…S-03:** código de salida de uso incorrecto de la CLI (2 de Click = 2 de AC-10);
+  `execute` síncrono sin justificar frente a conventions §3; `--stop` repetido e `index.csv` no
+  especificados (implementado: deduplicar; `index.csv` siempre). H-03: traza de Typer con secreto inválido.
 - **occupancy_sensor SP-01 (O-01):** AC-11 choca con las proporciones fijas de forzado (0,20/0,65/0,95)
   si los umbrales no son los de por defecto (p. ej. `full = 0,99` → FULL forzado = MEDIUM). Salidas:
   (c) limitar AC-11 a umbrales por defecto, (b) acotar umbrales en AC-03, (a) derivar `r` de los umbrales.
@@ -47,8 +52,7 @@ Spec `stop_tokens_qr` v1.1 fusionada (PR #12).
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Ninguno pendiente de decisión. (Sentidos de `gtfs_import` validados; CP-3 de `stop_tokens_qr`
-decidido, a la espera de la spec v1.1.)
+Ninguno.
 
 ## Bloqueos
-- `stop_tokens_qr` en `spec_blocked` hasta que se fusione su spec v1.1.
+Ninguno.
