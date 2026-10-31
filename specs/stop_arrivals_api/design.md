@@ -1,6 +1,6 @@
 # API de parada y llegadas — design
 
-> Feature: `stop_arrivals_api` · Versión: 1.1 · Estado: APPROVED
+> Feature: `stop_arrivals_api` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-06, RF-09, RF-11, RF-15, RF-32, RNF-01, RNF-08 · Casos de uso: CU-01 · Depende de: gtfs_import, stop_tokens_qr, sae_arrivals_source, occupancy_sensor
 
 ## 1. Resumen
@@ -139,6 +139,11 @@ class ScheduledArrivalsProvider:
                  per_direction: int = 2) -> None: ...
     def next_arrivals(self, stop_id: str, now: datetime) -> list[ScheduledStopTime]: ...
 ```
+
+**Días de servicio consultados (v1.2, AC-18):** `NetworkRepository.scheduled_stop_times(stop_id,
+at, window)` debe devolver las pasadas de **todos** los días de servicio entre `fecha(at) − 1` y
+`fecha(at + window)` (zona del feed). La implementación de `gtfs_import` solo cubría `D − 1` y `D`;
+se amplía en esta feature (T-05b), sin cambiar la firma.
 
 Candidatos de `TripMatcher`: `network.scheduled_stop_times(stop_id, at=arrival_at − tolerance,
 window=2·tolerance + rango de llegadas)` filtrados por línea y sentido, convertidos a
