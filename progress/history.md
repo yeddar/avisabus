@@ -45,3 +45,8 @@
 - Revisión ciclo 2: APPROVED sin bloqueantes. Cierra H-02 y H-03. Nuevos no bloqueantes: H-09
   (la CLI aún no usa `Settings`), H-10 (aislamiento de los tests de AC-09), H-11 (`../.env` en Docker).
 - Rama remota `main` borrada a petición de la persona (estaba contenida en `develop`; sin datos GTFS).
+
+## 2026-10-31 · gtfs_import · spec_approved → exploring → spec_blocked (CP-3)
+- E-01 (`progress/explore_gtfs_feed.md`): §4.3 da 2 sentidos en las 42 líneas con viajes; ninguna
+  circular por la regla de 500 m (C1/C2/C3 partidas en medios bucles) → la integración de AC-25
+  con C2 es incumplible. Propuestas: opción A, formas por sentido, recorte de headsigns, línea 98 en `gtfs_mini`.
