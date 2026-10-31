@@ -6,7 +6,7 @@ Spec: specs/occupancy_sensor/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Agent
 - [x] T-02 Funciones de simulación puras con tests de propiedades (AC-05, AC-06, AC-07, AC-10)
 - [x] T-03 Puertos `OccupancySensor` / `OccupancyOverrideRepository` y `NetworkRepository.trip_line`
 - [x] T-04 `SimulatedOccupancySensor` (AC-04, AC-08, AC-09, AC-11, AC-14)
-- [ ] T-05 Repositorio SQLite de forzados, casos de uso y CLI `occupancy override` (AC-11, AC-12, AC-13)
+- [x] T-05 Repositorio SQLite de forzados, casos de uso y CLI `occupancy override` (AC-11, AC-12, AC-13)
 - [ ] T-06 `.env.example`, composición en `main.py` y verificación completa
 
 ## Decisiones locales
