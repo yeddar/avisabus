@@ -1,0 +1,11 @@
+# Datos locales: feed GTFS real, base de datos (no se versionan)
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Sistema
+.DS_Store
+
+# El resto de entradas las añade project_scaffold (T-01, AC-20)
