@@ -1,6 +1,6 @@
 # Importación del GTFS — design
 
-> Feature: `gtfs_import` · Versión: 1.0 · Estado: APPROVED
+> Feature: `gtfs_import` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-01, RF-02, RF-03, RF-04, RF-32 · Casos de uso: CU-11 · Depende de: project_scaffold
 
 ## 1. Resumen
@@ -57,6 +57,8 @@ class NetworkRepository(Protocol):
     def lines_at_stop(self, stop_id: str) -> list[LineDirection]: ...
     def headsigns_at_stop(self, stop_id: str, line: str) -> list[HeadsignAtStop]: ...
     def line_directions(self, line: str) -> list[LineDirection]: ...
+    def shapes_for_direction(self, line: str, direction_id: int) -> list[tuple[str, int]]: ...
+        # (shape_id, trip_count) ordenados por trip_count desc, shape_id asc
     def line_direction(self, line: str, direction_id: int) -> LineDirection | None: ...
     def active_service_ids(self, service_date: date) -> frozenset[str]: ...
     def scheduled_stop_times(self, stop_id: str, at: datetime, window: timedelta) -> list[ScheduledStopTime]: ...
@@ -89,7 +91,8 @@ Salida de `import` (texto, una línea por dato; cifras ilustrativas):
 ```
 Feed importado (versión 3, feed_version 23-10-2026)
 Vigencia: 2026-10-16 → 2026-11-22
-Líneas: 46 · Paradas: 1117 · Viajes: 25 431 · Horarios de parada: 812 004
+Líneas: 42 · Paradas: 1117 · Viajes: 20 598 · Horarios de parada: 508 134
+route_id sin viajes ignorados: 3
 AVISO: el feed caduca en 5 días (2026-11-22)
 ```
 
@@ -112,7 +115,8 @@ Códigos de salida: `0` éxito, `1` sin feed (`info`), `2` error de validación 
 | feed_info.txt (opcional) | — | feed_version, feed_start_date, feed_end_date |
 
 `shape_id` es opcional en GTFS pero **obligatorio para AvisaBus** (trazado). Si un viaje concreto
-no tiene `trip_headsign`, se usa el nombre de la última parada del viaje.
+no tiene `trip_headsign`, se usa el nombre de la última parada del viaje. Ambos se recortan
+(espacios al principio y al final), igual que los nombres (AC-07).
 
 **Feed real de EMT (23-10-2026), cabeceras confirmadas:**
 
@@ -149,6 +153,18 @@ y número de viajes.
 Resultado: `gtfs_trip.direction_id` (entero) y `gtfs_trip.direction_source` (`feed` | `derived`).
 El sentido `0` de una línea es, por construcción, el de su patrón más frecuente.
 
+**Líneas circulares en el feed de EMT (23-10-2026).** C1, C2 y C3 no vienen como un bucle
+completo en un viaje, sino **partidas en medios viajes**, cada uno con su destino (p. ej. C2
+"Plaça d'Espanya - Ermita" / "Blasco Ibáñez - Facultat de Geografia"); sus extremos están a
+≥ 1 382 m, por lo que el paso 2 las trata como **lineales** y cada sentido significa "hacia el
+destino de ese medio bucle", coherente con lo que muestra el autobús y con el cambio de viaje en
+cada cabecera. En C2 y C3 un sentido agrupa medios bucles de los dos giros (formas distintas, sin
+paradas comunes), de ahí `line_direction_shape`. La rama circular (paso 3) queda para feeds que
+modelen el bucle completo en un viaje y solo se prueba con datos sintéticos.
+
+**Desempate** del patrón de referencia: mayor número de viajes; empate → `shape_id` menor en orden
+lexicográfico de cadena (p. ej. línea 59: `1070_2285_2437` < `1070_2437_2285`).
+
 Los headsigns **no** definen el sentido (una línea puede tener variantes de recorrido con
 headsigns distintos en el mismo sentido), pero se conservan todos: la tabla
 `stop_line_headsign` guarda qué headsigns pasan por cada parada en cada sentido, que es lo que
@@ -172,6 +188,7 @@ Colores: si faltan, `FE0000` / `FFFFFF` (los del feed actual).
 | `line_route` | `short_name`, `route_id` | PK (fv, route_id) |
 | `line_direction` | `short_name`, `direction_id`, `headsign`, `shape_id`, `trip_count` | PK (fv, short_name, direction_id) |
 | `stop_line_direction` | `stop_id`, `short_name`, `direction_id` | PK (fv, stop_id, short_name, direction_id) |
+| `line_direction_shape` | `short_name`, `direction_id`, `shape_id`, `trip_count` | PK (fv, short_name, direction_id, shape_id) |
 | `stop_line_headsign` | `stop_id`, `short_name`, `direction_id`, `headsign`, `trip_count` | PK (fv, stop_id, short_name, direction_id, headsign) |
 
 `gtfs_trip.line` se rellena al importar (`route_short_name` del `route_id`) para evitar joins.
@@ -209,13 +226,15 @@ sequenceDiagram
 ```
 
 Derivados (`build_derived`):
-1. `line`: por `short_name`, atributos del `route_id` con más viajes.
+1. `line`: por `short_name`, **solo si tiene al menos un viaje**; atributos del `route_id` con más
+   viajes. Los `route_id` sin viajes se ignoran y se cuentan (`ignored_route_ids`) para el resumen.
 2. `line_route`.
 3. **Sentidos** (si el feed no trae `direction_id`): se cargan los patrones por línea (`shape_id`,
    primera/última parada de un viaje representativo del patrón, puntos de la forma, nº de viajes),
    se llama a `derive_directions` y se actualiza `gtfs_trip.direction_id` por `shape_id`.
 4. `line_direction`: por (`line`, `direction_id`), `headsign` y `shape_id` con más viajes
    (empate → orden alfabético).
+4b. `line_direction_shape`: por (`line`, `direction_id`, `shape_id`) con su número de viajes.
 5. `stop_line_direction`: `SELECT DISTINCT stop_id, line, direction_id` de `stop_time ⋈ trip`.
 6. `stop_line_headsign`: `SELECT stop_id, line, direction_id, headsign, COUNT(DISTINCT trip_id)`
    de `stop_time ⋈ trip` agrupado.
@@ -254,13 +273,14 @@ Derivados (`build_derived`):
 
 ### Fixture `gtfs_mini`
 
-`backend/scripts/make_gtfs_mini.py --src data/gtfs/emt --lines 70,93,C2 --date 2026-11-04 --out backend/tests/fixtures/gtfs_mini`:
+`backend/scripts/make_gtfs_mini.py --src data/gtfs/emt --lines 70,93,98,C2 --date 2026-11-04 --out backend/tests/fixtures/gtfs_mini`:
 - conserva `agency`, `feed_info`, las rutas de esas líneas, sus viajes cuyos servicios estén
   activos en `--date` o en `--date - 1 día`, sus `stop_times`, las paradas y formas referenciadas,
   y las filas de `calendar`/`calendar_dates` de esos servicios;
-- debe incluir la parada **508** (servida por 70 y 93) y la **2070** si la sirve alguna de esas
-  líneas (si no, se añade la línea mínima que la sirva y se documenta);
-- objetivo de tamaño: < 2 MB en total.
+- incluye la parada **508** (servida por 70 y 93) y la **2070** (servida por la 98);
+- la 98 aporta una variante corta en el mismo sentido (`1054_487_2229`) y dos `route_id`; C2, dos
+  `route_id` con medios bucles de giro opuesto;
+- objetivo de tamaño: < 2 MB en total (estimado en E-01: ≈ 1,40 MB).
 
 ## 9. Decisiones locales permitidas
 

@@ -1,6 +1,6 @@
 # Importación del GTFS — requirements
 
-> Feature: `gtfs_import` · Versión: 1.0 · Estado: APPROVED
+> Feature: `gtfs_import` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-01, RF-02, RF-03, RF-04, RF-32 · Casos de uso: CU-11 · Depende de: project_scaffold
 
 ## Contexto
@@ -16,6 +16,14 @@ valenciano; `wheelchair_boarding = 0` en todas las paradas; no incluye líneas n
 **`trips.txt` no incluye `direction_id`** (columnas: `route_id, service_id, trip_id,
 trip_headsign, trip_short_name, shape_id`), por lo que el sentido se deriva al importar;
 `shape_dist_traveled` viene en `stop_times` y `shapes`, en metros.
+
+La exploración E-01 (`progress/explore_gtfs_feed.md`) confirmó además:
+- 42 líneas con viajes (las 23 y 30 no tienen ninguno, y el `route_id` 1068 tampoco);
+- horas de hasta `28:00:01` y 621 viajes que empiezan después de las 24:00;
+- **las circulares C1, C2 y C3 vienen partidas en medios viajes**, cada uno con su destino, por
+  lo que se tratan como líneas lineales: cada sentido significa "hacia el destino de ese medio
+  bucle" (decisión de la persona en CP-3, opción A);
+- en algunas líneas un mismo sentido tiene variantes de recorrido muy distintas (C2, C3, 62, 98).
 
 ## Alcance
 
@@ -68,8 +76,9 @@ trip_headsign, trip_short_name, shape_id`), por lo que el sentido se deriva al i
   la nueva versión en una única transacción y borrar después los datos de la versión anterior.
   *Verificación:* integration (dos importaciones seguidas; solo queda una versión)
 - **gtfs_import.AC-07** — EL SISTEMA DEBERÁ leer los ficheros como UTF-8 aceptando BOM y
-  conservar los nombres de paradas y líneas tal como vienen en el GTFS, eliminando solo espacios
-  al principio y al final.
+  conservar los nombres de paradas y líneas y los `trip_headsign` (y el nombre de la última parada
+  cuando se use como headsign) tal como vienen en el GTFS, eliminando solo espacios al principio y
+  al final (p. ej. `'Terramelar '` → `'Terramelar'`).
   *Verificación:* unit
 - **gtfs_import.AC-08** — EL SISTEMA DEBERÁ almacenar las horas de `stop_times` como segundos
   desde el inicio del día de servicio, admitiendo valores ≥ 24:00:00 (p. ej. `25:10:00` →
@@ -98,13 +107,17 @@ trip_headsign, trip_short_name, shape_id`), por lo que el sentido se deriva al i
   sentido `0`; en líneas lineales cada patrón toma el sentido cuyos extremos (primera y última
   parada) están más cerca de los del patrón de referencia en el mismo orden; los viajes quedan
   marcados con `direction_source = "derived"`.
-  *Verificación:* unit (patrones sintéticos: ida y vuelta, variante corta en el mismo sentido) +
-  integration (gtfs_mini: 70 y 93 tienen exactamente dos sentidos)
+  *Verificación:* unit (patrones sintéticos: ida y vuelta, variante corta en el mismo sentido;
+  empate de viajes resuelto por `shape_id` menor en orden lexicográfico) + integration (gtfs_mini:
+  70, 93, 98 y C2 tienen exactamente dos sentidos; la variante corta `1054_487_2229` de la 98 queda
+  en el mismo sentido que `1055_487_2271`; cada sentido de C2 tiene patrones de dos `route_id`)
 - **gtfs_import.AC-25** — SI una línea es circular (extremos del patrón de referencia a menos de
   500 m), ENTONCES EL SISTEMA DEBERÁ asignar el sentido según la orientación de la forma (mismo giro
   que el patrón de referencia → `0`, giro contrario → `1`); SI la orientación no es determinable,
   ENTONCES DEBERÁ asignar `0` y registrar `gtfs.direction_ambiguous`.
-  *Verificación:* unit (formas sintéticas horaria, antihoraria y degenerada) + integration (C2)
+  *Verificación:* unit (formas sintéticas horaria, antihoraria y degenerada). *Nota:* el feed de
+  EMT no contiene líneas circulares en un único viaje (ver Contexto); esta rama queda para feeds
+  futuros y no tiene caso de integración.
 - **gtfs_import.AC-26** — CUANDO se ejecuta `avisabus gtfs info --directions`, LA CLI DEBERÁ
   listar por línea y sentido: origen del sentido, primera y última parada del patrón principal,
   headsigns con su número de viajes y número de patrones.
@@ -113,6 +126,16 @@ trip_headsign, trip_short_name, shape_id`), por lo que el sentido se deriva al i
   REPOSITORIO DEBERÁ devolver cada combinación (sentido, headsign) de los viajes de esa línea que
   paran en ella, con su número de viajes.
   *Verificación:* integration
+
+- **gtfs_import.AC-28** — EL SISTEMA DEBERÁ crear solo las líneas comerciales con al menos un
+  viaje e ignorar los `route_id` sin viajes; el resumen de `gtfs import` DEBERÁ indicar cuántos
+  `route_id` se han ignorado por no tener viajes.
+  *Verificación:* integration (copia de `gtfs_mini` con un `route_id` añadido sin viajes)
+- **gtfs_import.AC-29** — EL SISTEMA DEBERÁ guardar, para cada línea y sentido, **todas** sus
+  formas con su número de viajes, y EL REPOSITORIO DEBERÁ devolverlas con
+  `shapes_for_direction(line, direction_id)` ordenadas por número de viajes descendente (empate:
+  `shape_id` menor).
+  *Verificación:* integration (98 y C2 en gtfs_mini devuelven dos formas por sentido)
 
 ### Consultas (`NetworkRepository`)
 
@@ -159,7 +182,8 @@ trip_headsign, trip_short_name, shape_id`), por lo que el sentido se deriva al i
 ### Fixture y rendimiento
 
 - **gtfs_import.AC-21** — EL SISTEMA DEBERÁ incluir `backend/tests/fixtures/gtfs_mini/` generada
-  desde el feed real con las líneas 70, 93 y C2 mediante `backend/scripts/make_gtfs_mini.py`, y
+  desde el feed real con las líneas 70, 93, 98 y C2 (la 98 sirve la parada 2070 y aporta una
+  variante corta en el mismo sentido) mediante `backend/scripts/make_gtfs_mini.py`, y
   su `README.md` DEBERÁ indicar el feed de origen, la fecha de referencia y el comando usado.
   *Verificación:* revisión + los tests de integración la usan
 - **gtfs_import.AC-22** — CUANDO se importa el feed real completo en el equipo de desarrollo,
@@ -173,7 +197,15 @@ trip_headsign, trip_short_name, shape_id`), por lo que el sentido se deriva al i
 | RF-01 Importar el feed | AC-01, AC-02, AC-03, AC-04, AC-07, AC-08, AC-12, AC-15, AC-16, AC-17, AC-22 |
 | RF-02 Reimportar sin interrupción y avisar de caducidad | AC-05, AC-06, AC-18, AC-19, AC-20 |
 | RF-03 Líneas comerciales | AC-09, AC-10, AC-11, AC-13 |
-| RF-03 / R-02 Sentidos (derivados) y headsigns | AC-23, AC-24, AC-25, AC-26, AC-27 |
+| RF-03 / R-02 Sentidos (derivados) y headsigns | AC-23, AC-24, AC-25, AC-26, AC-27, AC-29 |
+| RF-03 Solo líneas con viajes | AC-28 |
 | RF-04 Servicios activos por fecha | AC-14, AC-15 |
 | RF-32 Nombres tal como vienen en el GTFS | AC-07 |
 | RNF-10 Testabilidad | AC-21 |
+
+## Historial
+
+| Versión | Fecha | Cambio | Motivo |
+|---|---|---|---|
+| 1.0 | 2026-10-31 | Versión inicial aprobada (PR #2) | — |
+| 1.1 | 2026-10-31 | Circulares de EMT tratadas como lineales (medios bucles); AC-24 y AC-25 con verificaciones ajustadas; AC-07 incluye `trip_headsign`; AC-28 (solo líneas con viajes); AC-29 (todas las formas por sentido); línea 98 en `gtfs_mini`. | CP-3 tras la exploración E-01 (`progress/explore_gtfs_feed.md`). Aprobada por la persona. |

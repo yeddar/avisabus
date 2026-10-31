@@ -1,6 +1,6 @@
 # API de parada y llegadas — requirements
 
-> Feature: `stop_arrivals_api` · Versión: 1.0 · Estado: APPROVED
+> Feature: `stop_arrivals_api` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-06, RF-09, RF-11, RF-15, RF-32, RNF-01, RNF-08 · Casos de uso: CU-01 · Depende de: gtfs_import, stop_tokens_qr, sae_arrivals_source, occupancy_sensor
 
 ## Contexto
@@ -131,3 +131,10 @@ Es el backend de la vista de parada (CU-01). Une las piezas del bloque 1:
 | R-02 Destino SAE ↔ sentido GTFS | AC-05, AC-06, AC-07 |
 | ADR-013 Identidad por viaje | AC-10, AC-11 |
 | Contrato API (ADR-010) | AC-16 |
+
+## Historial
+
+| Versión | Fecha | Cambio | Motivo |
+|---|---|---|---|
+| 1.0 | 2026-10-31 | Versión inicial aprobada (PR #2) | — |
+| 1.1 | 2026-10-31 | `tasks.md` E-01: pregunta explícita sobre el destino que da el SAE en las circulares C1, C2 y C3. Sin cambios en AC ni en el diseño. | Riesgo señalado en `progress/explore_gtfs_feed.md`. Aprobada por la persona. |
