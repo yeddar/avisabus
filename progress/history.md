@@ -56,3 +56,19 @@
   formas por sentido (AC-29), solo líneas con viajes (AC-28), recorte de `trip_headsign` (AC-07),
   línea 98 en `gtfs_mini`. `stop_arrivals_api` v1.1: E-01 pregunta por los destinos del SAE en
   las circulares.
+
+## 2026-10-31 · gtfs_import v1.1 · spec_approved → implementing → spec_blocked (CP-3)
+- T-01…T-03b implementadas (AC-07, AC-08, AC-14, AC-19, AC-20, AC-24/25 en unit).
+- B-01 en T-04: con la fecha de referencia del design §8 (2026-11-04), `gtfs_mini` no incluye el
+  `route_id` 1055 de la 98 (solo fines de semana) → AC-24/AC-29 incumplibles para la 98.
+
+## 2026-10-31 · gtfs_import · spec_blocked → spec_approved (v1.2, CP-1) → implementing
+- CP-3 B-01 resuelto por la persona (PR #9): `gtfs_mini` con `--date 2026-11-09` (lunes + domingo),
+  límite < 2,5 MB; `gtfs import` sin `--yes`. Sin cambios en los AC.
+- `feat/gtfs_import` rebasada sobre `develop`; se reanuda la implementación desde T-04.
+
+## 2026-10-31 · gtfs_import · implementing → in_review → done
+- T-04…T-12 implementadas (T-01…T-03b ya hechas); `./init.sh verify` y tests `slow` en verde.
+  Feed real: 4,6 s / 75 MB; 42 líneas × 2 sentidos derivados, coincidentes con E-01.
+- Revisión ciclo 1: APPROVED sin bloqueantes. Huecos de spec no bloqueantes S-1…S-3 y
+  observaciones N-01…N-07 en `progress/review_gtfs_import.md`. Pendiente: validación de sentidos por la persona.

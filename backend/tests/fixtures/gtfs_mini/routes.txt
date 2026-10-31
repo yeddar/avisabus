@@ -1,0 +1,7 @@
+route_id,agency_id,route_short_name,route_long_name,route_desc,route_type,route_url,route_color,route_text_color,route_sort_order
+1054,EMT,98,98 - AV. DEL CID - EST. CABANYAL/PG. MARÍTIM,Només dies laborables,3,,FE0000,FFFFFF,1
+1055,EMT,98,98 - AV. DEL CID - EST. CABANYAL/PG. MARÍTIM,Només dissabtes i festius,3,,FE0000,FFFFFF,1
+1058,EMT,70,70 - LA FONTSANTA - ALBORAIA,,3,,FE0000,FFFFFF,1
+996,EMT,C2,C2 - CIRCULAR GRANS VIES,,3,,FE0000,FFFFFF,1
+651,EMT,C2,C2 - CIRCULAR GRANS VIES,,3,,FE0000,FFFFFF,1
+994,EMT,93,93 - AV. DEL CID - PG. MARÍTIM,,3,,FE0000,FFFFFF,1

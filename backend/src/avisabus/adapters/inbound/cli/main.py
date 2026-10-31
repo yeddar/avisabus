@@ -2,7 +2,10 @@
 
 import typer
 
+from avisabus.adapters.inbound.cli.gtfs import gtfs_app
+
 app = typer.Typer(name="avisabus", no_args_is_help=True)
+app.add_typer(gtfs_app, name="gtfs")
 
 
 @app.callback()
