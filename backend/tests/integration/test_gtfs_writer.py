@@ -1,4 +1,5 @@
 from collections import Counter
+from collections.abc import Callable, Iterator
 from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
@@ -6,9 +7,13 @@ from typing import Any
 import pytest
 from sqlalchemy import Engine, text
 
+from avisabus.adapters.outbound.gtfs.reader import CsvGtfsFeedReader
 from avisabus.adapters.outbound.persistence.network_tables import VERSIONED_TABLES
 from avisabus.adapters.outbound.persistence.sqlite_network import SqliteGtfsFeedWriter
+from avisabus.application.import_gtfs_feed import ImportGtfsFeed, ImportGtfsFeedCommand
 from avisabus.domain.models.network import FeedVersion
+from avisabus.domain.ports.gtfs_import import GtfsRow
+from tests.support.fake_clock import FakeClock
 from tests.support.gtfs import (
     InjectedFailureError,
     add_column,
@@ -436,3 +441,32 @@ def test_stop_line_headsigns_count_trips(
     )
     assert rows
     assert {tuple(r) for r in rows} == {tuple(r) for r in expected}
+
+
+class _FailingStopTimesReader(CsvGtfsFeedReader):
+    """Real reader that breaks (I/O error) after 5 000 rows of `stop_times.txt`."""
+
+    def iter_rows(self, name: str) -> Iterator[GtfsRow]:
+        for index, row in enumerate(super().iter_rows(name)):
+            if name == "stop_times.txt" and index == 5000:
+                raise OSError("read error")
+            yield row
+
+
+@pytest.mark.spec("gtfs_import.AC-05")
+async def test_import_failing_in_stop_times_keeps_previous_version_active_and_complete(
+    writer: SqliteGtfsFeedWriter, engine: Engine, feed_dir: Path
+) -> None:
+    def use_case(open_reader: Callable[[Path], CsvGtfsFeedReader]) -> ImportGtfsFeed:
+        clock = FakeClock(datetime(2026, 10, 31, 8, 0, tzinfo=UTC))
+        return ImportGtfsFeed(open_reader, writer, clock, batch_size=1000)
+
+    first = await use_case(CsvGtfsFeedReader).execute(ImportGtfsFeedCommand(feed_dir))
+    before = _versions_in(engine)
+    with pytest.raises(OSError, match="read error"):
+        await use_case(_FailingStopTimesReader).execute(ImportGtfsFeedCommand(feed_dir))
+    assert _versions_in(engine) == before
+    rows = _rows(engine, "SELECT id, is_active FROM feed_version")
+    assert [tuple(r) for r in rows] == [(first.feed.version_id, 1)]
+    stop_times = _rows(engine, "SELECT COUNT(*) FROM gtfs_stop_time")
+    assert stop_times[0][0] == 29040
