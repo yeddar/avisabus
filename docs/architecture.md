@@ -160,7 +160,7 @@ Notas:
 
 ## 7. Superficie de la API
 
-Prefijo `/api/v1`. JSON en `snake_case`. Errores en formato RFC 9457 (`application/problem+json`).
+Prefijo `/api/v1`. JSON en `snake_case`. Respuestas > 1 KB comprimidas con gzip. Errores en formato RFC 9457 (`application/problem+json`).
 El cliente envía el identificador anónimo de dispositivo en la cabecera `X-Device-Id`.
 El contrato es el OpenAPI generado por FastAPI; el frontend genera sus tipos a partir de él.
 
@@ -168,8 +168,8 @@ El contrato es el OpenAPI generado por FastAPI; el frontend genera sus tipos a p
 |---|---|---|---|
 | GET | `/stops/{stop_id}?t={token}` | Datos de parada y líneas | CU-01 |
 | GET | `/stops/{stop_id}/arrivals?t={token}` | Llegadas + ocupación | CU-01 |
-| GET | `/lines/{line}/directions/{direction_id}/shape` | Trazado GeoJSON | CU-02 |
-| GET | `/stops/{stop_id}/lines/{line}/position?direction_id=` | Posición estimada | CU-02 |
+| GET | `/stops/{stop_id}/lines/{line}/position?direction_id=&t=` | Posición estimada del próximo autobús (incluye `shape_id` del viaje) | CU-02 |
+| GET | `/shapes/{shape_id}` | Trazado (coordenadas GeoJSON) y paradas; cacheable con `ETag` | CU-02 |
 | POST | `/alerts` | Crear aviso (`stop_id`, `token`, `line`, `direction_id`, `needs`) | CU-03 |
 | GET | `/alerts/mine` | Avisos activos del dispositivo | CU-03 |
 | DELETE | `/alerts/{alert_id}` | Cancelar | CU-04 |
@@ -304,6 +304,7 @@ frontend/src/
 | ADR-011 | Esquema con `create_all` y sin migraciones; datos de red versionados por `feed_version_id` con activación atómica | Alembic | Los datos de red son reimportables y los efímeros no necesitan migrarse; menos piezas |
 | ADR-012 | Repositorios SQLite síncronos invocados desde casos de uso `async` | SQLAlchemy async / aiosqlite | Consultas locales de milisegundos; más simple de testear |
 | ADR-013 | Identidad del autobús = viaje GTFS emparejado con el ETA (`TripMatcher`) | Identificador de vehículo | El SAE no publica vehículos; el viaje da una identidad estable para posición, ocupación y avisos |
+| ADR-014 | Trazado servido por `shape_id` (no por línea y sentido) | `/lines/{line}/directions/{d}/shape` | El viaje concreto puede usar una variante de recorrido distinta de la representativa |
 
 ## 12. Riesgos técnicos
 

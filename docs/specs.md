@@ -107,10 +107,10 @@ siempre "Verificación completa" (`./init.sh verify`). Cada AC aparece en al men
 | 4 | `sae_arrivals_source` | 1 | [specs/sae_arrivals_source](../specs/sae_arrivals_source/) |
 | 5 | `occupancy_sensor` | 1 | [specs/occupancy_sensor](../specs/occupancy_sensor/) |
 | 6 | `stop_arrivals_api` | 1 | [specs/stop_arrivals_api](../specs/stop_arrivals_api/) |
-| 7 | `frontend_i18n` | 2 | pendiente |
-| 8 | `passenger_stop_view` | 2 | pendiente |
-| 9 | `position_estimation` | 2 | pendiente |
-| 10 | `passenger_map_view` | 2 | pendiente |
+| 7 | `frontend_i18n` | 2 | [specs/frontend_i18n](../specs/frontend_i18n/) |
+| 8 | `passenger_stop_view` | 2 | [specs/passenger_stop_view](../specs/passenger_stop_view/) |
+| 9 | `position_estimation` | 2 | [specs/position_estimation](../specs/position_estimation/) |
+| 10 | `passenger_map_view` | 2 | [specs/passenger_map_view](../specs/passenger_map_view/) |
 | 11 | `realtime_events` | 3 | pendiente |
 | 12 | `alert_create` | 3 | pendiente |
 | 13 | `alert_cancel` | 3 | pendiente |
