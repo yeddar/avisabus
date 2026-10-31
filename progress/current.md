@@ -4,26 +4,21 @@
 
 **Fecha:** 2026-10-31
 **Fase:** Implementación — Bloque 1 (Cimientos y datos)
-**Feature en curso:** `stop_tokens_qr` v1.1 — `implementing` (desde T-04); `occupancy_sensor` en `done` (PR #13, rama aparte)
+**Feature en curso:** ninguna. `stop_tokens_qr` y `occupancy_sensor` en `done`, con PR abiertas (sin fusionar)
 
 ## Último paso
-PR #10 (`gtfs_import`) y PR #11 (spec `gtfs_import` v1.3 —documenta S-1…S-3, sin cambios de
-código— y `stop_arrivals_api` v1.2 —AC-18/T-05b, cruce de medianoche—) fusionadas. La persona
-validó los sentidos derivados. Empieza `stop_tokens_qr` en `feat/stop_tokens_qr`.
-`stop_tokens_qr`: T-01…T-03 hechas (c5bc0c0, 89808c2, e30bd75); T-04 codificada según el design
-(6c73adb) pero detenida por B-01 (`progress/impl_stop_tokens_qr.md`). T-05…T-07 sin empezar.
+`occupancy_sensor` aprobada (ciclo 1) → PR #13. `stop_tokens_qr` v1.1 (T-04…T-07 tras el rebase sobre
+la spec v1.1) aprobada (ciclo 1, `progress/review_stop_tokens_qr.md`) → PR abierta contra `develop`.
+Las dos PR chocan en `config.py` (`ConfigurationError`), probablemente en `cli/container.py` y
+`cli/main.py`, y en `feature_list.json`/`progress/`: la segunda en fusionarse necesita rebase.
 
 ## Siguiente paso
-1. `stop_tokens_qr` v1.1 (PR #12 fusionada; rama rebasada): implementer desde T-04 hasta T-07 →
-   reviewer → PR (sin fusionar). Luego detenerse.
-2. `sae_arrivals_source`: **preguntar a la persona antes de empezar E-01** (red + grabación
-   `stop_508_peak`).
-3. `stop_arrivals_api` (v1.2).
-2. `occupancy_sensor` (rama `feat/occupancy_sensor` desde `develop`) → reviewer → PR.
-3. `sae_arrivals_source`: **preguntar a la persona antes de empezar E-01** (requiere red y la
+1. La persona fusiona las PR de `occupancy_sensor` (#13) y `stop_tokens_qr`; rebase de la segunda
+   (resolver conflictos de `config.py`, CLI, `feature_list.json` y `progress/`).
+2. `sae_arrivals_source`: **preguntar a la persona antes de empezar E-01** (requiere red y la
    grabación de 15 min en la parada 508 en hora punta, `stop_508_peak`).
-4. `stop_arrivals_api` (v1.2).
-5. En paralelo (fuera de Claude Code): specs del bloque 2 (PR #7).
+3. `stop_arrivals_api` (v1.2).
+4. En paralelo (fuera de Claude Code): specs del bloque 2 (PR #7).
 
 ## Pendiente para specs futuras
 - **Bloque 4 (`driver_session`/`driver_ui`):** en C2 y C3 cada sentido agrupa dos medios bucles
@@ -34,6 +29,11 @@ validó los sentidos derivados. Empieza `stop_tokens_qr` en `feat/stop_tokens_qr
   (bloque 3) según la regla nueva de `docs/conventions.md` §3.
 - **H-09:** el primer subcomando de CLI que use configuración debe construir `Settings()`.
 - **H-11:** en `deployment_rpi`, pasar la configuración con `env_file`/variables de Compose, no `../.env`.
+- **stop_tokens_qr H-01:** el aviso `security.dev_stop_token_secret` sale por stdout sin formato JSON
+  porque `Settings()` se construye antes de `configure_logging` (`cli/qr.py`, `main.py`); solo dev/test.
+- **stop_tokens_qr S-01…S-03:** código de salida de uso incorrecto de la CLI (2 de Click = 2 de AC-10);
+  `execute` síncrono sin justificar frente a conventions §3; `--stop` repetido e `index.csv` no
+  especificados (implementado: deduplicar; `index.csv` siempre). H-03: traza de Typer con secreto inválido.
 - H-10 (aislamiento de los tests de AC-09 frente a `tmp_path/../.env`): no bloqueante, sin acción.
 - **gtfs_import N-07 → `deployment_rpi`:** la BD crece al reimportar (68 → 139 MB) sin `VACUUM`.
 

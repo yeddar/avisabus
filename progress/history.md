@@ -102,3 +102,7 @@
 ## 2026-11-01 · stop_tokens_qr · spec_blocked → spec_approved (v1.1, CP-1) → implementing
 - Spec v1.1 (PR #12) resuelve B-01/B-02. `feat/stop_tokens_qr` rebasada sobre `develop`; se
   reanuda desde T-04. (`occupancy_sensor` cerrada en su rama, PR #13.)
+
+## 2026-11-01 · stop_tokens_qr · implementing → in_review → done
+- T-04 (fuente DejaVu 2.37 incluida + licencia + test de cobertura), T-05…T-07; `./init.sh verify` en verde.
+- Revisión ciclo 1: APPROVED sin bloqueantes; no bloqueantes H-01…H-03 y propuestas de spec S-01…S-03.
