@@ -14,8 +14,8 @@ validó los sentidos derivados. Empieza `stop_tokens_qr` en `feat/stop_tokens_qr
 (6c73adb) pero detenida por B-01 (`progress/impl_stop_tokens_qr.md`). T-05…T-07 sin empezar.
 
 ## Siguiente paso
-1. **La persona decide el CP-3 de `stop_tokens_qr`** (B-01, B-02) → spec-writer → CP-1 → reanudar
-   desde T-04 → reviewer → PR contra `develop` (sin fusionar).
+1. `stop_tokens_qr`: esperar la PR de la spec v1.1 (la prepara la persona) → rebase de
+   `feat/stop_tokens_qr` sobre `develop` → reanudar desde T-04 → reviewer → PR (sin fusionar).
 2. `occupancy_sensor` (rama `feat/occupancy_sensor` desde `develop`) → reviewer → PR.
 3. `sae_arrivals_source`: **preguntar a la persona antes de empezar E-01** (requiere red y la
    grabación de 15 min en la parada 508 en hora punta, `stop_508_peak`).
@@ -40,6 +40,9 @@ validó los sentidos derivados. Empieza `stop_tokens_qr` en `feat/stop_tokens_qr
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
+- **CP-3 de `stop_tokens_qr` decidido por la persona (2026-10-31):** B-01 → opción 1 (DejaVuSans.ttf
+  y su licencia en el repo + test de cobertura de caracteres); B-02 → "exactamente M"
+  (`boost_error=False`). Spec v1.1 en PR aparte (sin spec-writer). Detalle original:
 - **CP-3 · stop_tokens_qr B-01** — design §5: la etiqueta PNG usa "la fuente por defecto de Pillow o
   DejaVuSans si está disponible". La fuente por defecto de Pillow 13 (Aileron) no tiene glifos para
   `àèéíòóúçñ…` (comprobado) y DejaVuSans no está en macOS ni en imágenes Docker slim → 620 de
