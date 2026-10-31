@@ -98,3 +98,7 @@
 ## 2026-10-31 · stop_tokens_qr · CP-3 decidido (spec v1.1 pendiente de PR)
 - B-01 → incluir DejaVuSans.ttf y su licencia + test de cobertura de caracteres. B-02 → nivel QR
   "exactamente M" (`boost_error=False`). La persona prepara la spec v1.1 en una PR aparte.
+
+## 2026-11-01 · stop_tokens_qr · spec_blocked → spec_approved (v1.1, CP-1) → implementing
+- Spec v1.1 (PR #12) resuelve B-01/B-02. `feat/stop_tokens_qr` rebasada sobre `develop`; se
+  reanuda desde T-04. (`occupancy_sensor` cerrada en su rama, PR #13.)

@@ -61,7 +61,7 @@
       "order": 3,
       "block": 1,
       "title": "Tokens firmados de parada y generación de QR por CLI",
-      "status": "spec_blocked",
+      "status": "implementing",
       "depends_on": [
         "gtfs_import"
       ],
