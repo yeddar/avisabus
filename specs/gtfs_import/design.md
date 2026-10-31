@@ -1,6 +1,6 @@
 # Importación del GTFS — design
 
-> Feature: `gtfs_import` · Versión: 1.1 · Estado: APPROVED
+> Feature: `gtfs_import` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-01, RF-02, RF-03, RF-04, RF-32 · Casos de uso: CU-11 · Depende de: project_scaffold
 
 ## 1. Resumen
@@ -78,7 +78,7 @@ activos. El "inicio del día de servicio" es mediodía menos 12 h en hora local 
 ### CLI
 
 ```
-avisabus gtfs import PATH [--yes]     PATH = directorio o .zip
+avisabus gtfs import PATH             PATH = directorio o .zip
 avisabus gtfs info [--directions]
 ```
 
@@ -273,14 +273,20 @@ Derivados (`build_derived`):
 
 ### Fixture `gtfs_mini`
 
-`backend/scripts/make_gtfs_mini.py --src data/gtfs/emt --lines 70,93,98,C2 --date 2026-11-04 --out backend/tests/fixtures/gtfs_mini`:
+`backend/scripts/make_gtfs_mini.py --src data/gtfs/emt --lines 70,93,98,C2 --date 2026-11-09 --out backend/tests/fixtures/gtfs_mini`:
 - conserva `agency`, `feed_info`, las rutas de esas líneas, sus viajes cuyos servicios estén
   activos en `--date` o en `--date - 1 día`, sus `stop_times`, las paradas y formas referenciadas,
   y las filas de `calendar`/`calendar_dates` de esos servicios;
+- **`--date` debe ser un lunes** (2026-11-09): así entran los servicios de lunes a jueves y, por
+  `--date − 1 día`, los del domingo. En la 98 el `route_id` 1054 (recorrido corto) solo circula de
+  lunes a viernes y el 1055 (recorrido completo) solo en fin de semana; con un día laborable y su
+  víspera laborable faltaría el 1055 (bloqueo B-01). Como los servicios de lunes a jueves se
+  guardan como filas de `calendar` con rango, la fixture tiene servicio cualquier día de lunes a
+  jueves dentro de la vigencia del feed;
 - incluye la parada **508** (servida por 70 y 93) y la **2070** (servida por la 98);
 - la 98 aporta una variante corta en el mismo sentido (`1054_487_2229`) y dos `route_id`; C2, dos
   `route_id` con medios bucles de giro opuesto;
-- objetivo de tamaño: < 2 MB en total (estimado en E-01: ≈ 1,40 MB).
+- objetivo de tamaño: < 2,5 MB en total (medido por el implementer: ≈ 2,15 MB).
 
 ## 9. Decisiones locales permitidas
 
