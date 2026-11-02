@@ -7,13 +7,16 @@
 **Feature en curso:** `sae_arrivals_source` — `implementing` (spec v1.1)
 
 ## Último paso
-Spec `sae_arrivals_source` v1.1 fusionada (PR #15, CP-3 resuelto). `feat/sae_arrivals_source`
-igualada a `develop`; feature en `implementing`. Implementer lanzado con T-01…T-07 y T-09
-(sin T-08 ni T-08b).
+Spec `sae_arrivals_source` v1.1 fusionada (PR #15). Implementer: T-01…T-07 y T-09 hechas
+(`progress/impl_sae_arrivals_source.md`, decisiones D-01…D-17). `./init.sh verify` en rojo solo por
+`test_sae_fixtures.py::test_a_real_peak_session_of_stop_508_shows_a_passage` (falta la grabación
+de T-08); 616 tests en verde, cobertura 99,51 %.
 
 ## Siguiente paso
 1. `sae_arrivals_source`: **T-08 (grabación `stop_508_peak`, ≥ 15 min, intervalo 20 s) el martes
-   2026-11-03 a las 7:45 con la persona**, con la CLI de T-07. Después, T-10 y reviewer (agente nuevo).
+   2026-11-03 a las 7:45 con la persona**, con la CLI de T-07. Comando en `progress/impl_sae_arrivals_source.md`
+   (requiere `AVISABUS_SAE_CONTACT` con un correo de contacto, AC-01). Tras grabar: test de fixtures,
+   README de fixtures, commit, T-10 (`./init.sh verify`) y reviewer (agente nuevo).
    T-08b (nocturna) es opcional.
 2. `stop_arrivals_api` (v1.2) → fin del bloque 1 (CP-6).
 3. Fuera de Claude Code: PR de specs para SP-01 (`occupancy_sensor`), S-01 y H-01 (`stop_tokens_qr`)

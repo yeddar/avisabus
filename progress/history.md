@@ -129,3 +129,7 @@
 ## 2026-11-02 · sae_arrivals_source · spec_approved → implementing
 - E-01 ya hecha (no se repite). Implementer con T-01…T-07 y T-09; T-08 (grabación en hora punta)
   queda para el martes 2026-11-03 a las 7:45 con la persona; T-08b opcional.
+
+## 2026-11-02 · sae_arrivals_source · implementing (T-01…T-07, T-09 hechas)
+- Parser `QR.php`, fuente HTTP, caché, grabación/replay, CLI `sae fetch`/`record` y composición.
+  Verify en rojo solo por el test de AC-19 (a), que espera la grabación `stop_508_peak` (T-08, 2026-11-03 7:45).
