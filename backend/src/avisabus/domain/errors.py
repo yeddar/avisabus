@@ -18,3 +18,16 @@ class NoActiveFeedError(DomainError):
 
     def __init__(self) -> None:
         super().__init__("no active GTFS feed")
+
+
+class ArrivalsUnavailableError(DomainError):
+    """Real-time arrivals of a stop cannot be obtained (sae_arrivals_source design §6).
+
+    `stop_id` is the stop; `reason` is `timeout`, `network`, `http_<code>`, `unparseable`,
+    `no_recording` or the error recorded in a replayed session.
+    """
+
+    def __init__(self, stop_id: str, reason: str) -> None:
+        self.stop_id = stop_id
+        self.reason = reason
+        super().__init__(f"arrivals unavailable ({reason})")
