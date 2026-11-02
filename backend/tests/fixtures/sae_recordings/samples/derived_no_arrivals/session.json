@@ -1,0 +1,11 @@
+{
+  "started_at": "2026-11-02T11:00:11Z",
+  "stops": [
+    "508"
+  ],
+  "interval_s": null,
+  "source_url_template": "https://www.emtvalencia.es/QR.php?sec=est&p={stop_id}",
+  "source_format": "qrphp_html",
+  "derived_from": "progress/explore_sae_samples/stop508_qrphp_https_20261102T110011Z.body",
+  "note": "Derived (not real): the four arrival blocks (<div style=\"padding-left: 5px;...\">...</div>) were removed; the stop header and the rest of the page are unchanged."
+}

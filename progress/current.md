@@ -4,21 +4,30 @@
 
 **Fecha:** 2026-11-02
 **Fase:** Implementación — Bloque 1 (Cimientos y datos)
-**Feature en curso:** `sae_arrivals_source` — `spec_approved` v1.1 (CP-3 resuelto)
+**Feature en curso:** `sae_arrivals_source` — `done` (PR abierta, pendiente de fusión)
 
 ## Último paso
-PR #13 (`occupancy_sensor`) y PR #14 (`stop_tokens_qr`) fusionadas: 4/6 features del bloque 1 en
-`done`. La persona da paso a `sae_arrivals_source`: rama `feat/sae_arrivals_source`, exploración E-01
-completada (`progress/explore_sae.md`, muestras en `progress/explore_sae_samples/`) → CP-3.
+`sae_arrivals_source` (spec v1.1): T-01…T-10 hechas; T-08 grabada el lunes 2026-11-02 20:42–21:07
+(fuera de hora punta, a petición de la persona; paradas 508 y 2070, 3 pasos en la 508). Revisión
+ciclo 1: **APPROVED** sin bloqueantes. `done`; PR contra `develop` abierta (sin fusionar).
 
 ## Siguiente paso
-1. `sae_arrivals_source`: **la persona decide el CP-3** → spec-writer o PR de spec → CP-1 → implementer. **T-08 (grabación `stop_508_peak`, ≥ 15 min
-   en hora punta) se coordina con la persona** (se graba con la CLI de T-07).
+1. La persona revisa y fusiona la PR de `sae_arrivals_source`.
 2. `stop_arrivals_api` (v1.2) → fin del bloque 1 (CP-6).
 3. Fuera de Claude Code: PR de specs para SP-01 (`occupancy_sensor`), S-01 y H-01 (`stop_tokens_qr`)
-   — la prepara la persona; specs del bloque 2 (PR #7).
+   y corrección `parser.py`/`qrphp_parser.py` + NB-6 de `sae_arrivals_source` — la prepara la persona;
+   specs del bloque 2 (PR #7).
+4. T-08b (grabación nocturna, opcional) cuando la persona quiera.
 
 ## Pendiente para specs futuras
+- **sae_arrivals_source NB-1 → `stop_arrivals_api`:** la caché negativa relanza la misma instancia
+  de excepción y su traza crece con cada acierto (`cache.py:67,76`); usar `with_traceback(None)`.
+- **sae_arrivals_source NB-6:** alinear design (`build_arrivals_source` devuelve
+  `CachedArrivalsSource`, D-12; `interval_s: null` en sesiones E-01, D-08) y `parser.py` §3.
+- **sae_arrivals_source → `stop_arrivals_api`:** `gtfs_mini` solo cubre la línea 98 de la parada
+  2070 (73, 95, 99 sin GTFS). NB-2/NB-7 (tests de composición), NB-3 (detector de pasos laxo),
+  NB-4 (comando de regeneración del README), NB-5 (nombre `stop_508_peak`), NB-8 (definir
+  `AVISABUS_SAE_CONTACT` en dev/prod → `deployment_rpi`).
 - **Bloque 4 (`driver_session`/`driver_ui`):** en C2 y C3 cada sentido agrupa dos medios bucles
   con destinos distintos; al elegir línea y sentido, el conductor debe ver **todos** los destinos del
   sentido (no solo el principal), y la comprobación de "fuera de recorrido" debe usar
@@ -55,4 +64,4 @@ muestras derivadas para "sin llegadas" y `HH:MM`, grabación nocturna opcional (
 enviado a EMT pidiendo permiso para `getSAE` y preguntando por una API oficial.
 
 ## Bloqueos
-Ninguno. Pendiente: T-08 (grabación `stop_508_peak`) el martes 2026-11-03 a las 7:45.
+Ninguno. 

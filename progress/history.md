@@ -125,3 +125,20 @@
 - E-01: `getSAE` (XML) cerrado a terceros; la fuente es `QR.php` (HTML), enlazada por el
   Ajuntament. La persona aprueba la v1.1 (ADR-015, AC-21, AC-22, T-08b) y envía un correo a EMT
   solicitando permiso para `getSAE` y preguntando por una API oficial.
+
+## 2026-11-02 · sae_arrivals_source · spec_approved → implementing
+- E-01 ya hecha (no se repite). Implementer con T-01…T-07 y T-09; T-08 (grabación en hora punta)
+  queda para el martes 2026-11-03 a las 7:45 con la persona; T-08b opcional.
+
+## 2026-11-02 · sae_arrivals_source · implementing (T-01…T-07, T-09 hechas)
+- Parser `QR.php`, fuente HTTP, caché, grabación/replay, CLI `sae fetch`/`record` y composición.
+  Verify en rojo solo por el test de AC-19 (a), que espera la grabación `stop_508_peak` (T-08, 2026-11-03 7:45).
+
+## 2026-11-02 · sae_arrivals_source · implementing → in_review
+- T-08 adelantada a petición de la persona: grabación real de 25 min (lunes 20:42–21:07, fuera de
+  hora punta), paradas 508 y 2070, 0 fallos; 3 pasos en la 508 (70, 93, 70). Test de AC-19 (a)
+  relajado a "508 ∈ stops" (D-18). `./init.sh verify` en verde (617 tests, cobertura 99,51 %).
+
+## 2026-11-02 · sae_arrivals_source · in_review → done
+- Revisión ciclo 1: APPROVED (22 AC con evidencia, verify en verde). No bloqueantes NB-1…NB-8
+  anotados en `current.md`. PR contra `develop` abierta, sin fusionar. Bloque 1: 5/6 en `done`.

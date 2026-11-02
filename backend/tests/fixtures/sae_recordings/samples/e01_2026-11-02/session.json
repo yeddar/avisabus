@@ -1,0 +1,12 @@
+{
+  "started_at": "2026-11-02T10:59:09Z",
+  "stops": [
+    "508",
+    "2070",
+    "99999"
+  ],
+  "interval_s": null,
+  "source_url_template": "https://www.emtvalencia.es/QR.php?sec=est&p={stop_id}",
+  "source_format": "qrphp_html",
+  "note": "Real responses of exploration E-01 (manual curl requests at irregular intervals, some over http://; same content as https://). Converted from progress/explore_sae_samples/."
+}
