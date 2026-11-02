@@ -2,23 +2,20 @@
 
 > Fichero vivo: lo reescribe el orquestador al final de cada sesión.
 
-**Fecha:** 2026-11-01
+**Fecha:** 2026-11-02
 **Fase:** Implementación — Bloque 1 (Cimientos y datos)
-**Feature en curso:** ninguna. `occupancy_sensor` fusionada (PR #13); `stop_tokens_qr` en `done`, PR #14 rebasada, pendiente de fusión
+**Feature en curso:** `sae_arrivals_source` (`exploring`, E-01)
 
 ## Último paso
-PR #13 (`occupancy_sensor`) fusionada. `feat/stop_tokens_qr` rebasada sobre `develop`: conflictos de
-`progress/` resueltos por el orquestador; los de código (`config.py`, `pyproject.toml`/`uv.lock`,
-`domain/errors.py`, `cli/container.py`, `cli/main.py`) por el implementer, conservando ambas features.
-Commit 0128582: tres tests de `occupancy_sensor` que comparan stdout fijan ahora un secreto de token
-(el aviso `security.dev_stop_token_secret` los rompía); solo tests. `./init.sh verify` en verde.
+PR #13 (`occupancy_sensor`) y PR #14 (`stop_tokens_qr`) fusionadas: 4/6 features del bloque 1 en
+`done`. La persona da paso a `sae_arrivals_source`: rama `feat/sae_arrivals_source`, exploración E-01.
 
 ## Siguiente paso
-1. La persona fusiona la PR #14 (`stop_tokens_qr`).
-2. `sae_arrivals_source`: **esperar aviso de la persona** antes de empezar E-01 (requiere red y la
-   grabación de 15 min en la parada 508 en hora punta, `stop_508_peak`).
-3. `stop_arrivals_api` (v1.2).
-4. Fuera de Claude Code: PR de specs para SP-01 (`occupancy_sensor`), S-01 y H-01 (`stop_tokens_qr`)
+1. `sae_arrivals_source`: E-01 (endpoint y formato reales del SAE, paradas 508 y 2070; red) →
+   si contradice design §4 → CP-3; si no → implementer. **T-08 (grabación `stop_508_peak`, ≥ 15 min
+   en hora punta) se coordina con la persona** (se graba con la CLI de T-07).
+2. `stop_arrivals_api` (v1.2) → fin del bloque 1 (CP-6).
+3. Fuera de Claude Code: PR de specs para SP-01 (`occupancy_sensor`), S-01 y H-01 (`stop_tokens_qr`)
    — la prepara la persona; specs del bloque 2 (PR #7).
 
 ## Pendiente para specs futuras

@@ -111,3 +111,7 @@
 - PR #13 fusionada; `feat/stop_tokens_qr` rebasada sobre `develop`. Conflictos de código resueltos
   conservando ambas features; fix solo de tests (0128582) por el aviso del secreto de desarrollo en
   tests de `occupancy_sensor` que comparan stdout.
+
+## 2026-11-02 · stop_tokens_qr · PR #14 fusionada · sae_arrivals_source · spec_approved → exploring
+- PR #14 fusionada tras el rebase (bloque 1: 4/6 en `done`).
+- La persona da paso a `sae_arrivals_source`; rama `feat/sae_arrivals_source`, exploración E-01.
