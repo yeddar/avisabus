@@ -1,0 +1,31 @@
+1265 | 60 | Est.del Nord | 1 | 0:Sant Agustí(327) | 1 | single_direction | None | 0
+1265 | C3 | Ed. Bosca | 1 | 0:Conselleria d'Educació(471); 1:Eduard Boscà - Balears(470) | 2 | score | {0: (0.0, "Conselleria d'Educació"), 1: (0.25, 'Eduard Boscà - Balears')} | None
+1266 | 60 | Torrefiel | 1 | 1:Torrefiel(319) | 1 | single_direction | None | 1
+1266 | C3 | C. Benlloch | 1 | 0:Avinguda Campanar - Centre de Salut(448); 1:Cardenal Benlloch (imparell) - Port(450) | 2 | score | {0: (0.0, 'Avinguda Campanar - Centre de Salut'), 1: (0.2, 'Cardenal Benlloch (imparell) - Port')} | None
+1349 | 27 | La Torre | 1 | 1:La Torre(144) | 1 | single_direction | None | 1
+1349 | 64 | Hosp. La Fe | 1 | 0:Bulevard Sud (imparell) - Hospital La Fe(332) | 1 | single_direction | None | 0
+166 | 81 | Blasco Ibáñez | 1 | 1:Blasco Ibáñez - Serradora(105) | 1 | single_direction | None | 1
+1679 | C3 | Campanar | 1 | 0:Conselleria d'Educació(471) | 1 | single_direction | None | 0
+1751 | 99 | P. Congressos | 1 | 0:Mendizábal - Doctor Álvaro López(383); 1:Palau de Congressos(379) | 2 | score | {0: (0.0, 'Mendizábal - Doctor Álvaro López'), 1: (0.25, 'Palau de Congressos')} | None
+2014 | 16 | Vinalesa | 2 | 0:Poeta Querol - Teatre Principal(293); 1:Vinalesa - Plaça d'Ausiàs March(290) | 2 | score | {0: (0.0, 'Poeta Querol - Teatre Principal'), 1: (0.2, "Vinalesa - Plaça d'Ausiàs March")} | None
+2014 | 26 | Moncada | 1 | 0:Poeta Querol - Teatre Principal(49); 1:Moncada - Alfara(46) | 2 | score | {0: (0.0, 'Poeta Querol - Teatre Principal'), 1: (0.5, 'Moncada - Alfara')} | 1
+2070 | 73 | Sant Isidre | 1 | 1:Sant Isidre(435) | 1 | single_direction | None | 1
+2230 | 99 | La Malva-rosa | 1 | 0:Mendizábal - Doctor Álvaro López(383); 1:Palau de Congressos(379) | 2 | score | {0: (0.0, 'Mendizábal - Doctor Álvaro López'), 1: (0.0, 'Palau de Congressos')} | None
+2271 | 93 | Av. Cid | 1 | 0:Passeig Marítim - Hospital Malva-rosa(418); 1:Avinguda del Cid(403) | 2 | score | {0: (0.0, 'Passeig Marítim - Hospital Malva-rosa'), 1: (0.667, 'Avinguda del Cid')} | 1
+2277 | 72 | Sant Isidre | 2 | 0:Xàtiva - Institut Lluís Vives(169); 1:Sant Isidre(165) | 2 | score | {0: (0.0, 'Xàtiva - Institut Lluís Vives'), 1: (1.0, 'Sant Isidre')} | 1
+2281 | 16 | Vinalesa | 2 | 1:Vinalesa - Plaça d'Ausiàs March(290) | 1 | single_direction | None | 1
+2281 | 26 | Moncada | 1 | 1:Moncada - Alfara(46) | 1 | single_direction | None | 1
+2281 | 4 | Natzaret | 2 | 1:Natzaret(333) | 1 | single_direction | None | 1
+2281 | 70 | Alboraia | 2 | 1:Alboraia(302) | 1 | single_direction | None | 1
+2281 | 8 | Pta.de la Mar | 1 | 0:Porta de la Mar - Glorieta(350) | 1 | single_direction | None | 0
+2281 | 81 | Blasco Ibáñez | 1 | 1:Blasco Ibáñez - Serradora(105) | 1 | single_direction | None | 1
+229 | C3 | Campanar | 1 | 0:Avinguda Campanar - Centre de Salut(448); 1:Cardenal Benlloch (imparell) - Port(450) | 2 | score | {0: (0.2, 'Avinguda Campanar - Centre de Salut'), 1: (0.0, 'Cardenal Benlloch (imparell) - Port')} | None
+231 | C3 | Campanar | 1 | 0:Conselleria d'Educació(471); 1:Eduard Boscà - Balears(470) | 2 | score | {0: (0.0, "Conselleria d'Educació"), 1: (0.0, 'Eduard Boscà - Balears')} | None
+2312 | 62 | Benimàmet | 1 | 1:Terramelar(441) | 1 | single_direction | None | 1
+2403 | 4 | Natzaret | 2 | 0:Plaça de l'Ajuntament - Ateneu(340); 1:Natzaret(333) | 2 | score | {0: (0.0, "Plaça de l'Ajuntament - Ateneu"), 1: (1.0, 'Natzaret')} | 1
+487 | 93 | Av. Cid | 1 | 1:Avinguda del Cid(403) | 1 | single_direction | None | 1
+508 | 70 | Alboraia | 2 | 1:Alboraia(302) | 1 | single_direction | None | 1
+508 | 93 | Pass. Marítim | 1 | 0:Passeig Marítim - Hospital Malva-rosa(418) | 1 | single_direction | None | 0
+605 | C3 | Campanar | 1 | 0:Avinguda Campanar - Centre de Salut(448) | 1 | single_direction | None | 0
+830 | 19 | Est.del Nord | 1 | 0:Periodista Azzati - Plaça de l'Ajuntament(352) | 1 | single_direction | None | 0
+TOTAL arrivals=37 in_network=37 resolved=29 pct=78.4%

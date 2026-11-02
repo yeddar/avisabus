@@ -7,15 +7,18 @@
 **Feature en curso:** `stop_arrivals_api` v1.3 — `exploring` (rama `feat/stop_arrivals_api`)
 
 ## Último paso
-PR #18 (ajustes de cierre del bloque 1) fusionada: 5/6 features del bloque 1 en `done`.
-`stop_arrivals_api` → `exploring`; explorer con E-01 (destinos SAE frente a headsigns GTFS,
-circulares) y E-02 (tolerancia de emparejamiento) → `progress/explore_destinations.md`.
+PR #18 fusionada. `stop_arrivals_api` en `exploring`: E-01 y E-02 completadas
+(`progress/explore_destinations.md`, muestras nocturnas en `progress/explore_destinations_samples/`,
+22 consultas al SAE). Resolución de sentido 99,2 % de las llegadas reales (≈ 95,5 % estimado en toda
+la red; suelo 91,6 %) → no salta el umbral de CP-3 del 90 %.
 
 ## Siguiente paso
-1. **Parar tras la exploración** y revisar los resultados con la persona antes de implementar
-   (si E-01 resuelve < 90 % de las llegadas en red → CP-3).
-2. Implementer → reviewer → PR. Fin del bloque 1 (CP-6).
-3. T-08b de `sae_arrivals_source` (nocturna) opcional.
+1. **La persona revisa la exploración** (pedido explícito) y decide los puntos de
+   "Checkpoints pendientes". Después: implementer → reviewer → PR. Fin del bloque 1 (CP-6).
+2. Consultas diurnas a las cabeceras de C1 (1959, 2277) y C2 (166, 346, 691, 1057) antes de cerrar T-02
+   (recomendación del explorer).
+3. T-08b de `sae_arrivals_source` (nocturna): parcialmente cubierta por las muestras de E-01 de
+   `stop_arrivals_api` (`night_20261102/`).
 
 ## Pendiente para specs futuras
 - **stop_tokens_qr O-01:** `sae fetch|record` ya no emiten `security.dev_stop_token_secret` (no usan
@@ -56,10 +59,19 @@ circulares) y E-02 (tolerancia de emparejamiento) → `progress/explore_destinat
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Ninguno. CP-3 de `sae_arrivals_source` resuelto por la persona (2026-11-02): fuente `QR.php`
-(ADR-015), cabecera de parada obligatoria (AC-21), `source_format` en las grabaciones (AC-22),
-muestras derivadas para "sin llegadas" y `HH:MM`, grabación nocturna opcional (T-08b). Correo
-enviado a EMT pidiendo permiso para `getSAE` y preguntando por una API oficial.
+Revisión de la exploración de `stop_arrivals_api` por la persona. Decisiones propuestas:
+1. **Spec `stop_arrivals_api`:** quitar el alias `c → carrer` de `DEFAULT_ALIASES` (design §3 solo
+   permite añadir entradas); "C. Benlloch" es *Cardenal* Benlloch.
+2. **CP-3 ligero opcional:** emparejamiento por asignación óptima que preserva el orden en lugar del
+   voraz de design §3 (el voraz empareja mal con buses seguidos: 508/93 a 12 min, viaje que salta entre
+   refrescos) y tolerancia por defecto 10 min en vez de 20 (p95 5,4–5,9 min, máx. 6,6 min).
+3. Opcional: `min_score = 0,2`; cambiar el ejemplo de design §4 `"C2|Circular": 0` (sin evidencia)
+   por `"C3|Campanar": 0`. Aliases y 7 overrides propuestos como decisiones locales.
+4. **CP-3 de `sae_arrivals_source` (feature `done`):** el parser descarta el 29 % de las entradas
+   nocturnas (15/52): llegadas > ~60 min vienen como `HH:MM:SS` (no `HH:MM`) y en cabeceras como
+   `"{destino} -"` sin tiempo. La muestra real `night_20261102/2070` podría sustituir a la derivada.
+5. C1 y C2 no observadas (no circulan a las 23:30): si su texto en cabecera fuera genérico, 6 paradas
+   quedarían con `direction_id = null` (degradación acotada, no bloqueo).
 
 ## Bloqueos
 Ninguno. 

@@ -159,3 +159,8 @@
 ## 2026-11-02 · fix/bloque-1-ajustes fusionada (PR #18) · stop_arrivals_api · spec_approved → exploring
 - Rama `feat/stop_arrivals_api`. Exploración E-01 y E-02 → `progress/explore_destinations.md`;
   se para al terminar para revisarla con la persona.
+
+## 2026-11-02 · stop_arrivals_api · exploring (E-01, E-02 completadas; pendiente de revisión)
+- Resolución de sentido 99,2 % de 972 llegadas reales (≈ 95,5 % en red): sin CP-3 por umbral.
+  Propuestas: quitar alias `c → carrer`, asignación óptima y tolerancia 10 min. Detectado en
+  `sae_arrivals_source`: formatos `HH:MM:SS` y `"{destino} -"` no reconocidos (29 % nocturno).
