@@ -304,12 +304,13 @@ frontend/src/
 | ADR-011 | Esquema con `create_all` y sin migraciones; datos de red versionados por `feed_version_id` con activación atómica | Alembic | Los datos de red son reimportables y los efímeros no necesitan migrarse; menos piezas |
 | ADR-012 | Repositorios SQLite síncronos invocados desde casos de uso `async` | SQLAlchemy async / aiosqlite | Consultas locales de milisegundos; más simple de testear |
 | ADR-013 | Identidad del autobús = viaje GTFS emparejado con el ETA (`TripMatcher`) | Identificador de vehículo | El SAE no publica vehículos; el viaje da una identidad estable para posición, ocupación y avisos |
+| ADR-015 | Tiempos de llegada leídos de la página `QR.php` (HTML) que enlaza el Ajuntament, con User-Agent identificado | XML `getSAE` mediante `emtvlcapi`/`pyemtvlc` | EMT restringe `getSAE` a su visor; usarlo exigiría imitar al visor y eludir un control de acceso. Permiso solicitado a EMT el 2026-11-02; si lo concede, adaptador nuevo tras `ArrivalsSource` |
 
 ## 12. Riesgos técnicos
 
 | ID | Riesgo | Impacto | Mitigación |
 |---|---|---|---|
-| R-01 | El endpoint del SAE cambia o bloquea el acceso | Sin tiempos reales | Respaldo GTFS; grabaciones para demo; adaptador aislado |
+| R-01 | El SAE cambia o bloquea el acceso (EMT ya cerró `getSAE` a terceros; `QR.php` es HTML y puede cambiar) | Sin tiempos reales | Respaldo GTFS; grabaciones para demo; parser aislado que falla de forma explícita (`unparseable`); permiso solicitado a EMT (ADR-015) |
 | R-02 | El `destino` del SAE no casa con los headsign del GTFS; el feed no trae `direction_id` | Aviso con sentido erróneo | Sentidos derivados y validados por la persona (`gtfs info --directions`); `DirectionResolver` con todos los headsigns de la parada, normalización, alias y *overrides*; tests con grabaciones reales |
 | R-03 | Recursos de la Raspberry (RAM/CPU) al importar `stop_times` (33 MB) | Importación lenta | Importación por lotes en streaming; importar en el Mac y copiar la BD si hace falta |
 | R-04 | Caducidad mensual del feed GTFS | Horarios desfasados | RF-02 + comprobación diaria |

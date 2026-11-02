@@ -1,0 +1,15 @@
+HTTP/1.1 200 OK
+Date: Mon, 02 Nov 2026 11:01:20 GMT
+Server: Apache
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept
+Access-Control-Allow-Methods: POST, GET, OPTIONS, PUT
+X-Permitted-Cross-Domain-Policies: none
+Vary: Accept-Encoding
+X-XSS-Protection: 1; mode=block
+X-Content-Type-Options: nosniff
+Cache-Control: private
+referrer-Policy: no-referrer
+Content-Type: text/html; charset=UTF-8
+Transfer-Encoding: chunked
+

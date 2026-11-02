@@ -2,23 +2,20 @@
 
 > Fichero vivo: lo reescribe el orquestador al final de cada sesión.
 
-**Fecha:** 2026-11-01
+**Fecha:** 2026-11-02
 **Fase:** Implementación — Bloque 1 (Cimientos y datos)
-**Feature en curso:** ninguna. `occupancy_sensor` fusionada (PR #13); `stop_tokens_qr` en `done`, PR #14 rebasada, pendiente de fusión
+**Feature en curso:** `sae_arrivals_source` — `spec_approved` v1.1 (CP-3 resuelto)
 
 ## Último paso
-PR #13 (`occupancy_sensor`) fusionada. `feat/stop_tokens_qr` rebasada sobre `develop`: conflictos de
-`progress/` resueltos por el orquestador; los de código (`config.py`, `pyproject.toml`/`uv.lock`,
-`domain/errors.py`, `cli/container.py`, `cli/main.py`) por el implementer, conservando ambas features.
-Commit 0128582: tres tests de `occupancy_sensor` que comparan stdout fijan ahora un secreto de token
-(el aviso `security.dev_stop_token_secret` los rompía); solo tests. `./init.sh verify` en verde.
+PR #13 (`occupancy_sensor`) y PR #14 (`stop_tokens_qr`) fusionadas: 4/6 features del bloque 1 en
+`done`. La persona da paso a `sae_arrivals_source`: rama `feat/sae_arrivals_source`, exploración E-01
+completada (`progress/explore_sae.md`, muestras en `progress/explore_sae_samples/`) → CP-3.
 
 ## Siguiente paso
-1. La persona fusiona la PR #14 (`stop_tokens_qr`).
-2. `sae_arrivals_source`: **esperar aviso de la persona** antes de empezar E-01 (requiere red y la
-   grabación de 15 min en la parada 508 en hora punta, `stop_508_peak`).
-3. `stop_arrivals_api` (v1.2).
-4. Fuera de Claude Code: PR de specs para SP-01 (`occupancy_sensor`), S-01 y H-01 (`stop_tokens_qr`)
+1. `sae_arrivals_source`: **la persona decide el CP-3** → spec-writer o PR de spec → CP-1 → implementer. **T-08 (grabación `stop_508_peak`, ≥ 15 min
+   en hora punta) se coordina con la persona** (se graba con la CLI de T-07).
+2. `stop_arrivals_api` (v1.2) → fin del bloque 1 (CP-6).
+3. Fuera de Claude Code: PR de specs para SP-01 (`occupancy_sensor`), S-01 y H-01 (`stop_tokens_qr`)
    — la prepara la persona; specs del bloque 2 (PR #7).
 
 ## Pendiente para specs futuras
@@ -52,7 +49,10 @@ Commit 0128582: tres tests de `occupancy_sensor` que comparan stdout fijan ahora
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Ninguno.
+Ninguno. CP-3 de `sae_arrivals_source` resuelto por la persona (2026-11-02): fuente `QR.php`
+(ADR-015), cabecera de parada obligatoria (AC-21), `source_format` en las grabaciones (AC-22),
+muestras derivadas para "sin llegadas" y `HH:MM`, grabación nocturna opcional (T-08b). Correo
+enviado a EMT pidiendo permiso para `getSAE` y preguntando por una API oficial.
 
 ## Bloqueos
-Ninguno.
+Ninguno. Pendiente: T-08 (grabación `stop_508_peak`) el martes 2026-11-03 a las 7:45.

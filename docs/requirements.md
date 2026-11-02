@@ -32,7 +32,7 @@
 | RF-08 | El sistema deberá cachear las respuestas del SAE por parada con TTL configurable (20 s por defecto). | M | OBJ-01 |
 | RF-09 | Si el SAE falla o no responde, el sistema deberá mostrar el horario teórico GTFS indicando "horario programado". | M | OBJ-01 |
 | RF-10 | La vista de parada deberá refrescarse automáticamente cada ≤ 30 s sin recargar la página. | M | OBJ-01 |
-| RF-11 | El sistema deberá normalizar las respuestas del SAE (`minutos` / `horaLlegada`) y mostrar también líneas ausentes del GTFS (p. ej. nocturnas), sin mapa. | M | OBJ-01 |
+| RF-11 | El sistema deberá normalizar las respuestas del SAE (minutos, hora `HH:MM` o "próximo") y mostrar también líneas ausentes del GTFS (p. ej. nocturnas), sin mapa. | M | OBJ-01 |
 
 ### 1.4 Posición estimada
 

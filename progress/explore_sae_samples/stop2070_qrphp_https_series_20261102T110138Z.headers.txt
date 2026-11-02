@@ -1,0 +1,12 @@
+HTTP/1.1 200 OK
+Date: Mon, 02 Nov 2026 11:01:39 GMT
+Server: Apache
+X-Permitted-Cross-Domain-Policies: none
+Vary: Accept-Encoding
+X-XSS-Protection: 1; mode=block
+X-Content-Type-Options: nosniff
+Cache-Control: private
+referrer-Policy: no-referrer
+Content-Type: text/html; charset=utf-8
+Transfer-Encoding: chunked
+
