@@ -1,5 +1,8 @@
 # Implementación: sae_arrivals_source
-Spec: specs/sae_arrivals_source/ (v1.1, APPROVED) · Ciclo de revisión: 0
+Spec: specs/sae_arrivals_source/ (v1.2, APPROVED) · Ciclo de revisión: 0 (v1.2)
+
+> **v1.2 (2026-11-02, rama `fix/bloque-1-ajustes`):** solo T-11 (NB-1), T-12 (NB-4, NB-7) y T-13.
+> T-01…T-10 son de la v1.1 (aprobadas en la revisión de ciclo 1). T-08b sigue opcional y no se hace.
 
 Primera pasada: T-01…T-07 y T-09 (E-01 ya estaba hecha, `progress/explore_sae.md`). Después,
 con la grabación hecha por la persona el 2026-11-02 por la tarde-noche: T-08 y T-10. T-08b
@@ -29,8 +32,44 @@ con la grabación hecha por la persona el 2026-11-02 por la tarde-noche: T-08 y 
 - [x] T-09 Composición `build_arrivals_source`, configuración, `.env.example` y tarea `sae.stats`
       en el ciclo de vida de la app (commit e7e8031)
 - [x] T-10 Verificación completa: `./init.sh verify` en verde (ver "Verificación")
+- [x] T-11 (v1.2, NB-1) La caché negativa guarda solo el motivo y lanza una instancia nueva en
+      cada acierto (AC-11) (commit d90898a)
+- [x] T-12 (v1.2, NB-4, NB-7) Comando de regeneración del README con `--out` nueva; clientes HTTP
+      de los tests de composición cerrados (commit dd60eae)
+- [x] T-13 (v1.2) Verificación completa: `./init.sh verify` en verde (commit de este fichero)
 
 ## Decisiones locales
+
+### v1.2
+- **D-19 Caché negativa (T-11, AC-11):** `_Entry` guarda `error_reason: str | None` en lugar de la
+  excepción. En cada acierto se lanza `ArrivalsUnavailableError(stop_id, error_reason)` nuevo; el
+  `stop_id` es la clave de la entrada (el mismo que el del error original). No hay subclases de
+  `ArrivalsUnavailableError` (`SaeUnparseableError` no lo es y se traduce antes a
+  `unparseable`), así que el tipo se conserva.
+- **D-20 Ruta single-flight sin cambios (AC-10):** los llamantes concurrentes de **una misma**
+  consulta siguen recibiendo la misma instancia (AC-10: "el mismo error"; design §3: esperan el
+  mismo `Future`). La traza de esa instancia solo crece con el número de llamantes de esa consulta
+  concreta, no con los aciertos durante `error_ttl`, que es lo que pide AC-11. No apliqué
+  `with_traceback(None)` en esa ruta (sugerencia de NB-1) porque no lo pide la spec v1.2 y el test
+  de AC-10 comprueba la identidad.
+- **D-21 Tests de AC-11:** `test_failure_is_cached_for_the_error_ttl` ya no exige identidad con el
+  primer error (ahora compara `stop_id` y `reason`). Dos tests nuevos: aciertos consecutivos dan
+  objetos distintos con el mismo `stop_id`/`reason` (con `http_503`, para que el motivo no sea el
+  por defecto), y tras 200 aciertos todas las trazas tienen el mismo número de frames, no más que
+  la original, y la original no crece. `FakeSource` gana un atributo `reason`.
+- **D-22 README (T-12, NB-4):** el comando de regeneración usa una carpeta `--out` nueva
+  (`stop_508_<AAAA-MM-DD>`), con las paradas y la duración de la sesión actual (508 y 2070, 20 s,
+  1500 s), y explica que `sae record` no sobrescribe, cómo usar la sesión nueva con
+  `AVISABUS_SAE_REPLAY_DIR` y que sustituir `stop_508_peak` es una decisión aparte.
+- **D-23 Clientes HTTP (T-12, NB-7):** los tres `httpx.AsyncClient()` sueltos de
+  `test_sae_compose.py` pasan a `async with`; `test_missing_replay_session_stops_the_composition`
+  pasa a ser `async` para poder hacerlo. El comando de la tarea (`-W error::ResourceWarning`) ya
+  pasaba antes del cambio, porque httpx no emite `ResourceWarning` si no llegó a abrir conexiones:
+  el cambio es de higiene y no tiene un test que falle sin él. NB-2 (el test
+  `test_cache_limits_come_from_the_settings` no comprueba el TTL de error configurado) no está en
+  el alcance de la v1.2 y no lo he tocado más allá del cliente.
+
+### v1.1
 
 Dentro de design §9 (reglas del parser derivadas de E-01, librería de parseo):
 
@@ -140,6 +179,16 @@ Observaciones no bloqueantes para la persona/spec-writer y el reviewer:
   `<contacto>`.
 
 ## Verificación
+
+### v1.2 (2026-11-02, rama `fix/bloque-1-ajustes`, tras el commit dd60eae)
+- T-11: `uv run pytest tests/unit/test_sae_cache.py` → 15 passed (los 2 tests nuevos fallaban
+  antes del cambio).
+- T-12: `uv run pytest tests/unit/test_sae_compose.py -W error::ResourceWarning` → 14 passed.
+- T-13: `./init.sh verify` → **todo en verde**: format, lint, mypy (75 ficheros), lint-imports
+  (2 contratos), pytest 623 passed / 2 deselected (cobertura `domain`+`application` 99,51 %);
+  frontend format/lint/types/tests (7)/build; `feature_list.json` y trazabilidad AC→test OK.
+
+### v1.1
 
 `./init.sh verify` (2026-11-02, tras el commit ca36d15):
 
