@@ -1,4 +1,86 @@
-# Revisión: sae_arrivals_source
+# Revisión: sae_arrivals_source — v1.2
+Ciclo: 1 (v1.2) · Fecha: 2026-11-02 · Agente: reviewer · Spec: `specs/sae_arrivals_source/` v1.2 (APPROVED) · Rama: `fix/bloque-1-ajustes` (commits `d90898a` T-11, `dd60eae` T-12 y `485a88f` T-13 sobre `develop`)
+
+## Veredicto: APPROVED
+
+T-11, T-12 y T-13 están hechas. AC-11 (ampliado en v1.2) tiene dos tests nuevos que fallan con la
+implementación anterior: lo he comprobado restaurando `cache.py` de `develop`. Los 22 AC conservan
+su evidencia y `./init.sh verify` está en verde. Ningún hallazgo bloqueante. T-08b sigue
+opcional y no bloquea.
+
+## Matriz AC → evidencia
+
+| AC | Test(s) | Resultado | Nota |
+|---|---|---|---|
+| AC-01 | `tests/integration/test_sae_http_source.py` | OK | Sin cambios desde v1.1 |
+| AC-02 … AC-07 | `tests/unit/test_sae_parser.py` | OK | Sin cambios |
+| AC-08 | `test_sae_http_source.py` | OK | Sin cambios |
+| AC-09 | `tests/unit/test_sae_cache.py` | OK | Sin cambios |
+| AC-10 | `test_sae_cache.py` | OK | Sin cambios. Los llamantes concurrentes siguen recibiendo el mismo resultado o error de la `Task` compartida. |
+| **AC-11 (v1.2)** | `test_sae_cache.py::test_failure_is_cached_for_the_error_ttl`, `::test_each_cache_hit_raises_a_new_instance_with_the_same_stop_and_reason`, `::test_traceback_does_not_grow_with_cache_hits`, `::test_error_ttl_is_configurable` | OK | (1) Durante 5 s no se vuelve a consultar la fuente (`inner.calls == ["508"]`) y a los 5 s sí. (2) El original y 3 aciertos dan 4 objetos distintos, todos `ArrivalsUnavailableError` con el mismo `stop_id` y `reason` (`http_503`, distinto del valor por defecto del fake). (3) Tras 200 aciertos la traza tiene siempre la misma longitud, no supera la del original, y el original no cambia. **Mutación:** con `cache.py` de `develop` fallan los tests (2) y (3). Implementación: `cache.py:40-41` guarda solo `error_reason`, y `:68-69` crea la instancia nueva. |
+| AC-12 | `test_sae_cache.py` | OK | Sin cambios |
+| AC-13 | `test_sae_cache.py`, `test_sae_compose.py`, `test_main_sae.py` | OK | `test_stats_task_logs_the_cache_counters` usa ahora `async with httpx.AsyncClient()`; lo que comprueba no cambia. |
+| AC-14, AC-15 | `test_sae_recording.py`, `test_sae_replay.py` | OK | Sin cambios |
+| AC-16 | `test_sae_replay.py` | OK | Sin cambios |
+| AC-17, AC-18 | `tests/integration/test_cli_sae.py` | OK | Sin cambios |
+| AC-19 | `test_sae_fixtures.py`, `test_sae_parser.py`, `test_sae_replay.py` + revisión del README | OK | La sección "Regeneración" del README cambia (NB-4, ver abajo); las fixtures no. |
+| AC-20 | `test_sae_compose.py`, `test_main_sae.py` | OK | Los clientes HTTP se cierran (NB-7); las aserciones no cambian. |
+| AC-21 | `test_sae_parser.py`, `test_sae_http_source.py` | OK | Sin cambios |
+| AC-22 | `test_sae_compose.py`, `test_sae_recording.py`, `test_sae_replay.py`, `test_main_sae.py` | OK | `test_missing_replay_session_stops_the_composition` pasa a ser `async` para cerrar el cliente; sigue esperando `ConfigurationError`. |
+
+## Verificación ejecutada
+
+- `./init.sh verify` → **todo en verde** (exit 0): 645 passed y 2 deselected, cobertura del
+  99,52 %, lint-imports con 2 contratos respetados, frontend OK y trazabilidad OK (detalle en
+  `review_stop_tokens_qr.md`, misma ejecución).
+- `cd backend && uv run pytest tests/unit/test_sae_compose.py -W error::ResourceWarning` (la
+  verificación de T-12) → 14 passed.
+- `cd backend && uv run pytest tests/unit/test_sae_cache.py` → 15 passed. Con `cache.py` de
+  `develop` en una copia del scratchpad: 2 failed (los dos tests nuevos de AC-11) y 13 passed.
+- README: lo que dice coincide con el código y la fixture. `sae record` sale con 2 si `--out` ya
+  tiene `session.json` (`cli/sae.py:104-106`). `stop_508_peak/session.json` tiene las paradas
+  508 y 2070, intervalo de 20 s y 75 muestras por parada (unos 25 min). `stop_508_peak` es el
+  valor por defecto de `sae_replay_dir` (`config.py:53`).
+
+## Comprobación de `docs/verification.md` §4 (lo nuevo)
+
+- **Contrato:** design §3 "Caché (detalle)" v1.2 guarda solo el motivo y crea una instancia nueva
+  por acierto, y es lo que hace el código. Los puntos de design de NB-6 (`-> CachedArrivalsSource`
+  en `compose.py:20-22`; `interval_s: int | None` en `recording.py:34,53`) ya coincidían con el
+  código.
+- **Arquitectura:** sin cambios en `domain/`. Sin `datetime.now()`: los tiempos vienen de
+  `self._clock`.
+- **Tests:** sin red y con `FakeClock`. Los tests nuevos no son tautológicos (mutación).
+- **Privacidad:** sin cambios en los logs.
+- **Convenciones:** `fix(sae_arrivals_source)`, `test(sae_arrivals_source)` y `chore(progress)`.
+- **Alcance:** solo `cache.py`, `test_sae_cache.py`, `test_sae_compose.py` y el README de las
+  fixtures, todos en la lista de ficheros de T-11 y T-12.
+
+## Hallazgos
+
+### Bloqueantes
+
+Ninguno.
+
+### No bloqueantes
+
+- **O-01 — Por la ruta de la `Task` compartida, los llamantes concurrentes reciben la misma
+  instancia del error.** `backend/src/avisabus/adapters/outbound/sae/cache.py:78` (`return await
+  asyncio.shield(task)`). Lo pide AC-10 ("el mismo error a todas") y AC-11 v1.2 solo habla de los
+  aciertos de la caché, así que es conforme a la spec. La traza solo crece con el número de
+  llamantes concurrentes de un único fallo, no con la carga sostenida durante `error_ttl`, que
+  era el problema de NB-1. Lo anoto por si `stop_arrivals_api` registra trazas de este error.
+- Siguen abiertos de la revisión anterior, fuera del alcance de v1.2: NB-2 (el test de AC-20 no
+  avanza el reloj), NB-3 (el detector de pasos es laxo), NB-5 (nombre `stop_508_peak`) y NB-8
+  (`AVISABUS_SAE_CONTACT` vacío por defecto).
+
+### Problemas de spec
+
+Ninguno. NB-6 queda resuelto en el design v1.2.
+
+---
+
+# Revisión: sae_arrivals_source — v1.1 (revisión anterior)
 Ciclo: 1 · Fecha: 2026-11-02 · Agente: reviewer
 Spec: `specs/sae_arrivals_source/` v1.1 (APPROVED) · Rama: `feat/sae_arrivals_source` (base `develop`)
 

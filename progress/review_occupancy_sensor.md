@@ -1,4 +1,91 @@
-# Revisión: occupancy_sensor
+# Revisión: occupancy_sensor — v1.1
+Ciclo: 1 (v1.1) · Fecha: 2026-11-02 · Agente: reviewer · Spec: `specs/occupancy_sensor/` v1.1 (APPROVED) · Rama: `fix/bloque-1-ajustes` (commits `4d09934` T-07 y `ffb8f9d` T-08 sobre `develop`)
+
+## Veredicto: APPROVED
+
+T-07 y T-08 están hechas. AC-03 y AC-11, ampliados en v1.1, tienen tests de ejemplo y de
+propiedades (Hypothesis) que comparan con una fuerza bruta independiente, y fallan con las
+mutaciones relevantes. Los 14 AC conservan su evidencia y `./init.sh verify` está en verde.
+Ningún hallazgo bloqueante; dos observaciones no bloqueantes sobre la cobertura de tests.
+
+## Matriz AC → evidencia
+
+| AC | Test(s) | Resultado | Nota |
+|---|---|---|---|
+| AC-01, AC-02 | `tests/unit/test_occupancy_classifier.py` | OK | `classify_occupancy` se reorganiza con `_level` (`occupancy_classifier.py:59-64`) sin cambiar la regla. Los tests de fronteras 0,49/0,50/0,84/0,85 siguen en verde. |
+| **AC-03 (v1.1)** | `test_occupancy_classifier.py::test_a_level_without_any_whole_number_of_places_refuses_to_start` (capacidad 3 con 0,50/0,60, que es el ejemplo del design; capacidad 1 con los umbrales por defecto; capacidad 10 con 0,51/0,59), `::test_small_capacities_where_every_level_fits_are_accepted`, `::test_configuration_is_rejected_exactly_when_some_level_is_unreachable` (Hypothesis, 300 ejemplos); los tests de v1.0 (umbrales y `seats > capacity`); `tests/integration/test_main_composition.py` | OK | La propiedad comprueba **si y solo si**: `Settings` rechaza la configuración exactamente cuando algún nivel no es alcanzable, según una fuerza bruta sobre `0…capacidad` con `classify_occupancy` (`tests/support/occupancy.py:13-19`). **Mutación:** sin la comprobación nueva en `config.py:71-79`, fallan 4 tests. |
+| AC-04 … AC-10 | `test_simulated_occupancy_sensor.py`, `test_occupancy_simulation.py` | OK | Sin cambios en la simulación. El constructor recibe `thresholds`, y los tests le pasan `OccupancyThresholds()`. |
+| **AC-11 (v1.1)** | Unidad: `test_occupancy_classifier.py::test_override_takes_the_middle_of_the_band_of_the_default_thresholds` (22/61/83), `::test_override_follows_the_configured_thresholds` (0,40/0,90 → 20/65/95), `::test_override_is_moved_into_the_band_when_rounding_leaves_it` (capacidad 4 con 0,25/0,50 → MEDIUM 1), `::test_override_is_none_when_the_band_has_no_whole_number`, `::test_override_is_always_classified_as_the_requested_level_when_it_fits` (Hypothesis); `test_simulated_occupancy_sensor.py::test_override_forces_the_level_of_every_trip_of_the_line`, `::test_override_uses_the_configured_thresholds_and_capacity`, `::test_override_level_matches_the_classification_for_any_valid_configuration` (Hypothesis, sensor completo). Integración: `tests/integration/test_cli_occupancy.py` (CLI + BD + `FakeClock`) | OK | Coincide con design §3 "Forzado": punto medio de la banda (0,25 / 0,675 / 0,925 con los valores por defecto) y ajuste de uno en uno. El barrido con Hypothesis que pide el AC está a dos niveles: la función pura y el sensor. **Mutaciones:** sin el ajuste por redondeo fallan 7 tests (incluida la propiedad de `override_occupied`); con un sensor que ignora los umbrales configurados fallan 4. |
+| AC-12, AC-13, AC-14 | `test_cli_occupancy.py`, `test_occupancy_override_repository.py`, `test_set_occupancy_override.py`, `test_simulated_occupancy_sensor.py` | OK | Solo cambian los valores esperados (18/58/86 → 22/61/83), como consecuencia de AC-11 v1.1. La lógica de caducidad, `--clear`, `--list` y la caché de 5 s no cambia. |
+
+Corrección de `override_occupied` (`domain/services/occupancy_classifier.py:31-56`): el recorrido
+está acotado a `0…capacidad`, porque 0 plazas es siempre FREE (`medium > 0`) y `capacidad`
+plazas es siempre FULL (`full ≤ 1`). Como el nivel es monótono en `occupied`, recorrer de uno en
+uno visita todos los enteros de la banda, y saltarla (`(rank - target) * step > 0`) equivale a
+que la banda no tenga enteros. La validación de `Settings` y el sensor usan la misma función y
+la misma regla `_level` que el clasificador, así que no pueden discrepar.
+
+## Verificación ejecutada
+
+- `./init.sh verify` → **todo en verde** (exit 0): 645 passed y 2 deselected, cobertura del
+  99,52 % (`occupancy_classifier.py` al 100 %), lint-imports con 2 contratos respetados,
+  frontend OK y trazabilidad OK.
+- `cd backend && uv run pytest tests/unit/test_sae_cache.py tests/unit/test_simulated_occupancy_sensor.py tests/unit/test_occupancy_classifier.py tests/integration/test_cli_occupancy.py` → 117 passed.
+- **Mutaciones** en una copia del backend en el scratchpad:
+  - (M5) sin la comprobación de AC-03 v1.1 → 4 failed;
+  - (M6) sin el ajuste por redondeo → 7 failed;
+  - (M7) un sensor que usa los umbrales por defecto en vez de los configurados → 4 failed;
+  - (M8) `main.py` sin `settings.occupancy_thresholds()` → **0 fallos atribuibles**. El único
+    fallo, `test_env_example_documents_every_setting`, también falla sin mutar en la copia,
+    porque es un artefacto de la ruta de la copia (ver NB-1).
+
+## Comprobación de `docs/verification.md` §4 (lo nuevo)
+
+- **Contrato:** design §3 "Forzado" v1.1 (punto medio, ajuste y rechazo al arrancar) y §5
+  (`ConfigurationError` al construir `Settings`) se cumplen.
+- **Arquitectura:** `override_occupied` es una función pura de `domain/`, sin I/O. `config.py`
+  importa el servicio de dominio, que es una dirección permitida; lint-imports en verde.
+- **Tests:** sin red; Hypothesis con `derandomize=True` y `database=None` (reproducible y sin
+  escribir `.hypothesis/`); `FakeClock`.
+- **Privacidad:** el mensaje de `ConfigurationError` incluye la capacidad y los umbrales, que no
+  son datos personales ni secretos.
+- **Configuración:** `.env.example` documenta la nueva condición de arranque y el punto medio.
+- **Convenciones:** `fix(occupancy_sensor): …` y `chore(progress): …`.
+- **Alcance:** `occupancy_classifier.py` y `main.py` no están en la lista de ficheros de T-07. El
+  implementer lo anota en sus decisiones locales y ambos son necesarios: la función compartida y
+  el cableado de los umbrales configurados. Lo considero dentro del alcance.
+
+## Hallazgos
+
+### Bloqueantes
+
+Ninguno.
+
+### No bloqueantes
+
+- **NB-1 — Ningún test comprueba que `main.py` pase al sensor los umbrales configurados.**
+  `backend/src/avisabus/main.py:40` (`thresholds=settings.occupancy_thresholds()`). Si se
+  cambiara por `OccupancyThresholds()`, todo seguiría en verde (mutación M8): con umbrales no
+  por defecto, los forzados de la API se clasificarían con otros umbrales que el resto del
+  sistema, que es justo SP-01. Propuesta: en `tests/integration/test_main_composition.py`
+  (subproceso), definir unos umbrales no por defecto y un forzado, y comprobar el número de
+  plazas que devuelve `main.occupancy_sensor`. O basta con comprobar que el sensor guarda los
+  umbrales de `main.settings`.
+- **NB-2 — El barrido con Hypothesis del sensor completo no detecta por sí solo la falta del
+  ajuste por redondeo.** `backend/tests/unit/test_simulated_occupancy_sensor.py`
+  (`test_override_level_matches_the_classification_for_any_valid_configuration`). En la mutación
+  M6, ese test sigue en verde con los 300 ejemplos derandomizados. Lo detectan la propiedad
+  equivalente sobre `override_occupied` y el caso de ejemplo de capacidad 4, así que AC-11
+  sigue cubierto. Solo afectaría si algún día el sensor dejara de usar `override_occupied`. Para
+  reforzarlo se puede añadir `@example(...)` con la configuración (4, 0,25, 0,50).
+
+### Problemas de spec
+
+Ninguno.
+
+---
+
+# Revisión: occupancy_sensor — v1.0 (revisión anterior)
 Ciclo: 1 · Fecha: 2026-11-01 · Agente: reviewer
 
 ## Veredicto: APPROVED

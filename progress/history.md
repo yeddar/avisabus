@@ -151,3 +151,7 @@
 ## 2026-11-02 · stop_tokens_qr, sae_arrivals_source, occupancy_sensor · implementing → in_review
 - Tareas nuevas hechas (T-08/T-09, T-11…T-13, T-07/T-08); `./init.sh verify` en verde (645 tests,
   cobertura 99,52 %). Forzados por defecto pasan de 18/58/86 a 22/61/83 plazas (SP-01).
+
+## 2026-11-02 · stop_tokens_qr, sae_arrivals_source, occupancy_sensor · in_review → done
+- Revisión ciclo 1 (v1.2 / v1.2 / v1.1): APPROVED las tres, con pruebas de mutación; verify en verde.
+  No bloqueantes anotados en `current.md`. PR de `fix/bloque-1-ajustes` contra `develop`, sin fusionar.
