@@ -4,6 +4,12 @@ Run with `uvicorn avisabus.main:app`. An invalid configuration (`ConfigurationEr
 start-up here, before the database is opened.
 """
 
+import asyncio
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager, suppress
+
+import httpx
+from fastapi import FastAPI
 from sqlalchemy import Engine
 
 from avisabus.adapters.inbound.http.app import create_app
@@ -14,6 +20,8 @@ from avisabus.adapters.outbound.persistence.sqlite_network import SqliteNetworkR
 from avisabus.adapters.outbound.persistence.sqlite_occupancy_override import (
     SqliteOccupancyOverrideRepository,
 )
+from avisabus.adapters.outbound.sae.compose import build_arrivals_source
+from avisabus.background.sae_stats import run_sae_stats
 from avisabus.config import Settings
 from avisabus.domain.ports.clock import Clock
 from avisabus.domain.ports.occupancy import OccupancySensor
@@ -35,8 +43,27 @@ def build_occupancy_sensor(settings: Settings, engine: Engine, clock: Clock) -> 
 settings = Settings()
 configure_logging(settings.log_level)
 clock = SystemClock()
+http_client = httpx.AsyncClient()
+arrivals_source = build_arrivals_source(
+    settings, clock, http_client
+)  # may raise ConfigurationError
 engine = create_engine(settings)
 init_db(engine)
 occupancy_sensor = build_occupancy_sensor(settings, engine, clock)
 occupancy_thresholds = settings.occupancy_thresholds()
-app = create_app(settings)
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    """Runs the `sae.stats` task (sae_arrivals_source AC-13) and closes the SAE HTTP client."""
+    stats_task = asyncio.create_task(run_sae_stats(arrivals_source), name="sae.stats")
+    try:
+        yield
+    finally:
+        stats_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await stats_task
+        await http_client.aclose()
+
+
+app = create_app(settings, lifespan=lifespan)

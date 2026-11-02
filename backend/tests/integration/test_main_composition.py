@@ -11,6 +11,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.support.sae import E01
+
 PROBE = """
 import sqlite3, sys
 import avisabus.main as main
@@ -23,16 +25,18 @@ print(db.execute("SELECT name FROM sqlite_master WHERE name = 'occupancy_overrid
 """
 
 
-def _run_main(tmp_path: Path, **env: str) -> subprocess.CompletedProcess[str]:
+def _run_main(tmp_path: Path, probe: str = PROBE, **env: str) -> subprocess.CompletedProcess[str]:
     workdir = tmp_path / "root" / "backend"  # no .env here nor in its parent
     workdir.mkdir(parents=True)
     database = tmp_path / "avisabus.sqlite"
     clean = {k: v for k, v in os.environ.items() if not k.startswith("AVISABUS_")}
     clean.update({"AVISABUS_ENV": "test", "AVISABUS_DATABASE_URL": f"sqlite:///{database}"})
+    # In `test` the arrivals source is the replay (sae_arrivals_source AC-20): a real session.
+    clean["AVISABUS_SAE_REPLAY_DIR"] = str(E01)
     # With a secret, stop_tokens_qr does not log its dev-secret warning on stdout.
     clean.update({"AVISABUS_STOP_TOKEN_SECRET": "x" * 32, **env})
     return subprocess.run(  # noqa: S603 - fixed interpreter and script
-        [sys.executable, "-c", PROBE, str(database)],
+        [sys.executable, "-c", probe, str(database)],
         cwd=workdir,
         env=clean,
         capture_output=True,

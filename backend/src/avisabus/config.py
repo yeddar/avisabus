@@ -5,6 +5,7 @@ The backend runs from `backend/`, so the repository-root `.env` is read as `../.
 Every variable must be documented in the repository's `.env.example`.
 """
 
+from pathlib import Path
 from typing import Literal, Self
 
 import structlog
@@ -42,8 +43,13 @@ class Settings(BaseSettings):
     occupancy_threshold_medium: float = 0.50
     occupancy_threshold_full: float = 0.85
     stop_token_secret: SecretStr | None = None
+    arrivals_source: Literal["http", "replay"] | None = None
     sae_url_template: str = "https://www.emtvalencia.es/QR.php?sec=est&p={stop_id}"
     sae_timeout_s: float = Field(default=3, gt=0)
+    sae_cache_ttl_s: float = Field(default=20, ge=0)
+    sae_error_ttl_s: float = Field(default=5, ge=0)
+    sae_max_concurrency: int = Field(default=4, ge=1)
+    sae_replay_dir: Path = Path("tests/fixtures/sae_recordings/stop_508_peak")
     sae_contact: str = ""
 
     @model_validator(mode="after")
@@ -81,6 +87,12 @@ class Settings(BaseSettings):
                 "AVISABUS_SAE_URL_TEMPLATE must contain {stop_id} and no other placeholder"
             )
         return self
+
+    def resolved_arrivals_source(self) -> Literal["http", "replay"]:
+        """sae_arrivals_source AC-20: `replay` by default in `test`, `http` in `dev`/`prod`."""
+        if self.arrivals_source is not None:
+            return self.arrivals_source
+        return "replay" if self.env == "test" else "http"
 
     @model_validator(mode="after")
     def _check_stop_token_secret(self) -> Self:
