@@ -133,3 +133,8 @@
 ## 2026-11-02 · sae_arrivals_source · implementing (T-01…T-07, T-09 hechas)
 - Parser `QR.php`, fuente HTTP, caché, grabación/replay, CLI `sae fetch`/`record` y composición.
   Verify en rojo solo por el test de AC-19 (a), que espera la grabación `stop_508_peak` (T-08, 2026-11-03 7:45).
+
+## 2026-11-02 · sae_arrivals_source · implementing → in_review
+- T-08 adelantada a petición de la persona: grabación real de 25 min (lunes 20:42–21:07, fuera de
+  hora punta), paradas 508 y 2070, 0 fallos; 3 pasos en la 508 (70, 93, 70). Test de AC-19 (a)
+  relajado a "508 ∈ stops" (D-18). `./init.sh verify` en verde (617 tests, cobertura 99,51 %).
