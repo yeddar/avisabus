@@ -1,7 +1,8 @@
 """`avisabus qr generate (--stop ID ... | --all) [--format svg|png] [--out DIR]`.
 
 stop_tokens_qr design §3: the CLI writes one file per stop and `index.csv` (UTF-8, header
-`stop_id,name,url,file`). Exit codes: 0 success, 1 no feed imported, 2 some stop does not exist.
+`stop_id,name,url,file`). Exit codes: 0 success, 1 no feed imported, 3 some stop does not exist
+(2 is left to Typer/Click for usage errors, e.g. neither `--stop` nor `--all`).
 """
 
 import csv
@@ -22,7 +23,7 @@ from avisabus.domain.errors import NoActiveFeedError
 from avisabus.logging import configure_logging
 
 EXIT_NO_FEED = 1
-EXIT_MISSING_STOP = 2
+EXIT_MISSING_STOP = 3
 INDEX_FILE = "index.csv"
 INDEX_HEADER = ("stop_id", "name", "url", "file")
 

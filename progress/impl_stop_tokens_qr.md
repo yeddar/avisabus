@@ -1,10 +1,11 @@
 # Implementación: stop_tokens_qr
-Spec: specs/stop_tokens_qr/ (v1.1, APPROVED) · Ciclo de revisión: 0 · Agente: implementer · Fecha: 2026-11-01
+Spec: specs/stop_tokens_qr/ (v1.2, APPROVED) · Ciclo de revisión: 0 (v1.2) · Agente: implementer · Fecha: 2026-11-02
 
+> **v1.2 (2026-11-02, rama `fix/bloque-1-ajustes`):** solo T-08 (S-01 y H-01 de la revisión) y
+> T-09. T-01…T-07 son de la v1.0/v1.1 (revisadas y aprobadas en el ciclo 1).
+>
 > Retomada en T-04 tras la spec v1.1 (PR #12), que resuelve los bloqueos B-01 y B-02. La rama se
 > rebasó sobre `develop`, así que los hashes de T-01 a T-04 son los posteriores al rebase.
-> Todas las tareas están hechas y `./init.sh verify` pasa: lista para revisión.
-
 ## Tareas
 - [x] T-01 Configuración del secreto, validación por entorno y advertencia de desarrollo (AC-04, AC-05) (commit dbe22bd)
 - [x] T-02 `StopTokenSigner` y `HmacStopTokenSigner` (AC-01, AC-02, AC-03) (commit 6d57ee2)
@@ -15,8 +16,39 @@ Spec: specs/stop_tokens_qr/ (v1.1, APPROVED) · Ciclo de revisión: 0 · Agente:
 - [x] T-05 Caso de uso `GenerateStopQrCodes` (AC-08, AC-10, AC-11) (commit 76c7944)
 - [x] T-06 CLI `avisabus qr generate` (AC-07 – AC-11) (commit 4105f46)
 - [x] T-07 Verificación completa: `./init.sh verify` en verde (commit de progreso que cierra la implementación)
+- [x] T-08 (v1.2) S-01: código de salida 3 para paradas inexistentes; H-01: advertencia
+      `security.dev_stop_token_secret` en el log JSON, tras `configure_logging` (AC-05, AC-10)
+      (commit 8beef1a)
+- [x] T-09 (v1.2) Verificación completa: `./init.sh verify` en verde (commit de este fichero)
 
 ## Decisiones locales
+
+### v1.2 (T-08)
+- **`uses_dev_stop_token_secret`** es una `@property` de `Settings` (design §6): `True` si
+  `env != "prod"` y no hay secreto (ausente o vacío). El validador de `Settings` ya **no** registra
+  nada; solo falla en `prod`.
+- **Emisión de la advertencia:** una función `log_dev_stop_token_secret_warning(settings)` en
+  `config.py` (junto a `Settings`) registra el evento con `env` si la propiedad es `True`. La llaman
+  `main.py` justo después de `configure_logging` y `build_cli_container` (`cli/container.py`), que
+  todos los comandos de la CLI que usan el contenedor (`gtfs`, `occupancy`, `qr`) invocan justo
+  después de `configure_logging`. Así cubre "la CLI" sin tocar `gtfs.py` ni `occupancy.py`.
+  `sae fetch`/`sae record` no usan el contenedor ni el secreto, así que ya no muestran la
+  advertencia (antes salía, sin formato, al construir `Settings`).
+- **Destino del log JSON:** el que fija `configure_logging` (stdout, una línea JSON por evento),
+  igual que el resto de logs. Los tests de AC-05 comprueban que la línea del evento es JSON
+  (`level`, `env`, `timestamp`, `logger`) con la CLI real (`qr generate`, BD vacía) y con
+  `import avisabus.main` en un subproceso (`tests/integration/test_main_stop_token.py`).
+- **Test de `occupancy_sensor` adaptado:** `tests/integration/test_cli_occupancy.py` evitaba la
+  advertencia definiendo `AVISABUS_STOP_TOKEN_SECRET` en el entorno, pero ahora la emite el
+  contenedor con los `Settings` del test (sin secreto y con `configure_logging` anulado, así que
+  saldría por la consola delante de la salida de `--list`). El cambio mínimo: esos `Settings`
+  llevan `stop_token_secret="x" * 32` y se quita el `setenv`. No cambia lo que verifica.
+- **Errores de uso (`--stop`/`--all`):** el test ahora exige exactamente 2 (Click) y cita AC-10,
+  para distinguirlo del 3 de parada inexistente.
+- Quedan **sustituidas** por la v1.2 las decisiones de abajo que hablaban de "exit 2" para paradas
+  inexistentes y de emitir la advertencia "al construir `Settings` (validador `after`)".
+
+### v1.0 / v1.1
 - **`ConfigurationError`** se define en `config.py`, junto a `Settings`. El design no dice dónde
   va. No hereda de `ValueError`, así que pydantic no la envuelve en `ValidationError` y sale tal
   cual al construir `Settings()`. El mensaje nombra la variable pero no incluye el valor.
@@ -124,6 +156,14 @@ Ninguno abierto.
   tests lo comprueban con una URL que segno subiría a Q.
 
 ## Verificación
+
+### v1.2 (2026-11-02, rama `fix/bloque-1-ajustes`, tras el commit 8beef1a)
+- T-08: `uv run pytest tests -k "stop_token or cli_qr"` → 49 passed.
+- T-09: `./init.sh verify` → **todo en verde**: format, lint, mypy (75 ficheros), lint-imports
+  (2 contratos), pytest 621 passed / 2 deselected (cobertura `domain`+`application` 99,51 %);
+  frontend format/lint/types/tests (7)/build; `feature_list.json` y trazabilidad AC→test OK.
+
+### v1.0 / v1.1
 `./init.sh verify` (2026-11-01, rama `feat/stop_tokens_qr`, tras el commit de T-06): **todo en verde**.
 
 | Paso | Resultado |

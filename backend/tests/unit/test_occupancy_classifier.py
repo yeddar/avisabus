@@ -4,6 +4,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 from avisabus.config import ConfigurationError, Settings
 from avisabus.domain.models.occupancy import (
@@ -12,9 +14,11 @@ from avisabus.domain.models.occupancy import (
     OccupancyStatus,
     OccupancyThresholds,
 )
-from avisabus.domain.services.occupancy_classifier import classify_occupancy
+from avisabus.domain.services.occupancy_classifier import classify_occupancy, override_occupied
+from tests.support.occupancy import reachable_levels, threshold_configurations
 
 MEASURED_AT = datetime(2026, 11, 2, 8, 0, tzinfo=UTC)
+PROPERTIES = settings(max_examples=300, derandomize=True, database=None, deadline=None)
 OCCUPANCY_VARIABLES = (
     "CAPACITY",
     "SEATS",
@@ -178,3 +182,123 @@ def test_settings_expose_the_configured_thresholds(clean_environment: pytest.Mon
     clean_environment.setenv("AVISABUS_OCCUPANCY_THRESHOLD_MEDIUM", "0.4")
     clean_environment.setenv("AVISABUS_OCCUPANCY_THRESHOLD_FULL", "0.9")
     assert Settings().occupancy_thresholds() == OccupancyThresholds(medium=0.4, full=0.9)
+
+
+# --- v1.1 (SP-01): every level must admit a whole number of occupied places ---
+
+
+def _settings(capacity: int, medium: float, full: float) -> Settings:
+    return Settings(  # type: ignore[call-arg]
+        _env_file=None,
+        env="test",
+        occupancy_capacity=capacity,
+        occupancy_seats=0,
+        occupancy_threshold_medium=medium,
+        occupancy_threshold_full=full,
+    )
+
+
+@pytest.mark.spec("occupancy_sensor.AC-03")
+@pytest.mark.parametrize(
+    ("capacity", "medium", "full"),
+    [
+        (3, 0.50, 0.60),  # MEDIUM needs 1.5 <= occupied < 1.8
+        (1, 0.50, 0.85),  # default thresholds with a single place: no MEDIUM
+        (10, 0.51, 0.59),  # MEDIUM needs 5.1 <= occupied < 5.9
+    ],
+)
+def test_a_level_without_any_whole_number_of_places_refuses_to_start(
+    capacity: int, medium: float, full: float
+) -> None:
+    with pytest.raises(ConfigurationError, match="MEDIUM"):
+        _settings(capacity, medium, full)
+
+
+@pytest.mark.spec("occupancy_sensor.AC-03")
+@pytest.mark.parametrize(
+    ("capacity", "medium", "full"),
+    [(2, 0.50, 0.85), (3, 0.40, 0.70), (4, 0.25, 0.50), (90, 0.50, 0.85), (10, 0.50, 0.60)],
+)
+def test_small_capacities_where_every_level_fits_are_accepted(
+    capacity: int, medium: float, full: float
+) -> None:
+    assert _settings(capacity, medium, full).occupancy_capacity == capacity
+
+
+@pytest.mark.spec("occupancy_sensor.AC-03")
+@PROPERTIES
+@given(threshold_configurations())
+def test_configuration_is_rejected_exactly_when_some_level_is_unreachable(
+    configuration: tuple[int, OccupancyThresholds],
+) -> None:
+    capacity, thresholds = configuration
+    every_level_fits = reachable_levels(capacity, thresholds) == set(OccupancyLevel)
+    try:
+        _settings(capacity, thresholds.medium, thresholds.full)
+    except ConfigurationError:
+        accepted = False
+    else:
+        accepted = True
+    assert accepted is every_level_fits
+
+
+# --- v1.1 (SP-01): occupied places of an override, from the configured thresholds ---
+
+
+@pytest.mark.spec("occupancy_sensor.AC-11")
+@pytest.mark.parametrize(
+    ("level", "occupied"),
+    [
+        (OccupancyLevel.FREE, 22),  # round(90 * 0.25) = round(22.5)
+        (OccupancyLevel.MEDIUM, 61),  # round(90 * 0.675) = round(60.75)
+        (OccupancyLevel.FULL, 83),  # round(90 * 0.925) = round(83.25)
+    ],
+)
+def test_override_takes_the_middle_of_the_band_of_the_default_thresholds(
+    level: OccupancyLevel, occupied: int
+) -> None:
+    assert override_occupied(level, 90, OccupancyThresholds()) == occupied
+
+
+@pytest.mark.spec("occupancy_sensor.AC-11")
+@pytest.mark.parametrize(
+    ("level", "occupied"),
+    [
+        (OccupancyLevel.FREE, 20),  # round(100 * 0.20)
+        (OccupancyLevel.MEDIUM, 65),  # round(100 * 0.65)
+        (OccupancyLevel.FULL, 95),  # round(100 * 0.95)
+    ],
+)
+def test_override_follows_the_configured_thresholds(level: OccupancyLevel, occupied: int) -> None:
+    assert override_occupied(level, 100, OccupancyThresholds(medium=0.40, full=0.90)) == occupied
+
+
+@pytest.mark.spec("occupancy_sensor.AC-11")
+def test_override_is_moved_into_the_band_when_rounding_leaves_it() -> None:
+    # MEDIUM with capacity 4, thresholds 0.25 / 0.50: round(4 * 0.375) = round(1.5) = 2, and 2/4
+    # is FULL; one place less (1/4) is MEDIUM.
+    thresholds = OccupancyThresholds(medium=0.25, full=0.50)
+    assert override_occupied(OccupancyLevel.MEDIUM, 4, thresholds) == 1
+
+
+@pytest.mark.spec("occupancy_sensor.AC-11")
+def test_override_is_none_when_the_band_has_no_whole_number() -> None:
+    thresholds = OccupancyThresholds(medium=0.50, full=0.60)
+    assert override_occupied(OccupancyLevel.MEDIUM, 3, thresholds) is None
+
+
+@pytest.mark.spec("occupancy_sensor.AC-11")
+@PROPERTIES
+@given(threshold_configurations(), st.sampled_from(list(OccupancyLevel)))
+def test_override_is_always_classified_as_the_requested_level_when_it_fits(
+    configuration: tuple[int, OccupancyThresholds], level: OccupancyLevel
+) -> None:
+    capacity, thresholds = configuration
+    occupied = override_occupied(level, capacity, thresholds)
+    if level not in reachable_levels(capacity, thresholds):
+        assert occupied is None
+        return
+    assert occupied is not None
+    assert 0 <= occupied <= capacity
+    reading = OccupancyReading(capacity, 0, occupied, MEASURED_AT)
+    assert classify_occupancy(reading, thresholds).level is level

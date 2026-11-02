@@ -12,7 +12,8 @@ import structlog
 from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from avisabus.domain.models.occupancy import OccupancyThresholds
+from avisabus.domain.models.occupancy import OccupancyLevel, OccupancyThresholds
+from avisabus.domain.services.occupancy_classifier import override_occupied
 
 DEV_STOP_TOKEN_SECRET = b"avisabus-dev-only-secret-do-not-use!"
 """Fixed stop token secret used in `dev` and `test` when none is configured (never in `prod`)."""
@@ -54,7 +55,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _check_occupancy(self) -> Self:
-        """occupancy_sensor AC-03: `0 < medium < full <= 1` and `seats <= capacity`."""
+        """occupancy_sensor AC-03: `0 < medium < full <= 1`, `seats <= capacity` and (v1.1)
+        every level admits some whole number of occupied places with the configured capacity."""
         medium, full = self.occupancy_threshold_medium, self.occupancy_threshold_full
         if not 0 < medium < full <= 1:
             raise ConfigurationError(
@@ -66,6 +68,15 @@ class Settings(BaseSettings):
                 "AVISABUS_OCCUPANCY_SEATS must not exceed AVISABUS_OCCUPANCY_CAPACITY "
                 f"(got seats={self.occupancy_seats}, capacity={self.occupancy_capacity})"
             )
+        thresholds = self.occupancy_thresholds()
+        for level in OccupancyLevel:
+            if override_occupied(level, self.occupancy_capacity, thresholds) is None:
+                raise ConfigurationError(
+                    f"no whole number of occupied places is {level} with "
+                    f"AVISABUS_OCCUPANCY_CAPACITY={self.occupancy_capacity}, "
+                    f"AVISABUS_OCCUPANCY_THRESHOLD_MEDIUM={medium} and "
+                    f"AVISABUS_OCCUPANCY_THRESHOLD_FULL={full}"
+                )
         return self
 
     def occupancy_thresholds(self) -> OccupancyThresholds:
@@ -96,23 +107,35 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _check_stop_token_secret(self) -> Self:
-        """Production needs a secret of at least 32 bytes; dev/test fall back to a fixed one."""
+        """Production needs a secret of at least 32 bytes; dev/test fall back to a fixed one.
+
+        The dev-secret warning is not logged here (logging is not configured yet): the API and
+        the CLI call `log_dev_stop_token_secret_warning` right after `configure_logging`.
+        """
         configured = _secret_length(self.stop_token_secret)
-        if self.env == "prod":
-            if configured < MIN_STOP_TOKEN_SECRET_BYTES:
-                raise ConfigurationError(
-                    "AVISABUS_STOP_TOKEN_SECRET must be set to at least "
-                    f"{MIN_STOP_TOKEN_SECRET_BYTES} bytes when AVISABUS_ENV=prod"
-                )
-        elif configured == 0:
-            log.warning("security.dev_stop_token_secret", env=self.env)
+        if self.env == "prod" and configured < MIN_STOP_TOKEN_SECRET_BYTES:
+            raise ConfigurationError(
+                "AVISABUS_STOP_TOKEN_SECRET must be set to at least "
+                f"{MIN_STOP_TOKEN_SECRET_BYTES} bytes when AVISABUS_ENV=prod"
+            )
         return self
+
+    @property
+    def uses_dev_stop_token_secret(self) -> bool:
+        """True in dev/test when no secret is configured, so the fixed dev secret signs tokens."""
+        return self.env != "prod" and _secret_length(self.stop_token_secret) == 0
 
     def stop_token_secret_bytes(self) -> bytes:
         """Secret that signs stop tokens: the configured one or, in dev/test, the fixed one."""
         if self.stop_token_secret is None or not self.stop_token_secret.get_secret_value():
             return DEV_STOP_TOKEN_SECRET
         return self.stop_token_secret.get_secret_value().encode()
+
+
+def log_dev_stop_token_secret_warning(settings: Settings) -> None:
+    """stop_tokens_qr AC-05: warn, in the configured JSON log, that the dev secret is in use."""
+    if settings.uses_dev_stop_token_secret:
+        log.warning("security.dev_stop_token_secret", env=settings.env)
 
 
 def _secret_length(secret: SecretStr | None) -> int:

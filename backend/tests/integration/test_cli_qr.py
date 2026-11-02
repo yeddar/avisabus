@@ -2,10 +2,13 @@
 
 import asyncio
 import csv
+import json
+import logging
 from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
+import structlog
 from typer.testing import CliRunner, Result
 
 from avisabus.adapters.inbound.cli import qr as qr_cli
@@ -174,10 +177,10 @@ def test_png_format_writes_a_600_px_qr_with_the_label(tmp_path: Path) -> None:
 
 @pytest.mark.spec("stop_tokens_qr.AC-10")
 @pytest.mark.usefixtures("with_feed")
-def test_missing_stop_is_reported_others_are_generated_and_exit_code_is_2(tmp_path: Path) -> None:
+def test_missing_stop_is_reported_others_are_generated_and_exit_code_is_3(tmp_path: Path) -> None:
     out = tmp_path / "out"
     result = _run("--stop", "508", "--stop", "9999", "--stop", "64", "--out", str(out))
-    assert result.exit_code == 2
+    assert result.exit_code == 3
     assert "ERROR: parada 9999 no existe" in result.stderr
     assert sorted(p.name for p in out.iterdir()) == ["508.svg", "64.svg", "index.csv"]
     assert [row[0] for row in _index(out)[1:]] == ["508", "64"]
@@ -188,7 +191,7 @@ def test_missing_stop_is_reported_others_are_generated_and_exit_code_is_2(tmp_pa
 def test_every_missing_stop_is_reported(tmp_path: Path) -> None:
     out = tmp_path / "out"
     result = _run("--stop", "9999", "--stop", "0", "--out", str(out))
-    assert result.exit_code == 2
+    assert result.exit_code == 3
     assert "ERROR: parada 9999 no existe" in result.stderr
     assert "ERROR: parada 0 no existe" in result.stderr
     assert not list(out.glob("*.svg"))
@@ -205,6 +208,7 @@ def test_without_a_feed_exits_1_and_writes_nothing(tmp_path: Path, selection: li
     assert not out.exists()
 
 
+@pytest.mark.spec("stop_tokens_qr.AC-10")
 @pytest.mark.usefixtures("with_feed")
 @pytest.mark.parametrize(
     "args", [[], ["--stop", "508", "--all"]], ids=["no selection", "stop and all"]
@@ -214,6 +218,62 @@ def test_stop_and_all_are_mutually_exclusive_and_one_is_required(
 ) -> None:
     out = tmp_path / "out"
     result = _run(*args, "--out", str(out))
-    assert result.exit_code != 0
+    assert result.exit_code == 2  # usage error (Typer/Click), distinct from a missing stop (3)
     assert "--stop" in result.output
     assert not out.exists()
+
+
+@pytest.fixture
+def real_logging() -> Iterator[None]:
+    """Lets the command configure the real JSON logging and restores it afterwards."""
+    root = logging.getLogger()
+    handlers, level = root.handlers[:], root.level
+    yield
+    root.handlers[:] = handlers
+    root.setLevel(level)
+    structlog.reset_defaults()
+
+
+def _run_with_environment(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, secret: str | None
+) -> Result:
+    """Real `Settings`, logging and container (empty database, so the command exits with 1)."""
+    workdir = tmp_path / "root" / "backend"  # no .env here nor in its parent
+    workdir.mkdir(parents=True)
+    monkeypatch.chdir(workdir)
+    for name in ("AVISABUS_STOP_TOKEN_SECRET", "AVISABUS_LOG_LEVEL"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("AVISABUS_ENV", "dev")
+    monkeypatch.setenv("AVISABUS_DATABASE_URL", f"sqlite:///{tmp_path / 'empty.sqlite'}")
+    if secret is not None:
+        monkeypatch.setenv("AVISABUS_STOP_TOKEN_SECRET", secret)
+    return _run("--stop", "508", "--out", str(tmp_path / "out"))
+
+
+def _lines_with(output: str, event: str) -> list[str]:
+    return [line for line in output.splitlines() if event in line]
+
+
+@pytest.mark.spec("stop_tokens_qr.AC-05")
+@pytest.mark.usefixtures("real_logging")
+def test_cli_logs_the_dev_secret_warning_as_json_after_configuring_logging(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    result = _run_with_environment(monkeypatch, tmp_path, secret=None)
+    assert result.exit_code == 1, result.output
+    (line,) = _lines_with(result.stdout + result.stderr, "security.dev_stop_token_secret")
+    record = json.loads(line)  # a JSON log line, not the default console rendering
+    assert record["event"] == "security.dev_stop_token_secret"
+    assert record["level"] == "warning"
+    assert record["env"] == "dev"
+    assert {"timestamp", "logger"} <= record.keys()
+
+
+@pytest.mark.spec("stop_tokens_qr.AC-05")
+@pytest.mark.usefixtures("real_logging")
+def test_cli_does_not_warn_with_a_configured_secret(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    result = _run_with_environment(monkeypatch, tmp_path, secret=SECRET)
+    assert result.exit_code == 1, result.output
+    assert _lines_with(result.stdout + result.stderr, "security.dev_stop_token_secret") == []

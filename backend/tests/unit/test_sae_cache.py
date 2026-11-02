@@ -21,6 +21,7 @@ class FakeSource:
         self.clock = clock
         self.calls: list[str] = []
         self.failing: set[str] = set()
+        self.reason = "timeout"
         self.release: asyncio.Event | None = None
         self.in_flight = 0
         self.max_in_flight = 0
@@ -33,7 +34,7 @@ class FakeSource:
             if self.release is not None:
                 await self.release.wait()
             if stop_id in self.failing:
-                raise ArrivalsUnavailableError(stop_id, "timeout")
+                raise ArrivalsUnavailableError(stop_id, self.reason)
             return ArrivalsSnapshot(stop_id, self.clock.now(), ())
         finally:
             self.in_flight -= 1
@@ -167,18 +168,61 @@ async def test_cancelling_one_caller_does_not_cancel_the_shared_fetch(
 async def test_failure_is_cached_for_the_error_ttl(inner: FakeSource, clock: FakeClock) -> None:
     cache = _cache(inner, clock)
     inner.failing.add("508")
-    with pytest.raises(ArrivalsUnavailableError) as first:
+    with pytest.raises(ArrivalsUnavailableError):
         await cache.get_arrivals("508")
     clock.advance(timedelta(seconds=4.9))
     with pytest.raises(ArrivalsUnavailableError) as second:
         await cache.get_arrivals("508")
-    assert second.value is first.value
+    assert (second.value.stop_id, second.value.reason) == ("508", "timeout")
     assert inner.calls == ["508"]
 
     clock.advance(timedelta(seconds=0.1))  # 5 s after the failure
     inner.failing.clear()
     assert (await cache.get_arrivals("508")).stop_id == "508"
     assert inner.calls == ["508", "508"]
+
+
+def _frames(error: BaseException) -> int:
+    """Number of frames in the traceback of `error`."""
+    count, tb = 0, error.__traceback__
+    while tb is not None:
+        count, tb = count + 1, tb.tb_next
+    return count
+
+
+async def _raised(cache: CachedArrivalsSource, stop_id: str) -> ArrivalsUnavailableError:
+    with pytest.raises(ArrivalsUnavailableError) as raised:
+        await cache.get_arrivals(stop_id)
+    return raised.value
+
+
+@pytest.mark.spec("sae_arrivals_source.AC-11")
+async def test_each_cache_hit_raises_a_new_instance_with_the_same_stop_and_reason(
+    inner: FakeSource, clock: FakeClock
+) -> None:
+    cache = _cache(inner, clock)
+    inner.failing.add("508")
+    inner.reason = "http_503"
+    original = await _raised(cache, "508")
+    hits = [await _raised(cache, "508") for _ in range(3)]
+    assert inner.calls == ["508"]
+    assert len({id(error) for error in [original, *hits]}) == 4  # all distinct objects
+    for error in hits:
+        assert type(error) is ArrivalsUnavailableError
+        assert (error.stop_id, error.reason) == ("508", "http_503")
+
+
+@pytest.mark.spec("sae_arrivals_source.AC-11")
+async def test_traceback_does_not_grow_with_cache_hits(inner: FakeSource, clock: FakeClock) -> None:
+    cache = _cache(inner, clock)
+    inner.failing.add("508")
+    original = await _raised(cache, "508")
+    original_frames = _frames(original)
+    hits = [await _raised(cache, "508") for _ in range(200)]
+    assert inner.calls == ["508"]
+    assert {_frames(error) for error in hits} == {_frames(hits[0])}
+    assert _frames(hits[-1]) <= original_frames
+    assert _frames(original) == original_frames  # the stored error is not raised again
 
 
 @pytest.mark.spec("sae_arrivals_source.AC-11")

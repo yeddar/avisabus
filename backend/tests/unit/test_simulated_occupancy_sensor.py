@@ -1,9 +1,12 @@
 """`SimulatedOccupancySensor` with a fake network and in-memory overrides (T-04)."""
 
+import asyncio
 from datetime import UTC, date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 from avisabus.adapters.outbound.occupancy.simulated_sensor import SimulatedOccupancySensor
 from avisabus.domain.models.occupancy import (
@@ -24,7 +27,9 @@ from tests.support.fake_clock import FakeClock
 from tests.support.occupancy import (
     FakeTripNetwork,
     InMemoryOccupancyOverrideRepository,
+    reachable_levels,
     stop_times,
+    threshold_configurations,
 )
 
 MADRID = ZoneInfo("Europe/Madrid")
@@ -34,6 +39,7 @@ CAPACITY, SEATS, SEED = 90, 28, "avisabus"
 EIGHT, NINE = 8 * 3600, 9 * 3600
 LINE_93_TRIPS = tuple(f"93-trip-{n}" for n in range(20))
 LINE_70_TRIPS = tuple(f"70-trip-{n}" for n in range(20))
+PROPERTIES = settings(max_examples=300, derandomize=True, database=None, deadline=None)
 
 
 def _local(hour: int, minute: int = 0) -> datetime:
@@ -65,14 +71,17 @@ def _sensor(
     overrides: InMemoryOccupancyOverrideRepository,
     clock: FakeClock,
     seed: str = SEED,
+    capacity: int = CAPACITY,
+    thresholds: OccupancyThresholds | None = None,
 ) -> SimulatedOccupancySensor:
     return SimulatedOccupancySensor(
         network=network,  # type: ignore[arg-type]
         overrides=overrides,
         clock=clock,
-        capacity=CAPACITY,
-        seats=SEATS,
+        capacity=capacity,
+        seats=min(SEATS, capacity),
         seed=seed,
+        thresholds=thresholds or OccupancyThresholds(),
     )
 
 
@@ -254,9 +263,10 @@ async def test_unknown_trip_has_no_reading_even_with_overrides(
 @pytest.mark.parametrize(
     ("level", "occupied"),
     [
-        (OccupancyLevel.FREE, 18),  # round(90 * 0.20)
-        (OccupancyLevel.MEDIUM, 58),  # round(90 * 0.65) = round(58.5)
-        (OccupancyLevel.FULL, 86),  # round(90 * 0.95) = round(85.5)
+        # v1.1 (SP-01): middle of the band of the default thresholds 0.50 / 0.85
+        (OccupancyLevel.FREE, 22),  # round(90 * 0.25) = round(22.5)
+        (OccupancyLevel.MEDIUM, 61),  # round(90 * 0.675) = round(60.75)
+        (OccupancyLevel.FULL, 83),  # round(90 * 0.925) = round(83.25)
     ],
 )
 async def test_override_forces_the_level_of_every_trip_of_the_line(
@@ -273,6 +283,49 @@ async def test_override_forces_the_level_of_every_trip_of_the_line(
             assert reading.occupied == occupied
             assert _level(reading) is level
             assert reading.measured_at == at
+
+
+@pytest.mark.spec("occupancy_sensor.AC-11")
+@pytest.mark.parametrize(
+    ("level", "occupied"),
+    [
+        (OccupancyLevel.FREE, 20),  # round(100 * 0.20)
+        (OccupancyLevel.MEDIUM, 65),  # round(100 * 0.65)
+        (OccupancyLevel.FULL, 95),  # round(100 * 0.95)
+    ],
+)
+async def test_override_uses_the_configured_thresholds_and_capacity(
+    network: FakeTripNetwork,
+    overrides: InMemoryOccupancyOverrideRepository,
+    clock: FakeClock,
+    level: OccupancyLevel,
+    occupied: int,
+) -> None:
+    thresholds = OccupancyThresholds(medium=0.40, full=0.90)
+    sensor = _sensor(network, overrides, clock, capacity=100, thresholds=thresholds)
+    overrides.set(_override("93", level))
+    reading = await _read(sensor, LINE_93_TRIPS[0], _local(8))
+    assert reading.occupied == occupied
+    assert classify_occupancy(reading, thresholds).level is level
+
+
+@pytest.mark.spec("occupancy_sensor.AC-11")
+@PROPERTIES
+@given(threshold_configurations(), st.sampled_from(list(OccupancyLevel)))
+def test_override_level_matches_the_classification_for_any_valid_configuration(
+    configuration: tuple[int, OccupancyThresholds], level: OccupancyLevel
+) -> None:
+    capacity, thresholds = configuration
+    if reachable_levels(capacity, thresholds) != set(OccupancyLevel):
+        return  # rejected at start-up (AC-03): see test_occupancy_classifier.py
+    network = FakeTripNetwork()
+    network.add_trip("93-trip", "93", stop_times(EIGHT, NINE))
+    overrides = InMemoryOccupancyOverrideRepository()
+    overrides.set(_override("93", level))
+    sensor = _sensor(network, overrides, FakeClock(NOW), capacity=capacity, thresholds=thresholds)
+    reading = asyncio.run(_read(sensor, "93-trip", _local(8)))
+    assert 0 <= reading.occupied <= capacity
+    assert classify_occupancy(reading, thresholds).level is level
 
 
 @pytest.mark.spec("occupancy_sensor.AC-11")
@@ -300,10 +353,10 @@ async def test_expired_override_no_longer_applies(
     simulated = simulate_occupied(
         CAPACITY, hour_factor(at), route_factor(0.5), trip_factor(SEED, trip_id, SERVICE_DATE)
     )
-    assert simulated != 18
-    assert (await _read(sensor, trip_id, at)).occupied == 18
+    assert simulated != 22
+    assert (await _read(sensor, trip_id, at)).occupied == 22
     clock.advance(timedelta(seconds=59))
-    assert (await _read(sensor, trip_id, at)).occupied == 18
+    assert (await _read(sensor, trip_id, at)).occupied == 22
     clock.advance(timedelta(seconds=1))  # expires_at reached, even inside the cache window
     assert (await _read(sensor, trip_id, at)).occupied == simulated
 
@@ -320,12 +373,12 @@ async def test_override_changes_are_seen_within_five_seconds(
     trip_id = LINE_93_TRIPS[0]
     at = _local(8, 30)
     simulated = (await _read(sensor, trip_id, at)).occupied
-    assert simulated != 86
+    assert simulated != 83
     overrides.set(_override("93", OccupancyLevel.FULL))  # e.g. from the CLI, another process
     clock.advance(timedelta(seconds=4, milliseconds=999))
     assert (await _read(sensor, trip_id, at)).occupied == simulated  # still cached
     clock.advance(timedelta(milliseconds=1))
-    assert (await _read(sensor, trip_id, at)).occupied == 86
+    assert (await _read(sensor, trip_id, at)).occupied == 83
     overrides.clear("93")
     clock.advance(timedelta(seconds=5))
     assert (await _read(sensor, trip_id, at)).occupied == simulated

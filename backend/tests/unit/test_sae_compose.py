@@ -131,20 +131,22 @@ async def test_replay_source_wrapped_by_the_cache_and_never_the_network() -> Non
 @pytest.mark.spec("sae_arrivals_source.AC-20")
 async def test_cache_limits_come_from_the_settings() -> None:
     settings = _settings(env="test", sae_replay_dir=E01, sae_error_ttl_s=30)
-    source = build_arrivals_source(settings, FakeClock(NOW), httpx.AsyncClient())
-    stats_before = source.stats()
-    for _ in range(3):
-        with pytest.raises(Exception, match="arrivals unavailable"):
-            await source.get_arrivals("1234")  # no recording → cached error for 30 s
+    async with httpx.AsyncClient() as client:
+        source = build_arrivals_source(settings, FakeClock(NOW), client)
+        stats_before = source.stats()
+        for _ in range(3):
+            with pytest.raises(Exception, match="arrivals unavailable"):
+                await source.get_arrivals("1234")  # no recording → cached error for 30 s
     assert source.stats().errors == stats_before.errors + 1
 
 
 @pytest.mark.spec("sae_arrivals_source.AC-20")
 @pytest.mark.spec("sae_arrivals_source.AC-22")
-def test_missing_replay_session_stops_the_composition(tmp_path: Path) -> None:
+async def test_missing_replay_session_stops_the_composition(tmp_path: Path) -> None:
     settings = _settings(env="test", sae_replay_dir=tmp_path / "nothing")
-    with pytest.raises(ConfigurationError):
-        build_arrivals_source(settings, FakeClock(NOW), httpx.AsyncClient())
+    async with httpx.AsyncClient() as client:
+        with pytest.raises(ConfigurationError):
+            build_arrivals_source(settings, FakeClock(NOW), client)
 
 
 # --- AC-13: periodic sae.stats -----------------------------------------------------------------
@@ -177,9 +179,10 @@ async def test_stats_are_emitted_every_five_minutes() -> None:
 @pytest.mark.spec("sae_arrivals_source.AC-13")
 async def test_stats_task_logs_the_cache_counters() -> None:
     settings = _settings(env="test", sae_replay_dir=E01)
-    source = build_arrivals_source(settings, FakeClock(NOW), httpx.AsyncClient())
-    await source.get_arrivals("508")
-    await source.get_arrivals("508")
+    async with httpx.AsyncClient() as client:
+        source = build_arrivals_source(settings, FakeClock(NOW), client)
+        await source.get_arrivals("508")
+        await source.get_arrivals("508")
 
     calls = 0
 

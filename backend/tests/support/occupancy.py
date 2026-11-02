@@ -1,9 +1,31 @@
 """Fakes for the occupancy sensor tests (never used in production code)."""
 
-from datetime import datetime
+from datetime import UTC, datetime
+
+from hypothesis import strategies as st
 
 from avisabus.domain.models.network import TripStopTime
+from avisabus.domain.models.occupancy import OccupancyLevel, OccupancyReading, OccupancyThresholds
 from avisabus.domain.ports.occupancy import OccupancyOverride
+from avisabus.domain.services.occupancy_classifier import classify_occupancy
+
+
+def reachable_levels(capacity: int, thresholds: OccupancyThresholds) -> set[OccupancyLevel]:
+    """Levels reached by some whole number of occupied places (brute force over 0…capacity)."""
+    at = datetime(2026, 11, 2, tzinfo=UTC)
+    return {
+        classify_occupancy(OccupancyReading(capacity, 0, occupied, at), thresholds).level
+        for occupied in range(capacity + 1)
+    }
+
+
+@st.composite
+def threshold_configurations(draw: st.DrawFn) -> tuple[int, OccupancyThresholds]:
+    """A capacity and thresholds with `0 < medium < full <= 1` (in thousandths, like a config)."""
+    capacity = draw(st.integers(min_value=1, max_value=200))
+    medium = draw(st.integers(min_value=1, max_value=999))
+    full = draw(st.integers(min_value=medium + 1, max_value=1000))
+    return capacity, OccupancyThresholds(medium=medium / 1000, full=full / 1000)
 
 
 def stop_times(*arrivals: int) -> list[TripStopTime]:

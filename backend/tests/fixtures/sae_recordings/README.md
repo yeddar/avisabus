@@ -102,13 +102,22 @@ Cada sesión es una carpeta:
 
 ## Regeneración
 
-Las sesiones reales nuevas se graban con la CLI (requiere red; nunca en los tests ni en CI):
+Las sesiones reales nuevas se graban con la CLI (requiere red; nunca en los tests ni en CI).
+`sae record` se niega a escribir en una carpeta que ya tenga `session.json` (sale con código 2),
+así que cada grabación va a una carpeta `--out` **nueva**; las sesiones existentes no se
+sobrescriben. Por ejemplo, para repetir una sesión como `stop_508_peak` (paradas 508 y 2070,
+intervalo 20 s, 25 min):
 
 ```
 cd backend
-AVISABUS_SAE_CONTACT=<contacto> uv run avisabus sae record --stop 508 --interval 20 \
-    --duration 900 --out tests/fixtures/sae_recordings/stop_508_peak
+AVISABUS_SAE_CONTACT=<contacto> uv run avisabus sae record --stop 508 --stop 2070 --interval 20 \
+    --duration 1500 --out tests/fixtures/sae_recordings/stop_508_<AAAA-MM-DD>
 ```
+
+Para usarla como sesión de replay, apunta `AVISABUS_SAE_REPLAY_DIR` a la carpeta nueva. Sustituir
+`stop_508_peak` (el valor por defecto de esa variable, del que dependen los tests de
+`test_sae_fixtures.py`) es una decisión aparte: hay que borrar o renombrar antes la carpeta
+existente y revisar esos tests y su documentación arriba.
 
 Las muestras de `samples/` no se regeneran: proceden de la exploración E-01 y se convirtieron una
 sola vez con un script desechable que aplicaba exactamente las reglas descritas arriba.

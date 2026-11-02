@@ -1,4 +1,92 @@
-# Revisión: stop_tokens_qr
+# Revisión: stop_tokens_qr — v1.2
+Ciclo: 1 (v1.2) · Fecha: 2026-11-02 · Agente: reviewer · Spec: `specs/stop_tokens_qr/` v1.2 (APPROVED) · Rama: `fix/bloque-1-ajustes` (commits `8beef1a` T-08 y `8510422` T-09 sobre `develop`)
+
+## Veredicto: APPROVED
+
+T-08 y T-09 están hechas. Los dos AC modificados (AC-05 y AC-10) tienen tests que fallan si se
+rompe el comportamiento: lo he comprobado con mutaciones. Los 13 AC conservan su evidencia y
+`./init.sh verify` está en verde. Ningún hallazgo bloqueante; dos observaciones no bloqueantes.
+
+## Matriz AC → evidencia
+
+| AC | Test(s) | Resultado | Nota |
+|---|---|---|---|
+| AC-01 | `tests/unit/test_hmac_stop_token.py` | OK | Sin cambios desde v1.1 |
+| AC-02 | `tests/unit/test_hmac_stop_token.py` | OK | Sin cambios |
+| AC-03 | `tests/unit/test_hmac_stop_token.py` | OK | Sin cambios |
+| AC-04 | `tests/unit/test_settings_stop_token.py` | OK | Sin cambios. El validador de `prod` (`config.py:108-121`) sigue rechazando un secreto de menos de 32 bytes. |
+| **AC-05 (v1.2)** | `test_settings_stop_token.py::test_dev_and_test_without_secret_use_the_dev_secret_and_flag_it`, `::test_dev_with_a_configured_secret_uses_it_without_warning`, `::test_prod_accepts_a_secret_of_at_least_32_bytes`; `tests/integration/test_cli_qr.py::test_cli_logs_the_dev_secret_warning_as_json_after_configuring_logging`, `::test_cli_does_not_warn_with_a_configured_secret`; `tests/integration/test_main_stop_token.py::test_api_logs_the_dev_secret_warning_as_json_after_configuring_logging`, `::test_api_does_not_warn_with_a_configured_secret` | OK | En la unidad: `Settings` ya no registra nada y expone `uses_dev_stop_token_secret` (design §6). En la CLI (con `Settings`, logging y contenedor reales) y en la API (importa `avisabus.main` en un subproceso con BD y directorio temporales): la línea del evento es **JSON** válido, con `level=warning`, `env`, `timestamp` y `logger`, y no aparece si hay secreto. **Mutaciones:** sin la llamada del contenedor, el test de la CLI falla; con la advertencia antes de `configure_logging` en `main.py`, el test de la API falla. |
+| AC-06 | `tests/unit/test_stop_url.py` | OK | Sin cambios |
+| AC-07 | `test_cli_qr.py`, `test_generate_stop_qr_codes.py`, `test_segno_renderer.py` | OK | Sin cambios |
+| AC-08 | `test_cli_qr.py`, `test_generate_stop_qr_codes.py` | OK | Sin cambios |
+| AC-09 | `test_cli_qr.py`, `test_generate_stop_qr_codes.py`, `test_segno_renderer.py` | OK | Sin cambios |
+| **AC-10 (v1.2)** | `test_cli_qr.py::test_missing_stop_is_reported_others_are_generated_and_exit_code_is_3`, `::test_every_missing_stop_is_reported`, `::test_stop_and_all_are_mutually_exclusive_and_one_is_required`; `test_generate_stop_qr_codes.py` (caso de uso) | OK | Exit **3** con el error de cada parada; las demás se generan e `index.csv` solo las lista a ellas. El uso incorrecto (sin `--stop` ni `--all`, o con ambos) comprueba ahora **exactamente 2**, distinto de 3 (antes `!= 0`). **Mutación:** con `EXIT_MISSING_STOP = 2`, fallan dos tests. |
+| AC-11 | `test_cli_qr.py`, `test_generate_stop_qr_codes.py` | OK | Sin cambios (exit 1 sin feed) |
+| AC-12 | `tests/integration/test_segno_renderer.py` | OK | Sin cambios |
+| AC-13 | `tests/integration/test_segno_renderer.py` | OK | Sin cambios |
+
+## Verificación ejecutada
+
+- `./init.sh verify` → **todo en verde** (exit 0).
+  - Backend: ruff format y check OK; mypy OK; lint-imports con 2 contratos respetados y 0 rotos;
+    pytest con 645 passed, 2 deselected y 2 avisos esperados (el deprecation de pytest-asyncio y
+    el `SocketBlockedError` de `test_no_network.py`); cobertura del 99,52 %.
+  - Frontend: format, lint, types, tests (7) y build OK.
+  - Harness: `feature_list.json` y trazabilidad AC→test OK.
+- `cd backend && uv run pytest tests -k "stop_token or cli_qr"` (la verificación de T-08) → 49 passed.
+- **Mutaciones** en una copia del backend en el scratchpad (el repositorio no se toca), con el
+  venv del proyecto y `PYTHONPATH` apuntando a la copia:
+  - (M2) `EXIT_MISSING_STOP = 2` → fallan 2 tests de AC-10.
+  - (M3) sin `log_dev_stop_token_secret_warning` en `build_cli_container` → falla el test de AC-05
+    de la CLI.
+  - (M4) la advertencia antes de `configure_logging` en `main.py` → falla el test de AC-05 de la
+    API.
+
+## Comprobación de `docs/verification.md` §4 (lo nuevo)
+
+- **Contrato:** códigos de salida según design §3 (0/1/3, el 2 para Typer). La advertencia se
+  emite como pide design §6: `Settings.uses_dev_stop_token_secret`, y la emiten `main.py:46` y
+  `cli/container.py:46` justo después de `configure_logging`.
+- **Arquitectura:** sin cambios en `domain/`; lint-imports en verde.
+- **Tests:** sin red. El subproceso de `test_main_stop_token.py` no hereda el bloqueo de sockets
+  de pytest, pero usa `AVISABUS_ENV=test`, que compone la fuente de replay sin red (ver O-02).
+  No hay reloj real que afecte al resultado.
+- **Privacidad:** el evento solo lleva `env` y nunca el secreto.
+- **Convenciones:** `fix(stop_tokens_qr): …` y `chore(progress): …`.
+- **Alcance:** fuera de la feature solo se toca `tests/integration/test_cli_occupancy.py` (el
+  secreto pasa del entorno a los `Settings` del contenedor fake). Es una consecuencia directa de
+  mover la advertencia al contenedor; no cambia lo que verifica ese test.
+
+## Hallazgos
+
+### Bloqueantes
+
+Ninguno.
+
+### No bloqueantes
+
+- **O-01 — `avisabus sae fetch|record` ya no emite la advertencia.**
+  `backend/src/avisabus/adapters/inbound/cli/sae.py:61-66` (`build_runtime`) llama a
+  `configure_logging`, pero no usa `build_cli_container` y, por tanto, no llama a
+  `log_dev_stop_token_secret_warning`. Antes de v1.2 la emitía `Settings` en todos los comandos.
+  Encaja con design §6, que la asigna al "contenedor de la CLI", y esos comandos no firman tokens,
+  así que no lo considero incumplimiento de AC-05. Aun así, AC-05 dice "al ejecutar la CLI" sin
+  matizar. Propuesta para una versión futura de la spec: precisar "los comandos que usan el
+  contenedor de la CLI" o llamar también a la función desde `build_runtime`.
+- **O-02 — El test de la API importa `avisabus.main` en un subproceso sin el bloqueo de sockets.**
+  `backend/tests/integration/test_main_stop_token.py:21-41`. Hoy no hay red (`env=test` usa
+  replay, y `httpx.AsyncClient()` no conecta al crearse). Pero si en el futuro `main.py` hiciera
+  I/O de red al importarse, este test no lo detectaría. Para cubrirlo se podría fijar
+  `AVISABUS_ARRIVALS_SOURCE=replay` de forma explícita en el entorno del subproceso. Es menor.
+- (Pendiente de la revisión anterior, opcional) H-02 y H-03 siguen igual; no formaban parte de v1.2.
+
+### Problemas de spec
+
+Ninguno nuevo que requiera CP-3 (ver O-01). S-01 está resuelto en v1.2.
+
+---
+
+# Revisión: stop_tokens_qr — v1.1 (revisión anterior)
 Ciclo: 1 · Fecha: 2026-11-01 · Agente: reviewer · Spec: specs/stop_tokens_qr/ v1.1 (APPROVED) · Rama: `feat/stop_tokens_qr` (12 commits sobre `develop`, `ecbe6f2..e35011a`)
 
 ## Veredicto: APPROVED

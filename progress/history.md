@@ -142,3 +142,16 @@
 ## 2026-11-02 · sae_arrivals_source · in_review → done
 - Revisión ciclo 1: APPROVED (22 AC con evidencia, verify en verde). No bloqueantes NB-1…NB-8
   anotados en `current.md`. PR contra `develop` abierta, sin fusionar. Bloque 1: 5/6 en `done`.
+
+## 2026-11-02 · stop_tokens_qr, sae_arrivals_source, occupancy_sensor · done → spec_approved → implementing
+- PR #16 fusionada. PR #17 (ajustes de cierre del bloque 1): `occupancy_sensor` v1.1 (SP-01, AC-03),
+  `stop_tokens_qr` v1.2 (S-01, H-01), `sae_arrivals_source` v1.2 (NB-1, NB-4, NB-6, NB-7),
+  `stop_arrivals_api` v1.3 (nota sobre la parada 2070). Rama única `fix/bloque-1-ajustes`.
+
+## 2026-11-02 · stop_tokens_qr, sae_arrivals_source, occupancy_sensor · implementing → in_review
+- Tareas nuevas hechas (T-08/T-09, T-11…T-13, T-07/T-08); `./init.sh verify` en verde (645 tests,
+  cobertura 99,52 %). Forzados por defecto pasan de 18/58/86 a 22/61/83 plazas (SP-01).
+
+## 2026-11-02 · stop_tokens_qr, sae_arrivals_source, occupancy_sensor · in_review → done
+- Revisión ciclo 1 (v1.2 / v1.2 / v1.1): APPROVED las tres, con pruebas de mutación; verify en verde.
+  No bloqueantes anotados en `current.md`. PR de `fix/bloque-1-ajustes` contra `develop`, sin fusionar.
