@@ -125,3 +125,7 @@
 - E-01: `getSAE` (XML) cerrado a terceros; la fuente es `QR.php` (HTML), enlazada por el
   Ajuntament. La persona aprueba la v1.1 (ADR-015, AC-21, AC-22, T-08b) y envía un correo a EMT
   solicitando permiso para `getSAE` y preguntando por una API oficial.
+
+## 2026-11-02 · sae_arrivals_source · spec_approved → implementing
+- E-01 ya hecha (no se repite). Implementer con T-01…T-07 y T-09; T-08 (grabación en hora punta)
+  queda para el martes 2026-11-03 a las 7:45 con la persona; T-08b opcional.

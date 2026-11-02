@@ -82,7 +82,7 @@
       "order": 4,
       "block": 1,
       "title": "Fuente de tiempos de llegada del SAE: cliente, normalización, caché, grabación y replay",
-      "status": "spec_approved",
+      "status": "implementing",
       "depends_on": [
         "project_scaffold"
       ],
