@@ -115,3 +115,8 @@
 ## 2026-11-02 · stop_tokens_qr · PR #14 fusionada · sae_arrivals_source · spec_approved → exploring
 - PR #14 fusionada tras el rebase (bloque 1: 4/6 en `done`).
 - La persona da paso a `sae_arrivals_source`; rama `feat/sae_arrivals_source`, exploración E-01.
+
+## 2026-11-02 · sae_arrivals_source · exploring → spec_blocked (CP-3)
+- E-01 (`progress/explore_sae.md`, 14 peticiones ≤ 1/20 s por parada): `getSAE` (XML) cerrado a
+  terceros; la fuente usable es el HTML `QR.php?sec=est&p={id}`. Parada inexistente = 200 sin
+  entradas. Sin muestras de `HH:MM` ni "sin llegadas". Aviso legal de EMT a valorar.

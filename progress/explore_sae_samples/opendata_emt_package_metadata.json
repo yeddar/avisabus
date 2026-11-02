@@ -1,0 +1,9 @@
+{
+ "name": "emt",
+ "title": "EMT",
+ "license_id": "cc-by",
+ "license_title": "Atribución 4.0 Internacional (CC BY 4.0)",
+ "license_url": "http://creativecommons.org/licenses/by/4.0/deed.es",
+ "metadata_modified": "2026-10-14T11:02:57.322074",
+ "notes": "Información geográfica relacionada con las paradas de bus de la EMT\r\n\r\nMODELO DE DATOS\r\n\r\n- gid: Identificador numérico único.\r\n\r\n- id_parada: Identificador numérico oficial y único de la parada dentro de la red operativa de la EMT.\r\n\r\n- codvia: Código identificador de la vía pública donde se ubica la parada.\r\n\r\n- numportal: Número de policía (portal) correspondiente a la ubicación física de la parada en la calle. \r\n\r\n- suprimida: Indicador numérico que señala si la parada se encuentra operativa o ha sido suprimida.\r\n\r\n- denominacion: Nombre oficial o descriptivo asignado a la parada.\r\n\r\n- lineas: Lista de las líneas regulares o nocturnas de la EMT que efectúan parada en esa ubicación, separadas por comas.\r\n\r\n- proximas_llegadas: Enlace web (URL) directo a la plataforma de la EMT para consultar la estimación en tiempo real de las próximas llegadas de autobuses a esa parada específica.\r\n\r\nFuente: Geoportal https://geoportal.valencia.es/apps/GeoportalHome/es/inicio/geodatos-abiertos\r\n\r\nConjunto de datos de Alto Valor: Datos de Movilidad"
+}

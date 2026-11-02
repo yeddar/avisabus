@@ -4,15 +4,15 @@
 
 **Fecha:** 2026-11-02
 **Fase:** Implementación — Bloque 1 (Cimientos y datos)
-**Feature en curso:** `sae_arrivals_source` (`exploring`, E-01)
+**Feature en curso:** `sae_arrivals_source` — `spec_blocked` (CP-3 tras E-01)
 
 ## Último paso
 PR #13 (`occupancy_sensor`) y PR #14 (`stop_tokens_qr`) fusionadas: 4/6 features del bloque 1 en
-`done`. La persona da paso a `sae_arrivals_source`: rama `feat/sae_arrivals_source`, exploración E-01.
+`done`. La persona da paso a `sae_arrivals_source`: rama `feat/sae_arrivals_source`, exploración E-01
+completada (`progress/explore_sae.md`, muestras en `progress/explore_sae_samples/`) → CP-3.
 
 ## Siguiente paso
-1. `sae_arrivals_source`: E-01 (endpoint y formato reales del SAE, paradas 508 y 2070; red) →
-   si contradice design §4 → CP-3; si no → implementer. **T-08 (grabación `stop_508_peak`, ≥ 15 min
+1. `sae_arrivals_source`: **la persona decide el CP-3** → spec-writer o PR de spec → CP-1 → implementer. **T-08 (grabación `stop_508_peak`, ≥ 15 min
    en hora punta) se coordina con la persona** (se graba con la CLI de T-07).
 2. `stop_arrivals_api` (v1.2) → fin del bloque 1 (CP-6).
 3. Fuera de Claude Code: PR de specs para SP-01 (`occupancy_sensor`), S-01 y H-01 (`stop_tokens_qr`)
@@ -49,7 +49,19 @@ PR #13 (`occupancy_sensor`) y PR #14 (`stop_tokens_qr`) fusionadas: 4/6 features
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Ninguno.
+- **CP-3 · sae_arrivals_source (E-01)** — detalle en `progress/explore_sae.md`:
+  1. Fuente: el XML `getSAE` de la spec (`emtvlcapi`) está cerrado a terceros ("Temporalmente no
+     disponible desde el plano…"). La fuente usable es la página HTML
+     `https://www.emtvalencia.es/QR.php?sec=est&p={stop_id}` (campo `proximas_llegadas` de la capa
+     226 del geoportal, CC BY 4.0). Propuesta: cambiar «Contexto», design §4/§7 (URL por defecto y
+     reglas del parser HTML con `html.parser`), AC-04 (`Próximo`); interfaces sin cambios.
+  2. Parada inexistente = HTTP 200 sin entradas (se confunde con "sin llegadas"). Propuesta: respuesta
+     válida solo si la cabecera casa con `^{stop_id} - .+`; si no → `unparseable`.
+  3. AC-19 (b)/(c): sin muestras reales de "sin llegadas" ni `HH:MM` → muestras derivadas
+     documentadas, y/o grabación nocturna real (~23:30, 508, línea N4).
+  4. Aviso legal de EMT: prohíbe reproducir contenidos/enlazar sin consentimiento escrito (no
+     menciona scraping). Valorar pedir permiso a EMT o tratarlo en la memoria del TFM.
+  5. `docs/requirements.md` RF-11 cita `minutos`/`horaLlegada` (cambio de redacción, CP-4).
 
 ## Bloqueos
-Ninguno.
+- `sae_arrivals_source` en `spec_blocked` (CP-3 arriba). `stop_arrivals_api` depende de ella.
