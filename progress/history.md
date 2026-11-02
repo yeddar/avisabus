@@ -155,3 +155,7 @@
 ## 2026-11-02 · stop_tokens_qr, sae_arrivals_source, occupancy_sensor · in_review → done
 - Revisión ciclo 1 (v1.2 / v1.2 / v1.1): APPROVED las tres, con pruebas de mutación; verify en verde.
   No bloqueantes anotados en `current.md`. PR de `fix/bloque-1-ajustes` contra `develop`, sin fusionar.
+
+## 2026-11-02 · fix/bloque-1-ajustes fusionada (PR #18) · stop_arrivals_api · spec_approved → exploring
+- Rama `feat/stop_arrivals_api`. Exploración E-01 y E-02 → `progress/explore_destinations.md`;
+  se para al terminar para revisarla con la persona.

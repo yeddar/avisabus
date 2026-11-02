@@ -4,19 +4,18 @@
 
 **Fecha:** 2026-11-02
 **Fase:** Implementación — Bloque 1 (Cimientos y datos)
-**Feature en curso:** ajustes de cierre del bloque 1 (rama `fix/bloque-1-ajustes`) — `done`, PR abierta
-(sin fusionar). Siguiente: `stop_arrivals_api` v1.3.
+**Feature en curso:** `stop_arrivals_api` v1.3 — `exploring` (rama `feat/stop_arrivals_api`)
 
 ## Último paso
-Ajustes de cierre del bloque 1 en `fix/bloque-1-ajustes`: `stop_tokens_qr` v1.2 (T-08/T-09),
-`sae_arrivals_source` v1.2 (T-11…T-13), `occupancy_sensor` v1.1 (T-07/T-08). Revisión ciclo 1 de
-estas versiones: **APPROVED** las tres, sin bloqueantes. `done`; PR contra `develop` abierta.
+PR #18 (ajustes de cierre del bloque 1) fusionada: 5/6 features del bloque 1 en `done`.
+`stop_arrivals_api` → `exploring`; explorer con E-01 (destinos SAE frente a headsigns GTFS,
+circulares) y E-02 (tolerancia de emparejamiento) → `progress/explore_destinations.md`.
 
 ## Siguiente paso
-1. La persona revisa y fusiona la PR de `fix/bloque-1-ajustes`.
-2. Tras la fusión: `stop_arrivals_api` (v1.3), rama propia, E-01 (destinos del SAE frente a
-   headsigns del GTFS, incluidas circulares) y **parar** para revisar la exploración con la persona.
-3. Fin del bloque 1 (CP-6). T-08b de `sae_arrivals_source` (nocturna) opcional.
+1. **Parar tras la exploración** y revisar los resultados con la persona antes de implementar
+   (si E-01 resuelve < 90 % de las llegadas en red → CP-3).
+2. Implementer → reviewer → PR. Fin del bloque 1 (CP-6).
+3. T-08b de `sae_arrivals_source` (nocturna) opcional.
 
 ## Pendiente para specs futuras
 - **stop_tokens_qr O-01:** `sae fetch|record` ya no emiten `security.dev_stop_token_secret` (no usan
