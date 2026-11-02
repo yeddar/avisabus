@@ -1,6 +1,6 @@
 # Fuente de llegadas del SAE — requirements
 
-> Feature: `sae_arrivals_source` · Versión: 1.1 · Estado: APPROVED
+> Feature: `sae_arrivals_source` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-07, RF-08, RF-11, RF-35, RNF-08, RNF-10, RNF-13 · Casos de uso: CU-01 · Depende de: project_scaffold
 
 ## Contexto
@@ -92,8 +92,10 @@ nuevo tras el mismo puerto.
   *Verificación:* unit (asyncio.gather)
 - **sae_arrivals_source.AC-11** — SI la fuente falla para una parada, ENTONCES durante los
   siguientes 5 s (configurable) EL SISTEMA DEBERÁ responder `ArrivalsUnavailableError` para esa
-  parada sin volver a consultarla.
-  *Verificación:* unit
+  parada sin volver a consultarla, lanzando en cada respuesta una **instancia nueva** del error
+  (mismo `stop_id` y `reason`), de modo que su traza no crezca con cada acierto de la caché.
+  *Verificación:* unit (incluye que dos aciertos consecutivos lanzan objetos distintos y que
+  `__traceback__` no se acumula)
 - **sae_arrivals_source.AC-12** — EL SISTEMA DEBERÁ limitar a 4 (configurable) las consultas
   simultáneas a la fuente, sumando todas las paradas.
   *Verificación:* unit
@@ -174,3 +176,4 @@ nuevo tras el mismo puerto.
 |---|---|---|---|
 | 1.0 | 2026-10-31 | Versión inicial aprobada (PR #2) | — |
 | 1.1 | 2026-11-02 | Fuente `QR.php` (HTML) en lugar de `getSAE` (XML); reglas del parser en design §4; AC-04 cita `Próximo`; AC-21 (cabecera de parada obligatoria, parada inexistente = `unparseable`); AC-22 (`source_format` en las grabaciones); AC-19 (d) admite la parada inexistente como caso de error; T-08b (grabación nocturna opcional). | CP-3 tras la exploración E-01 (`progress/explore_sae.md`): `getSAE` está cerrado a terceros. Aprobada por la persona. |
+| 1.2 | 2026-11-02 | AC-11: instancia nueva del error en cada acierto de la caché negativa. Design: nombre del módulo `qrphp_parser.py` en §3, `build_arrivals_source` devuelve `CachedArrivalsSource`, `interval_s` admite `null`. T-11 y T-12 (README de regeneración y clientes HTTP en tests). | Hallazgos NB-1, NB-4, NB-6 y NB-7 de la revisión de `sae_arrivals_source`. Aprobada por la persona. |

@@ -1,6 +1,6 @@
 # Tokens de parada y QR — design
 
-> Feature: `stop_tokens_qr` · Versión: 1.1 · Estado: APPROVED
+> Feature: `stop_tokens_qr` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-05, RNF-07 · Casos de uso: CU-12 · Depende de: gtfs_import
 
 ## 1. Resumen
@@ -72,8 +72,7 @@ avisabus qr generate (--stop ID ... | --all) [--format svg|png] [--out DIR=./qr]
 ```
 
 Escribe los ficheros (la escritura a disco es responsabilidad de la CLI, no del caso de uso) y
-`index.csv` (UTF-8, cabecera `stop_id,name,url,file`). Códigos de salida: `0` todo bien,
-`1` sin feed, `2` alguna parada inexistente.
+`index.csv` (UTF-8, cabecera `stop_id,name,url,file`). Códigos de salida: `0` todo bien, `1` sin feed, `3` alguna parada inexistente (v1.2; `2` lo reserva Typer/Click para errores de uso).
 
 ### Firma
 
@@ -106,6 +105,7 @@ verify = len(token) == 22 and hmac.compare_digest(sign(stop_id), token)
 
 | Situación | Resultado |
 |---|---|
+| Desarrollo sin secreto | Se usa el secreto fijo de desarrollo. La advertencia `security.dev_stop_token_secret` **no** se emite al construir `Settings` (todavía no hay logging configurado): `Settings` expone `uses_dev_stop_token_secret: bool` y la emiten el composition root (`main.py`) y el contenedor de la CLI justo después de `configure_logging` (v1.2, H-01) |
 | Producción sin secreto válido | `ConfigurationError` al construir `Settings` → la app/CLI no arranca |
 | Parada inexistente | se añade a `missing_stop_ids`; la CLI imprime `ERROR: parada 9999 no existe` |
 | Sin feed | `NoActiveFeedError` → exit 1 |

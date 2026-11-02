@@ -1,6 +1,6 @@
 # Tokens de parada y QR — requirements
 
-> Feature: `stop_tokens_qr` · Versión: 1.1 · Estado: APPROVED
+> Feature: `stop_tokens_qr` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-05, RNF-07 · Casos de uso: CU-12 · Depende de: gtfs_import
 
 ## Contexto
@@ -46,7 +46,8 @@ después, `alert_create`.
   *Verificación:* unit
 - **stop_tokens_qr.AC-05** — MIENTRAS `AVISABUS_ENV` sea `dev` o `test` y no haya secreto
   configurado, EL SISTEMA DEBERÁ usar un secreto de desarrollo fijo y registrar la advertencia
-  `security.dev_stop_token_secret`.
+  `security.dev_stop_token_secret` **en el log JSON configurado** (no en la salida estándar sin
+  formato), tanto al arrancar la API como al ejecutar la CLI.
   *Verificación:* unit
 - **stop_tokens_qr.AC-06** — EL SISTEMA DEBERÁ construir la URL de una parada como
   `{AVISABUS_PUBLIC_BASE_URL}/p/{stop_id}?t={token}` sin barras duplicadas.
@@ -66,7 +67,9 @@ después, `alert_create`.
   menos 600×600 px para el código QR con la misma etiqueta.
   *Verificación:* integration (dimensiones y decodificación)
 - **stop_tokens_qr.AC-10** — SI una parada indicada no existe en el feed activo, ENTONCES LA CLI
-  DEBERÁ informar del error para esa parada, continuar con las demás y terminar con código 2.
+  DEBERÁ informar del error para esa parada, continuar con las demás y terminar con código **3**
+  (el código 2 queda para los errores de uso de la CLI, como omitir `--stop` y `--all`, que
+  Typer/Click ya devuelve con 2).
   *Verificación:* integration
 - **stop_tokens_qr.AC-11** — SI no hay feed importado, ENTONCES LA CLI DEBERÁ indicarlo y
   terminar con código 1 sin generar ficheros.
@@ -96,3 +99,4 @@ después, `alert_create`.
 |---|---|---|---|
 | 1.0 | 2026-10-31 | Versión inicial aprobada (PR #2) | — |
 | 1.1 | 2026-10-31 | AC-13: fuente DejaVu Sans incluida en el repositorio para la etiqueta PNG. AC-12: nivel de corrección exactamente M (`boost_error=False`). | Bloqueos B-01 (la fuente por defecto de Pillow no tiene tildes, cedillas ni eñes; 620 de 1 117 paradas afectadas) y B-02 del implementer. Aprobada por la persona. |
+| 1.2 | 2026-11-02 | AC-10: código de salida 3 para paradas inexistentes. AC-05: advertencia en el log JSON (design §6: la emiten `main.py` y la CLI tras configurar el logging). T-08. | Hallazgos S-01 y H-01 de la revisión de `stop_tokens_qr`. Aprobada por la persona. |

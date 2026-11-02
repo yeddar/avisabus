@@ -1,6 +1,6 @@
 # API de parada y llegadas — requirements
 
-> Feature: `stop_arrivals_api` · Versión: 1.2 · Estado: APPROVED
+> Feature: `stop_arrivals_api` · Versión: 1.3 · Estado: APPROVED
 > Requisitos: RF-06, RF-09, RF-11, RF-15, RF-32, RNF-01, RNF-08 · Casos de uso: CU-01 · Depende de: gtfs_import, stop_tokens_qr, sae_arrivals_source, occupancy_sensor
 
 ## Contexto
@@ -72,7 +72,9 @@ Es el backend de la vista de parada (CU-01). Une las piezas del bloque 1:
 - **stop_arrivals_api.AC-08** — SI la línea de una llegada no existe en el GTFS (p. ej. nocturnas),
   ENTONCES la llegada DEBERÁ devolverse con su tiempo, `in_network = false`,
   `direction_id = null`, `vehicle = null`, `occupancy = null` y `can_alert = false`.
-  *Verificación:* integration (grabación con línea fuera de red, real o derivada)
+  *Verificación:* integration (grabación con línea fuera de red: en `gtfs_mini` solo la 98 de las
+  líneas de la parada 2070 es de la red, así que la 73, la 95 y la 99 de la sesión grabada sirven
+  como caso **real** de línea fuera de red)
 - **stop_arrivals_api.AC-09** — EL SISTEMA DEBERÁ devolver como `destination` el `headsign` del
   GTFS cuando el sentido está resuelto, y el texto del SAE en otro caso.
   *Verificación:* unit
@@ -146,3 +148,4 @@ Es el backend de la vista de parada (CU-01). Une las piezas del bloque 1:
 | 1.0 | 2026-10-31 | Versión inicial aprobada (PR #2) | — |
 | 1.1 | 2026-10-31 | `tasks.md` E-01: pregunta explícita sobre el destino que da el SAE en las circulares C1, C2 y C3. Sin cambios en AC ni en el diseño. | Riesgo señalado en `progress/explore_gtfs_feed.md`. Aprobada por la persona. |
 | 1.2 | 2026-10-31 | AC-18: horarios que cruzan el cambio de día (incluye el día de servicio siguiente). T-05b modifica `SqliteNetworkRepository.scheduled_stop_times` (código de `gtfs_import`). | Hallazgo N-07 de `progress/review_gtfs_import.md`: la consulta solo miraba `D − 1` y `D`. Aprobada por la persona. |
+| 1.3 | 2026-11-02 | AC-08 y design §7: en `gtfs_mini`, las líneas 73, 95 y 99 de la parada 2070 son un caso real de línea fuera de red en los tests. Sin cambios de código ni de tareas. | Observación del orquestador tras `sae_arrivals_source` (la sesión grabada incluye la 2070). Aprobada por la persona. |

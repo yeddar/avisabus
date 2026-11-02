@@ -1,6 +1,6 @@
 # Sensor de ocupación — requirements
 
-> Feature: `occupancy_sensor` · Versión: 1.0 · Estado: APPROVED
+> Feature: `occupancy_sensor` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-14, RF-15 · Casos de uso: CU-01 (y, más adelante, CU-09) · Depende de: project_scaffold, gtfs_import
 
 ## Contexto
@@ -39,8 +39,9 @@ libres (RF-15), y al conductor como plazas libres (RF-29, feature `driver_demand
   configurables, e indicar si hay asientos libres (`free_seats > 0`).
   *Verificación:* unit (valores frontera 0,49 / 0,50 / 0,84 / 0,85)
 - **occupancy_sensor.AC-03** — SI los umbrales configurados no cumplen `0 < medio < lleno ≤ 1`,
-  o `seats > capacity`, ENTONCES EL SISTEMA DEBERÁ negarse a arrancar con un error de
-  configuración.
+  o `seats > capacity`, o (v1.1) con la capacidad configurada alguno de los tres niveles no admite
+  ningún número entero de plazas ocupadas, ENTONCES EL SISTEMA DEBERÁ negarse a arrancar con un
+  error de configuración.
   *Verificación:* unit
 
 ### Simulación
@@ -77,8 +78,10 @@ libres (RF-15), y al conductor como plazas libres (RF-29, feature `driver_demand
 - **occupancy_sensor.AC-11** — CUANDO el administrador ejecuta
   `avisabus occupancy override --line 93 --level FULL --minutes 30`, EL SISTEMA DEBERÁ guardar el
   forzado y, mientras no caduque, EL SENSOR DEBERÁ devolver para cualquier viaje de la línea 93
-  una lectura clasificada como `FULL` (y análogamente para `FREE` y `MEDIUM`).
-  *Verificación:* integration (BD temporal, FakeClock)
+  una lectura clasificada como `FULL` (y análogamente para `FREE` y `MEDIUM`), **con cualquier
+  configuración válida de umbrales y capacidad** (AC-03).
+  *Verificación:* integration (BD temporal, FakeClock) + unit (barrido de umbrales y capacidades
+  válidos con Hypothesis: el nivel forzado coincide siempre con la clasificación)
 - **occupancy_sensor.AC-12** — CUANDO caduca el forzado o el administrador ejecuta
   `avisabus occupancy override --line 93 --clear`, EL SENSOR DEBERÁ volver a la simulación normal.
   *Verificación:* integration
@@ -96,3 +99,10 @@ libres (RF-15), y al conductor como plazas libres (RF-29, feature `driver_demand
 | RF-14 Ocupación por vehículo tras interfaz, simulada | AC-01, AC-04, AC-05, AC-06, AC-07, AC-08, AC-09, AC-10, AC-11, AC-12, AC-13, AC-14 |
 | RF-15 Nivel de ocupación y asientos libres | AC-02, AC-03 |
 | OBJ-08 Desacoplamiento | AC-01 (puerto), AC-09 |
+
+## Historial
+
+| Versión | Fecha | Cambio | Motivo |
+|---|---|---|---|
+| 1.0 | 2026-10-31 | Versión inicial aprobada (PR #2) | — |
+| 1.1 | 2026-11-02 | AC-03 rechaza configuraciones con algún nivel sin enteros posibles; AC-11 válido con cualquier configuración válida; design: proporciones del forzado = punto medio de cada banda, con ajuste por redondeo; T-07. | Hallazgo SP-01 de la revisión de `occupancy_sensor`. Aprobada por la persona. |
