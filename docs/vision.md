@@ -54,7 +54,7 @@ actualizaciones en tiempo real.
 | Dato | Fuente | Naturaleza |
 |---|---|---|
 | Red: líneas, paradas, horarios, trazados | GTFS estático EMT València | Real (feed oficial, renovación ~mensual) |
-| Tiempos de llegada | SAE de EMT (endpoint "próximas llegadas" por parada) | Real, tiempo real. API no documentada oficialmente → caché y respaldo GTFS |
+| Tiempos de llegada | SAE de EMT, página "próximas llegadas" por parada (`QR.php`, enlazada en los datos abiertos del Ajuntament) | Real, tiempo real. API no documentada oficialmente → caché y respaldo GTFS |
 | Posición del autobús | Estimada: ETA SAE + tiempos de `stop_times` interpolados sobre `shapes` | Estimada (se indica en la UI) |
 | Ocupación | Sensor contador simulado | Simulada |
 | Posición del conductor | GPS del dispositivo (real) o simulador (demo) | Real / simulada |

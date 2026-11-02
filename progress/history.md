@@ -120,3 +120,8 @@
 - E-01 (`progress/explore_sae.md`, 14 peticiones ≤ 1/20 s por parada): `getSAE` (XML) cerrado a
   terceros; la fuente usable es el HTML `QR.php?sec=est&p={id}`. Parada inexistente = 200 sin
   entradas. Sin muestras de `HH:MM` ni "sin llegadas". Aviso legal de EMT a valorar.
+
+## 2026-11-02 · sae_arrivals_source · spec_blocked → spec_approved (v1.1, CP-3 + CP-1)
+- E-01: `getSAE` (XML) cerrado a terceros; la fuente es `QR.php` (HTML), enlazada por el
+  Ajuntament. La persona aprueba la v1.1 (ADR-015, AC-21, AC-22, T-08b) y envía un correo a EMT
+  solicitando permiso para `getSAE` y preguntando por una API oficial.

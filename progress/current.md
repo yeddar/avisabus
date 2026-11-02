@@ -4,7 +4,7 @@
 
 **Fecha:** 2026-11-02
 **Fase:** Implementación — Bloque 1 (Cimientos y datos)
-**Feature en curso:** `sae_arrivals_source` — `spec_blocked` (CP-3 tras E-01)
+**Feature en curso:** `sae_arrivals_source` — `spec_approved` v1.1 (CP-3 resuelto)
 
 ## Último paso
 PR #13 (`occupancy_sensor`) y PR #14 (`stop_tokens_qr`) fusionadas: 4/6 features del bloque 1 en
@@ -49,19 +49,10 @@ completada (`progress/explore_sae.md`, muestras en `progress/explore_sae_samples
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-- **CP-3 · sae_arrivals_source (E-01)** — detalle en `progress/explore_sae.md`:
-  1. Fuente: el XML `getSAE` de la spec (`emtvlcapi`) está cerrado a terceros ("Temporalmente no
-     disponible desde el plano…"). La fuente usable es la página HTML
-     `https://www.emtvalencia.es/QR.php?sec=est&p={stop_id}` (campo `proximas_llegadas` de la capa
-     226 del geoportal, CC BY 4.0). Propuesta: cambiar «Contexto», design §4/§7 (URL por defecto y
-     reglas del parser HTML con `html.parser`), AC-04 (`Próximo`); interfaces sin cambios.
-  2. Parada inexistente = HTTP 200 sin entradas (se confunde con "sin llegadas"). Propuesta: respuesta
-     válida solo si la cabecera casa con `^{stop_id} - .+`; si no → `unparseable`.
-  3. AC-19 (b)/(c): sin muestras reales de "sin llegadas" ni `HH:MM` → muestras derivadas
-     documentadas, y/o grabación nocturna real (~23:30, 508, línea N4).
-  4. Aviso legal de EMT: prohíbe reproducir contenidos/enlazar sin consentimiento escrito (no
-     menciona scraping). Valorar pedir permiso a EMT o tratarlo en la memoria del TFM.
-  5. `docs/requirements.md` RF-11 cita `minutos`/`horaLlegada` (cambio de redacción, CP-4).
+Ninguno. CP-3 de `sae_arrivals_source` resuelto por la persona (2026-11-02): fuente `QR.php`
+(ADR-015), cabecera de parada obligatoria (AC-21), `source_format` en las grabaciones (AC-22),
+muestras derivadas para "sin llegadas" y `HH:MM`, grabación nocturna opcional (T-08b). Correo
+enviado a EMT pidiendo permiso para `getSAE` y preguntando por una API oficial.
 
 ## Bloqueos
-- `sae_arrivals_source` en `spec_blocked` (CP-3 arriba). `stop_arrivals_api` depende de ella.
+Ninguno. Pendiente: T-08 (grabación `stop_508_peak`) el martes 2026-11-03 a las 7:45.
