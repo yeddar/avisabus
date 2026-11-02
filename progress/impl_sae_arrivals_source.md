@@ -1,8 +1,9 @@
 # Implementación: sae_arrivals_source
 Spec: specs/sae_arrivals_source/ (v1.1, APPROVED) · Ciclo de revisión: 0
 
-Alcance de esta sesión (orquestador): T-01…T-07 y T-09. T-08 y T-08b requieren red y se harán
-con la persona (martes 2026-11-03, 7:45). E-01 ya estaba hecha (`progress/explore_sae.md`).
+Primera pasada: T-01…T-07 y T-09 (E-01 ya estaba hecha, `progress/explore_sae.md`). Después,
+con la grabación hecha por la persona el 2026-11-02 por la tarde-noche: T-08 y T-10. T-08b
+(opcional, requiere red) sigue pendiente de la persona.
 
 ## Tareas
 - [x] T-01 Modelo normalizado, puerto `ArrivalsSource` y `ArrivalsUnavailableError` (commit 2a3636a)
@@ -13,29 +14,21 @@ con la persona (martes 2026-11-03, 7:45). E-01 ya estaba hecha (`progress/explor
 - [x] T-05 `CachedArrivalsSource` (commit dc4fdb8)
 - [x] T-06 Grabación (`RecordingArrivalsSource`) y `SaeReplayArrivalsSource` (commit 6e42a47)
 - [x] T-07 CLI `sae fetch` y `sae record` (commit 18c46c5)
-- [ ] T-08 Grabación real `stop_508_peak` — **pendiente de la persona** (requiere red). El test que
-      la verifica ya existe (`tests/unit/test_sae_fixtures.py::test_a_real_peak_session_of_stop_508_shows_a_passage`,
-      commit 52e27ff) y falla hasta que exista la grabación. Comando exacto (desde `backend/`,
-      martes 2026-11-03 a las 7:45; dura 15 min):
-
-      ```
-      cd backend
-      AVISABUS_ENV=dev AVISABUS_SAE_CONTACT='<correo de contacto>' \
-        uv run avisabus sae record --stop 508 --interval 20 --duration 900 \
-        --out tests/fixtures/sae_recordings/stop_508_peak
-      ```
-
-      Después: `uv run pytest tests/unit/test_sae_fixtures.py --no-cov` (debe detectar al menos un
-      paso de autobús), completar la sección `stop_508_peak/` del README de las fixtures (fecha,
-      hora, comando, paso observado) y hacer commit de la carpeta. Si no se detecta ningún paso,
-      repetir otro día laborable de lunes a jueves con `--out` nuevo (la CLI se niega a
-      sobrescribir una sesión existente).
+- [x] T-08 Grabación real `stop_508_peak` (commit ca36d15). **Grabada fuera de hora punta a
+      petición de la persona:** lunes 2026-11-02 (laborable), 20:42:23–21:07:04 Europe/Madrid, en
+      lugar de la hora punta del martes prevista en `tasks.md`. Paradas 508 y 2070, intervalo
+      20 s, 25 min (75 ciclos, 150 consultas, 0 fallidas, `AVISABUS_SAE_CONTACT` definido; las 150
+      respuestas se interpretan sin descartar entradas). Pasos observados en la 508: `offset_s`
+      520 (70 Alboraia), 1040 (93 Pass. Marítim), 1180 (70 Alboraia); en la 2070, 8 pasos.
+      Documentada en `backend/tests/fixtures/sae_recordings/README.md`; la verifica
+      `tests/unit/test_sae_fixtures.py::test_a_real_peak_session_of_stop_508_shows_a_passage` (ver
+      D-18).
 - [ ] T-08b (opcional) Grabación nocturna — **pendiente de la persona** (requiere red). Comando
       propuesto (hacia las 23:30, ~10 min):
       `AVISABUS_ENV=dev AVISABUS_SAE_CONTACT='<correo>' uv run avisabus sae record --stop 508 --stop 2070 --interval 20 --duration 600 --out tests/fixtures/sae_recordings/night_<AAAA-MM-DD>`
 - [x] T-09 Composición `build_arrivals_source`, configuración, `.env.example` y tarea `sae.stats`
       en el ciclo de vida de la app (commit e7e8031)
-- [ ] T-10 Verificación completa — en rojo solo por T-08 (ver "Verificación")
+- [x] T-10 Verificación completa: `./init.sh verify` en verde (ver "Verificación")
 
 ## Decisiones locales
 
@@ -120,39 +113,44 @@ Fuera de la lista de design §9 (detalles que la spec no fija; los anoto para el
   paso de autobús (la primera ETA de una línea+destino está en 0–2 min y en la respuesta siguiente
   salta ≥ 3 min hasta lo que era el bus siguiente, ±3 min) y lo valida con el paso real de la 95 en
   la parada 2070 (E-01). La comprobación de `stop_508_peak` (≥ 15 min, intervalo 20 s, de lunes a
-  jueves en Madrid, sin fixtures derivadas y con al menos un paso) falla hasta T-08.
+  jueves en Madrid, sin fixtures derivadas y con al menos un paso) fallaba hasta T-08.
+- **D-18 La sesión de AC-19 (a) puede grabar más paradas:** la comprobación de `stop_508_peak`
+  exigía `session.stops == ("508",)`; ahora exige `"508" in session.stops`, porque AC-19 (a) pide
+  una sesión real *de* la parada 508 (no *solo* de la 508) y la persona pidió grabar también la
+  2070. Se mantienen las demás comprobaciones (intervalo 20 s, `qrphp_html`, de lunes a jueves en
+  Madrid, ≥ 15 min, al menos un paso en la 508) y la de "sin fixtures derivadas" se amplía a
+  todas las paradas de la sesión (`*/*.json`), no solo a `508/`.
 
 ## Bloqueos
 
-Ninguno de spec (no hay CP-3). Pendiente operativo: T-08 (y T-08b opcional) requieren red y se
-harán con la persona.
+Ninguno de spec (no hay CP-3). T-08b (grabación nocturna) sigue opcional y pendiente de la
+persona.
 
-Observaciones no bloqueantes para la persona/spec-writer:
+Observaciones no bloqueantes para la persona/spec-writer y el reviewer:
 - design §3 nombra `adapters/outbound/sae/parser.py`; §2 y `tasks.md` dicen `qrphp_parser.py`
   (D-07).
 - Con el default `AVISABUS_SAE_CONTACT=""` el User-Agent no lleva contacto (D-15).
-- El README de las fixtures ya describe las sesiones de `samples/` y deja preparado el apartado
-  de `stop_508_peak/` para T-08.
+- `stop_508_peak` no es de hora punta (se grabó por la tarde-noche a petición de la persona);
+  el nombre de la carpeta se mantiene porque es el default de `AVISABUS_SAE_REPLAY_DIR`. AC-19 (a)
+  no exige hora punta; `tasks.md` (T-08) sí la mencionaba.
+- `gtfs_mini` solo tiene las líneas 70, 93, 98 y C2: la parte de la 2070 de la sesión (líneas 73,
+  95, 98, 99) solo casa con GTFS para la 98. Lo tendrá que tener en cuenta `stop_arrivals_api`.
+- En el README, el comando de T-08 se ha reconstruido a partir de `session.json` (paradas,
+  intervalo, carpeta) y de sus 75 ciclos (`--duration 1500`); el contacto figura como
+  `<contacto>`.
 
 ## Verificación
 
-`./init.sh verify` (2026-11-02, tras el último commit 52e27ff):
+`./init.sh verify` (2026-11-02, tras el commit ca36d15):
 
 ```
 OK   backend: format
 OK   backend: lint
 OK   backend: types
 OK   backend: architecture
-FAIL backend: tests   — 1 failed, 616 passed, 2 deselected; cobertura domain+application 99.51 %
+OK   backend: tests   — 617 passed, 2 deselected; cobertura domain+application 99.51 %
 OK   frontend: format / lint / types / tests (7 passed) / build
 OK   harness: feature_list.json
 OK   harness: trazabilidad AC→test   (AC-01…AC-22 de sae_arrivals_source citados)
-FAIL verify: 1 paso(s) fallido(s): backend: tests
+OK   verify: todo en verde
 ```
-
-El único fallo es
-`tests/unit/test_sae_fixtures.py::test_a_real_peak_session_of_stop_508_shows_a_passage`:
-`AssertionError: stop_508_peak has not been recorded yet (T-08, needs the network …)`. Falla
-**únicamente** porque falta la grabación real de T-08 (`tests/fixtures/sae_recordings/stop_508_peak/`
-no existe); no se ha falseado ni sorteado. AC-19 (a) queda sin evidencia hasta entonces. Al
-grabarla con el comando de T-08 el test debe pasar y `./init.sh verify` quedar en verde (T-10).
