@@ -23,7 +23,7 @@ from avisabus.application.set_occupancy_override import (
     ListOccupancyOverrides,
     SetOccupancyOverride,
 )
-from avisabus.config import Settings
+from avisabus.config import Settings, log_dev_stop_token_secret_warning
 from avisabus.domain.ports.clock import Clock
 
 
@@ -42,6 +42,8 @@ class CliContainer:
 
 
 def build_cli_container(settings: Settings, clock: Clock) -> CliContainer:
+    """Called by every CLI command right after `configure_logging`."""
+    log_dev_stop_token_secret_warning(settings)
     engine = create_engine(settings)
     init_db(engine)
     network = SqliteNetworkRepository(engine)

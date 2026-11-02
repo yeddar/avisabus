@@ -22,7 +22,7 @@ from avisabus.adapters.outbound.persistence.sqlite_occupancy_override import (
 )
 from avisabus.adapters.outbound.sae.compose import build_arrivals_source
 from avisabus.background.sae_stats import run_sae_stats
-from avisabus.config import Settings
+from avisabus.config import Settings, log_dev_stop_token_secret_warning
 from avisabus.domain.ports.clock import Clock
 from avisabus.domain.ports.occupancy import OccupancySensor
 from avisabus.logging import configure_logging
@@ -42,6 +42,7 @@ def build_occupancy_sensor(settings: Settings, engine: Engine, clock: Clock) -> 
 
 settings = Settings()
 configure_logging(settings.log_level)
+log_dev_stop_token_secret_warning(settings)
 clock = SystemClock()
 http_client = httpx.AsyncClient()
 arrivals_source = build_arrivals_source(

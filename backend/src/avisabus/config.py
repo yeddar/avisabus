@@ -96,23 +96,35 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _check_stop_token_secret(self) -> Self:
-        """Production needs a secret of at least 32 bytes; dev/test fall back to a fixed one."""
+        """Production needs a secret of at least 32 bytes; dev/test fall back to a fixed one.
+
+        The dev-secret warning is not logged here (logging is not configured yet): the API and
+        the CLI call `log_dev_stop_token_secret_warning` right after `configure_logging`.
+        """
         configured = _secret_length(self.stop_token_secret)
-        if self.env == "prod":
-            if configured < MIN_STOP_TOKEN_SECRET_BYTES:
-                raise ConfigurationError(
-                    "AVISABUS_STOP_TOKEN_SECRET must be set to at least "
-                    f"{MIN_STOP_TOKEN_SECRET_BYTES} bytes when AVISABUS_ENV=prod"
-                )
-        elif configured == 0:
-            log.warning("security.dev_stop_token_secret", env=self.env)
+        if self.env == "prod" and configured < MIN_STOP_TOKEN_SECRET_BYTES:
+            raise ConfigurationError(
+                "AVISABUS_STOP_TOKEN_SECRET must be set to at least "
+                f"{MIN_STOP_TOKEN_SECRET_BYTES} bytes when AVISABUS_ENV=prod"
+            )
         return self
+
+    @property
+    def uses_dev_stop_token_secret(self) -> bool:
+        """True in dev/test when no secret is configured, so the fixed dev secret signs tokens."""
+        return self.env != "prod" and _secret_length(self.stop_token_secret) == 0
 
     def stop_token_secret_bytes(self) -> bytes:
         """Secret that signs stop tokens: the configured one or, in dev/test, the fixed one."""
         if self.stop_token_secret is None or not self.stop_token_secret.get_secret_value():
             return DEV_STOP_TOKEN_SECRET
         return self.stop_token_secret.get_secret_value().encode()
+
+
+def log_dev_stop_token_secret_warning(settings: Settings) -> None:
+    """stop_tokens_qr AC-05: warn, in the configured JSON log, that the dev secret is in use."""
+    if settings.uses_dev_stop_token_secret:
+        log.warning("security.dev_stop_token_secret", env=settings.env)
 
 
 def _secret_length(secret: SecretStr | None) -> int:

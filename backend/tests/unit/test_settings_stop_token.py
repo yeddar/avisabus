@@ -46,13 +46,14 @@ def test_prod_accepts_a_secret_of_at_least_32_bytes(
     with capture_logs() as logs:
         settings = Settings()
     assert settings.stop_token_secret_bytes() == secret.encode()
+    assert settings.uses_dev_stop_token_secret is False
     assert logs == []
 
 
 @pytest.mark.spec("stop_tokens_qr.AC-05")
 @pytest.mark.parametrize("env", ["dev", "test"])
 @pytest.mark.parametrize("secret", [None, ""])
-def test_dev_and_test_without_secret_use_the_dev_secret_and_warn(
+def test_dev_and_test_without_secret_use_the_dev_secret_and_flag_it(
     monkeypatch: pytest.MonkeyPatch, env: str, secret: str | None
 ) -> None:
     monkeypatch.setenv("AVISABUS_ENV", env)
@@ -62,8 +63,10 @@ def test_dev_and_test_without_secret_use_the_dev_secret_and_warn(
         settings = Settings()
     assert settings.stop_token_secret_bytes() == DEV_STOP_TOKEN_SECRET
     assert DEV_STOP_TOKEN_SECRET == b"avisabus-dev-only-secret-do-not-use!"
-    assert [entry["event"] for entry in logs] == ["security.dev_stop_token_secret"]
-    assert logs[0]["log_level"] == "warning"
+    assert settings.uses_dev_stop_token_secret is True
+    # v1.2 (H-01): the warning is not logged here, before logging is configured; the API and the
+    # CLI log it right after `configure_logging` (see test_cli_qr.py and test_main_stop_token.py).
+    assert logs == []
 
 
 @pytest.mark.spec("stop_tokens_qr.AC-05")
@@ -75,6 +78,7 @@ def test_dev_with_a_configured_secret_uses_it_without_warning(
     with capture_logs() as logs:
         settings = Settings()
     assert settings.stop_token_secret_bytes() == b"my-local-secret"
+    assert settings.uses_dev_stop_token_secret is False
     assert logs == []
 
 

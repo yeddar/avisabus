@@ -61,7 +61,11 @@ LINE_70_TRIPS = TRIPS_BY_LINE["70"][:25]
 
 
 def _settings(path: Path) -> Settings:
-    return Settings(_env_file=None, env="test", database_url=f"sqlite:///{path}")  # type: ignore[call-arg]
+    # With a secret, the CLI container does not log the stop_tokens_qr dev-secret warning, which
+    # would otherwise be printed before the `--list` output (logging is not configured here).
+    return Settings(  # type: ignore[call-arg]
+        _env_file=None, env="test", database_url=f"sqlite:///{path}", stop_token_secret="x" * 32
+    )
 
 
 @pytest.fixture(scope="module")
@@ -98,9 +102,6 @@ def _container(
 
     monkeypatch.setattr(occupancy_cli, "build_cli_container", build)
     monkeypatch.setattr(occupancy_cli, "configure_logging", lambda _level: None)
-    # The CLI builds `Settings()`: with a secret, stop_tokens_qr does not log its dev-secret
-    # warning, which would otherwise be printed before the `--list` output.
-    monkeypatch.setenv("AVISABUS_STOP_TOKEN_SECRET", "x" * 32)
     yield
 
 
