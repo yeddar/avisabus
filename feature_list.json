@@ -82,7 +82,7 @@
       "order": 4,
       "block": 1,
       "title": "Fuente de tiempos de llegada del SAE: cliente, normalización, caché, grabación y replay",
-      "status": "in_review",
+      "status": "done",
       "depends_on": [
         "project_scaffold"
       ],
@@ -101,7 +101,7 @@
       "spec": "specs/sae_arrivals_source/",
       "needs_exploration": true,
       "review_cycles": 0,
-      "passes": false
+      "passes": true
     },
     {
       "id": "occupancy_sensor",

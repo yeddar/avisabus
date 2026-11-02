@@ -138,3 +138,7 @@
 - T-08 adelantada a petición de la persona: grabación real de 25 min (lunes 20:42–21:07, fuera de
   hora punta), paradas 508 y 2070, 0 fallos; 3 pasos en la 508 (70, 93, 70). Test de AC-19 (a)
   relajado a "508 ∈ stops" (D-18). `./init.sh verify` en verde (617 tests, cobertura 99,51 %).
+
+## 2026-11-02 · sae_arrivals_source · in_review → done
+- Revisión ciclo 1: APPROVED (22 AC con evidencia, verify en verde). No bloqueantes NB-1…NB-8
+  anotados en `current.md`. PR contra `develop` abierta, sin fusionar. Bloque 1: 5/6 en `done`.
