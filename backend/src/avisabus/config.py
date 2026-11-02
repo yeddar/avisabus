@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     occupancy_threshold_medium: float = 0.50
     occupancy_threshold_full: float = 0.85
     stop_token_secret: SecretStr | None = None
+    sae_url_template: str = "https://www.emtvalencia.es/QR.php?sec=est&p={stop_id}"
+    sae_timeout_s: float = Field(default=3, gt=0)
+    sae_contact: str = ""
 
     @model_validator(mode="after")
     def _check_occupancy(self) -> Self:
@@ -63,6 +66,21 @@ class Settings(BaseSettings):
         return OccupancyThresholds(
             medium=self.occupancy_threshold_medium, full=self.occupancy_threshold_full
         )
+
+    @model_validator(mode="after")
+    def _check_sae(self) -> Self:
+        """sae_arrivals_source: the URL template must say where the stop goes."""
+        try:
+            valid = "{stop_id}" in self.sae_url_template and bool(
+                self.sae_url_template.format(stop_id="0")
+            )
+        except (KeyError, IndexError, ValueError):
+            valid = False
+        if not valid:
+            raise ConfigurationError(
+                "AVISABUS_SAE_URL_TEMPLATE must contain {stop_id} and no other placeholder"
+            )
+        return self
 
     @model_validator(mode="after")
     def _check_stop_token_secret(self) -> Self:
