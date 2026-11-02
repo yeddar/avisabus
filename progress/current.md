@@ -4,20 +4,19 @@
 
 **Fecha:** 2026-11-02
 **Fase:** Implementación — Bloque 1 (Cimientos y datos)
-**Feature en curso:** `sae_arrivals_source` — `done` (PR abierta, pendiente de fusión)
+**Feature en curso:** ajustes de cierre del bloque 1 (rama `fix/bloque-1-ajustes`): `stop_tokens_qr` v1.2,
+`sae_arrivals_source` v1.2, `occupancy_sensor` v1.1 — `implementing`
 
 ## Último paso
-`sae_arrivals_source` (spec v1.1): T-01…T-10 hechas; T-08 grabada el lunes 2026-11-02 20:42–21:07
-(fuera de hora punta, a petición de la persona; paradas 508 y 2070, 3 pasos en la 508). Revisión
-ciclo 1: **APPROVED** sin bloqueantes. `done`; PR contra `develop` abierta (sin fusionar).
+PR #16 (`sae_arrivals_source`) y PR #17 (specs de ajustes de cierre del bloque 1) fusionadas.
+Rama `fix/bloque-1-ajustes`; implementer con las tareas nuevas: `stop_tokens_qr` T-08/T-09,
+`sae_arrivals_source` T-11…T-13, `occupancy_sensor` T-07/T-08.
 
 ## Siguiente paso
-1. La persona revisa y fusiona la PR de `sae_arrivals_source`.
-2. `stop_arrivals_api` (v1.2) → fin del bloque 1 (CP-6).
-3. Fuera de Claude Code: PR de specs para SP-01 (`occupancy_sensor`), S-01 y H-01 (`stop_tokens_qr`)
-   y corrección `parser.py`/`qrphp_parser.py` + NB-6 de `sae_arrivals_source` — la prepara la persona;
-   specs del bloque 2 (PR #7).
-4. T-08b (grabación nocturna, opcional) cuando la persona quiera.
+1. Reviewer nuevo de las tres versiones → si APPROVED, `done` y PR contra `develop` (sin fusionar).
+2. Tras la fusión: `stop_arrivals_api` (v1.3), rama propia, E-01 (destinos del SAE frente a
+   headsigns del GTFS, incluidas circulares) y **parar** para revisar la exploración con la persona.
+3. Fin del bloque 1 (CP-6). T-08b de `sae_arrivals_source` (nocturna) opcional.
 
 ## Pendiente para specs futuras
 - **sae_arrivals_source NB-1 → `stop_arrivals_api`:** la caché negativa relanza la misma instancia
