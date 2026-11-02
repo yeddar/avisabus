@@ -3,7 +3,8 @@
 - A snapshot younger than `ttl` is served without asking the source (AC-09).
 - Concurrent requests for the same stop share a single fetch: the fetch runs in its own task
   that every caller awaits (shielded, so cancelling one caller does not cancel it) (AC-10).
-- A failure is cached for `error_ttl` and the same error is raised again (AC-11).
+- A failure is cached for `error_ttl`: only its reason is stored, and every hit raises a new
+  `ArrivalsUnavailableError` with the same stop and reason, so no traceback piles up (AC-11).
 - At most `max_concurrency` fetches run at once, adding up every stop (AC-12).
 - Hits, misses and source errors are counted; `emit_stats` logs `sae.stats` (AC-13).
 """
@@ -36,7 +37,8 @@ class CacheStats:
 class _Entry:
     stored_at: datetime
     snapshot: ArrivalsSnapshot | None
-    error: ArrivalsUnavailableError | None
+    error_reason: str | None
+    """`reason` of the failure; the exception object itself is never stored (AC-11)."""
 
 
 class CachedArrivalsSource:
@@ -63,8 +65,8 @@ class CachedArrivalsSource:
         entry = self._entries.get(stop_id)
         if entry is not None and self._is_fresh(entry):
             self._hits += 1
-            if entry.error is not None:
-                raise entry.error
+            if entry.error_reason is not None:
+                raise ArrivalsUnavailableError(stop_id, entry.error_reason)
             assert entry.snapshot is not None  # noqa: S101 - one of the two is always set
             return entry.snapshot
         self._misses += 1
@@ -85,7 +87,7 @@ class CachedArrivalsSource:
 
     def _is_fresh(self, entry: _Entry) -> bool:
         age = self._clock.now() - entry.stored_at
-        return age < (self._ttl if entry.error is None else self._error_ttl)
+        return age < (self._ttl if entry.error_reason is None else self._error_ttl)
 
     async def _fetch(self, stop_id: str) -> ArrivalsSnapshot:
         try:
@@ -93,7 +95,7 @@ class CachedArrivalsSource:
                 snapshot = await self._inner.get_arrivals(stop_id)
         except ArrivalsUnavailableError as error:
             self._errors += 1
-            self._entries[stop_id] = _Entry(self._clock.now(), None, error)
+            self._entries[stop_id] = _Entry(self._clock.now(), None, error.reason)
             raise
         except Exception:
             self._errors += 1
