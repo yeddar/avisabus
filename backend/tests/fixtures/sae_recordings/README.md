@@ -66,11 +66,39 @@ Cada sesión es una carpeta:
   `"{destino} - HH:MM"` es un **supuesto** de design §4. La grabación nocturna opcional (T-08b)
   debe confirmarlo o desmentirlo.
 
-### `stop_508_peak/` — real (AC-19 a) — **pendiente (T-08)**
+### `stop_508_peak/` — real (AC-19 a)
 
-Sesión de hora punta de la parada 508, ≥ 15 min con intervalo de 20 s, de lunes a jueves. Se
-grabará con la CLI (ver "Regeneración") y se documentará aquí: fecha, hora, comando y el paso de
-autobús observado.
+- **Fecha:** lunes 2026-11-02 (laborable), de 20:42:23 a 21:07:04 en Madrid (19:42:23–20:07:04
+  UTC). **Fuera de hora punta:** se grabó a última hora de la tarde, a petición de la persona,
+  en lugar de en la hora punta de la mañana prevista en T-08. El nombre de la carpeta se mantiene
+  porque es el valor por defecto de `AVISABUS_SAE_REPLAY_DIR`.
+- **Paradas:** 508 y 2070 (en cada ciclo, primero la 508 y luego la 2070).
+- **Intervalo y duración:** 20 s durante 25 min: 75 ciclos (`offset_s` de 0 a 1480), es decir,
+  150 consultas (75 por parada).
+- **Cómo se obtuvo:** con la CLI de la feature contra `QR.php`, con `AVISABUS_SAE_CONTACT`
+  definido (User-Agent `AvisaBus/0.1.0 (TFM; <contacto>)`); paradas, intervalo y carpeta según
+  `session.json`, y `--duration 1500` según sus 75 ciclos:
+
+  ```
+  cd backend
+  AVISABUS_ENV=dev AVISABUS_SAE_CONTACT='<contacto>' \
+    uv run avisabus sae record --stop 508 --stop 2070 --interval 20 --duration 1500 \
+    --out tests/fixtures/sae_recordings/stop_508_peak
+  ```
+
+- **Consultas fallidas:** 0 (las 150 respuestas son HTTP 200 y el parser las interpreta todas
+  sin descartar ninguna entrada).
+  No hay fixtures derivadas: todas las respuestas son reales.
+- **Pasos de autobús observados en la 508** (detector de `tests/unit/test_sae_fixtures.py`: la
+  primera ETA de la línea llega a 0–2 min y en la respuesta siguiente salta al autobús siguiente):
+
+| `offset_s` | Línea | Destino |
+|---|---|---|
+| 520 | 70 | Alboraia |
+| 1040 | 93 | Pass. Marítim |
+| 1180 | 70 | Alboraia |
+
+  En la 2070 el mismo detector encuentra 8 pasos (líneas 73, 95 y 99).
 
 ## Regeneración
 

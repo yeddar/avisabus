@@ -1,0 +1,10 @@
+{
+  "started_at": "2026-11-02T19:42:23.769219Z",
+  "stops": [
+    "508",
+    "2070"
+  ],
+  "interval_s": 20,
+  "source_url_template": "https://www.emtvalencia.es/QR.php?sec=est&p={stop_id}",
+  "source_format": "qrphp_html"
+}

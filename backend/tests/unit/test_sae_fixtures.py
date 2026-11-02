@@ -132,12 +132,12 @@ def test_a_real_peak_session_of_stop_508_shows_a_passage() -> None:
         "tests/fixtures/sae_recordings/README.md)"
     )
     session = read_session(STOP_508_PEAK)
-    assert session.stops == ("508",)
+    assert "508" in session.stops  # a session of stop 508; it may record other stops too
     assert session.interval_s == 20
     assert session.source_format == "qrphp_html"
     assert session.started_at.astimezone(MADRID).weekday() <= 3  # Mon–Thu (gtfs_mini services)
     recordings = read_recordings(STOP_508_PEAK)["508"]
     assert recordings[-1].offset_s + session.interval_s >= 15 * 60
-    for path in (STOP_508_PEAK / "508").glob("*.json"):
+    for path in STOP_508_PEAK.glob("*/*.json"):  # every stop of the session is real
         assert "derived_from" not in json.loads(path.read_text(encoding="utf-8")), path.name
     assert passages(recordings), "no bus passage observed in stop_508_peak"
