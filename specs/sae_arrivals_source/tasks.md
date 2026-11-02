@@ -1,6 +1,6 @@
 # Fuente de llegadas del SAE — tasks
 
-> Feature: `sae_arrivals_source` · Versión: 1.1 · Estado: APPROVED
+> Feature: `sae_arrivals_source` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-07, RF-08, RF-11, RF-35, RNF-08, RNF-10, RNF-13 · Casos de uso: CU-01 · Depende de: project_scaffold
 
 ## Exploración
@@ -15,6 +15,9 @@
   de ejemplo (cuerpo + cabeceras relevantes) en `progress/explore_sae_samples/`.
   → `progress/explore_sae.md`
 
+> **v1.2:** T-01…T-10 implementadas en versiones anteriores (T-08b sigue opcional). En esta versión
+> solo quedan **T-11, T-12 y T-13**.
+>
 > **v1.1:** E-01 completada (`progress/explore_sae.md`); CP-3 resuelto. No repetir.
 
 ## Tareas
@@ -88,4 +91,20 @@
   - Verificación: `cd backend && uv run pytest tests/unit/test_sae_compose.py`
 
 - [ ] **T-10** — Verificación completa.
+  - Verificación: `./init.sh verify`
+
+- [ ] **T-11** — (v1.2, NB-1) La caché negativa guarda solo el motivo del error y lanza una
+  instancia nueva en cada acierto.
+  - AC: sae_arrivals_source.AC-11
+  - Ficheros: `adapters/outbound/sae/cache.py`, `tests/unit/test_sae_cache.py`
+  - Verificación: `cd backend && uv run pytest tests/unit/test_sae_cache.py`
+
+- [ ] **T-12** — (v1.2, NB-4, NB-7) El comando de regeneración del `README.md` de las grabaciones
+  usa una carpeta `--out` nueva (no sobrescribe sesiones); cerrar los clientes HTTP que los tests de
+  composición dejan abiertos.
+  - AC: (calidad; sin AC nuevo)
+  - Ficheros: `backend/tests/fixtures/sae_recordings/README.md`, `tests/unit/test_sae_compose.py`
+  - Verificación: `cd backend && uv run pytest tests/unit/test_sae_compose.py -W error::ResourceWarning`
+
+- [ ] **T-13** — Verificación completa (v1.2).
   - Verificación: `./init.sh verify`

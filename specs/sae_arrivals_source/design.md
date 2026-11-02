@@ -1,6 +1,6 @@
 # Fuente de llegadas del SAE — design
 
-> Feature: `sae_arrivals_source` · Versión: 1.1 · Estado: APPROVED
+> Feature: `sae_arrivals_source` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-07, RF-08, RF-11, RF-35, RNF-08, RNF-10, RNF-13 · Casos de uso: CU-01 · Depende de: project_scaffold
 
 ## 1. Resumen
@@ -26,7 +26,7 @@ ejercitan el mismo código que producción.
 | adapters/outbound | `sae/cache.py` | `CachedArrivalsSource` |
 | adapters/outbound | `sae/recording.py` | `RecordingArrivalsSource`, `SaeRecording` (formato de fichero) |
 | adapters/outbound | `sae/replay.py` | `SaeReplayArrivalsSource` |
-| adapters/outbound | `sae/compose.py` | `build_arrivals_source(settings, clock, http_client) -> ArrivalsSource` |
+| adapters/outbound | `sae/compose.py` | `build_arrivals_source(settings, clock, http_client) -> CachedArrivalsSource` (devuelve el tipo concreto para que `main.py` acceda a `stats()` y `emit_stats()`) |
 | adapters/inbound | `cli/sae.py` | `avisabus sae fetch`, `avisabus sae record` |
 
 ## 3. Interfaces
@@ -56,7 +56,7 @@ class ArrivalsSource(Protocol):
     async def get_arrivals(self, stop_id: str) -> ArrivalsSnapshot: ...
     # lanza ArrivalsUnavailableError
 
-# adapters/outbound/sae/parser.py
+# adapters/outbound/sae/qrphp_parser.py
 @dataclass(frozen=True, slots=True)
 class ParseResult:
     arrivals: tuple[SaeArrival, ...]
@@ -88,7 +88,9 @@ como un observador que escribe ficheros (no necesita envolver la fuente).
 ### Caché (detalle)
 
 - Entrada por `stop_id`: `(snapshot | error, stored_at)`.
-- Hit si `now - stored_at < ttl` (snapshot) o `< error_ttl` (error → se relanza el mismo error).
+- Hit si `now - stored_at < ttl` (snapshot) o `< error_ttl` (error → se lanza una **instancia
+  nueva** de `ArrivalsUnavailableError` con el mismo `stop_id` y `reason`; se guarda solo el motivo,
+  no el objeto de la excepción) (v1.2, AC-11).
 - Single-flight: diccionario `stop_id → asyncio.Future` en vuelo; los llamantes concurrentes
   esperan el mismo `Future`.
 - Concurrencia: `asyncio.Semaphore(max_concurrency)` alrededor de la llamada a `inner`.
@@ -161,6 +163,9 @@ cambiar las interfaces.
     ├── 000020.json
     └── ...
 ```
+
+`interval_s` puede ser `null` en sesiones que no se grabaron a intervalo fijo (p. ej. las muestras
+de la exploración E-01 convertidas a fixtures).
 
 `body` se guarda como texto (decodificado con la codificación declarada; si es binario, base64
 con `"body_encoding": "base64"`). Las fixtures derivadas (no reales) llevan

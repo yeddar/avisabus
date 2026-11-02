@@ -1,6 +1,6 @@
 # API de parada y llegadas — design
 
-> Feature: `stop_arrivals_api` · Versión: 1.2 · Estado: APPROVED
+> Feature: `stop_arrivals_api` · Versión: 1.3 · Estado: APPROVED
 > Requisitos: RF-06, RF-09, RF-11, RF-15, RF-32, RNF-01, RNF-08 · Casos de uso: CU-01 · Depende de: gtfs_import, stop_tokens_qr, sae_arrivals_source, occupancy_sensor
 
 ## 1. Resumen
@@ -240,6 +240,11 @@ Sin tablas nuevas. *Overrides* de sentido opcionales en un JSON:
 - **Integration (API):** app completa con BD de `gtfs_mini`, replay de `stop_508_peak` y
   `samples/`, `FakeClock` situado dentro de la sesión, `httpx.AsyncClient` (AC-01–AC-04, AC-08,
   AC-12–AC-17).
+- **Parada 2070 en los tests (v1.3):** la sesión `stop_508_peak` incluye también la 2070, servida
+  por 73, 95, 98 y 99, pero `gtfs_mini` solo contiene la 98. En los tests con `gtfs_mini`, la 73, la
+  95 y la 99 aparecen con `in_network = false`: es el comportamiento correcto y se usa como caso
+  real de AC-08, no como error. Para comprobar la resolución de sentidos en la 2070 con todas sus
+  líneas se usa la exploración E-01 sobre el feed completo, no los tests de integración.
 - La fixture `gtfs_mini` y la sesión `stop_508_peak` deben ser coherentes en fecha: los tests fijan
   el `FakeClock` en la fecha de la grabación y el día de la semana correspondiente debe tener
   servicio en `gtfs_mini` (si no, se regenera `gtfs_mini` con `--date` de la grabación; la

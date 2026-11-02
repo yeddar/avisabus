@@ -1,6 +1,6 @@
 # Sensor de ocupación — design
 
-> Feature: `occupancy_sensor` · Versión: 1.0 · Estado: APPROVED
+> Feature: `occupancy_sensor` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-14, RF-15 · Casos de uso: CU-01 · Depende de: project_scaffold, gtfs_import
 
 ## 1. Resumen
@@ -88,8 +88,14 @@ parada, `p = (s_at − s_first) / (s_last − s_first)` acotado a [0, 1].
 
 ### Forzado
 
-Con forzado activo para la línea del viaje, `occupied` se fija a `round(capacity × r)` con
-`r = 0,20` (FREE), `0,65` (MEDIUM) o `0,95` (FULL). La línea del viaje se obtiene de
+Con forzado activo para la línea del viaje, `occupied` se calcula a partir de los **umbrales
+configurados** (v1.1, SP-01), tomando el punto medio de la banda del nivel pedido:
+`r_FREE = medium / 2`, `r_MEDIUM = (medium + full) / 2`, `r_FULL = (full + 1) / 2`, y
+`occupied = round(capacity × r)`. Si por el redondeo (capacidades pequeñas) la lectura no se
+clasifica en el nivel pedido, se ajusta `occupied` de uno en uno hacia el interior de la banda
+hasta que coincida. Siempre existe ese valor porque AC-03 (v1.1) rechaza al arrancar las
+configuraciones en las que algún nivel no admite ningún entero de plazas ocupadas (p. ej.
+capacidad 3 con umbrales 0,50 y 0,60). Con los umbrales por defecto: 0,25 / 0,675 / 0,925. La línea del viaje se obtiene de
 `NetworkRepository` (los `TripStopTime` no la incluyen; se añade la consulta
 `trip_line(trip_id) -> str | None` al repositorio — ampliación del puerto definida aquí).
 
