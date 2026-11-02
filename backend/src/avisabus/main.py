@@ -37,6 +37,7 @@ def build_occupancy_sensor(settings: Settings, engine: Engine, clock: Clock) -> 
         capacity=settings.occupancy_capacity,
         seats=settings.occupancy_seats,
         seed=settings.occupancy_seed,
+        thresholds=settings.occupancy_thresholds(),
     )
 
 

@@ -1,18 +1,25 @@
 """Simulated `OccupancySensor` (RF-14, occupancy_sensor design §3).
 
 Deterministic: the reading depends only on the trip, its service day, the instant asked for,
-the configuration (capacity, seats, seed) and, when there is one, the demo override of the
-trip's line. Overrides are read through a 5 s cache so changes made from the CLI (another
-process) are seen without restarting the application (AC-14).
+the configuration (capacity, seats, seed, thresholds) and, when there is one, the demo override
+of the trip's line: the middle of the band of the forced level under the configured thresholds
+(v1.1, `override_occupied`). Overrides are read through a 5 s cache so changes made from the
+CLI (another process) are seen without restarting the application (AC-14).
 """
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from avisabus.domain.models.occupancy import OccupancyLevel, OccupancyReading, VehicleRef
+from avisabus.domain.models.occupancy import (
+    OccupancyLevel,
+    OccupancyReading,
+    OccupancyThresholds,
+    VehicleRef,
+)
 from avisabus.domain.ports.clock import Clock
 from avisabus.domain.ports.network import NetworkRepository
 from avisabus.domain.ports.occupancy import OccupancyOverride, OccupancyOverrideRepository
+from avisabus.domain.services.occupancy_classifier import override_occupied
 from avisabus.domain.services.occupancy_simulation import (
     hour_factor,
     progress,
@@ -20,13 +27,6 @@ from avisabus.domain.services.occupancy_simulation import (
     simulate_occupied,
     trip_factor,
 )
-
-OVERRIDE_RATIOS: dict[OccupancyLevel, float] = {
-    OccupancyLevel.FREE: 0.20,
-    OccupancyLevel.MEDIUM: 0.65,
-    OccupancyLevel.FULL: 0.95,
-}
-"""`occupied = round(capacity * ratio)` while an override of the trip's line is active."""
 
 OVERRIDES_CACHE_TTL = timedelta(seconds=5)
 
@@ -47,6 +47,7 @@ class SimulatedOccupancySensor:
         capacity: int,
         seats: int,
         seed: str,
+        thresholds: OccupancyThresholds,
     ) -> None:
         self._network = network
         self._overrides = overrides
@@ -54,6 +55,7 @@ class SimulatedOccupancySensor:
         self._capacity = capacity
         self._seats = seats
         self._seed = seed
+        self._override_occupied = _override_occupied_by_level(capacity, thresholds)
         self._cache: _CachedOverrides | None = None
 
     async def read(self, vehicle: VehicleRef, at: datetime) -> OccupancyReading | None:
@@ -62,7 +64,7 @@ class SimulatedOccupancySensor:
             return None
         level = self._override_level(vehicle.trip_id)
         if level is not None:
-            occupied = round(self._capacity * OVERRIDE_RATIOS[level])
+            occupied = self._override_occupied[level]
         else:
             occupied = simulate_occupied(
                 self._capacity,
@@ -92,3 +94,17 @@ class SimulatedOccupancySensor:
             cache = _CachedOverrides(now, {override.line: override for override in active})
             self._cache = cache
         return cache.by_line
+
+
+def _override_occupied_by_level(
+    capacity: int, thresholds: OccupancyThresholds
+) -> dict[OccupancyLevel, int]:
+    """Occupied places of each forced level; `Settings` already rejects configurations where a
+    level has none (occupancy_sensor AC-03), so a missing one here is a wiring error."""
+    by_level: dict[OccupancyLevel, int] = {}
+    for level in OccupancyLevel:
+        occupied = override_occupied(level, capacity, thresholds)
+        if occupied is None:
+            raise ValueError(f"no whole number of occupied places is {level} for this capacity")
+        by_level[level] = occupied
+    return by_level

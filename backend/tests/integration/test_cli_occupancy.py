@@ -122,6 +122,7 @@ def sensor(api_engine: Engine, clock: FakeClock) -> SimulatedOccupancySensor:
         capacity=90,
         seats=28,
         seed="avisabus",
+        thresholds=OccupancyThresholds(),
     )
 
 
@@ -149,6 +150,7 @@ def _simulated(api_engine: Engine, trip_ids: list[str], at: datetime) -> list[in
         capacity=90,
         seats=28,
         seed="avisabus",
+        thresholds=OccupancyThresholds(),
     )
     return [(_read(plain, t, at)).occupied for t in trip_ids]
 
@@ -238,7 +240,7 @@ def test_sensor_returns_to_simulation_when_the_override_expires(
     sensor: SimulatedOccupancySensor, api_engine: Engine, clock: FakeClock
 ) -> None:
     assert _run("--line", "93", "--level", "FREE", "--minutes", "10").exit_code == 0
-    assert [(_read(sensor, t, NOW)).occupied for t in LINE_93_TRIPS] == [18] * len(LINE_93_TRIPS)
+    assert [(_read(sensor, t, NOW)).occupied for t in LINE_93_TRIPS] == [22] * len(LINE_93_TRIPS)
     clock.advance(timedelta(minutes=10))
     got = [(_read(sensor, t, NOW)).occupied for t in LINE_93_TRIPS]
     assert got == _simulated(api_engine, LINE_93_TRIPS, NOW)
@@ -257,7 +259,7 @@ def test_clear_returns_the_line_to_simulation(
     clock.advance(timedelta(seconds=5))
     got = [(_read(sensor, t, NOW)).occupied for t in LINE_93_TRIPS]
     assert got == _simulated(api_engine, LINE_93_TRIPS, NOW)
-    assert {(_read(sensor, t, NOW)).occupied for t in LINE_70_TRIPS} == {18}
+    assert {(_read(sensor, t, NOW)).occupied for t in LINE_70_TRIPS} == {22}
 
 
 @pytest.mark.spec("occupancy_sensor.AC-12")
@@ -315,14 +317,14 @@ def test_running_sensor_sees_cli_changes_within_five_seconds(
 ) -> None:
     trip_id = LINE_93_TRIPS[0]
     [simulated] = _simulated(api_engine, [trip_id], NOW)
-    assert simulated != 86
+    assert simulated != 83
     assert (_read(sensor, trip_id, NOW)).occupied == simulated  # caches "no overrides"
     clock.advance(timedelta(seconds=2))
     assert _run("--line", "93", "--level", "FULL").exit_code == 0
     clock.advance(timedelta(seconds=2, milliseconds=999))
     assert (_read(sensor, trip_id, NOW)).occupied == simulated  # 4.999 s: cached
     clock.advance(timedelta(milliseconds=1))
-    assert (_read(sensor, trip_id, NOW)).occupied == 86  # 5 s: refreshed
+    assert (_read(sensor, trip_id, NOW)).occupied == 83  # 5 s: refreshed
     assert _run("--line", "93", "--clear").exit_code == 0
     clock.advance(timedelta(seconds=5))
     assert (_read(sensor, trip_id, NOW)).occupied == simulated

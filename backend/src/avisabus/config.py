@@ -12,7 +12,8 @@ import structlog
 from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from avisabus.domain.models.occupancy import OccupancyThresholds
+from avisabus.domain.models.occupancy import OccupancyLevel, OccupancyThresholds
+from avisabus.domain.services.occupancy_classifier import override_occupied
 
 DEV_STOP_TOKEN_SECRET = b"avisabus-dev-only-secret-do-not-use!"
 """Fixed stop token secret used in `dev` and `test` when none is configured (never in `prod`)."""
@@ -54,7 +55,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _check_occupancy(self) -> Self:
-        """occupancy_sensor AC-03: `0 < medium < full <= 1` and `seats <= capacity`."""
+        """occupancy_sensor AC-03: `0 < medium < full <= 1`, `seats <= capacity` and (v1.1)
+        every level admits some whole number of occupied places with the configured capacity."""
         medium, full = self.occupancy_threshold_medium, self.occupancy_threshold_full
         if not 0 < medium < full <= 1:
             raise ConfigurationError(
@@ -66,6 +68,15 @@ class Settings(BaseSettings):
                 "AVISABUS_OCCUPANCY_SEATS must not exceed AVISABUS_OCCUPANCY_CAPACITY "
                 f"(got seats={self.occupancy_seats}, capacity={self.occupancy_capacity})"
             )
+        thresholds = self.occupancy_thresholds()
+        for level in OccupancyLevel:
+            if override_occupied(level, self.occupancy_capacity, thresholds) is None:
+                raise ConfigurationError(
+                    f"no whole number of occupied places is {level} with "
+                    f"AVISABUS_OCCUPANCY_CAPACITY={self.occupancy_capacity}, "
+                    f"AVISABUS_OCCUPANCY_THRESHOLD_MEDIUM={medium} and "
+                    f"AVISABUS_OCCUPANCY_THRESHOLD_FULL={full}"
+                )
         return self
 
     def occupancy_thresholds(self) -> OccupancyThresholds:
