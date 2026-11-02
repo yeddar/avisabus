@@ -61,7 +61,7 @@
       "order": 3,
       "block": 1,
       "title": "Tokens firmados de parada y generación de QR por CLI",
-      "status": "implementing",
+      "status": "in_review",
       "depends_on": [
         "gtfs_import"
       ],
@@ -82,7 +82,7 @@
       "order": 4,
       "block": 1,
       "title": "Fuente de tiempos de llegada del SAE: cliente, normalización, caché, grabación y replay",
-      "status": "implementing",
+      "status": "in_review",
       "depends_on": [
         "project_scaffold"
       ],
@@ -108,7 +108,7 @@
       "order": 5,
       "block": 1,
       "title": "Sensor de ocupación simulado y clasificación por niveles",
-      "status": "implementing",
+      "status": "in_review",
       "depends_on": [
         "project_scaffold",
         "gtfs_import"
