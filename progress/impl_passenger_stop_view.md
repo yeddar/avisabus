@@ -1,5 +1,6 @@
 # Implementación: passenger_stop_view
-Spec: specs/passenger_stop_view/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Rama: `feat/passenger_stop_view`
+Spec: specs/passenger_stop_view/ (v1.1, APPROVED) · Ciclo de revisión: 0 (v1.1) · Rama: `feat/passenger_stop_view-v1.1`
+(v1.0: T-01…T-10 en `feat/passenger_stop_view`, revisada y APPROVED en el ciclo 1)
 
 ## Tareas
 - [x] T-01 Backend: `avisabus openapi export` y test de desfase (commit 75f6a97)
@@ -11,7 +12,8 @@ Spec: specs/passenger_stop_view/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Ra
 - [x] T-07 Errores y conectividad (commit c2950cb)
 - [x] T-08 Última parada y `NotFoundPage` (commit 544cb50)
 - [x] T-09 E2E, axe, capturas y presupuesto de bundle (commit 2114105)
-- [x] T-10 Verificación completa: `CI=1 ./init.sh verify --e2e` en verde (ver "Verificación")
+- [x] T-11 (v1.1) Anuncio y foco tras "Actualizar"/"Reintentar" (AC-24); mensaje de error sobre "los datos" y "Reintentar" que repite la petición de la parada (AC-17); `stop.refreshFailed` es/ca; comentario de `shared/device/storage.ts` (commit fd1825d)
+- [x] T-10 Verificación completa: `CI=1 ./init.sh verify --e2e` en verde (v1.0 tras T-09 y v1.1 tras T-11; ver "Verificación")
 
 Cada test se escribió antes que el código y se vio en rojo (fallo de importación o de aserción).
 Además, se comprobó con mutaciones temporales (revertidas) que los tests de AC-12
@@ -37,7 +39,8 @@ Además, se comprobó con mutaciones temporales (revertidas) que los tests de AC
 | AC-14 | `StopPage.test.tsx` ("Actualizado a las 08:40:00", botón → petición inmediata → anuncio educado "Datos actualizados" solo al terminar) |
 | AC-15 | `useArrivingAnnouncements.test.tsx` (10 casos), `StopPage.test.tsx` (refresco que pasa a 0 → un anuncio; refrescos rutinarios sin anuncios), `StopPage.errors.test.tsx` (refresco fallido sin anuncios) |
 | AC-16 | `StopPage.errors.test.tsx` (404 de parada o de llegadas, es/ca, sin `stop_id` ni token; sin token no llama a la API; un 404 ni se reintenta ni se refresca) + e2e |
-| AC-17 | `StopPage.errors.test.tsx` (503 y error de red con "Reintentar"; parada con 503 reintenta ambas; datos conservados con "Datos de las 08:40, pueden no estar actualizados" es/ca) + e2e |
+| AC-17 | `StopPage.errors.test.tsx` (503 y error de red con "Reintentar"; parada con 503 reintenta ambas; (v1.1) **solo falla la parada**: mensaje "No se han podido cargar los datos." con las llegadas visibles y "Reintentar" vuelve a pedir la parada; mensaje en `ca` "No s'han pogut carregar les dades."; datos conservados con "Datos de las 08:40, pueden no estar actualizados" es/ca) + e2e |
+| AC-24 | (v1.1) `StopPage.errors.test.tsx`: "Actualizar" con error → anuncio "No se han podido actualizar los datos" / "No s'han pogut actualitzar les dades" y `document.activeElement` = "Reintentar"/"Reintenta" (es/ca); "Reintentar" con éxito tras fallo de las llegadas, de la parada o de un refresco → "Datos actualizados" y foco en "Actualizar"; "Reintentar" con error (llegadas o parada) → anuncio y el foco sigue en "Reintentar", también mientras la petición está en curso; refresco automático fallido sin anuncios (AC-15). Mutaciones temporales (revertidas): sin conservar el aviso durante el reintento fallan 2 tests; sin `stop.refetch()` fallan 3 |
 | AC-18 | `src/shared/hooks/__tests__/useOnline.test.tsx`, `StopPage.errors.test.tsx` (aviso `role="status"`, sin peticiones mientras no hay conexión, petición al volver; abierta sin conexión no llama a la API) + e2e |
 | AC-19 | `lastStop.test.ts`, `StopPage.test.tsx` (se recuerda al cargar; no si 404), `src/app/routes/HomePage.test.tsx` (enlace es/ca, `lang`, URL codificada) + e2e |
 | AC-20 | `src/app/routes/NotFoundPage.test.tsx` (`/no-existe`, `/p`, `/p/508/otra`, enlace a la portada) + e2e |
@@ -120,6 +123,28 @@ iconos y redacción de textos) y de detalles internos no contractuales:
   renombrado rompe `tsc`). En e2e, `serviceWorkers: 'block'` para que `page.route` intercepte
   todas las peticiones.
 
+### Decisiones locales de T-11 (v1.1)
+- **Aviso de error durante "Reintentar":** TanStack Query v5 pasa a `pending` (sin `error`) una
+  consulta sin datos al volver a pedirla, así que el aviso y su botón desaparecían durante el
+  reintento y el foco caía en `body`. Mientras `manualAction === 'retry'` se mantiene el aviso
+  (`showError = failed || manualAction === 'retry'`) y no se muestra "Cargando…": el foco "sigue
+  en Reintentar" de verdad, sin moverlo.
+- **Foco:** solo se mueve cuando el control enfocado desaparece ("Actualizar" con error →
+  "Reintentar"; "Reintentar" con éxito → "Actualizar"). En los casos "se queda" no se llama a
+  `focus()`, para no quitar el foco si la persona lo ha movido mientras esperaba. Se pide con un
+  estado `focusRequest` y un `useEffect` que enfoca cuando el control ya está pintado (una sola
+  vez por petición).
+- **`ref` en un envoltorio:** `shared/ui/Button` (de `frontend_i18n`) no acepta `ref` en sus tipos
+  y T-11 no incluye ese fichero, así que los botones van dentro de un `<div className="flex">`
+  con `ref` y se enfoca su `button`. Sin cambio visual (capturas revisadas).
+- **Pulsaciones repetidas:** mientras hay una acción manual en curso se ignoran nuevas pulsaciones
+  de "Actualizar"/"Reintentar" (un segundo `refetch()` cancela el primero y su promesa podría
+  resolverse antes de tiempo y anunciar "Datos actualizados" sin datos nuevos).
+- **Textos (redacción, design §6):** `stop.error.body` "**No se han podido cargar los datos.**
+  Comprueba la conexión y vuelve a intentarlo." / "**No s'han pogut carregar les dades.** Comprova
+  la connexió i torna-ho a intentar."; `stop.refreshFailed` "No se han podido actualizar los
+  datos" (literal de AC-24) / "No s'han pogut actualitzar les dades".
+
 ## Desviaciones respecto al design (para que el reviewer y la persona las validen)
 No cambian contratos ni comportamiento de los AC. **Propuesta:** reflejarlas en el design o en
 `docs/` en la próxima revisión.
@@ -161,6 +186,12 @@ Redactados por mí (es / ca-valencia):
   lliures", "Ocupació no disponible"; vacío ca "No hi ha arribades previstes en este moment".
 
 ## Observaciones (no bloqueantes)
+- (v1.1) **Hueco menor de AC-24 con un 404:** si "Actualizar" o "Reintentar" terminan con un 404
+  (la parada desaparece del GTFS con la vista abierta), AC-16 sustituye la vista por "Parada no
+  encontrada" y no existe "Reintentar" al que llevar el foco. No se ha inventado comportamiento:
+  se anuncia "No se han podido actualizar los datos" (parte de AC-24 aplicable) y el foco queda
+  donde lo deje el cambio de página. Propuesta para una revisión futura de la spec: mover el foco
+  al `h1` de "Parada no encontrada". Caso muy raro (requiere reimportar el GTFS en caliente).
 - Playwright vacía `test-results/` al inicio de cada ejecución: si se lanza solo un spec
   (`npx playwright test e2e/i18n.spec.ts`), desaparecen las capturas de esta feature hasta la
   siguiente ejecución completa.
@@ -171,7 +202,19 @@ Redactados por mí (es / ca-valencia):
 Ninguno.
 
 ## Verificación
-`CI=1 ./init.sh verify --e2e` (2026-11-03, tras T-09, puerto 4173 libre) → código 0,
+**v1.1 (tras T-11):** `CI=1 ./init.sh verify --e2e` (2026-11-03, puerto 4173 libre) → código 0,
+"verify: todo en verde":
+- backend: format, lint, types, architecture (2 contratos respetados) OK; pytest 969 passed,
+  6 deselected, cobertura 99,39 %.
+- frontend: format, lint, types OK; Vitest 35 ficheros, 287 tests passed; build OK
+  (`index-*.js` 440,58 kB, **138,96 kB gzip**).
+- frontend e2e + a11y: 60 passed, axe sin violaciones; `test:bundle` 2 passed.
+- harness: `feature_list.json` OK; trazabilidad AC→test OK.
+- Capturas regeneradas (23:25) en `frontend/test-results/passenger_stop_view/<perfil>/`;
+  `stop-error-stale-es.png` muestra el texto nuevo "No se han podido cargar los datos." y los
+  botones envueltos no cambian la maquetación (`stop-realtime-*-refresh-focused.png`).
+
+**v1.0:** `CI=1 ./init.sh verify --e2e` (2026-11-03, tras T-09, puerto 4173 libre) → código 0,
 "verify: todo en verde":
 - backend: format, lint, types, architecture OK; pytest 861 passed, 6 deselected, cobertura
   99,66 %.
