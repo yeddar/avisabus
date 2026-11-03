@@ -1,0 +1,2 @@
+agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone,agency_email
+EMT,EMT Valencia,https://www.emtvalencia.es,Europe/Madrid,ca,+34963158515,atencioalaciutadania@emtvalencia.es

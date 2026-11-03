@@ -1,7 +1,9 @@
 # Tokens de parada y QR — tasks
 
-> Feature: `stop_tokens_qr` · Versión: 1.0 · Estado: APPROVED
+> Feature: `stop_tokens_qr` · Versión: 1.3 · Estado: APPROVED
 > Requisitos: RF-05, RNF-07 · Casos de uso: CU-12 · Depende de: gtfs_import
+
+> **v1.2:** T-01…T-07 implementadas en versiones anteriores. En esta versión solo quedan **T-08 y T-09**.
 
 ## Exploración
 
@@ -27,8 +29,10 @@ No necesaria.
   - Verificación: `cd backend && uv run pytest tests/unit/test_stop_url.py`
 
 - [ ] **T-04** — Puerto `QrRenderer` y `SegnoQrRenderer` (SVG con etiqueta, PNG ≥ 600 px con
-  etiqueta, nivel M, borde 4).
-  - AC: stop_tokens_qr.AC-07, AC-09, AC-12
+  etiqueta dibujada con la fuente incluida, nivel exactamente M, borde 4). v1.1: añadir
+  `fonts/DejaVuSans.ttf` y `fonts/LICENSE-DejaVu.txt` como datos del paquete y el test de cobertura
+  de caracteres.
+  - AC: stop_tokens_qr.AC-07, AC-09, AC-12, AC-13
   - Ficheros: `domain/ports/qr.py`, `adapters/outbound/qr/segno_renderer.py`, `tests/integration/test_segno_renderer.py`
   - Verificación: `cd backend && uv run pytest tests/integration/test_segno_renderer.py`
 
@@ -44,4 +48,13 @@ No necesaria.
   - Verificación: `cd backend && uv run pytest tests/integration/test_cli_qr.py`
 
 - [ ] **T-07** — Verificación completa.
+  - Verificación: `./init.sh verify`
+
+- [ ] **T-08** — (v1.2) S-01: código de salida 3 para paradas inexistentes. H-01: advertencia del
+  secreto de desarrollo emitida tras `configure_logging` (API y CLI) en el log JSON.
+  - AC: stop_tokens_qr.AC-05, AC-10
+  - Ficheros: `config.py`, `main.py`, `adapters/inbound/cli/{container,qr}.py`, tests de settings y de la CLI `qr`
+  - Verificación: `cd backend && uv run pytest tests -k "stop_token or cli_qr"`
+
+- [ ] **T-09** — Verificación completa (v1.2).
   - Verificación: `./init.sh verify`

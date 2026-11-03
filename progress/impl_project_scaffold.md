@@ -115,3 +115,61 @@ OK   harness: feature_list.json
 OK   harness: trazabilidad AC→test
 OK   verify: todo en verde
 ```
+
+---
+
+# Implementación: project_scaffold — v1.1
+Spec: specs/project_scaffold/ (v1.1, APPROVED) · Ciclo de revisión: 2 · Rama: `feat/project_scaffold-v1.1`
+
+Alcance: solo T-13 y T-14 (AC-23). T-01…T-12 son las de la v1.0 (registro anterior), sin cambios.
+
+## Tareas
+- [x] T-13 `Settings` con `env_file=("../.env", ".env")`; comentario de `.env.example` sobre la
+      ubicación del fichero y la prioridad; test de integración de AC-23 (commit 83d5398)
+- [x] T-14 `./init.sh verify` en verde (ver "Verificación")
+
+### Matriz AC → test (v1.1)
+| AC | Evidencia |
+|---|---|
+| AC-23 | `backend/tests/integration/test_settings_env_file.py` (directorios temporales `root/` y `root/backend/`, `chdir` a `backend/`): `.env` de la raíz cargado; `backend/.env` prevalece sobre la raíz y la raíz sigue rellenando el resto; el entorno del proceso prevalece sobre ambos; sin ficheros, valores por defecto |
+| AC-22 | `./init.sh verify` (código 0) |
+
+TDD: con `env_file=".env"` (v1.0) fallaban 2 de los 4 tests (carga de la raíz y combinación
+raíz + `backend/.env`); tras el cambio pasan los 4.
+
+El `.importlinter` ya incluía `include_external_packages = True` desde la v1.0 (H-02): coincide
+con el design §4 v1.1, sin cambios.
+
+## Decisiones locales
+- Ninguna nueva. La prioridad descrita la implementa pydantic-settings con `env_file` en tupla
+  (el último fichero prevalece; el entorno del proceso prevalece sobre los ficheros), tal y
+  como indica el design §3.
+
+## Bloqueos
+Ninguno.
+
+### Observaciones no bloqueantes
+- `tests/unit/test_settings.py` (AC-09) hace `chdir` a `tmp_path`, por lo que ahora también se
+  consultaría `tmp_path/../.env` (el directorio base de pytest, que no contiene `.env`). No
+  afecta a los resultados; no se ha tocado.
+- La fixture `settings` de `conftest.py` usa `_env_file=None`, así que los tests de la app no
+  dependen del `.env` local del desarrollador.
+
+## Verificación
+`./init.sh verify` (2026-10-31) → código de salida 0:
+
+```
+OK   backend: format
+OK   backend: lint
+OK   backend: types
+OK   backend: architecture        Contracts: 2 kept, 0 broken.
+OK   backend: tests               43 passed; cobertura domain+application 100 % (≥ 80 %)
+OK   frontend: format
+OK   frontend: lint
+OK   frontend: types
+OK   frontend: tests              3 ficheros, 7 tests
+OK   frontend: build              PWA v2.0.0 generateSW
+OK   harness: feature_list.json
+OK   harness: trazabilidad AC→test
+OK   verify: todo en verde
+```

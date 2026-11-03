@@ -113,3 +113,93 @@ Ninguno.
 - **H-08 — Entorno: versiones de Node y avisos de `npm audit`.**
   - Node: el local es v26 y la convención es Node 22 LTS. `.nvmrc` y `engines` fijan 22, así que no es un problema del código.
   - `npm audit`: hay 12 avisos moderados en dependencias de desarrollo, según el progreso del implementer. No afectan al bundle de producción.
+
+---
+
+# Revisión: project_scaffold — v1.1
+Ciclo: 2 · Fecha: 2026-10-31 · Agente: reviewer · Rama: `feat/project_scaffold-v1.1` (2 commits sobre `develop`: `83d5398` T-13 y `cc22c78` progreso T-13/T-14)
+
+## Veredicto: APPROVED
+
+No hay hallazgos bloqueantes. AC-23 tiene evidencia válida y los tests fallan si se rompe la
+prioridad de los ficheros (comprobado con mutaciones). `.importlinter` coincide con el design §4
+v1.1. Los AC-01…AC-22 siguen en verde (`./init.sh verify --e2e`, código 0).
+
+## Matriz AC → evidencia
+
+| AC | Test(s) | Resultado | Nota |
+|---|---|---|---|
+| AC-23 | `backend/tests/integration/test_settings_env_file.py`: `test_root_dotenv_is_loaded_when_running_from_backend`, `test_backend_dotenv_takes_precedence_over_root_dotenv`, `test_process_environment_takes_precedence_over_both_dotenv_files`, `test_defaults_apply_when_no_dotenv_file_exists` | OK | Reproduce el escenario del AC: `tmp_path/root/` y `tmp_path/root/backend/`, `chdir` a `backend/`, limpieza de `AVISABUS_*` del entorno. Cubre las tres reglas del AC: se carga la raíz, `backend/.env` prevalece sobre la raíz (y la raíz rellena los campos que `backend/.env` no define) y el entorno prevalece sobre ambos. **Mutaciones** en una copia en el scratchpad: `env_file=".env"` → 2 fallos; `env_file=(".env", "../.env")` (orden invertido) → 1 fallo; `env_file="../.env"` → 1 fallo; código real → 4 passed. Ver H-09 sobre "o la CLI". |
+| AC-03 (design §4 v1.1) | `test_architecture_contracts.py` (13 casos, sin cambios) | OK | `backend/.importlinter:3` tiene `include_external_packages = True`, y el resto del fichero coincide línea a línea con el extracto del design §4 v1.1. `lint-imports`: "Contracts: 2 kept, 0 broken". Cierra H-02 del ciclo 1. |
+| AC-09 | `backend/tests/unit/test_settings.py` (7 tests, sin cambios) | OK | Siguen pasando con la tupla `env_file`. `.env.example` documenta todas las variables (`test_env_example_documents_every_setting`) y su cabecera explica ahora la ubicación y la prioridad (`.env.example:2-5`). Ver H-10. |
+| AC-01, AC-02, AC-04…AC-08, AC-10…AC-21 | Mismos tests que en el ciclo 1, sin cambios | OK | El diff de la v1.1 no toca su código ni sus tests. 43 passed en backend (39 + 4 nuevos), 7 en frontend, 3 en e2e. |
+| AC-22 | `./init.sh verify --e2e` | OK | Código 0, "verify: todo en verde". |
+
+## Verificación ejecutada
+
+- `./init.sh verify` → código 0. Backend: format, lint, types (24 ficheros), architecture
+  ("2 kept, 0 broken"), tests (43 passed, cobertura de domain+application 100 % ≥ 80 %). Frontend:
+  format, lint, types, tests (3 ficheros / 7 tests), build (PWA generateSW). Harness:
+  `feature_list.json` y trazabilidad AC→test.
+- `./init.sh verify --e2e` → código 0; e2e + a11y: 3 passed (iPhone, Pixel, tablet horizontal).
+- `uv lock --check` → OK. `uv run avisabus --help` → código 0.
+- Mutaciones de `env_file` sobre una copia de `backend/src` y `backend/tests` en el scratchpad
+  (`PYTHONPATH` a la copia, `-o addopts=""`); resultados en la fila AC-23. El repositorio no se
+  ha modificado.
+- `git diff --stat develop...HEAD` → `.env.example`, `backend/src/avisabus/config.py`,
+  `backend/tests/integration/test_settings_env_file.py`, `progress/impl_project_scaffold.md`.
+  Único cambio sin commit: `feature_list.json` (`spec_approved → in_review`, del orquestador).
+- `grep` de `env_file` en `backend/src` y `backend/tests`: solo `config.py:15` y
+  `conftest.py:23` (`_env_file=None` en la fixture `settings`, que aísla los tests de la API del
+  `.env` local).
+
+### Lista de comprobación (`docs/verification.md` §4), limitada al cambio de la v1.1
+
+- **Contrato.** `Settings.model_config` coincide con el design §3 v1.1
+  (`env_prefix="AVISABUS_", env_file=("../.env", ".env"), extra="ignore"`). Los campos y sus
+  valores por defecto no cambian.
+- **Arquitectura.** `config.py` sigue fuera de las capas y prohibido para `domain`; no aparece
+  ningún `datetime.now`/`time.time` nuevo.
+- **Tests.** Sin red ni reloj; solo usan `tmp_path`, `monkeypatch.chdir` y `monkeypatch.delenv/setenv`.
+  No son tautológicos (mutaciones).
+- **Privacidad y seguridad.** Sin logs nuevos. Los secretos siguen llegando solo por configuración.
+- **Frontend.** No aplica (sin cambios).
+- **Convenciones.** Los commits son Conventional Commits con ámbito `project_scaffold` y citan
+  T-13/T-14. Código y docstrings en inglés; `.env.example` y progreso en castellano, como ya estaba.
+- **Alcance.** Solo los ficheros que lista T-13, más el progreso. No hay refactors ajenos.
+  `.importlinter` no se ha tocado, como indica T-13.
+
+## Hallazgos
+
+### Bloqueantes
+
+Ninguno.
+
+### No bloqueantes
+
+- **H-09 — AC-23 dice "el backend o la CLI", pero se prueba solo sobre `Settings`.**
+  - Dónde: `backend/tests/integration/test_settings_env_file.py`;
+    `backend/src/avisabus/adapters/inbound/cli/main.py` (la CLI aún no construye `Settings`).
+  - Qué pasa: el backend (`main.py:10`) y la futura CLI obtienen la configuración de `Settings()`,
+    así que probar `Settings` desde `backend/` cubre el comportamiento. Hoy la CLI no lee
+    configuración, de modo que no hay nada más que probar.
+  - Sugerencia: cuando una feature añada el primer subcomando que use `Settings` (p. ej.
+    `gtfs_import`), que construya `Settings()` en la CLI y no una configuración propia.
+- **H-10 — Los tests de AC-09 consultan ahora también `tmp_path/../.env`.**
+  - Dónde: `backend/tests/unit/test_settings.py:18` (`monkeypatch.chdir(tmp_path)`).
+  - Qué pasa: con la tupla, `Settings()` lee además el `.env` del directorio base de pytest. Nadie
+    escribe ahí (los tests de AC-23 escriben en `tmp_path/root/`), así que los resultados son
+    correctos, pero el aislamiento depende de una convención implícita. El implementer ya lo anota.
+  - Sugerencia: si en el futuro algún test escribe en el directorio base, que los tests de AC-09
+    hagan `chdir` a un subdirectorio de `tmp_path`.
+- **H-11 — `../.env` depende del directorio de trabajo.**
+  - Dónde: `backend/src/avisabus/config.py:15`.
+  - Qué pasa: la ruta es relativa al CWD. Desde `backend/` (`init.sh dev`, CLI) es la raíz del
+    repositorio, como dice el AC. Desde otro directorio (p. ej. `WORKDIR` en un contenedor)
+    `../.env` apunta a otro sitio. Es lo que pide el design §3 y el AC acota el caso a `backend/`.
+  - Sugerencia: que `deployment_rpi` tenga en cuenta que en Docker el `.env` llega por
+    `env_file`/variables de Compose y no por la lectura de `../.env`.
+- **Pendientes del ciclo 1 (fuera del alcance de la v1.1, siguen abiertos):** H-01 (mensajes de
+  excepción en los logs de uvicorn; ya recogido en `docs/conventions.md` §3), H-04, H-05, H-06
+  (sigue apareciendo el `PytestDeprecationWarning` de `asyncio_default_fixture_loop_scope`),
+  H-07 y H-08. **Cerrados:** H-02 (design §4 v1.1) y H-03 (AC-23).

@@ -1,13 +1,13 @@
 # Fuente de llegadas del SAE — design
 
-> Feature: `sae_arrivals_source` · Versión: 1.0 · Estado: APPROVED
+> Feature: `sae_arrivals_source` · Versión: 1.3 · Estado: APPROVED
 > Requisitos: RF-07, RF-08, RF-11, RF-35, RNF-08, RNF-10, RNF-13 · Casos de uso: CU-01 · Depende de: project_scaffold
 
 ## 1. Resumen
 
 ```
-CachedArrivalsSource ─▶ RecordingArrivalsSource? ─▶ SaeHttpArrivalsSource ─▶ SaeResponseParser
-                     └▶ SaeReplayArrivalsSource ─────────────────────────────▶ SaeResponseParser
+CachedArrivalsSource ─▶ SaeHttpArrivalsSource (QR.php) ──(observador: grabación)──▶ parse_qrphp_html
+                     └▶ SaeReplayArrivalsSource ── parser según session.source_format ──▶ parse_qrphp_html
 ```
 
 Todas implementan el puerto `ArrivalsSource`. El parser es una función pura sobre el cuerpo
@@ -21,12 +21,12 @@ ejercitan el mismo código que producción.
 | domain | `models/arrivals.py` | `ArrivalKind`, `SaeArrival`, `ArrivalsSnapshot` |
 | domain | `ports/arrivals.py` | `ArrivalsSource` (Protocol) |
 | domain | `errors.py` | `ArrivalsUnavailableError(stop_id, reason)` |
-| adapters/outbound | `sae/parser.py` | `parse_sae_response(body, content_type, fetched_at) -> ParseResult` |
+| adapters/outbound | `sae/qrphp_parser.py` | `parse_qrphp_html(body, stop_id, fetched_at) -> ParseResult` (+ registro `PARSERS`) |
 | adapters/outbound | `sae/http_source.py` | `SaeHttpArrivalsSource` |
 | adapters/outbound | `sae/cache.py` | `CachedArrivalsSource` |
 | adapters/outbound | `sae/recording.py` | `RecordingArrivalsSource`, `SaeRecording` (formato de fichero) |
 | adapters/outbound | `sae/replay.py` | `SaeReplayArrivalsSource` |
-| adapters/outbound | `sae/compose.py` | `build_arrivals_source(settings, clock, http_client) -> ArrivalsSource` |
+| adapters/outbound | `sae/compose.py` | `build_arrivals_source(settings, clock, http_client) -> CachedArrivalsSource` (devuelve el tipo concreto para que `main.py` acceda a `stats()` y `emit_stats()`) |
 | adapters/inbound | `cli/sae.py` | `avisabus sae fetch`, `avisabus sae record` |
 
 ## 3. Interfaces
@@ -56,12 +56,12 @@ class ArrivalsSource(Protocol):
     async def get_arrivals(self, stop_id: str) -> ArrivalsSnapshot: ...
     # lanza ArrivalsUnavailableError
 
-# adapters/outbound/sae/parser.py
+# adapters/outbound/sae/qrphp_parser.py
 @dataclass(frozen=True, slots=True)
 class ParseResult:
     arrivals: tuple[SaeArrival, ...]
     skipped: tuple[str, ...]   # motivos de las entradas descartadas
-def parse_sae_response(body: bytes, content_type: str | None, fetched_at: datetime) -> ParseResult: ...
+def parse_qrphp_html(body: bytes, stop_id: str, fetched_at: datetime) -> ParseResult: ...
 # lanza SaeUnparseableError si el cuerpo completo no es interpretable
 
 # adapters/outbound/sae/http_source.py
@@ -88,7 +88,9 @@ como un observador que escribe ficheros (no necesita envolver la fuente).
 ### Caché (detalle)
 
 - Entrada por `stop_id`: `(snapshot | error, stored_at)`.
-- Hit si `now - stored_at < ttl` (snapshot) o `< error_ttl` (error → se relanza el mismo error).
+- Hit si `now - stored_at < ttl` (snapshot) o `< error_ttl` (error → se lanza una **instancia
+  nueva** de `ArrivalsUnavailableError` con el mismo `stop_id` y `reason`; se guarda solo el motivo,
+  no el objeto de la excepción) (v1.2, AC-11).
 - Single-flight: diccionario `stop_id → asyncio.Future` en vuelo; los llamantes concurrentes
   esperan el mismo `Future`.
 - Concurrencia: `asyncio.Semaphore(max_concurrency)` alrededor de la llamada a `inner`.
@@ -105,28 +107,59 @@ avisabus sae record --stop ID [--stop ID ...] --interval S --duration S --out DI
 `record` usa siempre la fuente HTTP con observador de grabación (sin caché), recorre las paradas
 en cada ciclo y espera con una función `sleep` inyectable.
 
-## 4. Formato bruto del SAE
+## 4. Formato bruto del SAE (`QR.php`, confirmado en E-01)
 
-> **Se fija tras la exploración E-01.** El explorer documenta en `progress/explore_sae.md`:
-> URL y parámetros, método, `content_type`, codificación, estructura (XML/JSON/HTML), ejemplos
-> reales de: llegadas en minutos, llegadas con hora, marcadores de "llegando/en parada", sin
-> llegadas, parada inexistente; latencia típica; condiciones de uso conocidas.
->
-> - Si el formato contiene, por llegada, **línea, destino y minutos u hora** (como `emtvlcapi`),
->   el implementer escribe el parser según esos hallazgos **sin cambiar los AC ni las
->   interfaces** de este documento y registra las reglas concretas de parseo en
->   `progress/impl_sae_arrivals_source.md` § "Decisiones locales".
-> - Si no los contiene o requiere otra estrategia (autenticación, scraping de HTML complejo,
->   bloqueo), → **CP-3**.
+**Petición.** `GET https://www.emtvalencia.es/QR.php?sec=est&p={stop_id}` (plantilla
+`AVISABUS_SAE_URL_TEMPLATE`). Sin cookies ni cabeceras especiales; `User-Agent` del proyecto
+(AC-01). Respuesta `200`, `text/html; charset=utf-8`, unos 2–5 KB, latencia observada 80–250 ms.
 
-Plantilla de URL configurable (`AVISABUS_SAE_URL_TEMPLATE`, con `{stop_id}`), con el valor
-encontrado en E-01 como default.
+**Estructura relevante** (fragmento HTML de jQuery Mobile, sin `<html>`/`<body>`):
+
+```html
+<div style=" background: grey; …">508 - Parc de l'Oest - Enguera</div>        ← cabecera
+<div style="padding-left: 5px;…border-bottom:1px solid black;" >
+  <span class="imagenParada"><img src="…/line-icons/93bigW.gif" title="93" …></span>
+  <span style="position: relative; top: -5px;">&nbsp;&nbsp;Pass. Marítim - 7 min.</span>
+</div>                                                                           ← una llegada
+```
+
+**Reglas del parser** `parse_qrphp_html(body, stop_id, fetched_at)` (módulo
+`adapters/outbound/sae/qrphp_parser.py`, con `html.parser` de la biblioteca estándar):
+
+1. **Cabecera (AC-21):** se busca el texto de la cabecera; debe casar con
+   `^{stop_id} - .+$` (tras desescapar y recortar). Si no existe o no casa →
+   `SaeUnparseableError` (→ `ArrivalsUnavailableError(stop_id, "unparseable")`).
+2. **Entradas:** cada bloque que contiene un `<img title="…">` seguido de un `<span>` de texto.
+   `line` = valor de `title` recortado.
+3. **Texto:** se desescapan las entidades y se recortan los espacios de los extremos, incluido
+   `\xa0`. Se separa por el **último** `" - "`: a la izquierda `destination`, a la derecha el
+   tiempo. Si no hay `" - "` → entrada descartada (AC-06).
+4. **Tiempo:**
+   - `^\d+ min\.?$` → `MINUTES`, `minutes = n` (AC-02);
+   - `próximo` sin distinguir mayúsculas ni acentos → `MINUTES`, `minutes = 0` (AC-04);
+   - `^\d{1,2}:\d{2}(:\d{2})?$` → `CLOCK_TIME` (AC-03; `HH:MM:SS` observado de noche, v1.3;
+     los segundos se conservan en `arrival_at`);
+   - tiempo vacío (texto que termina en `" -"`) → entrada descartada con `sae.entry_without_time`
+     a nivel `debug` (AC-23, v1.3);
+   - cualquier otro → entrada descartada y `sae.unparsed_entry` con el texto del tiempo (no el
+     cuerpo) (AC-06). Así un marcador nuevo aparece en los logs sin romper el parser.
+5. **Sin llegadas:** cabecera válida y ninguna entrada → lista vacía (AC-07).
+6. Se conserva el orden de la página (ascendente por tiempo).
+
+Si EMT cambia el HTML de forma que no se encuentre la cabecera, todas las consultas darán
+`unparseable` y el sistema pasará al horario programado (RF-09) en lugar de mostrar "sin
+llegadas" por error.
+
+**Otras fuentes.** El parser se selecciona por formato (`qrphp_html`). Un futuro adaptador del XML
+`getSAE`, si EMT lo autoriza (ADR-015), añadiría otro formato (`getsae_xml`) y su parser sin
+cambiar las interfaces.
 
 ## 5. Formato de grabación
 
 ```
 <dir>/
-├── session.json        {"started_at": "...Z", "stops": ["508"], "interval_s": 20, "source_url_template": "..."}
+├── session.json        {"started_at": "...Z", "stops": ["508"], "interval_s": 20,
+│                        "source_url_template": "...", "source_format": "qrphp_html"}
 └── 508/
     ├── 000000.json     {"stop_id": "508", "captured_at": "...Z", "offset_s": 0, "status": 200,
     │                    "content_type": "...", "body": "<texto>", "error": null}
@@ -134,9 +167,16 @@ encontrado en E-01 como default.
     └── ...
 ```
 
+`interval_s` puede ser `null` en sesiones que no se grabaron a intervalo fijo (p. ej. las muestras
+de la exploración E-01 convertidas a fixtures).
+
 `body` se guarda como texto (decodificado con la codificación declarada; si es binario, base64
 con `"body_encoding": "base64"`). Las fixtures derivadas (no reales) llevan
 `"derived_from": "<fichero>"` y `"note": "<qué se cambió>"`.
+
+`SaeReplayArrivalsSource` lee `source_format` de `session.json` y elige el parser con un registro
+`PARSERS: Mapping[str, Callable[...]] = {"qrphp_html": parse_qrphp_html}`; formato desconocido →
+`ConfigurationError` al construirse (AC-22).
 
 ## 6. Errores
 
@@ -156,7 +196,7 @@ Logs: `sae.error` (`stop_id`, `reason`, `elapsed_ms`), `sae.unparsed_entry` (`st
 | Variable | Default | Notas |
 |---|---|---|
 | `AVISABUS_ARRIVALS_SOURCE` | `http` (`replay` si `env=test`) | `http` \| `replay` |
-| `AVISABUS_SAE_URL_TEMPLATE` | valor de E-01 | con `{stop_id}` |
+| `AVISABUS_SAE_URL_TEMPLATE` | `https://www.emtvalencia.es/QR.php?sec=est&p={stop_id}` | con `{stop_id}` |
 | `AVISABUS_SAE_TIMEOUT_S` | `3` | |
 | `AVISABUS_SAE_CACHE_TTL_S` | `20` | RF-08 |
 | `AVISABUS_SAE_ERROR_TTL_S` | `5` | |
@@ -166,7 +206,9 @@ Logs: `sae.error` (`stop_id`, `reason`, `elapsed_ms`), `sae.unparsed_entry` (`st
 
 ## 8. Estrategia de test
 
-- **Parser (unit):** se alimenta con los cuerpos de las grabaciones reales (AC-02–AC-07).
+- **Parser (unit):** se alimenta con los cuerpos reales de `progress/explore_sae_samples/`
+  convertidos a fixtures (minutos, `Próximo`, parada inexistente) y con las derivadas (sin
+  llegadas, `HH:MM`) (AC-02–AC-07, AC-21).
 - **HTTP (integration):** `httpx.MockTransport` (no abre sockets) para respuestas, errores,
   timeouts (`httpx.TimeoutException`) y verificación de URL y cabeceras (AC-01, AC-08).
 - **Caché (unit):** fuente fake con contador de llamadas y `FakeClock` (AC-09–AC-13); para

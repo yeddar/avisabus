@@ -1,0 +1,8 @@
+url=https://geoportal.emtvalencia.es/EMT/mapfunctions/MapUtilsPetitions.php?sec=getSAE&parada=508&adaptados=false&idioma=es
+http_code=200
+content_type=text/html; charset=UTF-8
+time_total=0.250900
+time_starttransfer=0.250364
+size=525
+redirect=
+requested_at_utc=20261102T110120Z

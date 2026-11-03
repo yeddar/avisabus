@@ -1,0 +1,8 @@
+url=https://www.emtvalencia.es/QR.php?sec=est&p=508
+http_code=200
+content_type=text/html; charset=utf-8
+time_total=0.163878
+time_starttransfer=0.162987
+size=3548
+redirect=
+requested_at_utc=20261102T110241Z

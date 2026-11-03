@@ -1,0 +1,8 @@
+url=https://www.emtvalencia.es/EMT/mapfunctions/MapUtilsPetitions.php?sec=getSAE&parada=2070&adaptados=false
+http_code=200
+content_type=text/html; charset=UTF-8
+time_total=0.086282
+time_starttransfer=0.086016
+size=524
+redirect=
+requested_at_utc=20261102T105917Z

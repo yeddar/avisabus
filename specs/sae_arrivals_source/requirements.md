@@ -1,6 +1,6 @@
 # Fuente de llegadas del SAE — requirements
 
-> Feature: `sae_arrivals_source` · Versión: 1.0 · Estado: APPROVED
+> Feature: `sae_arrivals_source` · Versión: 1.3 · Estado: APPROVED
 > Requisitos: RF-07, RF-08, RF-11, RF-35, RNF-08, RNF-10, RNF-13 · Casos de uso: CU-01 · Depende de: project_scaffold
 
 ## Contexto
@@ -14,9 +14,21 @@ EMT. **No es una API documentada oficialmente** (riesgo R-01), por lo que:
 - se graban respuestas reales para que los tests y las demos no dependan de la red;
 - el formato bruto se aísla en un parser; el resto del sistema solo ve el modelo normalizado.
 
-Referencia del formato conocido (cliente comunitario `emtvlcapi`): por cada llegada, `linea`,
-`destino` y `minutos`, o bien `horaLlegada` (`HH:MM`) para algunas líneas (p. ej. nocturnas).
-**El endpoint y el formato exactos se confirman en la exploración E-01** antes de implementar.
+**Fuente (confirmada en E-01, `progress/explore_sae.md`):** la página
+`https://www.emtvalencia.es/QR.php?sec=est&p={stop_id}`, que es la URL del campo
+`proximas_llegadas` del dataset `emt` del Ajuntament (CC BY 4.0) y el destino de los QR que EMT
+coloca en sus paradas. Es HTML UTF-8, pensado para personas: una cabecera `{stop_id} - {nombre}` y,
+por cada llegada, la línea (atributo `title` del icono) y un texto `"{destino} - {N} min."`,
+`"{destino} - Próximo"` o, previsiblemente (no observado), `"{destino} - HH:MM"`. Como máximo
+muestra 2 llegadas por línea. Se lee con un User-Agent que identifica el proyecto.
+
+**No se usa** el servicio XML `getSAE` (`MapUtilsPetitions.php?sec=getSAE`), que emplean los
+clientes comunitarios `emtvlcapi` y `pyemtvlc`: EMT lo restringe a su visor web y responde
+"Temporalmente no disponible desde el plano" a otros clientes. Esos clientes solo funcionan
+imitando al visor (User-Agent y `Referer` de navegador), lo que supondría eludir un control de
+acceso deliberado. Se ha pedido a EMT permiso para usarlo identificándose, y se le ha preguntado
+por una API oficial (correo del 2026-11-02, ADR-015). Si lo autoriza, se añadirá un adaptador
+nuevo tras el mismo puerto.
 
 ## Alcance
 
@@ -46,14 +58,14 @@ Referencia del formato conocido (cliente comunitario `emtvlcapi`): por cada lleg
 - **sae_arrivals_source.AC-02** — CUANDO una llegada viene expresada en minutos, EL SISTEMA
   DEBERÁ normalizarla con `kind = MINUTES`, `minutes = n` y `arrival_at = fetched_at + n min`.
   *Verificación:* unit (parser) con muestras reales
-- **sae_arrivals_source.AC-03** — CUANDO una llegada viene expresada como hora `HH:MM`, EL
+- **sae_arrivals_source.AC-03** — CUANDO una llegada viene expresada como hora `HH:MM` o
+  `HH:MM:SS` (esta última, observada de noche para llegadas a más de unos 60 min), EL
   SISTEMA DEBERÁ normalizarla con `kind = CLOCK_TIME` y `arrival_at` igual a la siguiente
   ocurrencia de esa hora en `Europe/Madrid` no anterior a `fetched_at − 5 min`.
   *Verificación:* unit (incluido el cruce de medianoche)
-- **sae_arrivals_source.AC-04** — CUANDO el SAE indica que el autobús está llegando o en la
-  parada (marcadores identificados en E-01), EL SISTEMA DEBERÁ normalizarlo como `MINUTES` con
-  `minutes = 0`.
-  *Verificación:* unit con muestras reales
+- **sae_arrivals_source.AC-04** — CUANDO el tiempo de una llegada es `Próximo` (sin distinguir
+  mayúsculas ni acentos), EL SISTEMA DEBERÁ normalizarlo como `MINUTES` con `minutes = 0`.
+  *Verificación:* unit con muestras reales (parada 2070, línea 95)
 - **sae_arrivals_source.AC-05** — EL SISTEMA DEBERÁ conservar `line` y `destination` tal como
   los devuelve el SAE, eliminando solo espacios al principio y al final.
   *Verificación:* unit
@@ -81,8 +93,10 @@ Referencia del formato conocido (cliente comunitario `emtvlcapi`): por cada lleg
   *Verificación:* unit (asyncio.gather)
 - **sae_arrivals_source.AC-11** — SI la fuente falla para una parada, ENTONCES durante los
   siguientes 5 s (configurable) EL SISTEMA DEBERÁ responder `ArrivalsUnavailableError` para esa
-  parada sin volver a consultarla.
-  *Verificación:* unit
+  parada sin volver a consultarla, lanzando en cada respuesta una **instancia nueva** del error
+  (mismo `stop_id` y `reason`), de modo que su traza no crezca con cada acierto de la caché.
+  *Verificación:* unit (incluye que dos aciertos consecutivos lanzan objetos distintos y que
+  `__traceback__` no se acumula)
 - **sae_arrivals_source.AC-12** — EL SISTEMA DEBERÁ limitar a 4 (configurable) las consultas
   simultáneas a la fuente, sumando todas las paradas.
   *Verificación:* unit
@@ -119,9 +133,28 @@ Referencia del formato conocido (cliente comunitario `emtvlcapi`): por cada lleg
   ≥ 15 min con intervalo de 20 s en la que se observe el paso de al menos un autobús (su ETA llega
   a 0 o desaparece y la primera llegada de la línea salta a la siguiente); (b) una respuesta real
   sin llegadas o, si no es posible obtenerla, una derivada de una real y documentada; (c) una
-  respuesta con hora `HH:MM` (real o derivada documentada); (d) un caso de error grabado. El
+  respuesta con hora (v1.3: la **real** de la parada 2070 grabada de noche en
+  `progress/explore_destinations_samples/`, que sustituye a la derivada); (d) un caso de error grabado (vale la
+  respuesta real de la parada inexistente 99999 o un timeout grabado por `sae record`). El
   `README.md` DEBERÁ describir cada sesión, su fecha y cómo se obtuvo.
   *Verificación:* revisión + tests que las usan
+
+- **sae_arrivals_source.AC-23** — CUANDO una entrada no trae tiempo (texto `"{destino} -"`,
+  observado en cabeceras al final del servicio), EL SISTEMA DEBERÁ descartarla registrando solo el
+  evento de depuración `sae.entry_without_time` (nivel `debug`, con `stop_id` y `line`), sin
+  contarla como `sae.unparsed_entry`.
+  *Verificación:* unit (muestra real nocturna)
+- **sae_arrivals_source.AC-21** — SI la respuesta del SAE no contiene una cabecera de parada con
+  el formato `{stop_id} - {nombre}` para el `stop_id` pedido (p. ej. la página que EMT devuelve
+  con código 200 para una parada inexistente, con la cabecera vacía), ENTONCES EL SISTEMA DEBERÁ
+  tratarla como no interpretable (`ArrivalsUnavailableError(stop_id, "unparseable")`) y no como
+  "sin llegadas".
+  *Verificación:* unit (muestra real de la parada 99999 y variante con otro `stop_id`)
+- **sae_arrivals_source.AC-22** — CADA SESIÓN GRABADA DEBERÁ indicar en `session.json` el formato
+  de la fuente (`source_format`, hoy `"qrphp_html"`), y LA FUENTE DE REPLAY DEBERÁ usar el parser
+  correspondiente a ese formato; SI el formato es desconocido, ENTONCES DEBERÁ fallar al
+  construirse con un error de configuración.
+  *Verificación:* unit
 
 ### Configuración y composición
 
@@ -137,9 +170,18 @@ Referencia del formato conocido (cliente comunitario `emtvlcapi`): por cada lleg
 |---|---|
 | RF-07 Tiempos reales del SAE | AC-01, AC-07, AC-08 |
 | RF-08 Caché por parada | AC-09, AC-10 |
-| RF-11 Normalización (minutos / hora) | AC-02, AC-03, AC-04, AC-05, AC-06 |
-| RF-35 Grabar y reproducir | AC-14, AC-15, AC-16, AC-17, AC-19 |
+| RF-11 Normalización (minutos / hora / próximo) | AC-02, AC-03, AC-04, AC-05, AC-06, AC-21, AC-23 |
+| RF-35 Grabar y reproducir | AC-14, AC-15, AC-16, AC-17, AC-19, AC-22 |
 | RNF-08 Uso respetuoso / resiliencia | AC-08, AC-10, AC-11, AC-12 |
 | RNF-10 Tests sin red | AC-15, AC-16, AC-19, AC-20 |
 | RNF-13 Observabilidad | AC-06, AC-08, AC-13 |
 | Depuración (CU-01) | AC-18 |
+
+## Historial
+
+| Versión | Fecha | Cambio | Motivo |
+|---|---|---|---|
+| 1.0 | 2026-10-31 | Versión inicial aprobada (PR #2) | — |
+| 1.1 | 2026-11-02 | Fuente `QR.php` (HTML) en lugar de `getSAE` (XML); reglas del parser en design §4; AC-04 cita `Próximo`; AC-21 (cabecera de parada obligatoria, parada inexistente = `unparseable`); AC-22 (`source_format` en las grabaciones); AC-19 (d) admite la parada inexistente como caso de error; T-08b (grabación nocturna opcional). | CP-3 tras la exploración E-01 (`progress/explore_sae.md`): `getSAE` está cerrado a terceros. Aprobada por la persona. |
+| 1.2 | 2026-11-02 | AC-11: instancia nueva del error en cada acierto de la caché negativa. Design: nombre del módulo `qrphp_parser.py` en §3, `build_arrivals_source` devuelve `CachedArrivalsSource`, `interval_s` admite `null`. T-11 y T-12 (README de regeneración y clientes HTTP en tests). | Hallazgos NB-1, NB-4, NB-6 y NB-7 de la revisión de `sae_arrivals_source`. Aprobada por la persona. |
+| 1.3 | 2026-11-03 | AC-03 acepta `HH:MM:SS`; AC-23 (entradas sin tiempo: descarte con evento `debug`); AC-19 (c) con la muestra nocturna real. T-14 y T-15. | Exploración de `stop_arrivals_api` (H-5): de noche el parser descartaba el 29 % de las entradas. Aprobada por la persona. |

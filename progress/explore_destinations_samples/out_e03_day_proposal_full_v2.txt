@@ -1,0 +1,46 @@
+1057 | 10 | Benimaclet | 2 | 0:Benimaclet - Lliri Blau(290) | 1 | single_direction | None | 0
+1057 | 12 | C.Art.Faller | 2 | 1:Ciutat de l'Artista Faller(114) | 1 | single_direction | None | 1
+1057 | 93 | Pass. Marítim | 2 | 0:Passeig Marítim - Hospital Malva-rosa(418) | 1 | single_direction | None | 0
+1057 | C2 | Est. Autobusos | 2 | 0:Estació d'autobusos(52); 1:Estadi de Mestalla (front)(53) | 2 | score | {0: (1.0, "Estació d'autobusos"), 1: (0.0, 'Estadi de Mestalla (front)')} | 0
+166 | 12 | Pl. America | 2 | 0:Plaça d'Amèrica - Pont d'Aragó(119) | 1 | single_direction | None | 0
+166 | 30 | Natzaret | 2 | - | 0 | out_of_network | None | None
+166 | 31 | La Patacona | 2 | 1:La Patacona - Institut(202) | 1 | single_direction | None | 1
+166 | 71 | Universitats | 2 | 0:Universitats - Facultat de Ciències Socials(206) | 1 | single_direction | None | 0
+166 | 81 | Blasco Ibáñez | 2 | 1:Blasco Ibáñez - Serradora(105) | 1 | single_direction | None | 1
+166 | C2 | Pl. Espanya | 2 | 0:Plaça d'Espanya - Ermita(56); 1:Blasco Ibáñez - Facultat de Geografia(54) | 2 | score | {0: (0.667, "Plaça d'Espanya - Ermita"), 1: (0.0, 'Blasco Ibáñez - Facultat de Geografia')} | 0
+1959 | 28 | Est.del Nord | 2 | 0:Xàtiva - Institut Lluís Vives(382) | 1 | single_direction | None | 0
+1959 | 95 | La Marina | 2 | 0:La Marina - Metro Neptú(103) | 1 | single_direction | None | 0
+1959 | C1 | Cntr.Històric | 2 | 0:Xàtiva - Institut Lluís Vives(165); 1:Blanqueria - Pare d'Òrfens(163) | 2 | score | {0: (0.0, 'Xàtiva - Institut Lluís Vives'), 1: (0.0, "Blanqueria - Pare d'Òrfens")} | None
+2223 | 28 | Est.del Nord | 2 | 0:Xàtiva - Institut Lluís Vives(382) | 1 | single_direction | None | 0
+2223 | 71 | La Llum | 2 | 1:La Llum(201) | 1 | single_direction | None | 1
+2223 | 81 | Est.del Nord | 2 | 0:Estació del Nord - Marqués de Sotelo(107) | 1 | single_direction | None | 0
+2223 | 94 | Av. França | 2 | 1:França - Camí Fondo del Grao(167) | 1 | single_direction | None | 1
+2223 | 95 | La Marina | 2 | 0:La Marina - Metro Neptú(103) | 1 | single_direction | None | 0
+2223 | C1 | Cntr.Històric | 2 | 0:Xàtiva - Institut Lluís Vives(165) | 1 | single_direction | None | 0
+2277 | 10 | Sant Marcel.li | 2 | 1:Sant Marcel·lí(274) | 1 | single_direction | None | 1
+2277 | 11 | Patraix | 2 | 0:Patraix(277) | 1 | single_direction | None | 0
+2277 | 28 | C.Art.Faller | 2 | 0:Xàtiva - Institut Lluís Vives(382); 1:Ciutat de l'Artista Faller(380) | 2 | score | {0: (0.0, 'Xàtiva - Institut Lluís Vives'), 1: (0.5, "Ciutat de l'Artista Faller")} | 1
+2277 | 31 | Est.J.Sorolla | 2 | 0:Estació Joaquín Sorolla(208) | 1 | single_direction | None | 0
+2277 | 59 | Sociòpolis | 2 | 0:Ignacio Hernández Hervas - Ruíz(135) | 1 | single_direction | None | 0
+2277 | 60 | Est.del Nord | 2 | 0:Sant Agustí(327) | 1 | single_direction | None | 0
+2277 | 62 | Benimàmet | 2 | 1:Terramelar(441) | 1 | single_direction | None | 1
+2277 | 7 | Mercat Central | 2 | 0:Mercat Central - Beata(269) | 1 | single_direction | None | 0
+2277 | 70 | La Fontsanta | 2 | 0:La Fontsanta(303) | 1 | single_direction | None | 0
+2277 | 71 | La Llum | 2 | 1:La Llum(201) | 1 | single_direction | None | 1
+2277 | 72 | Sant Isidre | 2 | 0:Xàtiva - Institut Lluís Vives(169); 1:Sant Isidre(165) | 2 | score | {0: (0.0, 'Xàtiva - Institut Lluís Vives'), 1: (1.0, 'Sant Isidre')} | 1
+2277 | 73 | Sant Isidre | 2 | 1:Sant Isidre(435) | 1 | single_direction | None | 1
+2277 | 9 | Forn d'Alcedo | 1 | 1:Forn d'Alcedo(322) | 1 | single_direction | None | 1
+2277 | C1 | Cntr.Històric | 2 | 0:Xàtiva - Institut Lluís Vives(165); 1:Blanqueria - Pare d'Òrfens(163) | 2 | score | {0: (0.0, 'Xàtiva - Institut Lluís Vives'), 1: (0.0, "Blanqueria - Pare d'Òrfens")} | None
+346 | 95 | Tres Creus | 2 | 1:Tres Creus (imparell) - Hospital General(100) | 1 | single_direction | None | 1
+346 | C2 | Av. Aragó | 2 | 0:Estació d'autobusos(52); 1:Estadi de Mestalla (front)(53) | 2 | override | None | 1
+688 | 92 | Campanar | 2 | 1:Campanar - Monestir de Poblet(190) | 1 | single_direction | None | 1
+688 | 93 | Av. Cid | 2 | 1:Avinguda del Cid(403) | 1 | single_direction | None | 1
+688 | C2 | Pl. Espanya | 2 | 0:Plaça d'Espanya - Ermita(56) | 1 | single_direction | None | 0
+691 | 92 | Campanar | 2 | 1:Campanar - Monestir de Poblet(190) | 1 | single_direction | None | 1
+691 | C2 | Blasco Ibáñez | 2 | 0:Plaça d'Espanya - Ermita(56); 1:Blasco Ibáñez - Facultat de Geografia(54) | 2 | score | {0: (0.0, "Plaça d'Espanya - Ermita"), 1: (0.5, 'Blasco Ibáñez - Facultat de Geografia')} | 1
+701 | 64 | Hosp. La Fe | 2 | 0:Bulevard Sud (imparell) - Hospital La Fe(332) | 1 | single_direction | None | 0
+701 | 92 | La Malva-rosa | 2 | 0:La Malva-rosa - Gran Canària(192) | 1 | single_direction | None | 0
+701 | C2 | Av. Aragó | 2 | 1:Estadi de Mestalla (front)(53) | 1 | single_direction | None | 1
+795 | 28 | C.Art.Faller | 2 | 1:Ciutat de l'Artista Faller(380) | 1 | single_direction | None | 1
+795 | C1 | Cntr.Històric | 2 | 1:Blanqueria - Pare d'Òrfens(163) | 1 | single_direction | None | 1
+TOTAL arrivals=89 in_network=87 resolved=83 pct=95.4%
