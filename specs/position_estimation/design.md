@@ -1,6 +1,6 @@
 # Estimación de la posición del autobús — design
 
-> Feature: `position_estimation` · Versión: 1.0 · Estado: APPROVED
+> Feature: `position_estimation` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-12, RNF-01 · Casos de uso: CU-02 · Depende de: gtfs_import, stop_arrivals_api
 
 ## 1. Resumen
@@ -77,6 +77,10 @@ def estimate_position(
     service_day_start: datetime,             # tz-aware: mediodía − 12 h, Europe/Madrid, del service_date
     arrival_at: datetime,                    # tz-aware UTC
     now: datetime,                           # tz-aware UTC
+    stop_coordinates: Mapping[str, tuple[float, float]] | None = None,
+        # v1.1 (AC-06): coordenadas de cada parada del viaje, necesarias para proyectarlas sobre
+        # la forma cuando los horarios no traen shape_dist_traveled. Mismo orden (lat, lon) que
+        # ShapeStop. Si hacen falta y no se pasan: error explícito (tipo: decisión local).
 ) -> PositionEstimate | None:                # None si el viaje no contiene la parada objetivo
     ...
 ```
@@ -87,7 +91,7 @@ Algoritmo:
    (cada parada se proyecta sobre el tramo de forma posterior a la anterior) (AC-06).
 3. Parada objetivo `k`: aparición de `target_stop_id` con `|sched_k − arrival_at|` mínimo (AC-07).
 4. `δ = arrival_at − sched_k`; `s = (now − δ − service_day_start).total_seconds()`.
-5. `s ≤ arrival_s[0]` → `NOT_STARTED`, `d = d_0`; `s ≥ arrival_s[k]` → `AT_STOP`, `d = d_k`;
+5. (v1.1, AC-04) `s < departure_s[0]` → `NOT_STARTED`, `d = d_0`; `s ≥ arrival_s[k]` → `AT_STOP`, `d = d_k`;
    en otro caso, el `i < k` con `s_i ≤ s < s_{i+1}` → `EN_ROUTE`, `d` por AC-01. Para `s_i` se
    usa `departure_s` de la parada `i` y para `s_{i+1}` el `arrival_s` de la `i+1`.
 6. `point_at_distance(shape, d)` → `lat`, `lon`, `bearing_deg` del segmento (AC-05).
@@ -189,7 +193,7 @@ supera 20 ms, se añade índice `(fv, shape_id)` en `gtfs_trip` — decisión lo
 | AC-01–AC-08 | `tests/unit/test_position_estimator.py` y `test_geometry.py`: viaje sintético rectilíneo de 5 paradas cada 1000 m y 120 s; casos con retraso, extremos, circular (parada repetida), sin `shape_dist_traveled` |
 | AC-09–AC-12 | `tests/integration/test_position_api.py` (BD `gtfs_mini`, replay, `FakeClock`; contador de llamadas a la fuente de llegadas para AC-09) |
 | AC-13–AC-16 | `tests/integration/test_shapes_api.py` (incluye `If-None-Match` y `Accept-Encoding: gzip`) |
-| AC-17 | `tests/integration/test_position_real_session.py`: recorre la sesión `stop_508_peak` avanzando el `FakeClock` cada 20 s |
+| AC-17 | `tests/integration/test_position_real_session.py`: recorre la sesión `stop_508_peak` avanzando el `FakeClock` cada 20 s; (v1.1) la propiedad de distancia se comprueba por `vehicle.trip_id` solo entre pares sucesivos con `minutes_{t+1} ≤ minutes_t`, y el test registra en su salida cuántos pares excluye (en la sesión actual, 5) |
 
 ## 6. Decisiones locales permitidas
 
