@@ -1,0 +1,5 @@
+{
+  "type": "https://avisabus/problems/network-unavailable",
+  "title": "Service Unavailable",
+  "status": 503
+}
