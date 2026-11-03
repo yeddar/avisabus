@@ -7,8 +7,8 @@ Spec: specs/position_estimation/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Ag
 - [x] T-02 Modelos de posición y `estimate_position` (AC-01, AC-02, AC-03, AC-04, AC-06, AC-07,
       AC-08) (commit 29f1ad1)
 - [x] T-03 Ampliación de `NetworkRepository`: `trip_shape_id`, `shape_stops`, `shape_line`
-      (soporte de AC-09 y AC-13)
-- [ ] T-04 `GetVehiclePosition`
+      (soporte de AC-09 y AC-13) (commit 74f6739)
+- [x] T-04 `GetVehiclePosition` y `LineNotAtStopError` (AC-09, AC-10, AC-11, AC-12)
 - [ ] T-05 `GetShape` y endpoint `/shapes/{shape_id}`
 - [ ] T-06 Endpoint de posición, `GZipMiddleware`, composición en `main.py`
 - [ ] T-07 Test de coherencia con la sesión real `stop_508_peak`
@@ -57,6 +57,21 @@ Spec: specs/position_estimation/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Ag
   la versión: 110–260 ms). Medido sobre una copia de la BD real (`data/avisabus.sqlite`, 94
   formas): 1,6–15,7 ms, por debajo de los 20 ms del design, así que no se añade el índice
   `(fv, shape_id)`.
+- **D-09 (T-04) Orden de las comprobaciones:** el constructor del design no recibe el firmante,
+  así que `GetVehiclePosition` llama primero a `GetStopArrivals.execute` (token → feed → parada,
+  antes del SAE) y después comprueba la línea y el sentido con `lines_at_stop`. Un token inválido
+  gana siempre a una línea que no pasa (404 indistinguible, AC-12). Con línea inexistente se
+  consulta la caché del SAE de la parada igualmente (la misma petición que haría la vista de
+  llegadas).
+- **D-10 (T-04) Viaje emparejado sin datos en el feed activo** (sin horarios, sin `shape_id` o con
+  forma vacía; solo si el feed cambia entre consultas): se trata como `NO_VEHICLE` (posición
+  `null`, forma representativa), igual que una llegada sin viaje (AC-11).
+- **D-11 (T-04) Nombres y coordenadas de las paradas del viaje:** con `get_stop` por cada parada
+  distinta del viaje (no hay consulta en bloque en el puerto); las coordenadas se pasan como
+  `stop_coordinates` (D-03). `now` de la estimación: `clock.now()`; `generated_at` y
+  `refresh_after_s`: los de `GetStopArrivals`.
+- **D-12 (T-04)** `LineNotAtStopError(stop_id, line, direction_id)`: atributos, mensaje sin
+  identificadores (conventions §3).
 
 ## Bloqueos
 

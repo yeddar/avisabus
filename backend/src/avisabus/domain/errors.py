@@ -42,3 +42,16 @@ class StopNotFoundError(DomainError):
     def __init__(self, stop_id: str) -> None:
         self.stop_id = stop_id
         super().__init__("stop not found")
+
+
+class LineNotAtStopError(DomainError):
+    """The line does not serve the stop in that direction (position_estimation AC-12).
+
+    The line and direction are in `line` and `direction_id`; the stop is in `stop_id`.
+    """
+
+    def __init__(self, stop_id: str, line: str, direction_id: int) -> None:
+        self.stop_id = stop_id
+        self.line = line
+        self.direction_id = direction_id
+        super().__init__("line not at stop")
