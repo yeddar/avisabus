@@ -3,26 +3,19 @@
 > Fichero vivo: lo reescribe el orquestador al final de cada sesión.
 
 **Fecha:** 2026-11-03
-**Fase:** Inicio del Bloque 2 (Pasajero)
-**Feature en curso:** ninguna. Bloque 1 cerrado (CP-6 aprobado). Specs del bloque 2 aprobadas (CP-1, PR #7).
+**Fase:** Implementación — Bloque 2
+**Feature en curso:** `frontend_i18n` v1.0 — `implementing` (rama `feat/frontend_i18n`)
 
 ## Último paso
-CP-1 del bloque 2: la persona aprueba la PR #7 con `frontend_i18n`, `passenger_stop_view`,
-`position_estimation` y `passenger_map_view` (v1.0, `spec_approved`), la guía visual
-`docs/design.md` y los ajustes documentales `sae_arrivals_source` 1.4, `occupancy_sensor` 1.3 y
-`stop_arrivals_api` 1.5 (sin cambios de código).
+PR #21 (`stop_arrivals_api`) fusionada: bloque 1 completo (6/6). PR #7 fusionada: specs del bloque 2
+aprobadas (CP-1) y guía visual `docs/design.md`; la persona da paso al bloque 2 (CP-6 superado).
+`frontend_i18n` (sin exploración) → `implementing`.
 
 ## Siguiente paso
-1. La persona fusiona la PR #7 en `develop`.
-2. `frontend_i18n`: `spec_approved → exploring` (la spec dice que no hace falta explorar) →
-   `implementing` → revisión.
-3. Después, `passenger_stop_view` y `position_estimation` (ambas dependen solo de features en
-   `done` o de `frontend_i18n`), y por último `passenger_map_view`.
-4. Las features de frontend siguen `docs/design.md`; su AC de conformidad visual se revisa con
-   capturas de las pruebas e2e y en CP-6.
-
-## Checkpoints pendientes
-Ninguno (CP-1 del bloque 2 aprobado).
+1. Implementer (T-01…T-08) → reviewer nuevo → `done` → PR contra `develop` sin fusionar.
+   Las features de frontend siguen `docs/design.md`; los AC de conformidad visual (revisión) se
+   comprueban con capturas de las pruebas e2e.
+2. Siguientes del bloque 2: `position_estimation`, `passenger_stop_view`, `passenger_map_view`.
 
 ## Pendiente para specs futuras
 - **stop_arrivals_api P-1:** ~~resuelto en la PR #7 (solo docs)~~ · AC-06 dice "superar" el umbral; design §3 dice `≥` (el código sigue el
@@ -82,7 +75,7 @@ Ninguno (CP-1 del bloque 2 aprobado).
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-**CP-6 — fin del bloque 1** (tras fusionar la PR de `stop_arrivals_api`): validación de la persona.
+Ninguno. CP-6 del bloque 1 superado (la persona da paso al bloque 2, 2026-11-03).
 
 ## Bloqueos
 Ninguno. 

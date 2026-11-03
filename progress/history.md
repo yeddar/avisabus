@@ -210,3 +210,7 @@
 - La persona aprueba la PR #7: `frontend_i18n`, `passenger_stop_view`, `position_estimation` y
   `passenger_map_view` v1.0, guía visual `docs/design.md` v1.0 y los ajustes documentales del
   bloque 1 (`sae_arrivals_source` 1.4, `occupancy_sensor` 1.3, `stop_arrivals_api` 1.5).
+
+## 2026-11-03 · CP-6 bloque 1 superado · frontend_i18n · spec_approved → implementing
+- PR #21 fusionada (bloque 1: 6/6). PR #7 fusionada: specs del bloque 2 (CP-1) y `docs/design.md`.
+- `frontend_i18n` no necesita exploración; rama `feat/frontend_i18n`.
