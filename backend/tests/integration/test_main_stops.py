@@ -40,7 +40,8 @@ def test_main_wires_the_stop_endpoints_with_the_configuration(tmp_path: Path) ->
     )
     assert result.returncode == 0, result.stderr
     assert result.stdout.splitlines()[-10:] == [
-        "['/api/v1/stops/{stop_id}', '/api/v1/stops/{stop_id}/arrivals']",
+        "['/api/v1/stops/{stop_id}', '/api/v1/stops/{stop_id}/arrivals', "
+        "'/api/v1/stops/{stop_id}/lines/{line}/position']",
         "CachedArrivalsSource",
         "30",
         "0:07:00",

@@ -13,6 +13,7 @@ from avisabus.domain.models.network import (
     Stop,
     TripStopTime,
 )
+from avisabus.domain.models.position import ShapeStop
 
 
 class NetworkRepository(Protocol):
@@ -65,3 +66,21 @@ class NetworkRepository(Protocol):
         ...
 
     def shape_points(self, shape_id: str) -> list[ShapePoint]: ...
+
+    def trip_shape_id(self, trip_id: str) -> str | None:
+        """Shape of the trip; `None` if the trip is not in the active feed.
+
+        Port extension defined by position_estimation design §3.
+        """
+        ...
+
+    def shape_stops(self, shape_id: str) -> list[ShapeStop]:
+        """Stops, in order, of the trip with the most frequent stop pattern among the trips with
+        that shape (tie: the pattern of the smallest `trip_id`; its trip gives the sequences);
+        `[]` if no trip uses the shape (position_estimation design §3)."""
+        ...
+
+    def shape_line(self, shape_id: str) -> Line | None:
+        """Commercial line of the trips with that shape (the one with most trips, then the
+        smallest name); `None` if no trip uses it (position_estimation design §3)."""
+        ...

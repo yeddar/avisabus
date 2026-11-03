@@ -13,7 +13,18 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 import structlog
-from sqlalchemy import Connection, Engine, Select, Table, delete, insert, select, text, update
+from sqlalchemy import (
+    Connection,
+    Engine,
+    Select,
+    Table,
+    delete,
+    func,
+    insert,
+    select,
+    text,
+    update,
+)
 
 from avisabus.adapters.outbound.persistence import network_tables as t
 from avisabus.domain.models.network import (
@@ -28,6 +39,7 @@ from avisabus.domain.models.network import (
     Stop,
     TripStopTime,
 )
+from avisabus.domain.models.position import ShapeStop
 from avisabus.domain.ports.gtfs_import import (
     DerivedSummary,
     DirectionReport,
@@ -578,6 +590,70 @@ class SqliteNetworkRepository:
                 .order_by(sp.c.sequence)
             )
             return [ShapePoint(r.lat, r.lon, r.sequence, r.dist) for r in rows]
+
+    def trip_shape_id(self, trip_id: str) -> str | None:
+        tr = t.gtfs_trip
+        with self._engine.connect() as conn:
+            return conn.execute(
+                select(tr.c.shape_id).where(
+                    tr.c.feed_version_id == _ACTIVE, tr.c.trip_id == trip_id
+                )
+            ).scalar()
+
+    def shape_stops(self, shape_id: str) -> list[ShapeStop]:
+        """Stops of the most frequent stop pattern of the shape's trips (position_estimation
+        design §3); on a tie, the pattern of the smallest trip id, whose trip gives the
+        sequences."""
+        tr, st, s = t.gtfs_trip, t.gtfs_stop_time, t.gtfs_stop
+        with self._engine.connect() as conn:
+            # Trips first, then their stop times by primary key: joining both tables makes
+            # SQLite scan every stop time of the version.
+            trips = (
+                select(tr.c.trip_id)
+                .where(tr.c.feed_version_id == _ACTIVE, tr.c.shape_id == shape_id)
+                .scalar_subquery()
+            )
+            rows = conn.execute(
+                select(st.c.trip_id, st.c.stop_id, st.c.stop_sequence)
+                .where(st.c.feed_version_id == _ACTIVE, st.c.trip_id.in_(trips))
+                .order_by(st.c.trip_id, st.c.stop_sequence)
+            )
+            by_trip: dict[str, list[tuple[str, int]]] = defaultdict(list)
+            for r in rows:
+                by_trip[r.trip_id].append((r.stop_id, r.stop_sequence))
+            if not by_trip:
+                return []
+            patterns: dict[tuple[str, ...], list[str]] = defaultdict(list)
+            for trip_id in sorted(by_trip):
+                patterns[tuple(stop for stop, _ in by_trip[trip_id])].append(trip_id)
+            trip_ids = min(patterns.values(), key=lambda trips: (-len(trips), trips[0]))
+            calls = by_trip[trip_ids[0]]
+            stops = {
+                r.stop_id: r
+                for r in conn.execute(
+                    select(s.c.stop_id, s.c.name, s.c.lat, s.c.lon).where(
+                        s.c.feed_version_id == _ACTIVE,
+                        s.c.stop_id.in_(sorted({stop for stop, _ in calls})),
+                    )
+                )
+            }
+        return [
+            ShapeStop(stop, stops[stop].name, stops[stop].lat, stops[stop].lon, sequence)
+            for stop, sequence in calls
+            if stop in stops
+        ]
+
+    def shape_line(self, shape_id: str) -> Line | None:
+        tr = t.gtfs_trip
+        with self._engine.connect() as conn:
+            line = conn.execute(
+                select(tr.c.line)
+                .where(tr.c.feed_version_id == _ACTIVE, tr.c.shape_id == shape_id)
+                .group_by(tr.c.line)
+                .order_by(func.count().desc(), tr.c.line)
+                .limit(1)
+            ).scalar()
+        return None if line is None else self.get_line(line)
 
     def active_timezone(self) -> str | None:
         with self._engine.connect() as conn:

@@ -13,7 +13,10 @@ from fastapi import FastAPI
 from sqlalchemy import Engine
 
 from avisabus.adapters.inbound.http.app import create_app
-from avisabus.adapters.inbound.http.container import build_stop_use_cases
+from avisabus.adapters.inbound.http.container import (
+    build_position_use_cases,
+    build_stop_use_cases,
+)
 from avisabus.adapters.outbound.clock import SystemClock
 from avisabus.adapters.outbound.occupancy.simulated_sensor import SimulatedOccupancySensor
 from avisabus.adapters.outbound.persistence.db import create_engine, init_db
@@ -63,6 +66,8 @@ occupancy_thresholds = settings.occupancy_thresholds()
 stop_use_cases = build_stop_use_cases(
     settings, engine, clock, arrivals_source, occupancy_sensor, direction_override_entries
 )
+# The position shares `GetStopArrivals` (and its SAE cache) with the stop endpoints.
+position_use_cases = build_position_use_cases(stop_use_cases, engine, clock)
 
 
 @asynccontextmanager
@@ -78,4 +83,4 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         await http_client.aclose()
 
 
-app = create_app(settings, lifespan=lifespan, stops=stop_use_cases)
+app = create_app(settings, lifespan=lifespan, stops=stop_use_cases, positions=position_use_cases)
