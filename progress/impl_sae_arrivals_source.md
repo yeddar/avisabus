@@ -1,5 +1,9 @@
 # Implementación: sae_arrivals_source
-Spec: specs/sae_arrivals_source/ (v1.2, APPROVED) · Ciclo de revisión: 0 (v1.2)
+Spec: specs/sae_arrivals_source/ (v1.3, APPROVED) · Ciclo de revisión: 0 (v1.3)
+
+> **v1.3 (2026-11-03, rama `fix/sae-occupancy-v1.3`):** solo T-14 (`HH:MM:SS`, entradas sin
+> tiempo, muestra nocturna real) y T-15. T-01…T-13 son de versiones anteriores. T-08b sigue
+> opcional y no se hace.
 
 > **v1.2 (2026-11-02, rama `fix/bloque-1-ajustes`):** solo T-11 (NB-1), T-12 (NB-4, NB-7) y T-13.
 > T-01…T-10 son de la v1.1 (aprobadas en la revisión de ciclo 1). T-08b sigue opcional y no se hace.
@@ -37,9 +41,48 @@ con la grabación hecha por la persona el 2026-11-02 por la tarde-noche: T-08 y 
 - [x] T-12 (v1.2, NB-4, NB-7) Comando de regeneración del README con `--out` nueva; clientes HTTP
       de los tests de composición cerrados (commit dd60eae)
 - [x] T-13 (v1.2) Verificación completa: `./init.sh verify` en verde (commit de este fichero)
+- [x] T-14 (v1.3) Parser: `HH:MM:SS` como `CLOCK_TIME` (AC-03), entradas `"{destino} -"`
+      descartadas con `sae.entry_without_time` a nivel `debug` (AC-23), muestra nocturna real de la
+      2070 en lugar de la derivada `HH:MM` y README (AC-19 c) (commit 15e9d14)
+- [x] T-15 (v1.3) Verificación completa: `./init.sh verify` (ver "Verificación"; commit de este
+      fichero)
 
 ## Decisiones locales
 
+### v1.3
+- **D-24 `ParseResult.without_time` (AC-23):** el parser sigue siendo puro (D-05) y quien registra
+  es `build_snapshot`. Para distinguir las entradas sin tiempo de las no interpretables, `ParseResult`
+  gana un tercer campo `without_time: tuple[str, ...] = ()` con la **línea** de cada entrada
+  descartada por no traer tiempo (en el orden de la página). `build_snapshot` registra por cada una
+  `log.debug("sae.entry_without_time", stop_id=…, line=…)` (sin destino ni texto) y no las mete
+  en `skipped`, así que no generan `sae.unparsed_entry`. Los dos campos de design §3 no cambian y
+  el nuevo tiene valor por defecto (los parsers de prueba que construyen `ParseResult(arrivals,
+  skipped)` siguen valiendo).
+- **D-25 Regla de "sin tiempo":** tras desescapar y recortar (incluido `\xa0`), el texto termina en
+  `" -"` (design §4: "texto que termina en `" -"`"). Se comprueba **antes** de separar por el
+  último `" - "`, para que `"Natzaret - Port -"` sea "sin tiempo" y no un tiempo `"Port -"`
+  irreconocible. Un texto que tras recortar es solo `"-"` (o `"Alboraia-"`) no termina en `" -"`
+  y sigue siendo `sae.unparsed_entry` (`no separator`).
+- **D-26 `HH:MM:SS`:** expresión `^\d{1,2}:\d{2}(:\d{2})?$`; segundos > 59 → `invalid clock
+  time` (AC-06), igual que horas > 23 o minutos > 59. Los segundos se conservan en `arrival_at` y
+  la regla de "no anterior a `fetched_at − 5 min`" (D-06) se aplica con ellos.
+- **D-27 Fixture nocturna `samples/night_2026-11-02/`:** junta en una sesión dos respuestas reales
+  de la exploración E-01 de `stop_arrivals_api` (`progress/explore_destinations_samples/night_20261102/`):
+  la **2070** (`HH:MM:SS`, la que pide T-14 para AC-19 c) y la **2312** (5 entradas sin tiempo
+  reales: AC-23 pide verificarlo con "muestra real nocturna" y la 2070 no tiene ninguna; es la única
+  de las 22 consultas nocturnas que las tiene). Cuerpos y demás campos sin cambios; `started_at`
+  = el de la 2070, el `offset_s` de la 2312 se recalcula (6 s, truncado como en D-09),
+  `interval_s = null` (como en D-08) y cada respuesta lleva `source_sample`. Conversión con un
+  script desechable (fuera del repositorio). Se borra `samples/derived_clock_time/`.
+- **D-28 Tests que usaban la derivada:** `STOP_508_CLOCK_TIME` desaparece de `tests/support/sae.py`
+  (pasa a `STOP_2070_NIGHT` y `STOP_2312_WITHOUT_TIME`). Los tests de `HH:MM` del parser cambian la
+  última entrada de la página nocturna real (`La Malva-rosa - 01:52:28`) en lugar de la de la
+  derivada. `test_cli_sae.py::test_fetch_shows_clock_times_in_madrid` (fuera de la lista de
+  ficheros de T-14, pero dependía de la fixture borrada) usa la página nocturna real: la CLI sigue
+  mostrando `HH:MM` (`00:42`, `01:52`); no he cambiado el formato de salida de la CLI porque T-14
+  no lo pide.
+
+### v1.2
 ### v1.2
 - **D-19 Caché negativa (T-11, AC-11):** `_Entry` guarda `error_reason: str | None` en lugar de la
   excepción. En cada acierto se lanza `ArrivalsUnavailableError(stop_id, error_reason)` nuevo; el
@@ -162,8 +205,16 @@ Fuera de la lista de design §9 (detalles que la spec no fija; los anoto para el
 
 ## Bloqueos
 
-Ninguno de spec (no hay CP-3). T-08b (grabación nocturna) sigue opcional y pendiente de la
-persona.
+Ninguno de spec (no hay CP-3). T-08b (grabación nocturna) sigue opcional y no se hace (la v1.3
+cubre AC-19 (c) con la muestra nocturna real de la exploración de `stop_arrivals_api`).
+
+Observaciones no bloqueantes de la v1.3:
+- `sae fetch` muestra las horas como `HH:MM` aunque el SAE dé `HH:MM:SS` (los segundos se pierden
+  solo en la salida de la CLI; `arrival_at` los conserva). AC-18 no fija el formato (D-28).
+- La rama `feat/stop_arrivals_api` es anterior a la v1.3: si usa `derived_clock_time` o
+  `STOP_508_CLOCK_TIME`, tendrá que adaptarse al hacer rebase.
+- AC-19 (b) sigue cubierto por la derivada `derived_no_arrivals`: ninguna de las 22 respuestas
+  nocturnas reales llega sin llegadas (todas traen alguna entrada).
 
 Observaciones no bloqueantes para la persona/spec-writer y el reviewer:
 - design §3 nombra `adapters/outbound/sae/parser.py`; §2 y `tasks.md` dicen `qrphp_parser.py`
@@ -179,6 +230,17 @@ Observaciones no bloqueantes para la persona/spec-writer y el reviewer:
   `<contacto>`.
 
 ## Verificación
+
+### v1.3 (2026-11-03, rama `fix/sae-occupancy-v1.3`, tras el commit 15e9d14)
+- T-14: `uv run pytest tests/unit/test_sae_parser.py` → 51 passed (los 15 tests nuevos o
+  cambiados fallaban antes del cambio del parser). Como en versiones anteriores, ejecutado solo
+  falla el umbral global de cobertura (`addopts` mide `domain`+`application` sobre toda la suite).
+- T-15: `./init.sh verify` → format, lint, mypy (75 ficheros), lint-imports, pytest 662 passed /
+  2 deselected (cobertura `domain`+`application` 99,52 %), frontend format/lint/types/tests (7)/
+  build y `feature_list.json` en **verde**; trazabilidad **FAIL** solo por
+  `occupancy_sensor.AC-15: ningún test lo cita` (AC nuevo de la otra feature de esta rama, que
+  cubre su T-09). Todos los AC de `sae_arrivals_source` (AC-01…AC-23) están citados. Resultado
+  final tras T-10 de `occupancy_sensor`: ver abajo.
 
 ### v1.2 (2026-11-02, rama `fix/bloque-1-ajustes`, tras el commit dd60eae)
 - T-11: `uv run pytest tests/unit/test_sae_cache.py` → 15 passed (los 2 tests nuevos fallaban
