@@ -145,45 +145,82 @@ iconos y redacción de textos) y de detalles internos no contractuales:
   la connexió i torna-ho a intentar."; `stop.refreshFailed` "No se han podido actualizar los
   datos" (literal de AC-24) / "No s'han pogut actualitzar les dades".
 
-## Desviaciones respecto al design (para que el reviewer y la persona las validen)
-No cambian contratos ni comportamiento de los AC. **Propuesta:** reflejarlas en el design o en
-`docs/` en la próxima revisión.
+## Desviaciones respecto al design (v1.0) y estado actual
+Las cuatro se detectaron en la v1.0. No cambian contratos ni comportamiento de los AC. La PR #24
+(spec v1.1 y CP-4 de `docs/`) las recoge todas. Esta rama sale de esa PR, que aún no está
+fusionada en `develop`.
 
-1. **`openapi-typescript` 7.13 declara `peerDependencies: typescript ^5.x`** y el proyecto usa
-   TypeScript 6.0 (no hay versión de `openapi-typescript` que admita la 6). Se instala con
-   `"overrides": { "openapi-typescript": { "typescript": "$typescript" } }` en `package.json`;
-   la generación funciona y el resultado se valida con `tsc`.
-2. **Color del rojo EMT:** el algoritmo del design (pasos de 5 puntos de L en HSL) da
-   `#e50000` (4,8:1), no exactamente el `#E40000` que cita `docs/design.md` §4 ("en torno a").
-3. **Negrita de los avisos (§5.6):** el texto de AC-09 se mantiene literal ("Sin datos en tiempo
-   real: se muestra el horario programado"), así que la negrita llega hasta los dos puntos en
-   lugar de ser una frase con punto como en el ejemplo de la guía.
-4. **`docs/conventions.md` §4** dice que en `localStorage` solo hay `device_id`, idioma y
-   perfil; AC-19 añade la última parada (`avisabus.lastStop`, con su token). Manda la spec
-   (conventions lo prevé); propuesta: añadirlo a la lista de conventions §4.
+1. **`openapi-typescript` 7.13 con TypeScript 6 mediante `overrides`.** *Resuelta en la spec
+   (v1.1, PR #24):* el design §2 documenta el `overrides` como deuda técnica. **Sigue abierta la
+   deuda:** hay que quitar el `overrides` cuando haya una versión de `openapi-typescript`
+   compatible con TypeScript 6.
+2. **Rojo EMT `#e50000` en vez de `#E40000`.** *Resuelta en `docs/` (PR #24):*
+   `docs/design.md` §4 v1.1 dice `#E50000` (4,8:1).
+3. **Negrita del aviso de horario programado (§5.6).** *Resuelta en `docs/` (PR #24):* el
+   ejemplo de `docs/design.md` §5.6 v1.1 usa el texto literal de AC-09.
+4. **`avisabus.lastStop` frente a `docs/conventions.md` §4.** *Resuelta en `docs/` (PR #24):*
+   conventions §4 ya incluye la última parada consultada. El comentario de
+   `shared/device/storage.ts` se actualizó en T-11 (hallazgo N-3).
 
-## Textos nuevos para revisar por la persona (CP-6)
-Literales de la spec: "Parada {id}", "Próximas llegadas", "Actualizado a las…", "Actualizar",
-"Datos actualizados", "No hay llegadas previstas en este momento", aviso de horario programado,
-"Línea {l} hacia {d} está llegando", "Parada no encontrada", "Reintentar", "Datos de las…",
-"Sin conexión", "Tu última parada: {nombre}", "Página no encontrada" y niveles de ocupación.
-Redactados por mí (es / ca-valencia):
-- `stop.towards` "hacia" / "cap a"; `stop.lines` "Líneas" / "Línies"; `stop.title` "Parada".
-- `stop.notFound.body` "Vuelve a escanear el código QR de la parada para ver sus próximas
-  llegadas." / "Torna a escanejar el codi QR de la parada per a vore les pròximes arribades."
-- `stop.error.body` "**No se han podido cargar las llegadas.** Comprueba la conexión y vuelve a
-  intentarlo." / "**No s'han pogut carregar les arribades.** Comprova la connexió i torna-ho a
-  intentar."; `stop.error.retry` ca "Reintenta"; `stop.refresh` ca "Actualitza".
-- `network.offline` "**Sin conexión.** Los datos se actualizarán cuando vuelva la conexión." /
-  "**Sense connexió.** Les dades s'actualitzaran quan torne la connexió."
-- `stop.scheduledTime` (frase accesible) "{hora} según el horario programado" / "segons l'horari
-  programat"; `stop.arrivingNow` "está llegando" / "està arribant"; `stop.loading` "Cargando las
-  próximas llegadas…" / "Carregant les pròximes arribades…".
-- `home.lastStop` ca "La teua última parada: {nombre}"; `notFound.body` "La dirección que has
-  abierto no existe." / "L'adreça que has obert no existix."; `notFound.home` "Ir a la portada" /
-  "Ves a la portada".
-- Ocupación ca: "Poc ocupat", "Ocupació mitjana", "Ple", "hi ha seients lliures", "sense seients
-  lliures", "Ocupació no disponible"; vacío ca "No hi ha arribades previstes en este moment".
+## Textos para revisar por la persona (CP-6)
+Redacción vigente tras T-11, tal como está en `src/locales/es` y `src/locales/ca-valencia`.
+Los marcados con **(spec)** son literales de la spec en castellano; el resto los redacté yo
+(design §6). Todos los textos en valenciano son míos. `<strong>` = negrita; `{…}` = variable.
+
+### Novedades de la v1.1 (T-11)
+| Clave | es | ca-valencia |
+|---|---|---|
+| `stop.error.body` | "**No se han podido cargar los datos.** Comprueba la conexión y vuelve a intentarlo." | "**No s'han pogut carregar les dades.** Comprova la connexió i torna-ho a intentar." |
+| `stop.refreshFailed` | "No se han podido actualizar los datos" **(spec, AC-24)** | "No s'han pogut actualitzar les dades" |
+
+### Vista de parada
+| Clave | es | ca-valencia |
+|---|---|---|
+| `stop.title` | "Parada" | "Parada" |
+| `stop.code` | "Parada {código}" **(spec)** | "Parada {código}" |
+| `stop.lineName` (oculto) | "Línea {línea}" | "Línia {línea}" |
+| `stop.lines` | "Líneas" | "Línies" |
+| `stop.arrivals` | "Próximas llegadas" **(spec)** | "Pròximes arribades" |
+| `stop.updatedAt` | "Actualizado a las {hora}" **(spec)** | "Actualitzat a les {hora}" |
+| `stop.refresh` | "Actualizar" **(spec)** | "Actualitza" |
+| `stop.refreshed` (anuncio) | "Datos actualizados" **(spec)** | "Dades actualitzades" |
+| `stop.loading` | "Cargando las próximas llegadas…" | "Carregant les pròximes arribades…" |
+| `stop.empty` | "No hay llegadas previstas en este momento" **(spec)** | "No hi ha arribades previstes en este moment" |
+| `stop.scheduledNotice` | "**Sin datos en tiempo real:** se muestra el horario programado" **(spec)** | "**Sense dades en temps real:** es mostra l'horari programat" |
+| `stop.scheduledSuffix` | "programado" | "programat" |
+| `stop.towards` | "hacia" | "cap a" |
+| `stop.error.retry` | "Reintentar" **(spec)** | "Reintenta" |
+| `stop.stale` | "Datos de las {hora}, pueden no estar actualizados" **(spec)** | "Dades de les {hora}, poden no estar actualitzades" |
+| `network.offline` | "**Sin conexión.** Los datos se actualizarán cuando vuelva la conexión." (spec: "Sin conexión") | "**Sense connexió.** Les dades s'actualitzaran quan torne la connexió." |
+
+### Textos para lector de pantalla
+| Clave | es | ca-valencia |
+|---|---|---|
+| `stop.rowLabel` | "Línea {línea}, hacia {destino}, {tiempo}, {ocupación}" **(spec, AC-05)** | "Línia {línea}, cap a {destino}, {tiempo}, {ocupación}" |
+| `stop.rowLabelNoOccupancy` (AC-08) | "Línea {línea}, hacia {destino}, {tiempo}" | "Línia {línea}, cap a {destino}, {tiempo}" |
+| `stop.arrivesIn` | "llega en {duración}" **(spec)** | "arriba en {duración}" |
+| `stop.arrivesAt` | "llega a las {hora}" **(spec)** | "arriba a les {hora}" |
+| `stop.scheduledTime` | "{hora} según el horario programado" | "{hora} segons l'horari programat" |
+| `stop.arrivingNow` | "está llegando" | "està arribant" |
+| `stop.arriving` (anuncio) | "Línea {línea} hacia {destino} está llegando" **(spec)** | "Línia {línea} cap a {destino} està arribant" |
+| `occupancy.spoken.*` | "poco ocupado", "ocupación media", "lleno", "ocupación no disponible" | "poc ocupat", "ocupació mitjana", "ple", "ocupació no disponible" |
+
+### Ocupación (en pantalla)
+| Clave | es | ca-valencia |
+|---|---|---|
+| `occupancy.FREE` / `MEDIUM` / `FULL` | "Poco ocupado" / "Ocupación media" / "Lleno" **(spec)** | "Poc ocupat" / "Ocupació mitjana" / "Ple" |
+| `occupancy.seatsYes` / `seatsNo` | "hay asientos libres" / "sin asientos libres" **(spec)** | "hi ha seients lliures" / "sense seients lliures" |
+| `occupancy.unavailable` | "Ocupación no disponible" **(spec)** | "Ocupació no disponible" |
+
+### Páginas de error y portada
+| Clave | es | ca-valencia |
+|---|---|---|
+| `stop.notFound.title` | "Parada no encontrada" **(spec)** | "Parada no trobada" |
+| `stop.notFound.body` | "Vuelve a escanear el código QR de la parada para ver sus próximas llegadas." | "Torna a escanejar el codi QR de la parada per a vore les pròximes arribades." |
+| `notFound.title` | "Página no encontrada" **(spec)** | "Pàgina no trobada" |
+| `notFound.body` | "La dirección que has abierto no existe." | "L'adreça que has obert no existix." |
+| `notFound.home` | "Ir a la portada" | "Ves a la portada" |
+| `home.lastStop` | "Tu última parada: {nombre}" **(spec)** | "La teua última parada: {nombre}" |
 
 ## Observaciones (no bloqueantes)
 - (v1.1) **Hueco menor de AC-24 con un 404:** si "Actualizar" o "Reintentar" terminan con un 404
