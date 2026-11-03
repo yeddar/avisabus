@@ -15,8 +15,10 @@ from sqlalchemy import Engine
 from avisabus.adapters.outbound.persistence.sqlite_network import SqliteNetworkRepository
 from avisabus.adapters.outbound.security.hmac_stop_token import HmacStopTokenSigner
 from avisabus.application.direction_overrides import validate_direction_overrides
+from avisabus.application.get_shape import GetShape
 from avisabus.application.get_stop import GetStop
 from avisabus.application.get_stop_arrivals import GetStopArrivals
+from avisabus.application.get_vehicle_position import GetVehiclePosition
 from avisabus.application.scheduled_arrivals import ScheduledArrivalsProvider
 from avisabus.config import Settings
 from avisabus.domain.ports.arrivals import ArrivalsSource
@@ -72,4 +74,21 @@ def build_stop_use_cases(
             logger=logger,
         ),
         direction_overrides=overrides,
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class PositionUseCases:
+    """Use cases of the position and shape endpoints (position_estimation design §2)."""
+
+    get_vehicle_position: GetVehiclePosition
+    get_shape: GetShape
+
+
+def build_position_use_cases(stops: StopUseCases, engine: Engine, clock: Clock) -> PositionUseCases:
+    """The position reuses the stops' `GetStopArrivals`, so it shares its SAE cache (AC-09)."""
+    network = SqliteNetworkRepository(engine)
+    return PositionUseCases(
+        get_vehicle_position=GetVehiclePosition(stops.get_stop_arrivals, network, clock),
+        get_shape=GetShape(network),
     )

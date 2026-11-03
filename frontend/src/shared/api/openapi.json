@@ -154,6 +154,21 @@
         "title": "HealthResponse",
         "type": "object"
       },
+      "NextStopSchema": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "stop_id": {
+            "title": "Stop Id",
+            "type": "string"
+          }
+        },
+        "required": ["stop_id", "name"],
+        "title": "NextStopSchema",
+        "type": "object"
+      },
       "OccupancySchema": {
         "properties": {
           "free_seats": {
@@ -174,6 +189,117 @@
         "title": "OccupancySchema",
         "type": "object"
       },
+      "PositionArrivalSchema": {
+        "properties": {
+          "arrival_at": {
+            "format": "date-time",
+            "title": "Arrival At",
+            "type": "string"
+          },
+          "destination": {
+            "description": "GTFS headsign when the direction is resolved, otherwise the SAE text.",
+            "title": "Destination",
+            "type": "string"
+          },
+          "kind": {
+            "enum": ["MINUTES", "CLOCK_TIME"],
+            "title": "Kind",
+            "type": "string"
+          },
+          "minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minutes"
+          },
+          "sae_destination": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Destination as given by the SAE; null when source is SCHEDULED.",
+            "title": "Sae Destination"
+          }
+        },
+        "required": ["kind", "minutes", "arrival_at", "destination", "sae_destination"],
+        "title": "PositionArrivalSchema",
+        "type": "object"
+      },
+      "PositionSchema": {
+        "properties": {
+          "bearing_deg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Bearing of the shape segment, 0–360°.",
+            "title": "Bearing Deg"
+          },
+          "distance_to_stop_m": {
+            "description": "Along the shape up to the stop, in metres.",
+            "title": "Distance To Stop M",
+            "type": "integer"
+          },
+          "lat": {
+            "description": "Estimated latitude (6 decimals).",
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "description": "Estimated longitude (6 decimals).",
+            "title": "Lon",
+            "type": "number"
+          },
+          "next_stop": {
+            "$ref": "#/components/schemas/NextStopSchema"
+          },
+          "stops_away": {
+            "description": "Stops before this one still ahead of the bus.",
+            "title": "Stops Away",
+            "type": "integer"
+          }
+        },
+        "required": ["lat", "lon", "bearing_deg", "distance_to_stop_m", "stops_away", "next_stop"],
+        "title": "PositionSchema",
+        "type": "object"
+      },
+      "PositionStopSchema": {
+        "properties": {
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
+          },
+          "name": {
+            "description": "Stop name as it comes in the GTFS.",
+            "title": "Name",
+            "type": "string"
+          },
+          "stop_id": {
+            "title": "Stop Id",
+            "type": "string"
+          }
+        },
+        "required": ["stop_id", "name", "lat", "lon"],
+        "title": "PositionStopSchema",
+        "type": "object"
+      },
       "ProblemSchema": {
         "properties": {
           "status": {
@@ -191,6 +317,108 @@
         },
         "required": ["type", "title", "status"],
         "title": "ProblemSchema",
+        "type": "object"
+      },
+      "ShapeResponse": {
+        "examples": [
+          {
+            "color": "FE0000",
+            "coordinates": [
+              [-0.3318, 39.4474],
+              [-0.3319, 39.4475]
+            ],
+            "line": "93",
+            "shape_id": "994_488_2271",
+            "stops": [
+              {
+                "lat": 39.46913,
+                "lon": -0.40362,
+                "name": "Av. del Cid - Ricardo Micó",
+                "sequence": 1,
+                "stop_id": "488"
+              }
+            ]
+          }
+        ],
+        "properties": {
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Line color, hexadecimal without '#'.",
+            "title": "Color"
+          },
+          "coordinates": {
+            "description": "Points of the shape in order, as GeoJSON positions [lon, lat].",
+            "items": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            "title": "Coordinates",
+            "type": "array"
+          },
+          "line": {
+            "title": "Line",
+            "type": "string"
+          },
+          "shape_id": {
+            "title": "Shape Id",
+            "type": "string"
+          },
+          "stops": {
+            "description": "Stops of the most frequent trip with this shape, in order.",
+            "items": {
+              "$ref": "#/components/schemas/ShapeStopSchema"
+            },
+            "title": "Stops",
+            "type": "array"
+          }
+        },
+        "required": ["shape_id", "line", "color", "coordinates", "stops"],
+        "title": "ShapeResponse",
+        "type": "object"
+      },
+      "ShapeStopSchema": {
+        "properties": {
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
+          },
+          "name": {
+            "description": "Stop name as it comes in the GTFS.",
+            "title": "Name",
+            "type": "string"
+          },
+          "sequence": {
+            "description": "stop_sequence of the trip.",
+            "title": "Sequence",
+            "type": "integer"
+          },
+          "stop_id": {
+            "title": "Stop Id",
+            "type": "string"
+          }
+        },
+        "required": ["stop_id", "name", "lat", "lon", "sequence"],
+        "title": "ShapeStopSchema",
         "type": "object"
       },
       "StopArrivalsResponse": {
@@ -377,6 +605,147 @@
         "title": "ValidationError",
         "type": "object"
       },
+      "VehiclePositionResponse": {
+        "examples": [
+          {
+            "arrival": {
+              "arrival_at": "2026-11-04T07:44:00Z",
+              "destination": "Passeig Marítim - Hospital Malva-rosa",
+              "kind": "MINUTES",
+              "minutes": 4,
+              "sae_destination": "Pass. Marítim"
+            },
+            "direction_id": 0,
+            "generated_at": "2026-11-04T07:40:00Z",
+            "headsign": "Passeig Marítim - Hospital Malva-rosa",
+            "line": "93",
+            "position": {
+              "bearing_deg": 245.0,
+              "distance_to_stop_m": 850,
+              "lat": 39.4701,
+              "lon": -0.3901,
+              "next_stop": {
+                "name": "Av. del Cid - Nicasio Benlloch",
+                "stop_id": "512"
+              },
+              "stops_away": 3
+            },
+            "refresh_after_s": 20,
+            "shape_id": "994_488_2271",
+            "source": "REALTIME",
+            "status": "EN_ROUTE",
+            "stop": {
+              "lat": 39.46794,
+              "lon": -0.39568,
+              "name": "Parc de l'Oest - Enguera",
+              "stop_id": "508"
+            },
+            "vehicle": {
+              "service_date": "2026-11-04",
+              "trip_id": "93_994_561_488_2271_2_122"
+            }
+          }
+        ],
+        "properties": {
+          "arrival": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PositionArrivalSchema"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "First arrival of the line and direction; null with NO_ARRIVAL."
+          },
+          "direction_id": {
+            "title": "Direction Id",
+            "type": "integer"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "headsign": {
+            "description": "Headsign of the line and direction at the stop.",
+            "title": "Headsign",
+            "type": "string"
+          },
+          "line": {
+            "title": "Line",
+            "type": "string"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PositionSchema"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Estimated position; null with NO_ARRIVAL and NO_VEHICLE."
+          },
+          "refresh_after_s": {
+            "description": "Seconds after which the client should refresh.",
+            "title": "Refresh After S",
+            "type": "integer"
+          },
+          "shape_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Shape of the trip, or the representative one of the line and direction.",
+            "title": "Shape Id"
+          },
+          "source": {
+            "enum": ["REALTIME", "SCHEDULED"],
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "enum": ["EN_ROUTE", "AT_STOP", "NOT_STARTED", "NO_VEHICLE", "NO_ARRIVAL"],
+            "title": "Status",
+            "type": "string"
+          },
+          "stop": {
+            "$ref": "#/components/schemas/PositionStopSchema"
+          },
+          "vehicle": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VehicleSchema"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Trip paired with the arrival, if any."
+          }
+        },
+        "required": [
+          "stop",
+          "line",
+          "direction_id",
+          "headsign",
+          "source",
+          "status",
+          "generated_at",
+          "refresh_after_s",
+          "arrival",
+          "vehicle",
+          "shape_id",
+          "position"
+        ],
+        "title": "VehiclePositionResponse",
+        "type": "object"
+      },
       "VehicleSchema": {
         "properties": {
           "service_date": {
@@ -418,6 +787,99 @@
         },
         "summary": "Health",
         "tags": ["health"]
+      }
+    },
+    "/api/v1/shapes/{shape_id}": {
+      "get": {
+        "operationId": "get_shape_api_v1_shapes__shape_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "shape_id",
+            "required": true,
+            "schema": {
+              "title": "Shape Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "if-none-match",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-None-Match"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShapeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "304": {
+            "description": "Not modified: `If-None-Match` has the current `ETag`."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 404,
+                  "title": "Not Found",
+                  "type": "https://avisabus/problems/shape-not-found"
+                }
+              }
+            },
+            "description": "The shape does not exist in the active feed."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 503,
+                  "title": "Service Unavailable",
+                  "type": "https://avisabus/problems/network-unavailable"
+                }
+              }
+            },
+            "description": "No active GTFS feed."
+          }
+        },
+        "summary": "Get Shape",
+        "tags": ["shapes"]
       }
     },
     "/api/v1/stops/{stop_id}": {
@@ -602,6 +1064,129 @@
         },
         "summary": "Get Stop Arrivals",
         "tags": ["stops"]
+      }
+    },
+    "/api/v1/stops/{stop_id}/lines/{line}/position": {
+      "get": {
+        "operationId": "get_vehicle_position_api_v1_stops__stop_id__lines__line__position_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stop_id",
+            "required": true,
+            "schema": {
+              "title": "Stop Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "line",
+            "required": true,
+            "schema": {
+              "title": "Line",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Direction of the line (0 or 1).",
+            "in": "query",
+            "name": "direction_id",
+            "required": true,
+            "schema": {
+              "description": "Direction of the line (0 or 1).",
+              "title": "Direction Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Signed stop token of the QR (22 characters).",
+            "in": "query",
+            "name": "t",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Signed stop token of the QR (22 characters).",
+              "title": "T"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehiclePositionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "examples": {
+                  "line-not-at-stop": {
+                    "value": {
+                      "status": 404,
+                      "title": "Not Found",
+                      "type": "https://avisabus/problems/line-not-at-stop"
+                    }
+                  },
+                  "stop-not-found": {
+                    "value": {
+                      "status": 404,
+                      "title": "Not Found",
+                      "type": "https://avisabus/problems/stop-not-found"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Missing or invalid token, or unknown stop (same body as the stop endpoints); or the line and direction do not serve the stop."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 503,
+                  "title": "Service Unavailable",
+                  "type": "https://avisabus/problems/network-unavailable"
+                }
+              }
+            },
+            "description": "No active GTFS feed."
+          }
+        },
+        "summary": "Get Vehicle Position",
+        "tags": ["position"]
       }
     }
   }

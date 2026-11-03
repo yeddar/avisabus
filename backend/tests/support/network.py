@@ -10,9 +10,11 @@ from avisabus.domain.models.network import (
     Line,
     LineDirection,
     ScheduledStopTime,
+    ShapePoint,
     Stop,
     TripStopTime,
 )
+from avisabus.domain.models.position import ShapeStop
 from avisabus.domain.services.occupancy_simulation import service_day_start
 
 FEED = FeedVersion(
@@ -41,6 +43,10 @@ class FakeNetwork:
     departing: dict[tuple[str, str], frozenset[int]] = field(default_factory=dict)
     scheduled: dict[str, list[ScheduledStopTime]] = field(default_factory=lambda: defaultdict(list))
     trips: dict[str, list[TripStopTime]] = field(default_factory=dict)
+    trip_shapes: dict[str, str] = field(default_factory=dict)
+    shapes: dict[str, list[ShapePoint]] = field(default_factory=dict)
+    shape_stop_lists: dict[str, list[ShapeStop]] = field(default_factory=dict)
+    shape_lines: dict[str, str] = field(default_factory=dict)
     scheduled_queries: list[tuple[str, datetime, timedelta]] = field(default_factory=list)
     departing_queries: list[tuple[str, str]] = field(default_factory=list)
 
@@ -77,6 +83,21 @@ class FakeNetwork:
 
     def trip_stop_times(self, trip_id: str) -> list[TripStopTime]:
         return list(self.trips.get(trip_id, []))
+
+    # Port extension of position_estimation.
+
+    def trip_shape_id(self, trip_id: str) -> str | None:
+        return self.trip_shapes.get(trip_id) if self.feed else None
+
+    def shape_points(self, shape_id: str) -> list[ShapePoint]:
+        return list(self.shapes.get(shape_id, [])) if self.feed else []
+
+    def shape_stops(self, shape_id: str) -> list[ShapeStop]:
+        return list(self.shape_stop_lists.get(shape_id, [])) if self.feed else []
+
+    def shape_line(self, shape_id: str) -> Line | None:
+        line = self.shape_lines.get(shape_id)
+        return None if line is None or not self.feed else self.lines.get(line)
 
     # Builders.
 

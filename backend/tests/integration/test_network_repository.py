@@ -563,3 +563,103 @@ def test_departing_directions_elsewhere(repo: SqliteNetworkRepository, tmp_path:
     engine = _engine(tmp_path / "empty.sqlite")
     assert SqliteNetworkRepository(engine).departing_directions("166", "C2") == frozenset()
     engine.dispose()
+
+
+# --- Port extension of position_estimation (T-03): trip_shape_id, shape_stops, shape_line ---
+
+
+def _shape_patterns() -> dict[str, dict[tuple[str, ...], list[str]]]:
+    """Brute force over the CSV: shape → stop pattern → its trip ids (sorted)."""
+    by_trip: dict[str, list[tuple[int, str]]] = defaultdict(list)
+    for row in STOP_TIMES:
+        by_trip[row["trip_id"]].append((int(row["stop_sequence"]), row["stop_id"]))
+    patterns: dict[str, dict[tuple[str, ...], list[str]]] = defaultdict(lambda: defaultdict(list))
+    for trip_id in sorted(TRIPS):
+        pattern = tuple(stop for _, stop in sorted(by_trip[trip_id]))
+        patterns[TRIPS[trip_id]["shape_id"]][pattern].append(trip_id)
+    return patterns
+
+
+@pytest.mark.spec("position_estimation.AC-09")
+def test_trip_shape_id_is_the_shape_of_every_trip(repo: SqliteNetworkRepository) -> None:
+    for trip_id, row in TRIPS.items():
+        assert repo.trip_shape_id(trip_id) == row["shape_id"]
+    assert repo.trip_shape_id("ghost") is None
+
+
+@pytest.mark.spec("position_estimation.AC-13")
+def test_shape_stops_are_the_stops_of_its_most_frequent_trip(
+    repo: SqliteNetworkRepository,
+) -> None:
+    for shape_id, patterns in _shape_patterns().items():
+        # Most trips; on a tie, the pattern of the smallest trip id.
+        trip_ids = min(patterns.values(), key=lambda trips: (-len(trips), trips[0]))
+        representative = trip_ids[0]
+        expected_rows = sorted(
+            (int(r["stop_sequence"]), r["stop_id"])
+            for r in STOP_TIMES
+            if r["trip_id"] == representative
+        )
+        got = repo.shape_stops(shape_id)
+        assert [(s.sequence, s.stop_id) for s in got] == expected_rows
+        for stop in got:
+            known = repo.get_stop(stop.stop_id)
+            assert known is not None
+            assert (stop.name, stop.lat, stop.lon) == (known.name, known.lat, known.lon)
+    assert repo.shape_stops("ghost") == []
+
+
+def _pattern_trips(feed: Path, shape_id: str, reference_trip: str, trips: dict[str, int]) -> None:
+    """Add `shape_id` (a copy of the reference trip's shape) and, for each new trip id, a copy of
+    the reference trip with only its first `n` stops (`n = 0`: every stop)."""
+    reference = next(r for r in read_rows(feed / "trips.txt") if r[2] == reference_trip)
+    shape_rows = [r for r in read_rows(feed / "shapes.txt") if r[0] == reference[5]]
+    append_rows(feed / "shapes.txt", [[shape_id, *r[1:]] for r in shape_rows])
+    stop_rows = [r for r in read_rows(feed / "stop_times.txt") if r[0] == reference_trip]
+    for trip_id, n in trips.items():
+        append_rows(
+            feed / "trips.txt",
+            [[reference[0], reference[1], trip_id, reference[3], trip_id, shape_id]],
+        )
+        kept = stop_rows if n == 0 else stop_rows[:n]
+        append_rows(feed / "stop_times.txt", [[trip_id, *r[1:]] for r in kept])
+
+
+@pytest.mark.spec("position_estimation.AC-13")
+async def test_shape_stops_with_several_stop_patterns(tmp_path: Path) -> None:
+    feed = copy_gtfs_mini(tmp_path / "feed")
+    reference = next(t for t, r in TRIPS.items() if r["shape_id"] == "1055_487_2271")
+    # Majority: two full trips beat a shorter one with a smaller trip id.
+    _pattern_trips(feed, "X_majority", reference, {"x_1": 5, "x_2": 0, "x_3": 0})
+    # Tie: one trip each; the pattern of the smallest trip id wins (the short one).
+    _pattern_trips(feed, "Y_tie", reference, {"y_2": 0, "y_1": 6})
+    engine = _engine(tmp_path / "db.sqlite")
+    await _import(engine, feed)
+    repo = SqliteNetworkRepository(engine)
+    full = [int(r["stop_sequence"]) for r in STOP_TIMES if r["trip_id"] == reference]
+    assert [s.sequence for s in repo.shape_stops("X_majority")] == sorted(full)
+    assert [s.sequence for s in repo.shape_stops("Y_tie")] == sorted(full)[:6]
+    assert repo.shape_line("X_majority") == repo.get_line("98")
+    engine.dispose()
+
+
+@pytest.mark.spec("position_estimation.AC-13")
+def test_shape_line_is_the_line_of_the_trips_with_that_shape(
+    repo: SqliteNetworkRepository,
+) -> None:
+    for shape_id in {row["shape_id"] for row in TRIPS.values()}:
+        lines = {ROUTE_LINES[r["route_id"]] for r in TRIPS.values() if r["shape_id"] == shape_id}
+        assert len(lines) == 1
+        line = repo.shape_line(shape_id)
+        assert line is not None
+        assert line == repo.get_line(lines.pop())
+    assert repo.shape_line("ghost") is None
+
+
+def test_shape_queries_without_an_active_feed(tmp_path: Path) -> None:
+    engine = _engine(tmp_path / "empty.sqlite")
+    empty = SqliteNetworkRepository(engine)
+    assert empty.trip_shape_id("38_1054_561_487_2229_3_001") is None
+    assert empty.shape_stops("1054_487_2229") == []
+    assert empty.shape_line("1054_487_2229") is None
+    engine.dispose()

@@ -235,3 +235,21 @@
 ## 2026-11-03 · passenger_stop_view · in_review → done
 - Revisión ciclo 1: APPROVED; desviaciones sin CP-3. CP-4 pendiente (`docs/conventions.md` §4 por
   `avisabus.lastStop`). PR contra `develop` sin fusionar. Bloque 2: 2/4 en `done`.
+
+## 2026-11-03 · passenger_stop_view PR #23 fusionada · position_estimation · spec_approved → implementing
+- CP-4 y `passenger_stop_view` v1.1 en la PR #24 (pendiente). `position_estimation` sin exploración.
+
+## 2026-11-03 · position_estimation · implementing → spec_blocked (CP-3)
+- T-01…T-06 hechas. AC-17 (distancia a la parada no aumenta > 50 m) falla con `stop_508_peak` cuando
+  el SAE retrasa la llegada (5 casos). Propuesta recomendada: limitar la propiedad a minutos no crecientes.
+
+## 2026-11-03 · position_estimation · spec_blocked → spec_approved (v1.1, PR #25) → implementing
+- Opción 1: AC-17 limitado a pares de instantes con minutos del SAE no crecientes. Se reanuda en T-07.
+
+## 2026-11-03 · position_estimation · implementing → in_review
+- T-07 (sesión real, 139 pares válidos, 5 excluidos) y T-08; firma alineada con design v1.1.
+  `CI=1 ./init.sh verify --e2e` en verde (969 backend, 278 Vitest, 60 e2e).
+
+## 2026-11-03 · position_estimation · in_review → done
+- Revisión ciclo 1 (v1.1): APPROVED; H-01…H-05 no bloqueantes. PR contra `develop` sin fusionar.
+  Bloque 2: 3/4 en `done` (falta `passenger_map_view`; antes, `passenger_stop_view` v1.1 tras la #24).
