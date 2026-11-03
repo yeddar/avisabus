@@ -198,3 +198,15 @@
 ## 2026-11-03 · stop_arrivals_api · in_review → done · bloque 1 completo
 - Revisión ciclo 1 (v1.4): APPROVED sin bloqueantes; overrides vacíos verificados de forma
   independiente. PR contra `develop` sin fusionar. Bloque 1: 6/6 en `done` → CP-6.
+
+## 2026-11-03 · bloque 1 · CP-6 aprobado (cierre del bloque)
+- La persona aprueba el bloque 1 (PR #21 fusionada) y la recomendación sobre el destino: en
+  pantalla, el texto del SAE; en el texto accesible, el headsign del GTFS.
+- Specs del bloque 2 actualizadas en la PR #7 con la guía visual (`docs/design.md`, del boceto
+  revisado) y ajustes solo documentales de `sae_arrivals_source` 1.4, `occupancy_sensor` 1.3 y
+  `stop_arrivals_api` 1.5. Pendiente de CP-1.
+
+## 2026-11-03 · bloque 2 · spec_draft → spec_approved (CP-1)
+- La persona aprueba la PR #7: `frontend_i18n`, `passenger_stop_view`, `position_estimation` y
+  `passenger_map_view` v1.0, guía visual `docs/design.md` v1.0 y los ajustes documentales del
+  bloque 1 (`sae_arrivals_source` 1.4, `occupancy_sensor` 1.3, `stop_arrivals_api` 1.5).

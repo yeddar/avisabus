@@ -20,6 +20,7 @@ Proyecto académico (TFM) desarrollado con **Spec Driven Development (spec first
 | [`docs/use_cases.md`](docs/use_cases.md) | Casos de uso y limitaciones conocidas |
 | [`docs/architecture.md`](docs/architecture.md) | Arquitectura, API, despliegue, ADR, riesgos |
 | [`docs/conventions.md`](docs/conventions.md) | Convenciones de código, glosario, tests, git |
+| [`docs/design.md`](docs/design.md) | Guía visual: tipografía, color, componentes y textos de interfaz |
 | [`docs/specs.md`](docs/specs.md) | Formato de las specs e índice de features |
 | [`docs/verification.md`](docs/verification.md) | Definición de terminado y proceso de revisión |
 | [`AGENTS.md`](AGENTS.md) | Roles de los agentes y flujo de trabajo |

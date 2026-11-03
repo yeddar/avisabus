@@ -1,6 +1,6 @@
 # Convenciones — AvisaBus
 
-> Estado: **APROBADO** (v1.0 · 2026-10-31). Obligatorio para personas y agentes.
+> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-03: guía visual y terminología "Solicitar", aprobada en la PR #7). Obligatorio para personas y agentes.
 > Si una convención entra en conflicto con una spec, manda la spec y se anota en `progress/`.
 
 ## 1. Idiomas
@@ -17,7 +17,7 @@
 
 | Castellano | Código | Nota |
 |---|---|---|
-| Aviso (de espera) | `Alert` | |
+| Aviso (de espera) | `Alert` | En la **interfaz** se dice "solicitar parada": botón "Solicitar" / "Sol·licita", estado "Parada solicitada", acción "Cancelar solicitud" (`docs/design.md` §7). En docs y código, "aviso" / `Alert`. |
 | Necesidad de accesibilidad | `Need` | `RAMP`, `EXTRA_TIME`, `SEAT` |
 | Parada | `Stop` | `stop_id` del GTFS = código del SAE |
 | Línea | `Line` | Agrupa `route_id` por `route_short_name` |
@@ -75,6 +75,7 @@
   - Ningún dato transmitido solo por color (ocupación y alertas llevan texto + icono).
   - Objetivos táctiles ≥ 44×44 px; contraste AA; foco visible.
   - Animaciones desactivadas con `prefers-reduced-motion`.
+- **Aspecto visual:** según la guía `docs/design.md` (tipografía autoalojada, tokens de color, componentes); las specs de frontend la citan.
 - **Estado local del dispositivo:** solo `device_id`, idioma y perfil de accesibilidad, en `localStorage`, encapsulado en `shared/device`.
 
 ## 5. API

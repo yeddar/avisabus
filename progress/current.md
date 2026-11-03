@@ -2,38 +2,44 @@
 
 > Fichero vivo: lo reescribe el orquestador al final de cada sesión.
 
-**Fecha:** 2026-11-02
-**Fase:** Fin del Bloque 1 (Cimientos y datos) — CP-6 pendiente
-**Feature en curso:** `stop_arrivals_api` v1.4 — `done`, PR abierta (sin fusionar). **Bloque 1 completo (6/6) → CP-6.**
+**Fecha:** 2026-11-03
+**Fase:** Inicio del Bloque 2 (Pasajero)
+**Feature en curso:** ninguna. Bloque 1 cerrado (CP-6 aprobado). Specs del bloque 2 aprobadas (CP-1, PR #7).
 
 ## Último paso
-`stop_arrivals_api` v1.4: T-01…T-09 (+T-05b, T-05c). Revisión ciclo 1: **APPROVED** sin bloqueantes
-(853 tests, cobertura 99,66 %, 17 mutaciones detectadas, tests `slow` en verde). Overrides: ninguno
-necesario (`backend/config/direction_overrides.json` = `{}`; 139/139 entradas reales en red y
-1142/1142 con las grabaciones se resuelven sin ellos). PR contra `develop` abierta.
+CP-1 del bloque 2: la persona aprueba la PR #7 con `frontend_i18n`, `passenger_stop_view`,
+`position_estimation` y `passenger_map_view` (v1.0, `spec_approved`), la guía visual
+`docs/design.md` y los ajustes documentales `sae_arrivals_source` 1.4, `occupancy_sensor` 1.3 y
+`stop_arrivals_api` 1.5 (sin cambios de código).
 
 ## Siguiente paso
-1. La persona fusiona la PR de `stop_arrivals_api`.
-2. **CP-6 (fin del bloque 1):** la persona valida el bloque antes de empezar el bloque 2
-   (`frontend_i18n` y siguientes; specs del bloque 2 en PR #7).
-3. T-08b de `sae_arrivals_source` (nocturna) opcional.
+1. La persona fusiona la PR #7 en `develop`.
+2. `frontend_i18n`: `spec_approved → exploring` (la spec dice que no hace falta explorar) →
+   `implementing` → revisión.
+3. Después, `passenger_stop_view` y `position_estimation` (ambas dependen solo de features en
+   `done` o de `frontend_i18n`), y por último `passenger_map_view`.
+4. Las features de frontend siguen `docs/design.md`; su AC de conformidad visual se revisa con
+   capturas de las pruebas e2e y en CP-6.
+
+## Checkpoints pendientes
+Ninguno (CP-1 del bloque 2 aprobado).
 
 ## Pendiente para specs futuras
-- **stop_arrivals_api P-1:** AC-06 dice "superar" el umbral; design §3 dice `≥` (el código sigue el
+- **stop_arrivals_api P-1:** ~~resuelto en la PR #7 (solo docs)~~ · AC-06 dice "superar" el umbral; design §3 dice `≥` (el código sigue el
   design; el único caso real en el límite, 1266 "C. Benlloch", da igual con ambas lecturas).
-- **stop_arrivals_api P-2 / O-5:** la verificación de AC-19 cita C1 en integración, pero `gtfs_mini`
+- **stop_arrivals_api P-2 / O-5:** ~~resuelto en la PR #7 (solo docs)~~ · la verificación de AC-19 cita C1 en integración, pero `gtfs_mini`
   no tiene C1 (cubierto en unitarios con datos reales y en test `slow` con el feed completo).
-- **stop_arrivals_api O-1/NB-4:** overrides validados solo al arrancar (sin feed se ignoran; tras
+- **stop_arrivals_api O-1/NB-4:** ~~resuelto en la PR #7 (solo docs)~~ · overrides validados solo al arrancar (sin feed se ignoran; tras
   reimportar no se revalidan). O-2: el formato por headsign no expresa un texto que cubre dos medios
   bucles (`C3|Campanar`). O-3: AC-09 no fija el headsign mostrado con override o sentido que sale.
   O-4: fichero de overrides ilegible no especificado (implementado: `ConfigurationError`).
 - **stop_arrivals_api NB-1…NB-3:** similitudes mal anotadas en el impl (1751: 0,333; 229: 0,25);
   `FakeLogger` importado de otro test → `tests/support/`; ruta de overrides relativa a `backend/`
   en `.env.example` (→ `deployment_rpi`).
-- **sae_arrivals_source v1.3:** SP-1 design §3 sin `ParseResult.without_time` (D-24); SP-2 design §8
+- **sae_arrivals_source v1.3:** ~~resuelto en la PR #7 (solo docs)~~ · SP-1 design §3 sin `ParseResult.without_time` (D-24); SP-2 design §8
   sigue citando la muestra derivada `HH:MM`. NB-1: `sae fetch` muestra `HH:MM` sin segundos. NB-2: en la
   sesión `night_2026-11-02` la 2312 empieza en el segundo 6. AC-19 (b) sigue con muestra derivada.
-- **occupancy_sensor v1.2:** SP-1 (O-02) AC-15 cita "el contenedor de la CLI", que no compone sensor
+- **occupancy_sensor v1.2:** ~~resuelto en la PR #7 (solo docs)~~ · SP-1 (O-02) AC-15 cita "el contenedor de la CLI", que no compone sensor
   ni clasificador → "(si compone alguno)" o quitarlo. NB-1: subproceso sin `pytest-socket` y con
   `SystemClock` (mismo patrón que `test_main_composition.py`).
 - **→ `stop_arrivals_api`:** al rebasar, adaptar usos de `derived_clock_time`/`STOP_508_CLOCK_TIME`
@@ -47,7 +53,7 @@ necesario (`backend/config/direction_overrides.json` = `{}`; 139/139 entradas re
 - **occupancy_sensor NB-1 (v1.1):** ningún test comprueba que `main.py` pase
   `settings.occupancy_thresholds()` al sensor → cubrirlo en `test_main_composition.py`.
 - **occupancy_sensor NB-2 (v1.1):** reforzar el barrido Hypothesis con `@example(4, 0.25, 0.50)`.
-- **occupancy_sensor SP-02:** design §3 escribe `progress(trip_stop_times, at)` sin día de servicio ni
+- **occupancy_sensor SP-02:** ~~resuelto en la PR #7 (solo docs)~~ · design §3 escribe `progress(trip_stop_times, at)` sin día de servicio ni
   la regla "mediodía − 12 h" (implementado con `service_date`).
 - **occupancy_sensor → `stop_arrivals_api`:** inyección y ciclo de vida del engine/sensor en
   `main.py` (N-01); la vigencia del forzado usa `clock.now()`, no `at` (N-04). N-02

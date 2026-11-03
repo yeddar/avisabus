@@ -1,6 +1,6 @@
 # Sensor de ocupación — design
 
-> Feature: `occupancy_sensor` · Versión: 1.2 · Estado: APPROVED
+> Feature: `occupancy_sensor` · Versión: 1.3 · Estado: APPROVED
 > Requisitos: RF-14, RF-15 · Casos de uso: CU-01 · Depende de: project_scaffold, gtfs_import
 
 ## 1. Resumen
@@ -83,8 +83,11 @@ class OccupancyOverrideRepository(Protocol):
 | `trip_factor(seed, trip_id, service_date)` | `0,75 + 0,5 · u`, con `u ∈ [0, 1)` derivado de `sha256(f"{seed}:{trip_id}:{service_date}")` (determinista, sin `random`) |
 | `simulate_occupied(capacity, h, r, t)` | `clamp(round(capacity · min(1,05, h·r·t)), 0, capacity)` |
 
-`progress(trip_stop_times, at)`: con el día de servicio y `arrival_s` de la primera y última
-parada, `p = (s_at − s_first) / (s_last − s_first)` acotado a [0, 1].
+`progress(trip_stop_times, service_date, at)` (v1.3): con `arrival_s` de la primera y última
+parada y `s_at` = segundos de `at` desde el inicio del día de servicio,
+`p = (s_at − s_first) / (s_last − s_first)` acotado a [0, 1]. El inicio del día de servicio es,
+como en GTFS, el mediodía local (Europe/Madrid) de `service_date` menos 12 h
+(`service_day_start(service_date)`), lo que es correcto también los días de cambio de hora.
 
 ### Forzado
 

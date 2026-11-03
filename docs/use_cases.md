@@ -1,6 +1,6 @@
 # Casos de uso — AvisaBus
 
-> Estado: **APROBADO** (v1.0 · 2026-10-31). Deriva de `docs/vision.md` y `docs/requirements.md`.
+> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-03: textos de botón "Solicitar"/"Cancelar solicitud" en CU-03 y CU-04, aprobada en la PR #7). Deriva de `docs/vision.md` y `docs/requirements.md`.
 > Cada caso de uso referencia los requisitos que cubre. Los flujos alternativos se numeran
 > `<paso><letra>` (p. ej. `3a` es una alternativa al paso 3).
 
@@ -105,10 +105,10 @@ flowchart LR
 - **Actor principal:** Pasajero (o Pasajero PMR). **Actor secundario:** Conductor (receptor).
 - **Objetivo:** que el conductor sepa que le espera, y con qué necesidades.
 - **Precondiciones:** el pasajero está en la vista de una parada con token válido (CU-01); la línea está en el GTFS.
-- **Disparador:** el pasajero pulsa "avisar" en una llegada.
+- **Disparador:** el pasajero pulsa "Solicitar" en una llegada (en la interfaz, el aviso se presenta como **solicitud de parada**; ver glosario de `docs/conventions.md`).
 
 **Flujo principal**
-1. El pasajero pulsa "avisar" en la fila de la línea y destino deseados.
+1. El pasajero pulsa "Solicitar" en la fila de la línea y destino deseados.
 2. El sistema muestra las necesidades de accesibilidad precargadas del perfil (CU-05) y el botón "confirmar aviso".
 3. El pasajero confirma.
 4. El sistema registra el aviso (parada, línea, sentido, necesidades, identificador anónimo del dispositivo) y lo asigna al próximo autobús de esa línea y sentido.
@@ -129,7 +129,7 @@ flowchart LR
 
 - **Actor principal:** Pasajero.
 - **Precondiciones:** el pasajero tiene un aviso activo.
-- **Disparador:** el pasajero pulsa "cancelar aviso".
+- **Disparador:** el pasajero pulsa "Cancelar solicitud".
 
 **Flujo principal**
 1. El sistema elimina el aviso.

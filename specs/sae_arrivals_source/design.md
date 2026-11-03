@@ -1,6 +1,6 @@
 # Fuente de llegadas del SAE — design
 
-> Feature: `sae_arrivals_source` · Versión: 1.3 · Estado: APPROVED
+> Feature: `sae_arrivals_source` · Versión: 1.4 · Estado: APPROVED
 > Requisitos: RF-07, RF-08, RF-11, RF-35, RNF-08, RNF-10, RNF-13 · Casos de uso: CU-01 · Depende de: project_scaffold
 
 ## 1. Resumen
@@ -60,7 +60,9 @@ class ArrivalsSource(Protocol):
 @dataclass(frozen=True, slots=True)
 class ParseResult:
     arrivals: tuple[SaeArrival, ...]
-    skipped: tuple[str, ...]   # motivos de las entradas descartadas
+    skipped: tuple[str, ...]   # motivos de las entradas descartadas (AC-06)
+    without_time: tuple[str, ...] = ()   # v1.3/1.4: líneas de las entradas sin tiempo (AC-23);
+                                         # no cuentan como `skipped` ni generan `sae.unparsed_entry`
 def parse_qrphp_html(body: bytes, stop_id: str, fetched_at: datetime) -> ParseResult: ...
 # lanza SaeUnparseableError si el cuerpo completo no es interpretable
 
@@ -103,6 +105,10 @@ como un observador que escribe ficheros (no necesita envolver la fuente).
 avisabus sae fetch --stop ID
 avisabus sae record --stop ID [--stop ID ...] --interval S --duration S --out DIR
 ```
+
+`fetch` muestra cada llegada como `línea · destino · N min` o `línea · destino · HH:MM` (hora local
+de Europe/Madrid, sin segundos aunque el SAE los dé: la normalización conserva el instante
+completo en `arrival_at`).
 
 `record` usa siempre la fuente HTTP con observador de grabación (sin caché), recorre las paradas
 en cada ciclo y espera con una función `sleep` inyectable.
@@ -207,8 +213,9 @@ Logs: `sae.error` (`stop_id`, `reason`, `elapsed_ms`), `sae.unparsed_entry` (`st
 ## 8. Estrategia de test
 
 - **Parser (unit):** se alimenta con los cuerpos reales de `progress/explore_sae_samples/`
-  convertidos a fixtures (minutos, `Próximo`, parada inexistente) y con las derivadas (sin
-  llegadas, `HH:MM`) (AC-02–AC-07, AC-21).
+  convertidos a fixtures (minutos, `Próximo`, parada inexistente), con la muestra **real** con
+  hora `HH:MM:SS` y entradas sin tiempo de `samples/night_2026-11-02/` (v1.3) y con la derivada
+  sin llegadas (AC-02–AC-07, AC-21, AC-23).
 - **HTTP (integration):** `httpx.MockTransport` (no abre sockets) para respuestas, errores,
   timeouts (`httpx.TimeoutException`) y verificación de URL y cabeceras (AC-01, AC-08).
 - **Caché (unit):** fuente fake con contador de llamadas y `FakeClock` (AC-09–AC-13); para
