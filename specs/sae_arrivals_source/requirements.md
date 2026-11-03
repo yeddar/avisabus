@@ -1,6 +1,6 @@
 # Fuente de llegadas del SAE — requirements
 
-> Feature: `sae_arrivals_source` · Versión: 1.2 · Estado: APPROVED
+> Feature: `sae_arrivals_source` · Versión: 1.3 · Estado: APPROVED
 > Requisitos: RF-07, RF-08, RF-11, RF-35, RNF-08, RNF-10, RNF-13 · Casos de uso: CU-01 · Depende de: project_scaffold
 
 ## Contexto
@@ -58,7 +58,8 @@ nuevo tras el mismo puerto.
 - **sae_arrivals_source.AC-02** — CUANDO una llegada viene expresada en minutos, EL SISTEMA
   DEBERÁ normalizarla con `kind = MINUTES`, `minutes = n` y `arrival_at = fetched_at + n min`.
   *Verificación:* unit (parser) con muestras reales
-- **sae_arrivals_source.AC-03** — CUANDO una llegada viene expresada como hora `HH:MM`, EL
+- **sae_arrivals_source.AC-03** — CUANDO una llegada viene expresada como hora `HH:MM` o
+  `HH:MM:SS` (esta última, observada de noche para llegadas a más de unos 60 min), EL
   SISTEMA DEBERÁ normalizarla con `kind = CLOCK_TIME` y `arrival_at` igual a la siguiente
   ocurrencia de esa hora en `Europe/Madrid` no anterior a `fetched_at − 5 min`.
   *Verificación:* unit (incluido el cruce de medianoche)
@@ -132,11 +133,17 @@ nuevo tras el mismo puerto.
   ≥ 15 min con intervalo de 20 s en la que se observe el paso de al menos un autobús (su ETA llega
   a 0 o desaparece y la primera llegada de la línea salta a la siguiente); (b) una respuesta real
   sin llegadas o, si no es posible obtenerla, una derivada de una real y documentada; (c) una
-  respuesta con hora `HH:MM` (real o derivada documentada); (d) un caso de error grabado (vale la
+  respuesta con hora (v1.3: la **real** de la parada 2070 grabada de noche en
+  `progress/explore_destinations_samples/`, que sustituye a la derivada); (d) un caso de error grabado (vale la
   respuesta real de la parada inexistente 99999 o un timeout grabado por `sae record`). El
   `README.md` DEBERÁ describir cada sesión, su fecha y cómo se obtuvo.
   *Verificación:* revisión + tests que las usan
 
+- **sae_arrivals_source.AC-23** — CUANDO una entrada no trae tiempo (texto `"{destino} -"`,
+  observado en cabeceras al final del servicio), EL SISTEMA DEBERÁ descartarla registrando solo el
+  evento de depuración `sae.entry_without_time` (nivel `debug`, con `stop_id` y `line`), sin
+  contarla como `sae.unparsed_entry`.
+  *Verificación:* unit (muestra real nocturna)
 - **sae_arrivals_source.AC-21** — SI la respuesta del SAE no contiene una cabecera de parada con
   el formato `{stop_id} - {nombre}` para el `stop_id` pedido (p. ej. la página que EMT devuelve
   con código 200 para una parada inexistente, con la cabecera vacía), ENTONCES EL SISTEMA DEBERÁ
@@ -163,7 +170,7 @@ nuevo tras el mismo puerto.
 |---|---|
 | RF-07 Tiempos reales del SAE | AC-01, AC-07, AC-08 |
 | RF-08 Caché por parada | AC-09, AC-10 |
-| RF-11 Normalización (minutos / hora / próximo) | AC-02, AC-03, AC-04, AC-05, AC-06, AC-21 |
+| RF-11 Normalización (minutos / hora / próximo) | AC-02, AC-03, AC-04, AC-05, AC-06, AC-21, AC-23 |
 | RF-35 Grabar y reproducir | AC-14, AC-15, AC-16, AC-17, AC-19, AC-22 |
 | RNF-08 Uso respetuoso / resiliencia | AC-08, AC-10, AC-11, AC-12 |
 | RNF-10 Tests sin red | AC-15, AC-16, AC-19, AC-20 |
@@ -177,3 +184,4 @@ nuevo tras el mismo puerto.
 | 1.0 | 2026-10-31 | Versión inicial aprobada (PR #2) | — |
 | 1.1 | 2026-11-02 | Fuente `QR.php` (HTML) en lugar de `getSAE` (XML); reglas del parser en design §4; AC-04 cita `Próximo`; AC-21 (cabecera de parada obligatoria, parada inexistente = `unparseable`); AC-22 (`source_format` en las grabaciones); AC-19 (d) admite la parada inexistente como caso de error; T-08b (grabación nocturna opcional). | CP-3 tras la exploración E-01 (`progress/explore_sae.md`): `getSAE` está cerrado a terceros. Aprobada por la persona. |
 | 1.2 | 2026-11-02 | AC-11: instancia nueva del error en cada acierto de la caché negativa. Design: nombre del módulo `qrphp_parser.py` en §3, `build_arrivals_source` devuelve `CachedArrivalsSource`, `interval_s` admite `null`. T-11 y T-12 (README de regeneración y clientes HTTP en tests). | Hallazgos NB-1, NB-4, NB-6 y NB-7 de la revisión de `sae_arrivals_source`. Aprobada por la persona. |
+| 1.3 | 2026-11-03 | AC-03 acepta `HH:MM:SS`; AC-23 (entradas sin tiempo: descarte con evento `debug`); AC-19 (c) con la muestra nocturna real. T-14 y T-15. | Exploración de `stop_arrivals_api` (H-5): de noche el parser descartaba el 29 % de las entradas. Aprobada por la persona. |

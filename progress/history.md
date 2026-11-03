@@ -169,3 +169,8 @@
 - 10 consultas diurnas (C1/C2): C2 resuelta con alias + `C2|Av. Aragó`; C1 da "Cntr.Històric"
   genérico y no se resuelve en sus cabeceras 1959/2277 con la spec actual (opciones a/b/c en
   `explore_destinations.md`). Pendiente: PR de specs de la persona con las decisiones del CP-3.
+
+## 2026-11-03 · stop_arrivals_api · CP-3 tras E-01/E-02/E-03 → spec v1.4 aprobada
+- Resolución de sentido observada: 99,2 %. C1 usa "Cntr.Històric" en ambos sentidos → regla del
+  sentido que sale (opción c). Emparejamiento óptimo con orden y tolerancia de 10 min.
+- Reabiertas `sae_arrivals_source` (v1.3) y `occupancy_sensor` (v1.2); `stop_tokens_qr` v1.3 sin código.

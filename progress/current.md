@@ -59,24 +59,11 @@ la red; suelo 91,6 %) → no salta el umbral de CP-3 del 90 %.
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Revisión de la exploración de `stop_arrivals_api` por la persona. Decisiones propuestas:
-1. **Spec `stop_arrivals_api`:** quitar el alias `c → carrer` de `DEFAULT_ALIASES` (design §3 solo
-   permite añadir entradas); "C. Benlloch" es *Cardenal* Benlloch.
-2. **CP-3 ligero opcional:** emparejamiento por asignación óptima que preserva el orden en lugar del
-   voraz de design §3 (el voraz empareja mal con buses seguidos: 508/93 a 12 min, viaje que salta entre
-   refrescos) y tolerancia por defecto 10 min en vez de 20 (p95 5,4–5,9 min, máx. 6,6 min).
-3. Opcional: `min_score = 0,2`; cambiar el ejemplo de design §4 `"C2|Circular": 0` (sin evidencia)
-   por `"C3|Campanar": 0`. Aliases y 7 overrides propuestos como decisiones locales.
-4. **CP-3 de `sae_arrivals_source` (feature `done`):** el parser descarta el 29 % de las entradas
-   nocturnas (15/52): llegadas > ~60 min vienen como `HH:MM:SS` (no `HH:MM`) y en cabeceras como
-   `"{destino} -"` sin tiempo. La muestra real `night_20261102/2070` podría sustituir a la derivada.
-5. **E-03 (2026-11-03, 10 paradas de día):** C2 se resuelve en sus 4 cabeceras con alias + nuevo
-   *override* `C2|Av. Aragó → 1`. **C1 da el genérico "Cntr.Històric"**: en 1959 y 2277 no se
-   resuelve con la spec actual (≈ 23,5 % de las pasadas de C1). Opciones: (a) aceptar degradación
-   (AC-07), (b) *overrides* con parada opcional `C1|Cntr.Històric|1959: 0`, `…|2277: 1`
-   (recomendada por el explorer), (c) regla "sentido que sale" (139/139 sin *overrides*, amplía
-   `NetworkRepository`). Línea 30 en la 166 sin viajes en el GTFS (caso real de AC-08). Entradas
-   duplicadas idénticas del SAE → conviene un test en `match_trips`. Sin formatos nuevos de día.
+Ninguno. CP-3 de `stop_arrivals_api` resuelto por la persona (2026-11-03), opción (c) para C1:
+spec v1.4 (sentido que sale, overrides por headsign, umbral 0,2, alias revisados, emparejamiento
+óptimo con tolerancia de 10 min, `sae_destination`, duplicados). Se reabren `sae_arrivals_source`
+v1.3 (`HH:MM:SS`, entradas sin tiempo, muestra nocturna real) y `occupancy_sensor` v1.2 (test de
+composición). `stop_tokens_qr` v1.3: solo redacción de AC-05.
 
 ## Bloqueos
 Ninguno. 

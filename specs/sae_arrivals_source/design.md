@@ -1,6 +1,6 @@
 # Fuente de llegadas del SAE — design
 
-> Feature: `sae_arrivals_source` · Versión: 1.2 · Estado: APPROVED
+> Feature: `sae_arrivals_source` · Versión: 1.3 · Estado: APPROVED
 > Requisitos: RF-07, RF-08, RF-11, RF-35, RNF-08, RNF-10, RNF-13 · Casos de uso: CU-01 · Depende de: project_scaffold
 
 ## 1. Resumen
@@ -137,7 +137,10 @@ en cada ciclo y espera con una función `sleep` inyectable.
 4. **Tiempo:**
    - `^\d+ min\.?$` → `MINUTES`, `minutes = n` (AC-02);
    - `próximo` sin distinguir mayúsculas ni acentos → `MINUTES`, `minutes = 0` (AC-04);
-   - `^\d{1,2}:\d{2}$` → `CLOCK_TIME` (AC-03; formato **supuesto**, no observado);
+   - `^\d{1,2}:\d{2}(:\d{2})?$` → `CLOCK_TIME` (AC-03; `HH:MM:SS` observado de noche, v1.3;
+     los segundos se conservan en `arrival_at`);
+   - tiempo vacío (texto que termina en `" -"`) → entrada descartada con `sae.entry_without_time`
+     a nivel `debug` (AC-23, v1.3);
    - cualquier otro → entrada descartada y `sae.unparsed_entry` con el texto del tiempo (no el
      cuerpo) (AC-06). Así un marcador nuevo aparece en los logs sin romper el parser.
 5. **Sin llegadas:** cabecera válida y ninguna entrada → lista vacía (AC-07).

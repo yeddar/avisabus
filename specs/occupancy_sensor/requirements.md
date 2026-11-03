@@ -1,6 +1,6 @@
 # Sensor de ocupación — requirements
 
-> Feature: `occupancy_sensor` · Versión: 1.1 · Estado: APPROVED
+> Feature: `occupancy_sensor` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-14, RF-15 · Casos de uso: CU-01 (y, más adelante, CU-09) · Depende de: project_scaffold, gtfs_import
 
 ## Contexto
@@ -92,12 +92,18 @@ libres (RF-15), y al conductor como plazas libres (RF-29, feature `driver_demand
   (otro proceso) en un máximo de 5 segundos sin reiniciar la aplicación.
   *Verificación:* integration (caché de 5 s con FakeClock)
 
+- **occupancy_sensor.AC-15** — CUANDO la aplicación se compone en `main.py` (y en el contenedor de
+  la CLI), EL SISTEMA DEBERÁ pasar al sensor y al clasificador los umbrales, la capacidad, los
+  asientos y la semilla **configurados**, no los valores por defecto.
+  *Verificación:* integration (arranque con valores no estándar y comprobación de que el sensor
+  compuesto los usa)
+
 ## Trazabilidad
 
 | Requisito | AC |
 |---|---|
 | RF-14 Ocupación por vehículo tras interfaz, simulada | AC-01, AC-04, AC-05, AC-06, AC-07, AC-08, AC-09, AC-10, AC-11, AC-12, AC-13, AC-14 |
-| RF-15 Nivel de ocupación y asientos libres | AC-02, AC-03 |
+| RF-15 Nivel de ocupación y asientos libres | AC-02, AC-03, AC-15 |
 | OBJ-08 Desacoplamiento | AC-01 (puerto), AC-09 |
 
 ## Historial
@@ -106,3 +112,4 @@ libres (RF-15), y al conductor como plazas libres (RF-29, feature `driver_demand
 |---|---|---|---|
 | 1.0 | 2026-10-31 | Versión inicial aprobada (PR #2) | — |
 | 1.1 | 2026-11-02 | AC-03 rechaza configuraciones con algún nivel sin enteros posibles; AC-11 válido con cualquier configuración válida; design: proporciones del forzado = punto medio de cada banda, con ajuste por redondeo; T-07. | Hallazgo SP-01 de la revisión de `occupancy_sensor`. Aprobada por la persona. |
+| 1.2 | 2026-11-03 | AC-15: test de composición con configuración no estándar. T-09 y T-10. | Hallazgo NB-1 de la revisión de los ajustes del bloque 1. Aprobada por la persona. |

@@ -82,7 +82,7 @@
       "order": 4,
       "block": 1,
       "title": "Fuente de tiempos de llegada del SAE: cliente, normalización, caché, grabación y replay",
-      "status": "done",
+      "status": "spec_approved",
       "depends_on": [
         "project_scaffold"
       ],
@@ -101,14 +101,14 @@
       "spec": "specs/sae_arrivals_source/",
       "needs_exploration": true,
       "review_cycles": 0,
-      "passes": true
+      "passes": false
     },
     {
       "id": "occupancy_sensor",
       "order": 5,
       "block": 1,
       "title": "Sensor de ocupación simulado y clasificación por niveles",
-      "status": "done",
+      "status": "spec_approved",
       "depends_on": [
         "project_scaffold",
         "gtfs_import"
@@ -123,14 +123,14 @@
       "spec": "specs/occupancy_sensor/",
       "needs_exploration": false,
       "review_cycles": 0,
-      "passes": true
+      "passes": false
     },
     {
       "id": "stop_arrivals_api",
       "order": 6,
       "block": 1,
       "title": "API de parada y llegadas: sentido, viaje asociado, ocupación y respaldo por horario",
-      "status": "exploring",
+      "status": "spec_approved",
       "depends_on": [
         "gtfs_import",
         "stop_tokens_qr",

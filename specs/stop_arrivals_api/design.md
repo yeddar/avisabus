@@ -1,6 +1,6 @@
 # API de parada y llegadas — design
 
-> Feature: `stop_arrivals_api` · Versión: 1.3 · Estado: APPROVED
+> Feature: `stop_arrivals_api` · Versión: 1.4 · Estado: APPROVED
 > Requisitos: RF-06, RF-09, RF-11, RF-15, RF-32, RNF-01, RNF-08 · Casos de uso: CU-01 · Depende de: gtfs_import, stop_tokens_qr, sae_arrivals_source, occupancy_sensor
 
 ## 1. Resumen
@@ -54,6 +54,7 @@ class ArrivalView:
     arrival_at: datetime
     line_color: str | None
     line_text_color: str | None
+    sae_destination: str | None       # texto del SAE tal cual; None si SCHEDULED (AC-21)
     vehicle: VehicleView | None
     occupancy: OccupancyStatus | None
     can_alert: bool
@@ -85,25 +86,39 @@ def normalize_destination(text: str, aliases: Mapping[str, str]) -> frozenset[st
     # → cada token sustituido por aliases.get(token, token) → descarta tokens vacíos
 
 def resolve_direction(destination: str, candidates: Sequence[DirectionCandidate],
-                      aliases: Mapping[str, str], min_score: float = 0.34,
-                      overrides: Mapping[tuple[str, str], int] | None = None,
-                      line: str | None = None) -> int | None: ...
+                      aliases: Mapping[str, str], min_score: float = 0.2,
+                      override_headsign: str | None = None,
+                      departing_directions: frozenset[int] = frozenset()) -> int | None: ...
     # candidates = un elemento por (direction_id, headsign) de headsigns_at_stop(stop, line);
     #              un mismo sentido puede aparecer varias veces (variantes de recorrido).
-    # 0 candidatos → None; todos del mismo direction_id → ese direction_id
-    # override exacto (line, destination) → ese direction_id si está entre los candidatos
-    # si no: score(headsign) = |A∩B| / |A∪B| (Jaccard), contando como coincidencia también los
-    #        pares en que un token es prefijo del otro con longitud ≥ 3;
-    #        best[d] = máximo score de los headsigns del sentido d;
-    #        gana d* si best[d*] ≥ min_score y best[d*] > best[d] para todo d ≠ d*; si no → None
+    # Orden de resolución (v1.4):
+    # 1. 0 candidatos → None; todos del mismo direction_id → ese direction_id (AC-05)
+    # 2. override_headsign (ya buscado por "línea|destino SAE") → sentido del candidato con ese
+    #    headsign; si ninguno lo tiene, se ignora el override (AC-20)
+    # 3. texto: score(headsign) = |A∩B| / |A∪B| (Jaccard sobre conjuntos normalizados), contando
+    #    también como coincidencia los pares de tokens en que uno es prefijo del otro con longitud
+    #    ≥ 3, emparejados **1 a 1** de forma voraz (cada token se usa una sola vez);
+    #    best[d] = máximo score de los headsigns del sentido d;
+    #    gana d* si best[d*] ≥ min_score y best[d*] > best[d] para todo d ≠ d* (AC-06)
+    # 4. sentido que sale: si departing_directions (sentidos cuyos viajes EMPIEZAN en la parada)
+    #    tiene exactamente un elemento y está entre los candidatos → ese (AC-19)
+    # 5. None (AC-07)
 
-DEFAULT_ALIASES = {"pass": "passeig", "pg": "passeig", "est": "estacio", "av": "avinguda",
-                   "avda": "avinguda", "pl": "placa", "hosp": "hospital", "univ": "universitats",
-                   "c": "carrer"}
+DEFAULT_ALIASES = {
+    # abreviaturas
+    "pass": "passeig", "pg": "passeig", "est": "estacio", "av": "avinguda", "avda": "avinguda",
+    "pl": "placa", "hosp": "hospital", "univ": "universitats", "pta": "porta", "fta": "fonteta",
+    "s": "sant", "ed": "eduard", "j": "joaquin",
+    # palabras vacías → "" (se descartan)
+    "de": "", "d": "", "del": "", "dels": "", "la": "", "l": "", "el": "", "els": "",
+    "les": "", "i": "", "y": "",
+}
+# v1.4: se elimina "c": "carrer" ("C. Benlloch" = Cardenal, "C.Art.Faller" = Ciutat de l'Artista Faller)
 ```
 
-La tabla definitiva de alias y los *overrides* se completan con los hallazgos de E-01 (decisión
-local permitida: añadir entradas; no cambiar el algoritmo).
+La tabla de alias y los *overrides* pueden ampliarse con casos nuevos (decisión local permitida:
+añadir entradas, con un test que las cubra); quitar entradas o cambiar el algoritmo requiere una
+versión nueva de la spec.
 
 ```python
 # domain/services/trip_matcher.py
@@ -115,10 +130,14 @@ class TripCandidate:
 
 def match_trips(arrival_times: Sequence[datetime], candidates: Sequence[TripCandidate],
                 tolerance: timedelta) -> list[TripCandidate | None]: ...
-    # Para llegadas de la MISMA línea y sentido, ordenadas por tiempo:
-    # asignación voraz en orden: a cada llegada, el candidato libre con menor |scheduled_at − t|
-    # dentro de la tolerancia; además, el candidato elegido debe ser posterior al asignado a la
-    # llegada anterior (orden temporal). Sin candidato → None.
+    # v1.4 (AC-10): para las llegadas de la MISMA línea y sentido, ordenadas por tiempo, elegir la
+    # asignación que (1) maximiza el nº de llegadas emparejadas, (2) a igualdad minimiza
+    # Σ|scheduled_at − t|, (3) usa cada candidato una vez, (4) es estrictamente creciente en
+    # scheduled_at, (5) solo usa pares con |scheduled_at − t| ≤ tolerance.
+    # Desempate final determinista: lexicográfico por trip_id de las asignaciones.
+    # Tamaño real: ≤ 2–4 llegadas por línea y sentido (QR.php muestra 2 por línea) y pocos
+    # candidatos: basta con programación dinámica tipo alineamiento de secuencias o fuerza bruta.
+    # Llegadas duplicadas (AC-22) son elementos distintos de la secuencia.
 ```
 
 ```python
@@ -128,7 +147,8 @@ class GetStopArrivals:
                  arrivals: ArrivalsSource, scheduled: ScheduledArrivalsProvider,
                  occupancy: OccupancySensor, thresholds: OccupancyThresholds, clock: Clock,
                  refresh_after_s: int, match_tolerance: timedelta,
-                 aliases: Mapping[str, str], direction_overrides: Mapping[tuple[str, str], int],
+                 aliases: Mapping[str, str], direction_overrides: Mapping[tuple[str, str], str],
+                 min_score: float,
                  logger: Logger) -> None: ...
     async def execute(self, stop_id: str, token: str) -> StopArrivals: ...
     # lanza StopNotFoundError (token inválido o parada inexistente) y NoActiveFeedError
@@ -144,6 +164,18 @@ class ScheduledArrivalsProvider:
 at, window)` debe devolver las pasadas de **todos** los días de servicio entre `fecha(at) − 1` y
 `fecha(at + window)` (zona del feed). La implementación de `gtfs_import` solo cubría `D − 1` y `D`;
 se amplía en esta feature (T-05b), sin cambiar la firma.
+
+**Sentidos que salen (v1.4, AC-19):** ampliación de `NetworkRepository` (código de
+`gtfs_import`, autorizada por T-05c): `departing_directions(stop_id, line) -> frozenset[int]`,
+sentidos de la línea con algún viaje activo en la red cuyo `stop_sequence` mínimo está en esa
+parada. Se puede precalcular al importar o consultar sobre `gtfs_stop_time`/`gtfs_trip` (decisión
+local permitida, con índice si supera 20 ms).
+
+**Overrides (v1.4, AC-20):** el fichero contiene `"{línea}|{destino SAE exacto}": "{headsign
+GTFS}"`. Al arrancar se valida cada entrada contra la red activa (línea existente y headsign
+existente en algún sentido de esa línea); las inválidas se registran (`arrivals.override_invalid`)
+y se ignoran. En cada consulta, `GetStopArrivals` busca `(line, destination)` y pasa el headsign a
+`resolve_direction`, que lo traduce al sentido con los candidatos de esa parada.
 
 Candidatos de `TripMatcher`: `network.scheduled_stop_times(stop_id, at=arrival_at − tolerance,
 window=2·tolerance + rango de llegadas)` filtrados por línea y sentido, convertidos a
@@ -178,7 +210,8 @@ parada.
   "refresh_after_s": 20,
   "arrivals": [
     {
-      "line": "93", "destination": "Pg. Marítim", "direction_id": 0, "in_network": true,
+      "line": "93", "destination": "Passeig Marítim - Hospital Malva-rosa",
+      "sae_destination": "Pass. Marítim", "direction_id": 0, "in_network": true,
       "kind": "MINUTES", "minutes": 4, "arrival_at": "2026-11-04T07:44:00Z",
       "line_color": "FE0000", "line_text_color": "FFFFFF",
       "vehicle": {"trip_id": "12345", "service_date": "2026-11-04"},
@@ -186,7 +219,8 @@ parada.
       "can_alert": true
     },
     {
-      "line": "N4", "destination": "Est.del Nord", "direction_id": null, "in_network": false,
+      "line": "N4", "destination": "Est.del Nord", "sae_destination": "Est.del Nord",
+      "direction_id": null, "in_network": false,
       "kind": "CLOCK_TIME", "minutes": null, "arrival_at": "2026-11-04T21:41:00Z",
       "line_color": null, "line_text_color": null,
       "vehicle": null, "occupancy": null, "can_alert": false
@@ -210,8 +244,17 @@ Errores (`problem+json`):
 Sin tablas nuevas. *Overrides* de sentido opcionales en un JSON:
 
 ```json
-{ "93|Pass. Marítim": 0, "C2|Circular": 0 }
+{
+  "C3|Campanar": "Avinguda Campanar - Centre de Salut",
+  "C2|Av. Aragó": "Estadi de Mestalla (front)"
+}
 ```
+
+(Ejemplo. El contenido inicial son los overrides propuestos en `progress/explore_destinations.md`
+—E-01 y E-03—, **traducidos de número de sentido a headsign** con la tabla de
+`gtfs info --directions`; el implementer los verifica con las muestras reales. Con la regla del
+sentido que sale (AC-19) algunos pueden dejar de ser necesarios: se conservan solo los que un test
+demuestre necesarios.)
 
 ## 5. Errores y logs
 
@@ -225,11 +268,11 @@ Sin tablas nuevas. *Overrides* de sentido opcionales en un JSON:
 
 | Variable | Default |
 |---|---|
-| `AVISABUS_TRIP_MATCH_TOLERANCE_MIN` | `20` |
+| `AVISABUS_TRIP_MATCH_TOLERANCE_MIN` | `10` |
 | `AVISABUS_SCHEDULED_WINDOW_MIN` | `90` |
 | `AVISABUS_SCHEDULED_PER_DIRECTION` | `2` |
 | `AVISABUS_DIRECTION_OVERRIDES_FILE` | *(vacío)* |
-| `AVISABUS_DIRECTION_MIN_SCORE` | `0.34` |
+| `AVISABUS_DIRECTION_MIN_SCORE` | `0.2` |
 
 ## 7. Estrategia de test
 

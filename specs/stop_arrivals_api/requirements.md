@@ -1,6 +1,6 @@
 # API de parada y llegadas — requirements
 
-> Feature: `stop_arrivals_api` · Versión: 1.3 · Estado: APPROVED
+> Feature: `stop_arrivals_api` · Versión: 1.4 · Estado: APPROVED
 > Requisitos: RF-06, RF-09, RF-11, RF-15, RF-32, RNF-01, RNF-08 · Casos de uso: CU-01 · Depende de: gtfs_import, stop_tokens_qr, sae_arrivals_source, occupancy_sensor
 
 ## Contexto
@@ -62,9 +62,11 @@ Es el backend de la vista de parada (CU-01). Une las piezas del bloque 1:
   SISTEMA DEBERÁ comparar el destino del SAE con **todos** los headsigns de los viajes de esa
   línea que paran allí (`NetworkRepository.headsigns_at_stop`), tras normalizar (minúsculas, sin
   acentos ni puntuación, abreviaturas expandidas según la tabla de alias), y elegir el sentido del
-  headsign más parecido, siempre que la similitud supere el umbral y la mejor similitud de ese
-  sentido sea estrictamente mayor que la mejor de cualquier otro sentido.
-  *Verificación:* unit (casos reales obtenidos en E-01)
+  headsign más parecido, siempre que la similitud supere el umbral (0,2 por defecto) y la mejor
+  similitud de ese sentido sea estrictamente mayor que la mejor de cualquier otro sentido. El orden
+  completo de resolución está en design §3 (sentido único → override → texto → sentido que sale →
+  sin resolver).
+  *Verificación:* unit (casos reales de E-01 y E-03: `progress/explore_destinations.md` H-2 y H-7)
 - **stop_arrivals_api.AC-07** — SI no se puede resolver el sentido, ENTONCES la llegada DEBERÁ
   devolverse con `direction_id = null` y `can_alert = false`, y EL SISTEMA DEBERÁ registrar
   `arrivals.direction_unresolved` con línea y destino.
@@ -78,12 +80,15 @@ Es el backend de la vista de parada (CU-01). Une las piezas del bloque 1:
 - **stop_arrivals_api.AC-09** — EL SISTEMA DEBERÁ devolver como `destination` el `headsign` del
   GTFS cuando el sentido está resuelto, y el texto del SAE en otro caso.
   *Verificación:* unit
-- **stop_arrivals_api.AC-10** — CUANDO una llegada tiene sentido resuelto, EL SISTEMA DEBERÁ
-  emparejarla con el viaje programado de esa línea y sentido cuya hora en la parada sea la más
-  próxima a `arrival_at`, dentro de una tolerancia de 20 min (configurable); SI varias llegadas de
-  la misma línea y sentido compiten por viajes, ENTONCES cada viaje DEBERÁ asignarse como máximo
-  a una llegada, respetando el orden temporal.
-  *Verificación:* unit
+- **stop_arrivals_api.AC-10** — CUANDO hay llegadas con sentido resuelto, EL SISTEMA DEBERÁ
+  emparejar, por cada línea y sentido, el **conjunto** de sus llegadas con viajes programados
+  mediante una asignación óptima que: (1) maximice el número de llegadas emparejadas; (2) a
+  igualdad, minimice la suma de `|hora programada − arrival_at|`; (3) use cada viaje como máximo
+  una vez; (4) conserve el orden (a llegadas posteriores, viajes con hora programada posterior); y
+  (5) solo empareje dentro de una tolerancia de **10 min** (configurable). EL EMPAREJAMIENTO DEBERÁ
+  ser estable: con los mismos datos de entrada da siempre el mismo resultado.
+  *Verificación:* unit (incluido el caso real de dos autobuses seguidos de la 93 en la 508, en el
+  que la asignación voraz elegía un viaje a −12 min, y el caso de entradas duplicadas)
 - **stop_arrivals_api.AC-11** — SI no hay viaje dentro de la tolerancia, ENTONCES la llegada
   DEBERÁ devolverse con `vehicle = null` y `occupancy = null`, manteniendo `can_alert = true` si
   el sentido está resuelto.
@@ -92,6 +97,28 @@ Es el backend de la vista de parada (CU-01). Une las piezas del bloque 1:
   `vehicle = {trip_id, service_date}` y `occupancy = {level, has_free_seats, free_seats}` según
   el sensor y el clasificador; SI el sensor no devuelve lectura, ENTONCES `occupancy = null`.
   *Verificación:* integration
+
+- **stop_arrivals_api.AC-19** — SI el sentido no se resuelve por sentido único, override ni
+  texto, Y exactamente uno de los sentidos de la línea tiene viajes que **empiezan** en esa parada,
+  ENTONCES EL SISTEMA DEBERÁ asignar ese sentido ("sentido que sale"): en una cabecera, el autobús
+  al que se sube el pasajero es el que sale.
+  *Verificación:* unit + integration (cabeceras de C1, 1959 y 2277, con el texto genérico real
+  "Cntr.Històric")
+- **stop_arrivals_api.AC-20** — LOS *OVERRIDES* DE SENTIDO DEBERÁN expresarse como
+  `"{línea}|{destino SAE}" → "{headsign GTFS}"` (no por número de sentido, que puede cambiar al
+  importar un feed nuevo) y resolverse a sentido en cada consulta a partir de los headsigns de la
+  parada; SI al arrancar algún override nombra una línea o un headsign inexistentes en la red
+  activa, ENTONCES EL SISTEMA DEBERÁ registrar `arrivals.override_invalid` con la entrada y
+  ignorarla (sin impedir el arranque).
+  *Verificación:* unit + integration
+- **stop_arrivals_api.AC-21** — CADA LLEGADA DEBERÁ incluir `sae_destination` con el texto de
+  destino tal como lo da el SAE (`null` si `source = "SCHEDULED"`), además de `destination`
+  (AC-09), para que la interfaz pueda mostrar lo que rotula el autobús.
+  *Verificación:* integration
+- **stop_arrivals_api.AC-22** — SI el SAE devuelve entradas duplicadas (misma línea, destino y
+  tiempo), ENTONCES EL SISTEMA DEBERÁ conservarlas como llegadas distintas y el emparejamiento NO
+  DEBERÁ asignar el mismo viaje a las dos.
+  *Verificación:* unit
 
 ### Respaldo por horario (RF-09)
 
@@ -137,8 +164,9 @@ Es el backend de la vista de parada (CU-01). Une las piezas del bloque 1:
 | RF-32 Nombres del GTFS | AC-01, AC-09 |
 | RNF-01 Rendimiento | AC-17 |
 | RNF-08 Uso respetuoso del SAE | AC-17 |
-| R-02 Destino SAE ↔ sentido GTFS | AC-05, AC-06, AC-07 |
-| ADR-013 Identidad por viaje | AC-10, AC-11 |
+| R-02 Destino SAE ↔ sentido GTFS | AC-05, AC-06, AC-07, AC-19, AC-20 |
+| ADR-013 Identidad por viaje | AC-10, AC-11, AC-22 |
+| RF-32 / UX: destino rotulado | AC-09, AC-21 |
 | Contrato API (ADR-010) | AC-16 |
 
 ## Historial
@@ -149,3 +177,4 @@ Es el backend de la vista de parada (CU-01). Une las piezas del bloque 1:
 | 1.1 | 2026-10-31 | `tasks.md` E-01: pregunta explícita sobre el destino que da el SAE en las circulares C1, C2 y C3. Sin cambios en AC ni en el diseño. | Riesgo señalado en `progress/explore_gtfs_feed.md`. Aprobada por la persona. |
 | 1.2 | 2026-10-31 | AC-18: horarios que cruzan el cambio de día (incluye el día de servicio siguiente). T-05b modifica `SqliteNetworkRepository.scheduled_stop_times` (código de `gtfs_import`). | Hallazgo N-07 de `progress/review_gtfs_import.md`: la consulta solo miraba `D − 1` y `D`. Aprobada por la persona. |
 | 1.3 | 2026-11-02 | AC-08 y design §7: en `gtfs_mini`, las líneas 73, 95 y 99 de la parada 2070 son un caso real de línea fuera de red en los tests. Sin cambios de código ni de tareas. | Observación del orquestador tras `sae_arrivals_source` (la sesión grabada incluye la 2070). Aprobada por la persona. |
+| 1.4 | 2026-11-03 | Orden de resolución del sentido con la regla del **sentido que sale** (AC-19); overrides por headsign y validados (AC-20); umbral 0,2; alias revisados (sin `c → carrer`, con palabras vacías y abreviaturas de E-01); emparejamiento **óptimo con orden** y tolerancia de 10 min (AC-10); `sae_destination` (AC-21); entradas duplicadas (AC-22). T-02, T-03, T-05c, T-06 y T-07 ampliadas. | CP-3 tras las exploraciones E-01, E-02 y E-03 (`progress/explore_destinations.md`). Aprobada por la persona. |

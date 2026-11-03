@@ -1,6 +1,6 @@
 # Fuente de llegadas del SAE — tasks
 
-> Feature: `sae_arrivals_source` · Versión: 1.2 · Estado: APPROVED
+> Feature: `sae_arrivals_source` · Versión: 1.3 · Estado: APPROVED
 > Requisitos: RF-07, RF-08, RF-11, RF-35, RNF-08, RNF-10, RNF-13 · Casos de uso: CU-01 · Depende de: project_scaffold
 
 ## Exploración
@@ -15,6 +15,8 @@
   de ejemplo (cuerpo + cabeceras relevantes) en `progress/explore_sae_samples/`.
   → `progress/explore_sae.md`
 
+> **v1.3:** solo quedan **T-14 y T-15**.
+>
 > **v1.2:** T-01…T-10 implementadas en versiones anteriores (T-08b sigue opcional). En esta versión
 > solo quedan **T-11, T-12 y T-13**.
 >
@@ -107,4 +109,15 @@
   - Verificación: `cd backend && uv run pytest tests/unit/test_sae_compose.py -W error::ResourceWarning`
 
 - [ ] **T-13** — Verificación completa (v1.2).
+  - Verificación: `./init.sh verify`
+
+- [ ] **T-14** — (v1.3) Parser: `HH:MM:SS` como `CLOCK_TIME` y entradas sin tiempo descartadas con
+  `sae.entry_without_time` (`debug`). Convertir la respuesta nocturna real de la 2070
+  (`progress/explore_destinations_samples/`) en fixture y sustituir la muestra derivada de `HH:MM`
+  (actualizar el README).
+  - AC: sae_arrivals_source.AC-03, AC-19, AC-23
+  - Ficheros: `adapters/outbound/sae/qrphp_parser.py`, `backend/tests/fixtures/sae_recordings/samples/**`, `tests/unit/test_sae_parser.py`
+  - Verificación: `cd backend && uv run pytest tests/unit/test_sae_parser.py`
+
+- [ ] **T-15** — Verificación completa (v1.3).
   - Verificación: `./init.sh verify`
