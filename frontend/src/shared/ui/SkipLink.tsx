@@ -20,7 +20,7 @@ export function SkipLink() {
     <a
       href={`#${MAIN_CONTENT_ID}`}
       onClick={skipToMain}
-      className="sr-only z-50 min-h-11 bg-surface px-4 font-bold text-accent focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:inline-flex focus:items-center focus:rounded-[10px] focus:border-2 focus:border-accent"
+      className="sr-only z-50 min-h-11 min-w-11 bg-surface font-bold text-accent focus:not-sr-only focus:absolute focus:px-4 focus:top-2 focus:left-2 focus:inline-flex focus:items-center focus:rounded-[10px] focus:border-2 focus:border-accent"
     >
       {t('layout.skipToContent')}
     </a>

@@ -9,7 +9,7 @@ Spec: specs/frontend_i18n/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Rama: `f
 - [x] T-04 Utilidades de formato y `GtfsText` (commit pendiente)
 - [x] T-05 Tema visual, componentes base de UI, foco, `Announcer`, `usePageTitle` (commit pendiente)
 - [x] T-06 `Layout` accesible y `LanguageSelector` (commit pendiente)
-- [ ] T-07 `HomePage` traducida y E2E de idioma con axe, peticiones y capturas
+- [x] T-07 `HomePage` traducida y E2E de idioma con axe, peticiones y capturas (commit pendiente)
 - [ ] T-08 Verificación completa
 
 ## Decisiones locales

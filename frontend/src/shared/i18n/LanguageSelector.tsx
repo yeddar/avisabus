@@ -1,6 +1,7 @@
 import { useId, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { ChevronDownIcon } from '../ui/icons/ChevronDownIcon';
 import {
   DEFAULT_LANGUAGE,
   SUPPORTED_LANGUAGES,
@@ -27,18 +28,22 @@ export function LanguageSelector() {
       <label htmlFor={id} className="text-sm text-text-muted">
         {t('language.label')}
       </label>
-      <select
-        id={id}
-        value={current}
-        onChange={changeLanguage}
-        className="min-h-11 rounded-lg border border-control-border bg-surface px-3 text-base text-text"
-      >
-        {SUPPORTED_LANGUAGES.map((language) => (
-          <option key={language} value={language} lang={toHtmlLang(language)}>
-            {SUPPORTED_LANGUAGE_NAMES[language]}
-          </option>
-        ))}
-      </select>
+      {/* appearance-none: WebKit ignores min-height on natively drawn selects. */}
+      <div className="relative">
+        <select
+          id={id}
+          value={current}
+          onChange={changeLanguage}
+          className="min-h-11 appearance-none rounded-lg border border-control-border bg-surface py-2 pr-9 pl-3 text-base text-text"
+        >
+          {SUPPORTED_LANGUAGES.map((language) => (
+            <option key={language} value={language} lang={toHtmlLang(language)}>
+              {SUPPORTED_LANGUAGE_NAMES[language]}
+            </option>
+          ))}
+        </select>
+        <ChevronDownIcon className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-text" />
+      </div>
     </div>
   );
 }

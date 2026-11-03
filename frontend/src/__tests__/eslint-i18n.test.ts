@@ -87,6 +87,16 @@ describe('ESLint i18n rule', () => {
     30_000,
   );
 
+  it('[frontend_i18n.AC-15] the home page and the layout have no literal texts, even ignoring eslint-disable comments', async () => {
+    const strict = new ESLint({ cwd: projectRoot, allowInlineConfig: false });
+    const results = await strict.lintFiles(['src/app/routes/HomePage.tsx', 'src/app/Layout.tsx']);
+
+    const errors = results.flatMap((r) =>
+      r.messages.filter((m) => m.ruleId !== null && I18N_RULES.has(m.ruleId)),
+    );
+    expect(errors).toEqual([]);
+  }, 30_000);
+
   it('[frontend_i18n.AC-07] keeps the invalid fixture out of the normal lint run', async () => {
     expect(await eslint().isPathIgnored(FIXTURE)).toBe(true);
   }, 30_000);
