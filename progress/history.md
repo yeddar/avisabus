@@ -238,3 +238,7 @@
 
 ## 2026-11-03 · passenger_stop_view PR #23 fusionada · position_estimation · spec_approved → implementing
 - CP-4 y `passenger_stop_view` v1.1 en la PR #24 (pendiente). `position_estimation` sin exploración.
+
+## 2026-11-03 · position_estimation · implementing → spec_blocked (CP-3)
+- T-01…T-06 hechas. AC-17 (distancia a la parada no aumenta > 50 m) falla con `stop_508_peak` cuando
+  el SAE retrasa la llegada (5 casos). Propuesta recomendada: limitar la propiedad a minutos no crecientes.

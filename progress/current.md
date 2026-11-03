@@ -4,15 +4,17 @@
 
 **Fecha:** 2026-11-03
 **Fase:** Implementación — Bloque 2
-**Feature en curso:** `position_estimation` v1.0 — `implementing` (rama `feat/position_estimation`)
+**Feature en curso:** `position_estimation` v1.0 — `spec_blocked` (CP-3, AC-17); T-01…T-06 hechas
 
 ## Último paso
-PR #23 (`passenger_stop_view`) fusionada. CP-4 (`docs/conventions.md` §4) y specs `passenger_stop_view`
-v1.1 / `frontend_i18n` v1.1 en la PR #24, pendiente de aprobación de la persona.
-`position_estimation` (sin exploración) → `implementing`.
+`position_estimation`: T-01…T-06 hechas y en verde (965 tests backend). T-07 bloqueada (B-01, CP-3):
+la segunda propiedad de AC-17 (la distancia a la parada no aumenta > 50 m en un mismo viaje) falla 5
+veces con `stop_508_peak`, siempre cuando los minutos del SAE suben. Verify en rojo solo por la
+trazabilidad de AC-17.
 
 ## Siguiente paso
-1. `position_estimation`: implementer → reviewer nuevo → `done` → PR sin fusionar.
+1. `position_estimation`: **la persona decide el CP-3 de AC-17** → corrección de spec → T-07, T-08 →
+   reviewer nuevo → PR.
 2. **Cuando la #24 esté fusionada:** `passenger_stop_view` → `implementing` (v1.1, solo T-11: AC-17 y
    AC-24) con revisión nueva. **Va antes de `passenger_map_view`.**
 3. `passenger_map_view`. CP-6 del bloque 2: textos nuevos, anuncios de "llegando" con lector de
@@ -88,7 +90,14 @@ v1.1 / `frontend_i18n` v1.1 en la PR #24, pendiente de aprobación de la persona
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Ninguno. CP-6 del bloque 1 superado (la persona da paso al bloque 2, 2026-11-03).
+**CP-3 `position_estimation` AC-17 (B-01):** con `stop_508_peak`, la distancia a la parada aumenta
+> 50 m 5 veces en un mismo viaje, siempre cuando el SAE retrasa la llegada (minutos 0→7, 0→2, 0→2,
+0→4, 4→7); en los 138 pares sin subida de minutos no aumenta ni 1 m. Causa: AC-01/AC-02 aplican el
+retraso a todo el recorrido y `TripMatcher` no mantiene la identidad del autobús entre consultas.
+Propuestas: (1, recomendada) limitar la propiedad a instantes en que los minutos no aumentan;
+(2) suavizado por viaje (estado, cambia el design); (3) quitar la propiedad. Además, para la spec:
+D-03 (`stop_coordinates` opcional en `estimate_position`, design §3) y D-04 (límite de `NOT_STARTED`:
+design `≤ arrival` frente a AC-04 `< departure`; implementado según el AC).
 
 ## Bloqueos
 Ninguno. 
