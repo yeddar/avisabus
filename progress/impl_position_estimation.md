@@ -13,8 +13,12 @@ Spec: specs/position_estimation/ (v1.1, APPROVED; T-01…T-06 hechas con la v1.0
       `Cache-Control` (AC-13, AC-14, AC-15) (commit 62641a7)
 - [x] T-06 Endpoint de posición, `GZipMiddleware(minimum_size=1000)`, composición en `main.py`
       (AC-09, AC-10, AC-11, AC-12, AC-16) (commit 686c359)
-- [ ] T-07 Test de coherencia con la sesión real `stop_508_peak` — **BLOQUEADA (CP-3, ver
-      Bloqueos B-01)**: la segunda propiedad de AC-17 no se cumple con los datos reales.
+- [x] T-07 (v1.1) Test de coherencia con la sesión real `stop_508_peak`
+      (`tests/integration/test_position_real_session.py`, AC-17): 75 ciclos × (70/1, 93/0); todas
+      las posiciones `REALTIME` a < 30 m de su forma; 139 pares sucesivos del mismo viaje con
+      minutos del SAE no crecientes sin aumento > 50 m; 5 pares excluidos (minutos que suben) y
+      listados en la salida. Antes, la v1.1 alinea la firma de `estimate_position` (commit
+      0b32f39).
 - [ ] T-08 Contrato del frontend (`npm run gen:api`) y verificación completa — contrato ya
       regenerado en T-05 y T-06 (D-16); la verificación completa falla solo por la trazabilidad de
       AC-17 (pendiente de B-01).
@@ -114,7 +118,13 @@ Spec: specs/position_estimation/ (v1.1, APPROVED; T-01…T-06 hechas con la v1.0
 
 ## Bloqueos
 
-### B-01 (CP-3) — AC-17: la distancia a la parada de un mismo viaje sí aumenta más de 50 m con `stop_508_peak`
+### B-01 (CP-3) — RESUELTO (spec v1.1, PR #25, opción 1 elegida por la persona)
+
+AC-17 limita ahora la propiedad de distancia a los pares sucesivos en que los minutos del SAE no
+aumentan; el design v1.1 incorpora `stop_coordinates` (D-03) y la frontera de `NOT_STARTED` (D-04).
+Se deja abajo el análisis original como registro.
+
+#### Análisis original de B-01 — AC-17: la distancia a la parada de un mismo viaje sí aumenta más de 50 m con `stop_508_peak`
 
 **AC afectado:** `position_estimation.AC-17`, segunda propiedad: "para un mismo viaje en instantes
 sucesivos de la reproducción, la distancia a la parada NO DEBERÁ aumentar más de 50 m".
@@ -169,8 +179,8 @@ minutos menores, avanza.
    alcance; mejor en una versión posterior o en `passenger_map_view` (presentación).
 3. Quitar la segunda propiedad y dejar solo la de los 30 m.
 
-Hasta que se resuelva, T-07 queda sin hacer y `./init.sh verify` falla en la trazabilidad
-(`position_estimation.AC-17: ningún test lo cita`). T-01…T-06 están completas y en verde.
+(Estado tras la v1.1: T-07 hecha con la propuesta 1; el test excluye y lista exactamente esos 5
+pares.)
 
 ## Verificación
 
