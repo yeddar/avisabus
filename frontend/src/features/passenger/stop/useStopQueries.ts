@@ -7,7 +7,13 @@ import type { StopArrivalsResponse, StopResponse } from '../../../shared/api/typ
 const DEFAULT_REFRESH_S = 20;
 const MAX_REFRESH_S = 30;
 
-const retry = (failures: number, error: ApiError) => error.status !== 404 && failures < 2;
+const NOT_FOUND = 404;
+
+export const isNotFound = (error: ApiError | null | undefined): boolean =>
+  error?.status === NOT_FOUND;
+
+/** A missing stop is final; other errors are retried twice (1 s and 2 s later). */
+const retry = (failures: number, error: ApiError) => !isNotFound(error) && failures < 2;
 
 function stopPath(stopId: string, token: string, suffix = ''): string {
   return `/stops/${encodeURIComponent(stopId)}${suffix}?t=${encodeURIComponent(token)}`;
@@ -37,7 +43,9 @@ export function useStopArrivals(
     queryFn: ({ signal }) =>
       apiGet<StopArrivalsResponse>(stopPath(stopId, token, '/arrivals'), { signal }),
     refetchInterval: (query) =>
-      Math.min(query.state.data?.refresh_after_s ?? DEFAULT_REFRESH_S, MAX_REFRESH_S) * 1000,
+      isNotFound(query.state.error)
+        ? false
+        : Math.min(query.state.data?.refresh_after_s ?? DEFAULT_REFRESH_S, MAX_REFRESH_S) * 1000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
     placeholderData: keepPreviousData,

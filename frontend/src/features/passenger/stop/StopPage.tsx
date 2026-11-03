@@ -1,26 +1,44 @@
-import { useTranslation } from 'react-i18next';
+import type { UseQueryResult } from '@tanstack/react-query';
+import { Trans, useTranslation } from 'react-i18next';
 import { useParams, useSearchParams } from 'react-router-dom';
 
-import type { Arrival } from '../../../shared/api/types';
+import type { ApiError } from '../../../shared/api/client';
+import type { Arrival, StopArrivalsResponse, StopResponse } from '../../../shared/api/types';
+import { useOnline } from '../../../shared/hooks/useOnline';
 import { useServerNow } from '../../../shared/hooks/useServerNow';
+import { formatClockTime } from '../../../shared/i18n/format';
 import { useAnnounce } from '../../../shared/ui/Announcer';
 import { Button } from '../../../shared/ui/Button';
 import { RefreshIcon } from '../../../shared/ui/icons/RefreshIcon';
+import { StatusNotice } from '../../../shared/ui/StatusNotice';
 import { usePageTitle } from '../../../shared/ui/usePageTitle';
 import { ArrivalsList } from './ArrivalsList';
 import { SourceNotice } from './SourceNotice';
 import { StopHeader } from './StopHeader';
+import { StopNotFound } from './StopNotFound';
 import { formatUpdateTime } from './time';
 import { useArrivingAnnouncements } from './useArrivingAnnouncements';
-import { useStop, useStopArrivals } from './useStopQueries';
+import { isNotFound, useStop, useStopArrivals } from './useStopQueries';
 import { useUiLanguage } from './useUiLanguage';
+
+const H1 = 'text-[1.75rem] leading-[1.15] font-bold';
 
 /** Route /p/:stopId?t={token}: the passenger's stop view (CU-01). */
 export function StopPage() {
   const { stopId = '' } = useParams();
   const [searchParams] = useSearchParams();
-  const token = searchParams.get('t') ?? '';
+  const token = searchParams.get('t');
+  // Without a token the API would answer 404 anyway: do not call it (design §3).
+  if (token === null || token === '') return <StopNotFound />;
   return <StopView key={`${stopId}|${token}`} stopId={stopId} token={token} />;
+}
+
+function StopView({ stopId, token }: { stopId: string; token: string }) {
+  const stop = useStop(stopId, token);
+  const arrivals = useStopArrivals(stopId, token);
+
+  if (isNotFound(stop.error) || isNotFound(arrivals.error)) return <StopNotFound />;
+  return <StopContent stop={stop} arrivals={arrivals} />;
 }
 
 /** Mounted only once there are data, so arrivals already "Llegando" on load are not announced. */
@@ -29,13 +47,19 @@ function ArrivingAnnouncer({ arrivals, now }: { arrivals: Arrival[]; now: Date }
   return null;
 }
 
-function StopView({ stopId, token }: { stopId: string; token: string }) {
+interface StopContentProps {
+  stop: UseQueryResult<StopResponse, ApiError>;
+  arrivals: UseQueryResult<StopArrivalsResponse, ApiError>;
+}
+
+function StopContent({ stop, arrivals }: StopContentProps) {
   const { t } = useTranslation();
   const language = useUiLanguage();
   const announce = useAnnounce();
-  const stop = useStop(stopId, token);
-  const arrivals = useStopArrivals(stopId, token);
+  const online = useOnline();
   const now = useServerNow(arrivals.data?.generated_at);
+  const failed = stop.isError || arrivals.isError;
+  const data = arrivals.data;
 
   usePageTitle(stop.data?.name ?? t('stop.title'));
 
@@ -44,10 +68,15 @@ function StopView({ stopId, token }: { stopId: string; token: string }) {
     if (!result.isError) announce(t('stop.refreshed'), 'polite');
   }
 
+  function retry() {
+    if (stop.isError) void stop.refetch();
+    void arrivals.refetch();
+  }
+
   return (
     <div className="flex flex-col gap-5">
       {stop.data === undefined ? (
-        <h1 className="text-[1.75rem] leading-[1.15] font-bold">{t('stop.title')}</h1>
+        <h1 className={H1}>{t('stop.title')}</h1>
       ) : (
         <StopHeader stop={stop.data} />
       )}
@@ -55,27 +84,48 @@ function StopView({ stopId, token }: { stopId: string; token: string }) {
         <h2 id="arrivals-h" className="text-[1.375rem] font-bold">
           {t('stop.arrivals')}
         </h2>
-        {arrivals.data === undefined ? (
-          <p className="text-text-muted">{t('stop.loading')}</p>
+        {!online && (
+          <StatusNotice role="status">
+            <Trans i18nKey="network.offline" components={{ strong: <strong /> }} />
+          </StatusNotice>
+        )}
+        {failed && (
+          <StatusNotice
+            action={
+              <Button icon={<RefreshIcon className="size-[18px]" />} onClick={retry}>
+                {t('stop.error.retry')}
+              </Button>
+            }
+          >
+            <Trans i18nKey="stop.error.body" components={{ strong: <strong /> }} />
+          </StatusNotice>
+        )}
+        {data === undefined ? (
+          !failed && online && <p className="text-text-muted">{t('stop.loading')}</p>
         ) : (
           <>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-text-muted">
-                {t('stop.updatedAt', {
-                  time: formatUpdateTime(arrivals.data.generated_at, language),
-                })}
-              </p>
-              <Button icon={<RefreshIcon className="size-[18px]" />} onClick={() => void refresh()}>
-                {t('stop.refresh')}
-              </Button>
+              {arrivals.isError ? (
+                <p className="font-bold text-text">
+                  {t('stop.stale', { time: formatClockTime(data.generated_at, language) })}
+                </p>
+              ) : (
+                <>
+                  <p className="text-text-muted">
+                    {t('stop.updatedAt', { time: formatUpdateTime(data.generated_at, language) })}
+                  </p>
+                  <Button
+                    icon={<RefreshIcon className="size-[18px]" />}
+                    onClick={() => void refresh()}
+                  >
+                    {t('stop.refresh')}
+                  </Button>
+                </>
+              )}
             </div>
-            <ArrivingAnnouncer arrivals={arrivals.data.arrivals} now={now} />
-            <SourceNotice source={arrivals.data.source} />
-            <ArrivalsList
-              arrivals={arrivals.data.arrivals}
-              source={arrivals.data.source}
-              now={now}
-            />
+            <ArrivingAnnouncer arrivals={data.arrivals} now={now} />
+            <SourceNotice source={data.source} />
+            <ArrivalsList arrivals={data.arrivals} source={data.source} now={now} />
           </>
         )}
       </section>
