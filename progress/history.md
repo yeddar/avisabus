@@ -190,3 +190,7 @@
 ## 2026-11-03 · PR #20 fusionada · stop_arrivals_api · spec_approved → implementing (v1.4)
 - Exploración E-01…E-03 ya en `develop` (PR #19). Implementer con todas las tareas de v1.4; overrides
   iniciales = los de la exploración traducidos a headsign, solo los que un test demuestre necesarios.
+
+## 2026-11-03 · stop_arrivals_api · implementing → in_review
+- T-01…T-09 (+T-05b, T-05c); verify en verde (853 tests, cobertura 99,66 %). Ningún override
+  necesario: las 139 entradas reales se resuelven con alias, umbral 0,2 y sentido que sale.
