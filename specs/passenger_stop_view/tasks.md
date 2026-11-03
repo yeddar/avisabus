@@ -1,6 +1,6 @@
 # Vista de parada del pasajero — tasks
 
-> Feature: `passenger_stop_view` · Versión: 1.0 · Estado: APPROVED
+> Feature: `passenger_stop_view` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-06, RF-10, RF-15, RF-32, RNF-01, RNF-03, RNF-04, RNF-05, RNF-14 · Casos de uso: CU-01 · Depende de: stop_arrivals_api, frontend_i18n
 
 ## Exploración
@@ -63,6 +63,14 @@ No necesaria.
   - AC: passenger_stop_view.AC-04, AC-16, AC-21, AC-22, AC-23
   - Ficheros: `e2e/stop-view.spec.ts`, `e2e/fixtures/*.json`, `src/__tests__/bundle-budget.test.ts`, `package.json`
   - Verificación: `cd frontend && npm run e2e`
+
+- [ ] **T-11** — (v1.1) Anuncio y foco tras "Actualizar"/"Reintentar" (AC-24); mensaje de error
+  sobre "los datos" y "Reintentar" que repite también la petición de la parada (AC-17); clave
+  `stop.refreshFailed` en ambos idiomas; corregir el comentario de `shared/device/storage.ts` con
+  la lista de `docs/conventions.md` §4.
+  - AC: passenger_stop_view.AC-17, AC-24
+  - Ficheros: `src/features/passenger/stop/StopPage.tsx`, `src/shared/device/storage.ts`, `src/locales/**`, `StopPage.errors.test.tsx`
+  - Verificación: `cd frontend && npm run test -- StopPage`
 
 - [ ] **T-10** — Verificación completa.
   - Verificación: `./init.sh verify --e2e`

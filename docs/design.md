@@ -1,6 +1,6 @@
 # Guía visual — AvisaBus
 
-> Estado: **APROBADO** (v1.0 · 2026-11-03, PR #7).
+> Estado: **APROBADO** (v1.0 · 2026-11-03, PR #7; v1.1 · 2026-11-03, pendiente de aprobación).
 > Deriva de `docs/requirements.md` (RNF-03, RNF-05, RNF-14, RNF-15) y del boceto revisado por la
 > persona el 2026-11-03.
 
@@ -85,7 +85,8 @@ fórmula WCAG 2.x.
 
 **Color de línea:** se usa el `line_color` / `line_text_color` del GTFS pasado por
 `accessibleLineColors()` (`passenger_stop_view.AC-11`, contraste ≥ 4,5:1). El rojo de EMT
-(`#FE0000`, 4,0:1 con blanco) queda en torno a `#E40000` (4,9:1). El `#C40000` del boceto es solo
+(`#FE0000`, 4,0:1 con blanco) queda en `#E50000` (4,8:1), según el algoritmo de
+`passenger_stop_view` design §3. El `#C40000` del boceto es solo
 ilustrativo; no se fija ningún color de línea en el código.
 
 **Modo oscuro:** fuera de alcance del MVP.
@@ -149,7 +150,9 @@ botones solo con icono salvo el zoom del mapa, que lleva `aria-label`.
 
 Aviso de horario programado, sin conexión y errores: caja con fondo `accent-surface`, borde 2 px
 `accent`, radio 12 px, relleno 12 px, icono informativo y texto de 16 px con la primera frase en
-negrita ("**Sin datos en tiempo real.** Se muestra el horario programado.").
+negrita hasta el primer signo de puntuación ("**Sin datos en tiempo real:** se muestra el horario
+programado", texto literal de `passenger_stop_view.AC-09`). El texto lo fija la spec; la guía solo
+fija el estilo.
 
 ### 5.7 Vista de mapa
 
@@ -192,3 +195,4 @@ actualizar, mapa, mano (Solicitar), información, siluetas de ocupación, flecha
 | Versión | Fecha | Cambio | Motivo |
 |---|---|---|---|
 | 1.0 | 2026-11-03 | Versión inicial a partir del boceto | Revisión visual de la persona tras el bloque 1. Aprobada por la persona (PR #7). |
+| 1.1 | 2026-11-03 | §4: el rojo de EMT queda en `#E50000` (4,8:1); §5.6: ejemplo con el texto literal de `passenger_stop_view.AC-09`. | Desviaciones 2 y 3 de la revisión de `passenger_stop_view`. Pendiente de aprobación. |

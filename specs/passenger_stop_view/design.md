@@ -1,6 +1,6 @@
 # Vista de parada del pasajero — design
 
-> Feature: `passenger_stop_view` · Versión: 1.0 · Estado: APPROVED
+> Feature: `passenger_stop_view` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-06, RF-10, RF-15, RF-32, RNF-01, RNF-03, RNF-04, RNF-05, RNF-14 · Casos de uso: CU-01 · Depende de: stop_arrivals_api, frontend_i18n
 
 ## 1. Resumen
@@ -62,7 +62,26 @@ Scripts nuevos en `package.json`:
 |---|---|
 | `gen:api` | `cd ../backend && uv run avisabus openapi export --out ../frontend/src/shared/api/openapi.json && cd ../frontend && openapi-typescript src/shared/api/openapi.json -o src/shared/api/schema.d.ts && prettier --write src/shared/api` |
 
-Dependencias: `@tanstack/react-query`; dev: `openapi-typescript`.
+Dependencias: `@tanstack/react-query`; dev: `openapi-typescript`. (v1.1) `openapi-typescript` 7.x
+declara `typescript ^5` como *peer* y el proyecto usa TypeScript 6: se instala con
+`"overrides": { "openapi-typescript": { "typescript": "$typescript" } }` en `package.json`. Es deuda
+técnica: se quita cuando haya una versión compatible; `tsc` y el test de desfase protegen el
+contrato.
+
+### Acciones manuales: anuncio y foco (v1.1, AC-24)
+
+`StopPage` sabe si la petición en curso la lanzó la persona (`manualAction: 'refresh' | 'retry' |
+null`, estado local). Al terminar:
+
+| Acción | Resultado | Anuncio (`useAnnounce('polite')`) | Foco |
+|---|---|---|---|
+| Actualizar | éxito | `stop.refreshed` (AC-14) | se queda en "Actualizar" |
+| Actualizar | error | `stop.refreshFailed` | "Reintentar" del aviso de error (`ref` + `focus()` tras pintarse) |
+| Reintentar | éxito | `stop.refreshed` | "Actualizar" |
+| Reintentar | error | `stop.refreshFailed` | se queda en "Reintentar" |
+
+"Reintentar" llama a `refetch()` de `useStopArrivals` y, si su error está activo, también de
+`useStop` (AC-17).
 
 ## 3. Interfaces
 
@@ -157,6 +176,7 @@ stop.arriving ("Línea {{line}} hacia {{destination}} está llegando"),
 stop.rowLabel ("Línea {{line}}, hacia {{destination}}, {{time}}, {{occupancy}}"),
 stop.arrivesIn ("llega en {{duration}}"), stop.arrivesAt ("llega a las {{time}}"),
 stop.notFound.title, stop.notFound.body, stop.error.body, stop.error.retry, stop.stale,
+stop.refreshFailed ("No se han podido actualizar los datos", v1.1),
 occupancy.FREE, occupancy.MEDIUM, occupancy.FULL, occupancy.seatsYes, occupancy.seatsNo,
 occupancy.unavailable, network.offline, home.lastStop, notFound.title, notFound.home
 ```
