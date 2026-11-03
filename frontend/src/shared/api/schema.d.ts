@@ -21,6 +21,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/shapes/{shape_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Shape */
+    get: operations['get_shape_api_v1_shapes__shape_id__get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/stops/{stop_id}': {
     parameters: {
       query?: never;
@@ -133,6 +150,73 @@ export interface components {
       title: string;
       /** Type */
       type: string;
+    };
+    /**
+     * ShapeResponse
+     * @example {
+     *       "color": "FE0000",
+     *       "coordinates": [
+     *         [
+     *           -0.3318,
+     *           39.4474
+     *         ],
+     *         [
+     *           -0.3319,
+     *           39.4475
+     *         ]
+     *       ],
+     *       "line": "93",
+     *       "shape_id": "994_488_2271",
+     *       "stops": [
+     *         {
+     *           "lat": 39.46913,
+     *           "lon": -0.40362,
+     *           "name": "Av. del Cid - Ricardo Micó",
+     *           "sequence": 1,
+     *           "stop_id": "488"
+     *         }
+     *       ]
+     *     }
+     */
+    ShapeResponse: {
+      /**
+       * Color
+       * @description Line color, hexadecimal without '#'.
+       */
+      color: string | null;
+      /**
+       * Coordinates
+       * @description Points of the shape in order, as GeoJSON positions [lon, lat].
+       */
+      coordinates: [number, number][];
+      /** Line */
+      line: string;
+      /** Shape Id */
+      shape_id: string;
+      /**
+       * Stops
+       * @description Stops of the most frequent trip with this shape, in order.
+       */
+      stops: components['schemas']['ShapeStopSchema'][];
+    };
+    /** ShapeStopSchema */
+    ShapeStopSchema: {
+      /** Lat */
+      lat: number;
+      /** Lon */
+      lon: number;
+      /**
+       * Name
+       * @description Stop name as it comes in the GTFS.
+       */
+      name: string;
+      /**
+       * Sequence
+       * @description stop_sequence of the trip.
+       */
+      sequence: number;
+      /** Stop Id */
+      stop_id: string;
     };
     /**
      * StopArrivalsResponse
@@ -298,6 +382,80 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['HealthResponse'];
+        };
+      };
+    };
+  };
+  get_shape_api_v1_shapes__shape_id__get: {
+    parameters: {
+      query?: never;
+      header?: {
+        'if-none-match'?: string | null;
+      };
+      path: {
+        shape_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ShapeResponse'];
+        };
+      };
+      /** @description Not modified: `If-None-Match` has the current `ETag`. */
+      304: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description The shape does not exist in the active feed. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProblemSchema'];
+          /**
+           * @example {
+           *       "status": 404,
+           *       "title": "Not Found",
+           *       "type": "https://avisabus/problems/shape-not-found"
+           *     }
+           */
+          'application/problem+json': unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+      /** @description No active GTFS feed. */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProblemSchema'];
+          /**
+           * @example {
+           *       "status": 503,
+           *       "title": "Service Unavailable",
+           *       "type": "https://avisabus/problems/network-unavailable"
+           *     }
+           */
+          'application/problem+json': unknown;
         };
       };
     };

@@ -193,6 +193,108 @@
         "title": "ProblemSchema",
         "type": "object"
       },
+      "ShapeResponse": {
+        "examples": [
+          {
+            "color": "FE0000",
+            "coordinates": [
+              [-0.3318, 39.4474],
+              [-0.3319, 39.4475]
+            ],
+            "line": "93",
+            "shape_id": "994_488_2271",
+            "stops": [
+              {
+                "lat": 39.46913,
+                "lon": -0.40362,
+                "name": "Av. del Cid - Ricardo Micó",
+                "sequence": 1,
+                "stop_id": "488"
+              }
+            ]
+          }
+        ],
+        "properties": {
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Line color, hexadecimal without '#'.",
+            "title": "Color"
+          },
+          "coordinates": {
+            "description": "Points of the shape in order, as GeoJSON positions [lon, lat].",
+            "items": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            "title": "Coordinates",
+            "type": "array"
+          },
+          "line": {
+            "title": "Line",
+            "type": "string"
+          },
+          "shape_id": {
+            "title": "Shape Id",
+            "type": "string"
+          },
+          "stops": {
+            "description": "Stops of the most frequent trip with this shape, in order.",
+            "items": {
+              "$ref": "#/components/schemas/ShapeStopSchema"
+            },
+            "title": "Stops",
+            "type": "array"
+          }
+        },
+        "required": ["shape_id", "line", "color", "coordinates", "stops"],
+        "title": "ShapeResponse",
+        "type": "object"
+      },
+      "ShapeStopSchema": {
+        "properties": {
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
+          },
+          "name": {
+            "description": "Stop name as it comes in the GTFS.",
+            "title": "Name",
+            "type": "string"
+          },
+          "sequence": {
+            "description": "stop_sequence of the trip.",
+            "title": "Sequence",
+            "type": "integer"
+          },
+          "stop_id": {
+            "title": "Stop Id",
+            "type": "string"
+          }
+        },
+        "required": ["stop_id", "name", "lat", "lon", "sequence"],
+        "title": "ShapeStopSchema",
+        "type": "object"
+      },
       "StopArrivalsResponse": {
         "examples": [
           {
@@ -418,6 +520,99 @@
         },
         "summary": "Health",
         "tags": ["health"]
+      }
+    },
+    "/api/v1/shapes/{shape_id}": {
+      "get": {
+        "operationId": "get_shape_api_v1_shapes__shape_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "shape_id",
+            "required": true,
+            "schema": {
+              "title": "Shape Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "if-none-match",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-None-Match"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShapeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "304": {
+            "description": "Not modified: `If-None-Match` has the current `ETag`."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 404,
+                  "title": "Not Found",
+                  "type": "https://avisabus/problems/shape-not-found"
+                }
+              }
+            },
+            "description": "The shape does not exist in the active feed."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 503,
+                  "title": "Service Unavailable",
+                  "type": "https://avisabus/problems/network-unavailable"
+                }
+              }
+            },
+            "description": "No active GTFS feed."
+          }
+        },
+        "summary": "Get Shape",
+        "tags": ["shapes"]
       }
     },
     "/api/v1/stops/{stop_id}": {

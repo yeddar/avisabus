@@ -55,3 +55,12 @@ class LineNotAtStopError(DomainError):
         self.line = line
         self.direction_id = direction_id
         super().__init__("line not at stop")
+
+
+class ShapeNotFoundError(DomainError):
+    """No trip of the active feed uses the shape (position_estimation AC-15). It is in
+    `shape_id`."""
+
+    def __init__(self, shape_id: str) -> None:
+        self.shape_id = shape_id
+        super().__init__("shape not found")

@@ -7,9 +7,10 @@ from typing import Any
 from fastapi import FastAPI
 
 import avisabus
-from avisabus.adapters.inbound.http.container import StopUseCases
+from avisabus.adapters.inbound.http.container import PositionUseCases, StopUseCases
 from avisabus.adapters.inbound.http.errors import register_error_handlers
 from avisabus.adapters.inbound.http.routes import health
+from avisabus.adapters.inbound.http.routes import shapes as shapes_routes
 from avisabus.adapters.inbound.http.routes import stops as stops_routes
 from avisabus.config import Settings
 
@@ -23,11 +24,13 @@ def create_app(
     settings: Settings,
     lifespan: Lifespan | None = None,
     stops: StopUseCases | None = None,
+    positions: PositionUseCases | None = None,
     *,
     schema_only: bool = False,
 ) -> FastAPI:
     """`lifespan` starts and stops the background work wired in `avisabus.main`; `stops` adds
-    the stop endpoints (stop_arrivals_api), which need the network and the arrivals source.
+    the stop endpoints (stop_arrivals_api), which need the network and the arrivals source;
+    `positions` adds the position and shape endpoints (position_estimation).
 
     With `schema_only`, every router is registered without its dependencies, so the app can only
     describe itself (`openapi_document`); its endpoints must not be called."""
@@ -39,6 +42,10 @@ def create_app(
         app.state.stop_use_cases = stops
     if stops is not None or schema_only:
         app.include_router(stops_routes.router, prefix=API_PREFIX)
+    if positions is not None:
+        app.state.position_use_cases = positions
+    if positions is not None or schema_only:
+        app.include_router(shapes_routes.router, prefix=API_PREFIX)
     return app
 
 

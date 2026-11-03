@@ -8,8 +8,9 @@ Spec: specs/position_estimation/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Ag
       AC-08) (commit 29f1ad1)
 - [x] T-03 Ampliación de `NetworkRepository`: `trip_shape_id`, `shape_stops`, `shape_line`
       (soporte de AC-09 y AC-13) (commit 74f6739)
-- [x] T-04 `GetVehiclePosition` y `LineNotAtStopError` (AC-09, AC-10, AC-11, AC-12)
-- [ ] T-05 `GetShape` y endpoint `/shapes/{shape_id}`
+- [x] T-04 `GetVehiclePosition` y `LineNotAtStopError` (AC-09, AC-10, AC-11, AC-12) (commit d09eec9)
+- [x] T-05 `GetShape`, `ShapeNotFoundError` y endpoint `/shapes/{shape_id}` con `ETag`, `304` y
+      `Cache-Control` (AC-13, AC-14, AC-15)
 - [ ] T-06 Endpoint de posición, `GZipMiddleware`, composición en `main.py`
 - [ ] T-07 Test de coherencia con la sesión real `stop_508_peak`
 - [ ] T-08 Contrato del frontend (`npm run gen:api`) y verificación completa
@@ -72,6 +73,20 @@ Spec: specs/position_estimation/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Ag
   `refresh_after_s`: los de `GetStopArrivals`.
 - **D-12 (T-04)** `LineNotAtStopError(stop_id, line, direction_id)`: atributos, mensaje sin
   identificadores (conventions §3).
+- **D-13 (T-05) Forma sin viajes:** `GetShape` responde `ShapeNotFoundError` (404
+  `shape-not-found`) si la forma no tiene puntos **o** ningún viaje del feed activo la usa (no
+  tendría línea; `ShapeView.line` es obligatorio). En el feed real y en `gtfs_mini` todas las
+  formas tienen viajes. `color`: el de la línea (`None` solo si viniera vacío).
+- **D-14 (T-05) `If-None-Match`:** comparación débil (RFC 9110): admite lista separada por comas,
+  prefijo `W/` y `*`. El `304` lleva `ETag` y `Cache-Control`; los errores (`404`, `503`) llevan
+  `Cache-Control: no-store` y no llevan `ETag`.
+- **D-15 (T-05) Composición:** nuevo `PositionUseCases(get_vehicle_position, get_shape)` y
+  `build_position_use_cases(stops, engine, clock)` en `adapters/inbound/http/container.py`
+  (reutiliza `stops.get_stop_arrivals`, misma caché del SAE); `create_app(..., positions=...)`
+  registra los routers (también con `schema_only`). Helper de tests `tests/support/position.py`.
+- **D-16 (T-05/T-06) Contrato del frontend:** `npm run gen:api` se ejecuta en cada tarea que
+  cambia la API (T-05 y T-06) para que el test de desfase de `passenger_stop_view` (AC-02) siga en
+  verde en cada commit; T-08 lo comprueba de nuevo.
 
 ## Bloqueos
 

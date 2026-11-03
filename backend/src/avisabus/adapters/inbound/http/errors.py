@@ -9,12 +9,13 @@ import structlog
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from avisabus.domain.errors import NoActiveFeedError, StopNotFoundError
+from avisabus.domain.errors import NoActiveFeedError, ShapeNotFoundError, StopNotFoundError
 
 PROBLEM_JSON = "application/problem+json"
 NO_STORE = "no-store"
 STOP_NOT_FOUND_TYPE = "https://avisabus/problems/stop-not-found"
 NETWORK_UNAVAILABLE_TYPE = "https://avisabus/problems/network-unavailable"
+SHAPE_NOT_FOUND_TYPE = "https://avisabus/problems/shape-not-found"
 
 _logger = structlog.get_logger(__name__)
 
@@ -47,7 +48,13 @@ async def handle_no_active_feed(_request: Request, _exc: Exception) -> JSONRespo
     )
 
 
+async def handle_shape_not_found(_request: Request, _exc: Exception) -> JSONResponse:
+    """position_estimation AC-15."""
+    return problem_response(HTTPStatus.NOT_FOUND, SHAPE_NOT_FOUND_TYPE, {"Cache-Control": NO_STORE})
+
+
 def register_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(StopNotFoundError, handle_stop_not_found)
     app.add_exception_handler(NoActiveFeedError, handle_no_active_feed)
+    app.add_exception_handler(ShapeNotFoundError, handle_shape_not_found)
     app.add_exception_handler(Exception, handle_unexpected_error)
