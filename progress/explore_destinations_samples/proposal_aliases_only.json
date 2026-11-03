@@ -1,0 +1,6 @@
+{
+  "add_aliases": {"de": "", "d": "", "del": "", "dels": "", "la": "", "l": "", "el": "", "els": "",
+                  "les": "", "i": "", "y": "",
+                  "pta": "porta", "fta": "fonteta", "s": "sant", "ed": "eduard", "j": "joaquin"},
+  "remove_aliases": ["c"]
+}

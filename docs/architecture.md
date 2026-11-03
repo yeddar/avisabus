@@ -135,7 +135,7 @@ Notas:
 | Servicio | Responsabilidad | RF |
 |---|---|---|
 | `derive_directions` | El feed de EMT no trae `direction_id`: lo deriva al importar por línea, a partir de los extremos de cada trazado. Las circulares de EMT (C1, C2, C3) vienen partidas en medios viajes y se tratan igual ("hacia el destino de cada mitad"); la regla por orientación queda para feeds con el bucle en un solo viaje. Guarda todas las formas de cada sentido. | RF-03 |
-| `DirectionResolver` | Traduce el `destino` del SAE a `direction_id` para una parada y línea. Si la línea solo pasa en un sentido por esa parada, es inmediato; si no, por coincidencia con los headsigns de los viajes que paran allí. | RF-11, RF-16 |
+| `DirectionResolver` | Traduce el `destino` del SAE a `direction_id` para una parada y línea, en este orden: sentido único en la parada → override (por headsign) → coincidencia de texto con los headsigns de los viajes que paran allí → **sentido que sale** de la parada (cabeceras) → sin resolver. | RF-11, RF-16 |
 | `PositionEstimator` | Dado ETA a una parada y los tiempos programados entre paradas del viaje, sitúa el autobús sobre el shape (interpolación por distancia). | RF-12 |
 | `OccupancyClassifier` | Convierte ocupación en nivel con umbrales configurables. | RF-15 |
 | `AlertAssigner` | Asigna el aviso al próximo autobús (ETA mínimo) y al conductor conectado de esa línea y sentido más cercano aguas arriba de la parada. | RF-20, RF-23 |

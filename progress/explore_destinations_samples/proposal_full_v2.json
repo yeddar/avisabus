@@ -1,0 +1,33 @@
+{
+ "add_aliases": {
+  "de": "",
+  "d": "",
+  "del": "",
+  "dels": "",
+  "la": "",
+  "l": "",
+  "el": "",
+  "els": "",
+  "les": "",
+  "i": "",
+  "y": "",
+  "pta": "porta",
+  "fta": "fonteta",
+  "s": "sant",
+  "ed": "eduard",
+  "j": "joaquin"
+ },
+ "remove_aliases": [
+  "c"
+ ],
+ "overrides": {
+  "99|La Malva-rosa": 0,
+  "99|P. Congressos": 1,
+  "C3|Campanar": 0,
+  "C3|Ed. Bosca": 1,
+  "C3|C. Benlloch": 1,
+  "16|Vinalesa": 1,
+  "26|Moncada": 1,
+  "C2|Av. Aragó": 1
+ }
+}

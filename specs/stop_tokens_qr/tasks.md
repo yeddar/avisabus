@@ -1,6 +1,6 @@
 # Tokens de parada y QR — tasks
 
-> Feature: `stop_tokens_qr` · Versión: 1.2 · Estado: APPROVED
+> Feature: `stop_tokens_qr` · Versión: 1.3 · Estado: APPROVED
 > Requisitos: RF-05, RNF-07 · Casos de uso: CU-12 · Depende de: gtfs_import
 
 > **v1.2:** T-01…T-07 implementadas en versiones anteriores. En esta versión solo quedan **T-08 y T-09**.

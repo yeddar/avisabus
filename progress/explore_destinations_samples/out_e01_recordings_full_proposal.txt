@@ -1,0 +1,7 @@
+2070 | 73 | Sant Isidre | 144 | 1:Sant Isidre(435) | 1 | single_direction | None | 1
+2070 | 95 | Tres Creus | 150 | 1:Tres Creus (imparell) - Hospital General(100) | 1 | single_direction | None | 1
+2070 | 98 | Av. Cid | 144 | 1:Cid - Pere Maria Orts(141) | 1 | single_direction | None | 1
+2070 | 99 | La Malva-rosa | 150 | 0:Mendizábal - Doctor Álvaro López(383) | 1 | single_direction | None | 0
+508 | 70 | Alboraia | 145 | 1:Alboraia(302) | 1 | single_direction | None | 1
+508 | 93 | Pass. Marítim | 150 | 0:Passeig Marítim - Hospital Malva-rosa(418) | 1 | single_direction | None | 0
+TOTAL arrivals=883 in_network=883 resolved=883 pct=100.0%

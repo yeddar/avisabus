@@ -1,8 +1,10 @@
 # Sensor de ocupación — tasks
 
-> Feature: `occupancy_sensor` · Versión: 1.1 · Estado: APPROVED
+> Feature: `occupancy_sensor` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-14, RF-15 · Casos de uso: CU-01 · Depende de: project_scaffold, gtfs_import
 
+> **v1.2:** solo quedan **T-09 y T-10**.
+>
 > **v1.1:** T-01…T-06 implementadas en la v1.0. En esta versión solo quedan **T-07 y T-08**.
 
 ## Exploración
@@ -49,4 +51,13 @@ No necesaria.
   - Verificación: `cd backend && uv run pytest tests/unit/test_simulated_occupancy_sensor.py`
 
 - [ ] **T-08** — Verificación completa (v1.1).
+  - Verificación: `./init.sh verify`
+
+- [ ] **T-09** — (v1.2) Test de composición: con `AVISABUS_OCCUPANCY_*` no estándar, el sensor y el
+  clasificador compuestos en `main.py` y en la CLI usan esos valores.
+  - AC: occupancy_sensor.AC-15
+  - Ficheros: `tests/integration/test_occupancy_composition.py` (y ajuste de composición si falla)
+  - Verificación: `cd backend && uv run pytest tests/integration/test_occupancy_composition.py`
+
+- [ ] **T-10** — Verificación completa (v1.2).
   - Verificación: `./init.sh verify`

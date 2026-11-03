@@ -1,0 +1,6 @@
+tol 10 greedy : matched 426/439, first-arrival trip changes 22 (backwards 8)
+tol 10 optimal: matched 439/439, first-arrival trip changes 8 (backwards 1)
+tol 15 greedy : matched 439/439, first-arrival trip changes 22 (backwards 8)
+tol 15 optimal: matched 439/439, first-arrival trip changes 8 (backwards 1)
+tol 20 greedy : matched 439/439, first-arrival trip changes 22 (backwards 8)
+tol 20 optimal: matched 439/439, first-arrival trip changes 8 (backwards 1)

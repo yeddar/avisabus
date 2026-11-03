@@ -4,19 +4,21 @@
 
 **Fecha:** 2026-11-02
 **Fase:** Implementación — Bloque 1 (Cimientos y datos)
-**Feature en curso:** ajustes de cierre del bloque 1 (rama `fix/bloque-1-ajustes`) — `done`, PR abierta
-(sin fusionar). Siguiente: `stop_arrivals_api` v1.3.
+**Feature en curso:** `stop_arrivals_api` v1.3 — `exploring` (rama `feat/stop_arrivals_api`)
 
 ## Último paso
-Ajustes de cierre del bloque 1 en `fix/bloque-1-ajustes`: `stop_tokens_qr` v1.2 (T-08/T-09),
-`sae_arrivals_source` v1.2 (T-11…T-13), `occupancy_sensor` v1.1 (T-07/T-08). Revisión ciclo 1 de
-estas versiones: **APPROVED** las tres, sin bloqueantes. `done`; PR contra `develop` abierta.
+PR #18 fusionada. `stop_arrivals_api` en `exploring`: E-01 y E-02 completadas
+(`progress/explore_destinations.md`, muestras nocturnas en `progress/explore_destinations_samples/`,
+22 consultas al SAE). Resolución de sentido 99,2 % de las llegadas reales (≈ 95,5 % estimado en toda
+la red; suelo 91,6 %) → no salta el umbral de CP-3 del 90 %.
 
 ## Siguiente paso
-1. La persona revisa y fusiona la PR de `fix/bloque-1-ajustes`.
-2. Tras la fusión: `stop_arrivals_api` (v1.3), rama propia, E-01 (destinos del SAE frente a
-   headsigns del GTFS, incluidas circulares) y **parar** para revisar la exploración con la persona.
-3. Fin del bloque 1 (CP-6). T-08b de `sae_arrivals_source` (nocturna) opcional.
+1. **La persona revisa la exploración** (pedido explícito) y decide los puntos de
+   "Checkpoints pendientes". Después: implementer → reviewer → PR. Fin del bloque 1 (CP-6).
+2. E-03 hecha (cabeceras e intermedias de C1/C2 de día). La persona prepara la PR de specs con las
+   decisiones del CP-3; **no lanzar el implementer** hasta que esté fusionada.
+3. T-08b de `sae_arrivals_source` (nocturna): parcialmente cubierta por las muestras de E-01 de
+   `stop_arrivals_api` (`night_20261102/`).
 
 ## Pendiente para specs futuras
 - **stop_tokens_qr O-01:** `sae fetch|record` ya no emiten `security.dev_stop_token_secret` (no usan
@@ -57,10 +59,11 @@ estas versiones: **APPROVED** las tres, sin bloqueantes. `done`; PR contra `deve
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Ninguno. CP-3 de `sae_arrivals_source` resuelto por la persona (2026-11-02): fuente `QR.php`
-(ADR-015), cabecera de parada obligatoria (AC-21), `source_format` en las grabaciones (AC-22),
-muestras derivadas para "sin llegadas" y `HH:MM`, grabación nocturna opcional (T-08b). Correo
-enviado a EMT pidiendo permiso para `getSAE` y preguntando por una API oficial.
+Ninguno. CP-3 de `stop_arrivals_api` resuelto por la persona (2026-11-03), opción (c) para C1:
+spec v1.4 (sentido que sale, overrides por headsign, umbral 0,2, alias revisados, emparejamiento
+óptimo con tolerancia de 10 min, `sae_destination`, duplicados). Se reabren `sae_arrivals_source`
+v1.3 (`HH:MM:SS`, entradas sin tiempo, muestra nocturna real) y `occupancy_sensor` v1.2 (test de
+composición). `stop_tokens_qr` v1.3: solo redacción de AC-05.
 
 ## Bloqueos
 Ninguno. 

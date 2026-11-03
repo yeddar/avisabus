@@ -1,6 +1,6 @@
 # Tokens de parada y QR — requirements
 
-> Feature: `stop_tokens_qr` · Versión: 1.2 · Estado: APPROVED
+> Feature: `stop_tokens_qr` · Versión: 1.3 · Estado: APPROVED
 > Requisitos: RF-05, RNF-07 · Casos de uso: CU-12 · Depende de: gtfs_import
 
 ## Contexto
@@ -47,7 +47,8 @@ después, `alert_create`.
 - **stop_tokens_qr.AC-05** — MIENTRAS `AVISABUS_ENV` sea `dev` o `test` y no haya secreto
   configurado, EL SISTEMA DEBERÁ usar un secreto de desarrollo fijo y registrar la advertencia
   `security.dev_stop_token_secret` **en el log JSON configurado** (no en la salida estándar sin
-  formato), tanto al arrancar la API como al ejecutar la CLI.
+  formato), al arrancar la API y al ejecutar los comandos de la CLI que usan el secreto (p. ej.
+  `qr generate`); el resto de comandos no la emiten.
   *Verificación:* unit
 - **stop_tokens_qr.AC-06** — EL SISTEMA DEBERÁ construir la URL de una parada como
   `{AVISABUS_PUBLIC_BASE_URL}/p/{stop_id}?t={token}` sin barras duplicadas.
@@ -100,3 +101,4 @@ después, `alert_create`.
 | 1.0 | 2026-10-31 | Versión inicial aprobada (PR #2) | — |
 | 1.1 | 2026-10-31 | AC-13: fuente DejaVu Sans incluida en el repositorio para la etiqueta PNG. AC-12: nivel de corrección exactamente M (`boost_error=False`). | Bloqueos B-01 (la fuente por defecto de Pillow no tiene tildes, cedillas ni eñes; 620 de 1 117 paradas afectadas) y B-02 del implementer. Aprobada por la persona. |
 | 1.2 | 2026-11-02 | AC-10: código de salida 3 para paradas inexistentes. AC-05: advertencia en el log JSON (design §6: la emiten `main.py` y la CLI tras configurar el logging). T-08. | Hallazgos S-01 y H-01 de la revisión de `stop_tokens_qr`. Aprobada por la persona. |
+| 1.3 | 2026-11-03 | AC-05: la advertencia solo se emite en la API y en los comandos que usan el secreto. Solo redacción: sin tareas ni cambios de código. | Observación O-01 de la revisión de los ajustes del bloque 1. Aprobada por la persona. |

@@ -155,3 +155,22 @@
 ## 2026-11-02 · stop_tokens_qr, sae_arrivals_source, occupancy_sensor · in_review → done
 - Revisión ciclo 1 (v1.2 / v1.2 / v1.1): APPROVED las tres, con pruebas de mutación; verify en verde.
   No bloqueantes anotados en `current.md`. PR de `fix/bloque-1-ajustes` contra `develop`, sin fusionar.
+
+## 2026-11-02 · fix/bloque-1-ajustes fusionada (PR #18) · stop_arrivals_api · spec_approved → exploring
+- Rama `feat/stop_arrivals_api`. Exploración E-01 y E-02 → `progress/explore_destinations.md`;
+  se para al terminar para revisarla con la persona.
+
+## 2026-11-02 · stop_arrivals_api · exploring (E-01, E-02 completadas; pendiente de revisión)
+- Resolución de sentido 99,2 % de 972 llegadas reales (≈ 95,5 % en red): sin CP-3 por umbral.
+  Propuestas: quitar alias `c → carrer`, asignación óptima y tolerancia 10 min. Detectado en
+  `sae_arrivals_source`: formatos `HH:MM:SS` y `"{destino} -"` no reconocidos (29 % nocturno).
+
+## 2026-11-03 · stop_arrivals_api · exploring (E-03 completada)
+- 10 consultas diurnas (C1/C2): C2 resuelta con alias + `C2|Av. Aragó`; C1 da "Cntr.Històric"
+  genérico y no se resuelve en sus cabeceras 1959/2277 con la spec actual (opciones a/b/c en
+  `explore_destinations.md`). Pendiente: PR de specs de la persona con las decisiones del CP-3.
+
+## 2026-11-03 · stop_arrivals_api · CP-3 tras E-01/E-02/E-03 → spec v1.4 aprobada
+- Resolución de sentido observada: 99,2 %. C1 usa "Cntr.Històric" en ambos sentidos → regla del
+  sentido que sale (opción c). Emparejamiento óptimo con orden y tolerancia de 10 min.
+- Reabiertas `sae_arrivals_source` (v1.3) y `occupancy_sensor` (v1.2); `stop_tokens_qr` v1.3 sin código.
