@@ -183,7 +183,7 @@
       "order": 8,
       "block": 2,
       "title": "Vista de parada del pasajero con refresco y ocupación",
-      "status": "in_review",
+      "status": "done",
       "depends_on": [
         "stop_arrivals_api",
         "frontend_i18n"
@@ -205,7 +205,7 @@
       "spec": "specs/passenger_stop_view/",
       "needs_exploration": false,
       "review_cycles": 0,
-      "passes": false
+      "passes": true
     },
     {
       "id": "position_estimation",

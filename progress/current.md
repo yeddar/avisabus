@@ -4,19 +4,29 @@
 
 **Fecha:** 2026-11-03
 **Fase:** Implementación — Bloque 2
-**Feature en curso:** `passenger_stop_view` v1.0 — `implementing` (rama `feat/passenger_stop_view`)
+**Feature en curso:** `passenger_stop_view` v1.0 — `done`, PR abierta (sin fusionar)
 
 ## Último paso
-PR #22 (`frontend_i18n`) fusionada; AC-17 (textos y aspecto) validado por la persona. N-01 lo recoge el
-spec-writer en la próxima revisión de specs (solo docs); N-04 → `deployment_rpi`.
-`passenger_stop_view` (sin exploración) → `implementing`.
+`passenger_stop_view` v1.0: T-01…T-10. Revisión ciclo 1: **APPROVED** sin bloqueantes (`CI=1 ./init.sh
+verify --e2e` en verde: 861 backend, 278 Vitest, 60 e2e, JS inicial 138,7 KB gzip; AC-23 cotejado con
+capturas en `frontend/test-results/passenger_stop_view/`). PR contra `develop` abierta.
 
 ## Siguiente paso
-1. Implementer (T-01…T-10) → reviewer nuevo → `done` → PR contra `develop` sin fusionar.
-   Seguir `docs/design.md`; AC visuales por revisión con capturas e2e.
+1. La persona fusiona la PR. **CP-4:** actualizar `docs/conventions.md` §4 para incluir
+   `avisabus.lastStop` (AC-19; texto propuesto en `progress/review_passenger_stop_view.md`).
 2. Siguientes del bloque 2: `position_estimation`, `passenger_map_view`.
+3. CP-6 del bloque 2: revisar textos nuevos (lista en `progress/impl_passenger_stop_view.md`), anuncios
+   de "llegando" con lector de pantalla (sin anuncio en la primera carga) y foco tras un "Actualizar"
+   fallido (N-1).
 
 ## Pendiente para specs futuras
+- **passenger_stop_view N-1 (accesibilidad):** si "Actualizar" falla no se anuncia nada y el foco se
+  pierde (el botón desaparece); igual al acertar con "Reintentar". N-2: si solo falla la petición de
+  la parada, el aviso habla de "las llegadas" y no se recupera solo. N-3: comentario desfasado en
+  `shared/device/storage.ts`. N-6: el OpenAPI exportado sale de `create_app(schema_only=True)`, no de
+  la app de `main.py`. Deuda: `overrides` de npm para `openapi-typescript` con TS 6 (quitar cuando haya
+  versión compatible). Docs (CP-4, persona): conventions §4 (`avisabus.lastStop`); opcional, color EMT
+  `#e50000` y ejemplo §5.6 en `docs/design.md`.
 - **frontend_i18n N-01 (lo recoge el spec-writer, solo docs):** design §3 desfasado para i18next 26 (AC-05: post-procesador solo en
   desarrollo, `initAsync`) y sin los huecos de `eslint-plugin-i18next` 6.1 (AC-07: `no-restricted-syntax`).
   N-02: `eslint.config.js` importa un módulo interno del plugin. N-03: falso aviso del post-procesador
