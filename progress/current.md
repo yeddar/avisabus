@@ -4,21 +4,20 @@
 
 **Fecha:** 2026-11-03
 **Fase:** Implementación — Bloque 2
-**Feature en curso:** `frontend_i18n` v1.0 — `done`, PR abierta (sin fusionar)
+**Feature en curso:** `passenger_stop_view` v1.0 — `implementing` (rama `feat/passenger_stop_view`)
 
 ## Último paso
-`frontend_i18n` v1.0: T-01…T-08. Revisión ciclo 1: **APPROVED** sin bloqueantes (`CI=1 ./init.sh verify
---e2e` en verde: 150 Vitest, 24 e2e en 3 perfiles, axe sin violaciones en `es`/`ca`; AC-17 cotejado con
-capturas e2e y tokens de `docs/design.md` §4/§5.1). PR contra `develop` abierta.
+PR #22 (`frontend_i18n`) fusionada; AC-17 (textos y aspecto) validado por la persona. N-01 lo recoge el
+spec-writer en la próxima revisión de specs (solo docs); N-04 → `deployment_rpi`.
+`passenger_stop_view` (sin exploración) → `implementing`.
 
 ## Siguiente paso
-1. La persona fusiona la PR de `frontend_i18n`. AC-17 incluye además validación manual de la persona
-   (en CP-6 del bloque 2); textos nuevos (`app.tagline`, `home.title`, `home.scanQr` en valenciano)
-   a revisar entonces.
-2. Siguiente del bloque 2 por orden: `passenger_stop_view` / `position_estimation` / `passenger_map_view`.
+1. Implementer (T-01…T-10) → reviewer nuevo → `done` → PR contra `develop` sin fusionar.
+   Seguir `docs/design.md`; AC visuales por revisión con capturas e2e.
+2. Siguientes del bloque 2: `position_estimation`, `passenger_map_view`.
 
 ## Pendiente para specs futuras
-- **frontend_i18n N-01:** design §3 desfasado para i18next 26 (AC-05: post-procesador solo en
+- **frontend_i18n N-01 (lo recoge el spec-writer, solo docs):** design §3 desfasado para i18next 26 (AC-05: post-procesador solo en
   desarrollo, `initAsync`) y sin los huecos de `eslint-plugin-i18next` 6.1 (AC-07: `no-restricted-syntax`).
   N-02: `eslint.config.js` importa un módulo interno del plugin. N-03: falso aviso del post-procesador
   con `t(key, { lng })`. N-04 → PWA offline / `deployment_rpi`: el service worker no precachea los

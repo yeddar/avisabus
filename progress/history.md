@@ -223,3 +223,6 @@
 ## 2026-11-03 · frontend_i18n · in_review → done
 - Revisión ciclo 1: APPROVED; las 4 desviaciones del design no requieren CP-3 (N-01 para la spec).
   PR contra `develop` sin fusionar. Bloque 2: 1/4 en `done`.
+
+## 2026-11-03 · frontend_i18n PR #22 fusionada (AC-17 validado) · passenger_stop_view · spec_approved → implementing
+- Sin exploración según su `tasks.md`; rama `feat/passenger_stop_view`.
