@@ -4,20 +4,25 @@
 
 **Fecha:** 2026-11-03
 **Fase:** Implementación — Bloque 2
-**Feature en curso:** `frontend_i18n` v1.0 — `implementing` (rama `feat/frontend_i18n`)
+**Feature en curso:** `frontend_i18n` v1.0 — `done`, PR abierta (sin fusionar)
 
 ## Último paso
-PR #21 (`stop_arrivals_api`) fusionada: bloque 1 completo (6/6). PR #7 fusionada: specs del bloque 2
-aprobadas (CP-1) y guía visual `docs/design.md`; la persona da paso al bloque 2 (CP-6 superado).
-`frontend_i18n` (sin exploración) → `implementing`.
+`frontend_i18n` v1.0: T-01…T-08. Revisión ciclo 1: **APPROVED** sin bloqueantes (`CI=1 ./init.sh verify
+--e2e` en verde: 150 Vitest, 24 e2e en 3 perfiles, axe sin violaciones en `es`/`ca`; AC-17 cotejado con
+capturas e2e y tokens de `docs/design.md` §4/§5.1). PR contra `develop` abierta.
 
 ## Siguiente paso
-1. Implementer (T-01…T-08) → reviewer nuevo → `done` → PR contra `develop` sin fusionar.
-   Las features de frontend siguen `docs/design.md`; los AC de conformidad visual (revisión) se
-   comprueban con capturas de las pruebas e2e.
-2. Siguientes del bloque 2: `position_estimation`, `passenger_stop_view`, `passenger_map_view`.
+1. La persona fusiona la PR de `frontend_i18n`. AC-17 incluye además validación manual de la persona
+   (en CP-6 del bloque 2); textos nuevos (`app.tagline`, `home.title`, `home.scanQr` en valenciano)
+   a revisar entonces.
+2. Siguiente del bloque 2 por orden: `passenger_stop_view` / `position_estimation` / `passenger_map_view`.
 
 ## Pendiente para specs futuras
+- **frontend_i18n N-01:** design §3 desfasado para i18next 26 (AC-05: post-procesador solo en
+  desarrollo, `initAsync`) y sin los huecos de `eslint-plugin-i18next` 6.1 (AC-07: `no-restricted-syntax`).
+  N-02: `eslint.config.js` importa un módulo interno del plugin. N-03: falso aviso del post-procesador
+  con `t(key, { lng })`. N-04 → PWA offline / `deployment_rpi`: el service worker no precachea los
+  `woff2` (sin conexión, `system-ui`). Capturas e2e: con `CI=1` o puerto 4173 libre.
 - **stop_arrivals_api P-1:** ~~resuelto en la PR #7 (solo docs)~~ · AC-06 dice "superar" el umbral; design §3 dice `≥` (el código sigue el
   design; el único caso real en el límite, 1266 "C. Benlloch", da igual con ambas lecturas).
 - **stop_arrivals_api P-2 / O-5:** ~~resuelto en la PR #7 (solo docs)~~ · la verificación de AC-19 cita C1 en integración, pero `gtfs_mini`

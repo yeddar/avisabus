@@ -219,3 +219,7 @@
 - T-01…T-08; `./init.sh verify --e2e` en verde (150 Vitest, 24 e2e en 3 perfiles). 4 desviaciones
   del design anotadas en el impl (i18next 26, huecos de `eslint-plugin-i18next`, test de AC-15 de
   `project_scaffold`). Capturas e2e en `frontend/e2e-captures/frontend_i18n/` (no versionadas).
+
+## 2026-11-03 · frontend_i18n · in_review → done
+- Revisión ciclo 1: APPROVED; las 4 desviaciones del design no requieren CP-3 (N-01 para la spec).
+  PR contra `develop` sin fusionar. Bloque 2: 1/4 en `done`.
