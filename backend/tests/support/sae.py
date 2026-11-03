@@ -38,3 +38,6 @@ def replace_once(body: bytes, old: str, new: str) -> bytes:
     text = body.decode("utf-8")
     assert text.count(old) == 1, f"{old!r} must appear exactly once"
     return text.replace(old, new).encode("utf-8")
+
+
+DAY = SAMPLES / "day_2026-11-03"

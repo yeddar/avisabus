@@ -13,6 +13,7 @@ from fastapi import FastAPI
 from sqlalchemy import Engine
 
 from avisabus.adapters.inbound.http.app import create_app
+from avisabus.adapters.inbound.http.container import build_stop_use_cases
 from avisabus.adapters.outbound.clock import SystemClock
 from avisabus.adapters.outbound.occupancy.simulated_sensor import SimulatedOccupancySensor
 from avisabus.adapters.outbound.persistence.db import create_engine, init_db
@@ -22,7 +23,11 @@ from avisabus.adapters.outbound.persistence.sqlite_occupancy_override import (
 )
 from avisabus.adapters.outbound.sae.compose import build_arrivals_source
 from avisabus.background.sae_stats import run_sae_stats
-from avisabus.config import Settings, log_dev_stop_token_secret_warning
+from avisabus.config import (
+    Settings,
+    log_dev_stop_token_secret_warning,
+    read_direction_overrides,
+)
 from avisabus.domain.ports.clock import Clock
 from avisabus.domain.ports.occupancy import OccupancySensor
 from avisabus.logging import configure_logging
@@ -49,10 +54,15 @@ http_client = httpx.AsyncClient()
 arrivals_source = build_arrivals_source(
     settings, clock, http_client
 )  # may raise ConfigurationError
+direction_override_entries = read_direction_overrides(settings)  # may raise ConfigurationError
 engine = create_engine(settings)
 init_db(engine)
 occupancy_sensor = build_occupancy_sensor(settings, engine, clock)
 occupancy_thresholds = settings.occupancy_thresholds()
+# Overrides are checked against the network active at start-up (stop_arrivals_api AC-20).
+stop_use_cases = build_stop_use_cases(
+    settings, engine, clock, arrivals_source, occupancy_sensor, direction_override_entries
+)
 
 
 @asynccontextmanager
@@ -68,4 +78,4 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         await http_client.aclose()
 
 
-app = create_app(settings, lifespan=lifespan)
+app = create_app(settings, lifespan=lifespan, stops=stop_use_cases)

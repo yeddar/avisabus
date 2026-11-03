@@ -77,6 +77,31 @@ Cada sesión es una carpeta:
 | 2070 | 0 | **Hora `HH:MM:SS`** (AC-03): `73 Sant Isidre - 10 min.`, `99 La Malva-rosa - 00:42:28` y `99 La Malva-rosa - 01:52:28` (ya del día siguiente) |
 | 2312 | 6 | **Entradas sin tiempo** (AC-23): cabecera de líneas al final del servicio; 5 de sus 6 entradas son `"{destino} -"` (líneas 7, 9, 62, 60 y 9) y la otra es `62 Benimàmet - 54 min.` |
 
+### `samples/day_2026-11-03/` — real (`stop_arrivals_api`)
+
+- **Fecha:** martes 2026-11-03, de 09:59:00 a 10:00:50 en Madrid (08:59:00–09:00:50 UTC).
+- **Cómo se obtuvo:** en la exploración E-03 de `stop_arrivals_api`
+  (`progress/explore_destinations.md`, hallazgo H-7), con la CLI de la feature y una sola consulta
+  por parada, separadas ≥ 21 s entre sí (`avisabus sae record --stop <id> --interval 20 --duration 1
+  --out …`, con el User-Agent del proyecto). Se juntaron en una sola sesión las grabaciones de seis
+  cabeceras, desde `progress/explore_destinations_samples/day_20261103/<id>/` (cada respuesta lo
+  indica en `source_sample`): `started_at` es el de la 1959 y el `offset_s` de las demás se
+  recalcula desde él. Los cuerpos y los demás campos no cambian; `interval_s` es `null`. No
+  contienen datos de contacto.
+- **Uso:** casos reales de resolución del sentido en cabeceras con `gtfs_mini` (C2) en
+  `tests/integration/test_stops_api.py` (AC-06, AC-19, AC-20). Los tests crean el replay con
+  `start` = `started_at` y sitúan el `FakeClock` justo después del `captured_at` de cada parada.
+- **Contenido:**
+
+| Parada | `offset_s` | Caso |
+|---|---|---|
+| 1959 | 0 | Cabecera de C1: `C1 Cntr.Històric` (texto genérico) ×2; C1 no está en `gtfs_mini` |
+| 2277 | 21 | Cabecera de C1: `C1 Cntr.Històric` ×2 y 13 líneas más (de ellas, solo la 70 está en `gtfs_mini`) |
+| 166 | 43 | Cabecera de C2: `C2 Pl. Espanya` ×2 (sentido 0 por texto); la 30 no tiene viajes en el GTFS |
+| 346 | 65 | Cabecera de C2: `C2 Av. Aragó` ×2 (no coincide con ningún headsign: sentido que sale, 1) |
+| 691 | 86 | Cabecera de C2: `C2 Blasco Ibáñez` ×2 (sentido 1 por texto) |
+| 1057 | 108 | Cabecera de C2: `C2 Est. Autobusos` ×2 (sentido 0 por texto), la 93 y `12 C.Art.Faller - 7 min.` duplicada (entradas idénticas, AC-22) |
+
 ### `stop_508_peak/` — real (AC-19 a)
 
 - **Fecha:** lunes 2026-11-02 (laborable), de 20:42:23 a 21:07:04 en Madrid (19:42:23–20:07:04
