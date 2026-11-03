@@ -1,5 +1,5 @@
 # Implementación: position_estimation
-Spec: specs/position_estimation/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Agente: implementer · Fecha: 2026-11-03
+Spec: specs/position_estimation/ (v1.1, APPROVED; T-01…T-06 hechas con la v1.0) · Ciclo de revisión: 0 · Agente: implementer · Fecha: 2026-11-03
 
 ## Tareas
 - [x] T-01 Geometría: `haversine_m`, `cumulative_distances`, `shape_distances`, `point_at_distance`,
@@ -39,13 +39,21 @@ Spec: specs/position_estimation/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Ag
   None = None` (`(lat, lon)` por parada); los siete parámetros del design no cambian. Sin
   distancias y sin coordenadas, `ValueError`. Lo interpreto como parte de "la implementación
   concreta de la proyección" (design §6). **Propuesta para la spec:** añadir el parámetro a la
-  firma del design §3.
+  firma del design §3. **v1.1:** el design lo incorpora como octavo parámetro posicional con
+  `None` por defecto (sin `*`); se quita el "solo por nombre" para que coincida exactamente
+  (commit de alineación v1.1, con test que lo llama en posición).
 - **D-04 (T-02) Frontera de `NOT_STARTED`:** AC-04 dice "anterior a la salida del viaje" (estricto,
   salida) y el design §3 paso 5 escribe `s ≤ arrival_s[0]`. Se sigue el AC (manda sobre el
   design): `NOT_STARTED` si `s < departure_s[0]`; en `s = departure_s[0]` el autobús está
   `EN_ROUTE` en `d_0`. La posición es la misma en ambas lecturas (solo cambia la etiqueta en el
   instante exacto de salida; en el feed de EMT `arrival = departure`). Se comprueba `AT_STOP`
   antes que `NOT_STARTED` (AC-03), lo que solo importa si la parada objetivo es la primera.
+  **v1.1:** el design §3 paso 5 ya dice `s < departure_s[0]` → `NOT_STARTED`, igual que el
+  código. El paso 5 lista `NOT_STARTED` antes que `AT_STOP`, pero no fija cuál prevalece. Solo
+  difieren si la parada objetivo es la **primera** del viaje y el autobús está entre su llegada y
+  su salida (`arrival_s[0] ≤ s < departure_s[0]`). En ese caso el código da `AT_STOP` (AC-03:
+  el instante desplazado ya alcanzó la hora de la parada objetivo). En el feed de EMT no ocurre
+  (`arrival = departure`). Se mantiene sin cambios; se anota para el reviewer.
 - **D-05 (T-02) Autobús detenido en una parada intermedia** (entre `arrival_s` y `departure_s` de
   la parada `i`, hueco del paso 5 del design): `EN_ROUTE` en `d_i`. En el feed de EMT no ocurre
   (`arrival = departure`). `f = 0` también si `s_{i+1} ≤ s_i` (datos incoherentes).

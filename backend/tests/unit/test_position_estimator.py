@@ -285,3 +285,14 @@ def test_a_trip_without_the_target_stop_has_no_estimate() -> None:
 def test_stop_times_are_ordered_by_sequence() -> None:
     shuffled = [TRIP[3], TRIP[0], TRIP[4], TRIP[2], TRIP[1]]
     assert _estimate(300, 480, trip=shuffled) == _estimate(300, 480)
+
+
+@pytest.mark.spec("position_estimation.AC-06")
+def test_stop_coordinates_is_the_eighth_parameter_of_the_design() -> None:
+    # design v1.1 §3: `stop_coordinates` follows `now`, with `None` as default.
+    coords = {stop: _north(1000 * n) for n, stop in enumerate(STOPS)}
+    trip = _trip(with_dist=False)
+    shape = _shape(with_dist=False)
+    estimate = estimate_position(trip, shape, NAMES, "E", DAY_START, _at(480), _at(300), coords)
+    assert estimate is not None
+    assert estimate.shape_distance_m == pytest.approx(2500, abs=1)

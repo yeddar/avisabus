@@ -25,7 +25,6 @@ def estimate_position(
     service_day_start: datetime,
     arrival_at: datetime,
     now: datetime,
-    *,
     stop_coordinates: Mapping[str, tuple[float, float]] | None = None,
 ) -> PositionEstimate | None:
     """Position at `now` of the trip that reaches `target_stop_id` at `arrival_at`.
