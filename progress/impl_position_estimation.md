@@ -12,9 +12,12 @@ Spec: specs/position_estimation/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Ag
 - [x] T-05 `GetShape`, `ShapeNotFoundError` y endpoint `/shapes/{shape_id}` con `ETag`, `304` y
       `Cache-Control` (AC-13, AC-14, AC-15) (commit 62641a7)
 - [x] T-06 Endpoint de posición, `GZipMiddleware(minimum_size=1000)`, composición en `main.py`
-      (AC-09, AC-10, AC-11, AC-12, AC-16)
-- [ ] T-07 Test de coherencia con la sesión real `stop_508_peak`
-- [ ] T-08 Contrato del frontend (`npm run gen:api`) y verificación completa
+      (AC-09, AC-10, AC-11, AC-12, AC-16) (commit 686c359)
+- [ ] T-07 Test de coherencia con la sesión real `stop_508_peak` — **BLOQUEADA (CP-3, ver
+      Bloqueos B-01)**: la segunda propiedad de AC-17 no se cumple con los datos reales.
+- [ ] T-08 Contrato del frontend (`npm run gen:api`) y verificación completa — contrato ya
+      regenerado en T-05 y T-06 (D-16); la verificación completa falla solo por la trazabilidad de
+      AC-17 (pendiente de B-01).
 
 ## Decisiones locales
 
@@ -103,8 +106,71 @@ Spec: specs/position_estimation/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Ag
 
 ## Bloqueos
 
-Ninguno.
+### B-01 (CP-3) — AC-17: la distancia a la parada de un mismo viaje sí aumenta más de 50 m con `stop_508_peak`
+
+**AC afectado:** `position_estimation.AC-17`, segunda propiedad: "para un mismo viaje en instantes
+sucesivos de la reproducción, la distancia a la parada NO DEBERÁ aumentar más de 50 m".
+
+**Qué se hizo (sin escribir el test de T-07):** recorrer la sesión `stop_508_peak` con `gtfs_mini`,
+el `FakeClock` desde `started_at` avanzando 20 s (75 instantes, offsets 0…1480) y la API real de
+posición (misma composición que `main.py`, `tests/support/position.py`) para la 93 (sentido 0) y la
+70 (sentido 1) en la parada 508; para cada `vehicle.trip_id` se compara `distance_to_stop_m` con su
+observación anterior.
+
+**Resultado:**
+
+- Primera propiedad (a menos de 30 m de la forma): **se cumple**; todas las posiciones son
+  `REALTIME` y la peor está a 0,05 m de la forma de su viaje (redondeo a 6 decimales).
+- Segunda propiedad: **5 incumplimientos**, todos en instantes en que **los minutos del SAE
+  aumentan**:
+
+| Línea | Viaje (`trip_id`) | Offsets | `distance_to_stop_m` | Minutos SAE | Causa en los datos |
+|---|---|---|---|---|---|
+| 93 | `93_994_561_488_2271_2_122` | 280 → 300 | 0 → 4765 | 0 → 7 | El autobús a 0 min desaparece; el siguiente (7 min) se empareja con el mismo viaje (`TripMatcher`) |
+| 70 | `70_1058_601_500_2030_3_070` | 460 → 480 | 0 → 1288 | 0 → 2 | El SAE vuelve de 0 a 2 min |
+| 70 | `70_1058_601_500_2030_3_071` | 1080 → 1100 | 0 → 1380 | 0 → 2 | El SAE vuelve de 0 a 2 min |
+| 70 | `70_1058_601_500_2030_3_071` | 1160 → 1380 (no consecutivos) | 0 → 2752 | 0 → 4 | Reemparejamiento del mismo viaje con otro autobús |
+| 70 | `70_1058_601_500_2030_3_072` | 1400 → 1420 | 2707 → 4729 | 4 → 7 | El SAE sube la ETA 3 min en 20 s |
+
+Respuestas brutas del SAE que lo muestran (parada 508, `parse_qrphp_html`): offset 280
+`93 0 min`, 300 `70 3 min, 93 7 min` (sin la 93 a 0 min); 1400 `70 4 min`, 1420 `70 7 min`; 1080
+`70 0 min`, 1100 `70 2 min`.
+
+**Por qué no es un fallo de la implementación:** con el modelo de AC-01/AC-02 (el retraso en la
+parada se aplica a todo el recorrido), si el SAE retrasa la llegada Δ más que el tiempo
+transcurrido, el instante desplazado retrocede y el autobús retrocede por el trazado (3 min de
+horario ≈ 2 km en la 70). Es lo que piden AC-01 y AC-02; y el `trip_id` de una llegada lo decide
+el `TripMatcher` de `stop_arrivals_api` en cada consulta, sin identidad estable del autobús entre
+instantes. Cumplir AC-17 tal como está exigiría inventar un comportamiento no especificado
+(suavizado o memoria de posiciones por viaje, contrario a una función pura) o alterar la fixture.
+
+**Comprobación de la alternativa:** en los 138 pares de instantes consecutivos del mismo viaje en
+que los minutos del SAE **no aumentan**, la distancia nunca aumenta (ni siquiera 1 m): con
+minutos iguales, `arrival_at` avanza lo mismo que el reloj y la posición se queda quieta; con
+minutos menores, avanza.
+
+**Propuestas (elige la persona / spec-writer):**
+
+1. **(Recomendada)** Reformular la segunda propiedad de AC-17: "para un mismo viaje en instantes
+   sucesivos de la reproducción **en los que la llegada del SAE no se retrasa** (sus minutos no
+   aumentan), la distancia a la parada NO DEBERÁ aumentar más de 50 m", y añadir, si se quiere,
+   que el test **documente** los retrocesos observados cuando el SAE retrasa la llegada (los 5 de
+   la tabla). Con esta redacción el test se puede escribir ya y pasa.
+2. Especificar un suavizado (p. ej., no retroceder más de X m para el mismo `trip_id` durante
+   Y s), lo que exige estado por viaje (caché) fuera del dominio puro: cambio de design y de
+   alcance; mejor en una versión posterior o en `passenger_map_view` (presentación).
+3. Quitar la segunda propiedad y dejar solo la de los 30 m.
+
+Hasta que se resuelva, T-07 queda sin hacer y `./init.sh verify` falla en la trazabilidad
+(`position_estimation.AC-17: ningún test lo cita`). T-01…T-06 están completas y en verde.
 
 ## Verificación
 
-Pendiente (T-08).
+`CI=1 ./init.sh verify --e2e` (2026-11-03, tras T-06):
+
+- backend: format OK · lint OK · types OK (mypy, 92 ficheros) · architecture OK (2 contratos) ·
+  tests OK (965 passed, 6 deselected; cobertura `domain`+`application` 99,39 %)
+- frontend: format OK · lint OK · types OK · tests OK (35 ficheros, 278 tests) · build OK ·
+  e2e + a11y OK (60 passed)
+- harness: `feature_list.json` OK · **trazabilidad FAIL**: `position_estimation.AC-17: ningún
+  test lo cita` (bloqueo B-01).
