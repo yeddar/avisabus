@@ -239,8 +239,9 @@ Observaciones no bloqueantes para la persona/spec-writer y el reviewer:
   2 deselected (cobertura `domain`+`application` 99,52 %), frontend format/lint/types/tests (7)/
   build y `feature_list.json` en **verde**; trazabilidad **FAIL** solo por
   `occupancy_sensor.AC-15: ningún test lo cita` (AC nuevo de la otra feature de esta rama, que
-  cubre su T-09). Todos los AC de `sae_arrivals_source` (AC-01…AC-23) están citados. Resultado
-  final tras T-10 de `occupancy_sensor`: ver abajo.
+  cubre su T-09). Todos los AC de `sae_arrivals_source` (AC-01…AC-23) están citados.
+- Tras T-09/T-10 de `occupancy_sensor` (commit c0dbd32), `./init.sh verify` → **todo en verde**:
+  pytest 665 passed / 2 deselected (cobertura 99,52 %), trazabilidad AC→test OK.
 
 ### v1.2 (2026-11-02, rama `fix/bloque-1-ajustes`, tras el commit dd60eae)
 - T-11: `uv run pytest tests/unit/test_sae_cache.py` → 15 passed (los 2 tests nuevos fallaban

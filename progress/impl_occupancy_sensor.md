@@ -1,5 +1,8 @@
 # Implementación: occupancy_sensor
-Spec: specs/occupancy_sensor/ (v1.1, APPROVED) · Ciclo de revisión: 0 (v1.1) · Agente: implementer · Fecha: 2026-11-02
+Spec: specs/occupancy_sensor/ (v1.2, APPROVED) · Ciclo de revisión: 0 (v1.2) · Agente: implementer · Fecha: 2026-11-03
+
+> **v1.2 (2026-11-03, rama `fix/sae-occupancy-v1.3`):** solo T-09 (AC-15, NB-1 de la revisión
+> v1.1) y T-10. T-01…T-08 son de versiones anteriores.
 
 > **v1.1 (2026-11-02, rama `fix/bloque-1-ajustes`):** solo T-07 (SP-01 / O-01) y T-08. T-01…T-06
 > son de la v1.0 (revisada y aprobada).
@@ -20,6 +23,10 @@ Spec: specs/occupancy_sensor/ (v1.1, APPROVED) · Ciclo de revisión: 0 (v1.1) �
       banda, con ajuste por redondeo); AC-03 ampliado; tests de propiedades (AC-03, AC-11)
       (commit 4d09934)
 - [x] T-08 (v1.1) Verificación completa: `./init.sh verify` en verde (commit de este fichero)
+- [x] T-09 (v1.2) Test de composición con `AVISABUS_OCCUPANCY_*` no estándar
+      (`tests/integration/test_occupancy_composition.py`, AC-15); sin cambios de composición
+      (commit c0dbd32)
+- [x] T-10 (v1.2) Verificación completa: `./init.sh verify` en verde (commit de este fichero)
 
 Tests nuevos: `tests/unit/test_occupancy_classifier.py`, `tests/unit/test_occupancy_simulation.py`,
 `tests/unit/test_simulated_occupancy_sensor.py`, `tests/unit/test_set_occupancy_override.py`,
@@ -28,6 +35,36 @@ Tests nuevos: `tests/unit/test_occupancy_classifier.py`, `tests/unit/test_occupa
 `tests/integration/test_network_repository.py`, fakes en `tests/support/occupancy.py`.
 
 ## Decisiones locales
+
+### v1.2 (T-09)
+- **Cómo se comprueba "el sensor compuesto los usa" (AC-15):** como en
+  `test_main_composition.py`, se importa `avisabus.main` en un subproceso (directorio de trabajo
+  sin `.env`, `AVISABUS_ENV=test`, replay sobre la sesión E-01) con capacidad 60, asientos 20,
+  semilla `composition-test` y umbrales 0,30 / 0,70, sobre una copia de una BD con `gtfs_mini` y
+  forzados que no caducan (2100-01-01) para las líneas 93 (`FULL`), 70 (`FREE`) y C2 (`MEDIUM`).
+  El subproceso lee con `main.occupancy_sensor` 3 viajes de cada línea forzada y 20 de la 98 (sin
+  forzado), a mitad de su recorrido programado, e imprime también `main.occupancy_thresholds`
+  (lo que `main.py` expone para el clasificador). El test compara cada lectura (capacidad,
+  asientos, ocupados) con la de un `SimulatedOccupancySensor` construido en el propio test con los
+  valores configurados, `FakeClock` y los mismos forzados; además, los forzados dan
+  `override_occupied(nivel, 60, umbrales)` y se clasifican en su nivel con los umbrales
+  configurados.
+- **Test guarda:** comprueba que dejar **cualquiera** de los cuatro valores (capacidad, asientos,
+  semilla, umbrales) en su valor por defecto cambia alguna lectura de referencia, para que el
+  test principal no pueda pasar por casualidad. Lo he comprobado además con 5 mutaciones de
+  `main.py` (umbrales del sensor, capacidad, asientos, semilla y `occupancy_thresholds`
+  exportado, cada uno a su valor por defecto): las 5 hacen fallar el test principal.
+- **Sin "rojo" previo:** la composición ya era correcta (T-07 había cableado los umbrales), así que
+  el test pasó a la primera; "ajuste de composición si falla" no ha hecho falta y `main.py` no
+  cambia. Las mutaciones anteriores sustituyen al rojo.
+- **Reloj en el subproceso:** `main.py` usa `SystemClock` (es la raíz de composición real). El
+  resultado no depende de él: las lecturas se piden con `at` explícito y los forzados no caducan
+  hasta 2100 (el reloj solo decide la vigencia del forzado y la caché de 5 s).
+- **CLI (ver "Bloqueos", O-02):** el contenedor de la CLI no compone ningún sensor ni clasificador
+  (solo los casos de uso de forzado, que guardan el nivel, no plazas). Un tercer test lo fija:
+  ningún campo de `CliContainer` es un `SimulatedOccupancySensor` ni `OccupancyThresholds` ni se
+  llama `*sensor*`/`*threshold*`; si eso cambia, el test obliga a escribir uno como el de
+  `main.py`.
 
 ### v1.1 (T-07)
 - **`override_occupied(level, capacity, thresholds) -> int | None`** es una función pura de
@@ -141,6 +178,15 @@ Tests nuevos: `tests/unit/test_occupancy_classifier.py`, `tests/unit/test_occupa
 ## Bloqueos
 Ninguno abierto.
 
+- **O-02 (v1.2, no bloqueante; para la persona/spec-writer y el reviewer).** AC-15 y T-09 dicen
+  que el sensor y el clasificador se componen "en `main.py` (y en el contenedor de la CLI)", pero
+  el contenedor de la CLI (`adapters/inbound/cli/container.py`) no construye ni sensor ni
+  clasificador: `occupancy override` solo guarda el nivel forzado y su caducidad, y ningún
+  comando lee ocupaciones. Lo he leído como "allí donde se compongan", que en la CLI se cumple
+  sin nada que pasar; no he añadido un sensor a la CLI porque ningún comando lo usaría (sería
+  inventar comportamiento). Lo cubre el test guarda de la CLI. Propuesta: precisar en AC-15
+  "(y en el contenedor de la CLI, si compone alguno)" o quitar el paréntesis.
+
 - **O-01 — RESUELTA en la spec v1.1** (SP-01 de la revisión; opción (a), punto medio de cada banda,
   más la ampliación de AC-03). Implementada en T-07. Texto original:
 
@@ -158,6 +204,14 @@ Ninguno abierto.
     - (c) aclarar en AC-11 que se refiere a los umbrales por defecto.
 
 ## Verificación
+
+### v1.2 (2026-11-03, rama `fix/sae-occupancy-v1.3`, tras el commit c0dbd32)
+- T-09: `uv run pytest tests/integration/test_occupancy_composition.py` → 3 passed (ejecutado
+  solo, falla el umbral global de cobertura, como siempre con los comandos de tarea).
+- T-10: `./init.sh verify` → **todo en verde**: format, lint, mypy (75 ficheros), lint-imports
+  (2 contratos), pytest 665 passed / 2 deselected (cobertura `domain`+`application` 99,52 %);
+  frontend format/lint/types/tests (7)/build; `feature_list.json` y trazabilidad AC→test OK
+  (incluido `occupancy_sensor.AC-15`).
 
 ### v1.1 (2026-11-02, rama `fix/bloque-1-ajustes`, tras el commit 4d09934)
 - T-07: `uv run pytest tests/unit/test_simulated_occupancy_sensor.py` → 27 passed (ejecutado solo,
