@@ -1,0 +1,27 @@
+{
+  "stop_id": "508",
+  "name": "Parc de l'Oest - Enguera",
+  "lines": [
+    {
+      "line": "70",
+      "direction_id": 0,
+      "headsign": "Alboraia",
+      "color": "FE0000",
+      "text_color": "FFFFFF"
+    },
+    {
+      "line": "70",
+      "direction_id": 1,
+      "headsign": "Universitats",
+      "color": "FE0000",
+      "text_color": "FFFFFF"
+    },
+    {
+      "line": "93",
+      "direction_id": 0,
+      "headsign": "Passeig Marítim - Hospital Malva-rosa",
+      "color": "FE0000",
+      "text_color": "FFFFFF"
+    }
+  ]
+}

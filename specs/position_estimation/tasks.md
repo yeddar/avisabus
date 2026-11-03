@@ -1,6 +1,6 @@
 # Estimación de la posición del autobús — tasks
 
-> Feature: `position_estimation` · Versión: 1.0 · Estado: APPROVED
+> Feature: `position_estimation` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-12, RNF-01 · Casos de uso: CU-02 · Depende de: gtfs_import, stop_arrivals_api
 
 ## Exploración

@@ -3,28 +3,35 @@
 > Fichero vivo: lo reescribe el orquestador al final de cada sesión.
 
 **Fecha:** 2026-11-03
-**Fase:** Inicio del Bloque 2 (Pasajero)
-**Feature en curso:** ninguna. Bloque 1 cerrado (CP-6 aprobado). Specs del bloque 2 aprobadas (CP-1, PR #7).
+**Fase:** Implementación — Bloque 2
+**Feature en curso:** `passenger_stop_view` v1.0 — `done`, PR abierta (sin fusionar)
 
 ## Último paso
-CP-1 del bloque 2: la persona aprueba la PR #7 con `frontend_i18n`, `passenger_stop_view`,
-`position_estimation` y `passenger_map_view` (v1.0, `spec_approved`), la guía visual
-`docs/design.md` y los ajustes documentales `sae_arrivals_source` 1.4, `occupancy_sensor` 1.3 y
-`stop_arrivals_api` 1.5 (sin cambios de código).
+`passenger_stop_view` v1.0: T-01…T-10. Revisión ciclo 1: **APPROVED** sin bloqueantes (`CI=1 ./init.sh
+verify --e2e` en verde: 861 backend, 278 Vitest, 60 e2e, JS inicial 138,7 KB gzip; AC-23 cotejado con
+capturas en `frontend/test-results/passenger_stop_view/`). PR contra `develop` abierta.
 
 ## Siguiente paso
-1. La persona fusiona la PR #7 en `develop`.
-2. `frontend_i18n`: `spec_approved → exploring` (la spec dice que no hace falta explorar) →
-   `implementing` → revisión.
-3. Después, `passenger_stop_view` y `position_estimation` (ambas dependen solo de features en
-   `done` o de `frontend_i18n`), y por último `passenger_map_view`.
-4. Las features de frontend siguen `docs/design.md`; su AC de conformidad visual se revisa con
-   capturas de las pruebas e2e y en CP-6.
-
-## Checkpoints pendientes
-Ninguno (CP-1 del bloque 2 aprobado).
+1. La persona fusiona la PR. **CP-4:** actualizar `docs/conventions.md` §4 para incluir
+   `avisabus.lastStop` (AC-19; texto propuesto en `progress/review_passenger_stop_view.md`).
+2. Siguientes del bloque 2: `position_estimation`, `passenger_map_view`.
+3. CP-6 del bloque 2: revisar textos nuevos (lista en `progress/impl_passenger_stop_view.md`), anuncios
+   de "llegando" con lector de pantalla (sin anuncio en la primera carga) y foco tras un "Actualizar"
+   fallido (N-1).
 
 ## Pendiente para specs futuras
+- **passenger_stop_view N-1 (accesibilidad):** si "Actualizar" falla no se anuncia nada y el foco se
+  pierde (el botón desaparece); igual al acertar con "Reintentar". N-2: si solo falla la petición de
+  la parada, el aviso habla de "las llegadas" y no se recupera solo. N-3: comentario desfasado en
+  `shared/device/storage.ts`. N-6: el OpenAPI exportado sale de `create_app(schema_only=True)`, no de
+  la app de `main.py`. Deuda: `overrides` de npm para `openapi-typescript` con TS 6 (quitar cuando haya
+  versión compatible). Docs (CP-4, persona): conventions §4 (`avisabus.lastStop`); opcional, color EMT
+  `#e50000` y ejemplo §5.6 en `docs/design.md`.
+- **frontend_i18n N-01 (lo recoge el spec-writer, solo docs):** design §3 desfasado para i18next 26 (AC-05: post-procesador solo en
+  desarrollo, `initAsync`) y sin los huecos de `eslint-plugin-i18next` 6.1 (AC-07: `no-restricted-syntax`).
+  N-02: `eslint.config.js` importa un módulo interno del plugin. N-03: falso aviso del post-procesador
+  con `t(key, { lng })`. N-04 → PWA offline / `deployment_rpi`: el service worker no precachea los
+  `woff2` (sin conexión, `system-ui`). Capturas e2e: con `CI=1` o puerto 4173 libre.
 - **stop_arrivals_api P-1:** ~~resuelto en la PR #7 (solo docs)~~ · AC-06 dice "superar" el umbral; design §3 dice `≥` (el código sigue el
   design; el único caso real en el límite, 1266 "C. Benlloch", da igual con ambas lecturas).
 - **stop_arrivals_api P-2 / O-5:** ~~resuelto en la PR #7 (solo docs)~~ · la verificación de AC-19 cita C1 en integración, pero `gtfs_mini`
@@ -82,7 +89,7 @@ Ninguno (CP-1 del bloque 2 aprobado).
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-**CP-6 — fin del bloque 1** (tras fusionar la PR de `stop_arrivals_api`): validación de la persona.
+Ninguno. CP-6 del bloque 1 superado (la persona da paso al bloque 2, 2026-11-03).
 
 ## Bloqueos
 Ninguno. 

@@ -1,0 +1,83 @@
+{
+  "app": {
+    "name": "AvisaBus",
+    "tagline": "Próximos autobuses de EMT València y solicitud de parada, accesibles para todas las personas."
+  },
+  "home": {
+    "title": "Inicio",
+    "scanQr": "Escanea el código QR de tu parada para ver cuándo llega tu autobús y solicitar parada al conductor.",
+    "lastStop": "Tu última parada: <name>{{name}}</name>"
+  },
+  "language": {
+    "label": "Idioma"
+  },
+  "layout": {
+    "skipToContent": "Saltar al contenido",
+    "attribution": "Datos: EMT València (GTFS y tiempos de llegada) · Ajuntament de València"
+  },
+  "time": {
+    "minutesShort": "{{count}} min",
+    "minutes_one": "{{count}} minuto",
+    "minutes_other": "{{count}} minutos",
+    "arriving": "Llegando"
+  },
+  "distance": {
+    "meters": "{{value}} m",
+    "kilometers": "{{value}} km"
+  },
+  "stop": {
+    "title": "Parada",
+    "code": "Parada {{code}}",
+    "lineName": "Línea {{line}}",
+    "towards": "hacia",
+    "lines": "Líneas",
+    "arrivals": "Próximas llegadas",
+    "updatedAt": "Actualizado a las {{time}}",
+    "refresh": "Actualizar",
+    "refreshed": "Datos actualizados",
+    "empty": "No hay llegadas previstas en este momento",
+    "scheduledNotice": "<strong>Sin datos en tiempo real:</strong> se muestra el horario programado",
+    "scheduledSuffix": "programado",
+    "scheduledTime": "{{time}} según el horario programado",
+    "minutes": "<number>{{value}}</number> <unit>min</unit>",
+    "arriving": "Línea {{line}} hacia {{destination}} está llegando",
+    "rowLabel": "Línea {{line}}, hacia <destination>{{destination}}</destination>, {{time}}, {{occupancy}}",
+    "rowLabelNoOccupancy": "Línea {{line}}, hacia <destination>{{destination}}</destination>, {{time}}",
+    "arrivesIn": "llega en {{duration}}",
+    "arrivesAt": "llega a las {{time}}",
+    "arrivingNow": "está llegando",
+    "loading": "Cargando las próximas llegadas…",
+    "notFound": {
+      "title": "Parada no encontrada",
+      "body": "Vuelve a escanear el código QR de la parada para ver sus próximas llegadas."
+    },
+    "error": {
+      "body": "<strong>No se han podido cargar las llegadas.</strong> Comprueba la conexión y vuelve a intentarlo.",
+      "retry": "Reintentar"
+    },
+    "stale": "Datos de las {{time}}, pueden no estar actualizados"
+  },
+  "occupancy": {
+    "FREE": "Poco ocupado",
+    "MEDIUM": "Ocupación media",
+    "FULL": "Lleno",
+    "seatsYes": "hay asientos libres",
+    "seatsNo": "sin asientos libres",
+    "unavailable": "Ocupación no disponible",
+    "spoken": {
+      "FREE": "poco ocupado",
+      "MEDIUM": "ocupación media",
+      "FULL": "lleno",
+      "unavailable": "ocupación no disponible"
+    },
+    "spokenWithSeats": "{{level}}, {{seats}}"
+  },
+  "network": {
+    "offline": "<strong>Sin conexión.</strong> Los datos se actualizarán cuando vuelva la conexión."
+  },
+  "notFound": {
+    "title": "Página no encontrada",
+    "body": "La dirección que has abierto no existe.",
+    "home": "Ir a la portada"
+  }
+}

@@ -1,0 +1,244 @@
+import { act, fireEvent, screen, within } from '@testing-library/react';
+import { RouterProvider, createMemoryRouter } from 'react-router-dom';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { routes } from '../../../../app/routes';
+import type { Language } from '../../../../shared/i18n/languages';
+import { ARRIVALS_REALTIME, STOP_508 } from '../../../../test/fixtures/api';
+import {
+  NETWORK_UNAVAILABLE,
+  NetworkFailure,
+  STOP_NOT_FOUND,
+  mockApi,
+  ok,
+  problem,
+  type FakeReply,
+} from '../../../../test/mockApi';
+import { renderWithProviders } from '../../../../test/render';
+
+const TOKEN = 'AbCdEfGhIjKlMnOpQrStUv';
+const GENERATED_AT = Date.parse('2026-11-04T07:40:00Z');
+/** Retries of a failed request (1 s and 2 s apart) before the error is shown. */
+const RETRIES_MS = 3_100;
+
+type Reply = () => FakeReply | Promise<FakeReply>;
+
+function renderAt(path: string, language: Language = 'es') {
+  const router = createMemoryRouter(routes, { initialEntries: [path] });
+  return renderWithProviders(<RouterProvider router={router} />, { language });
+}
+
+async function flush(ms = 0) {
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(ms);
+  });
+}
+
+function setOnline(online: boolean) {
+  vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(online);
+  window.dispatchEvent(new Event(online ? 'online' : 'offline'));
+}
+
+function arrivalsList(): HTMLElement | null {
+  const section = screen
+    .getByRole('heading', { level: 2, name: 'Próximas llegadas' })
+    .closest('section')!;
+  return within(section).queryByRole('list');
+}
+
+function offlineNotice(): HTMLElement | null {
+  const text = screen.queryByText('Sin conexión.');
+  return text?.closest<HTMLElement>('[role="status"]') ?? null;
+}
+
+describe('StopPage errors and connectivity', () => {
+  let stopReply: Reply;
+  let arrivalsReply: Reply;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(GENERATED_AT);
+    stopReply = () => ok(STOP_508());
+    arrivalsReply = () => ok(ARRIVALS_REALTIME());
+  });
+
+  afterEach(() => {
+    act(() => setOnline(true));
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    document.title = '';
+  });
+
+  function api() {
+    return mockApi((url) => {
+      if (url.pathname === '/api/v1/stops/508') return stopReply();
+      if (url.pathname === '/api/v1/stops/508/arrivals') return arrivalsReply();
+      throw new Error(`unexpected request ${url.pathname}`);
+    });
+  }
+
+  it.each([
+    ['stop', 'es', 'Parada no encontrada', 'Vuelve a escanear el código QR de la parada'],
+    ['arrivals', 'es', 'Parada no encontrada', 'Vuelve a escanear el código QR de la parada'],
+    ['stop', 'ca', 'Parada no trobada', 'Torna a escanejar el codi QR de la parada'],
+  ] as const)(
+    '[passenger_stop_view.AC-16] a 404 of the %s request shows "Parada no encontrada" without the stop id or token (%s)',
+    async (failing, language, title, body) => {
+      if (failing === 'stop') stopReply = () => problem(404, STOP_NOT_FOUND);
+      else arrivalsReply = () => problem(404, STOP_NOT_FOUND);
+      api();
+      renderAt(`/p/508?t=${TOKEN}`, language);
+      await flush();
+
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(title);
+      expect(screen.getByText(new RegExp(body))).toBeInTheDocument();
+      expect(document.title).toBe(`${title} · AvisaBus`);
+      const main = screen.getByRole('main');
+      expect(main).not.toHaveTextContent('508');
+      expect(main).not.toHaveTextContent(TOKEN);
+      expect(screen.queryByRole('list')).toBeNull();
+    },
+  );
+
+  it('[passenger_stop_view.AC-16] a 404 is neither retried nor refreshed', async () => {
+    stopReply = () => problem(404, STOP_NOT_FOUND);
+    arrivalsReply = () => problem(404, STOP_NOT_FOUND);
+    const { fetchMock } = api();
+    renderAt(`/p/508?t=${TOKEN}`);
+
+    await flush(120_000);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Parada no encontrada');
+  });
+
+  it('[passenger_stop_view.AC-16] without a token shows "Parada no encontrada" and does not call the API', async () => {
+    const { fetchMock } = api();
+    renderAt('/p/508');
+    await flush();
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Parada no encontrada');
+    expect(screen.getByRole('main')).not.toHaveTextContent('508');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['503', () => problem(503, NETWORK_UNAVAILABLE)],
+    ['network error', () => Promise.reject(new NetworkFailure())],
+  ] as const)(
+    '[passenger_stop_view.AC-17] a %s while loading the arrivals shows a message with "Reintentar"',
+    async (_name, failure) => {
+      arrivalsReply = failure;
+      const { arrivalCalls } = api();
+      renderAt(`/p/508?t=${TOKEN}`);
+      await flush(RETRIES_MS);
+
+      expect(arrivalCalls()).toBe(3);
+      expect(screen.getByText('No se han podido cargar las llegadas.')).toBeInTheDocument();
+      expect(arrivalsList()).toBeNull();
+
+      arrivalsReply = () => ok(ARRIVALS_REALTIME());
+      fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+      await flush();
+
+      expect(arrivalsList()).not.toBeNull();
+      expect(screen.queryByText('No se han podido cargar las llegadas.')).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Reintentar' })).toBeNull();
+    },
+  );
+
+  it('[passenger_stop_view.AC-17] a 503 while loading the stop shows the message and retries both requests', async () => {
+    stopReply = () => problem(503, NETWORK_UNAVAILABLE);
+    arrivalsReply = () => problem(503, NETWORK_UNAVAILABLE);
+    const { calls } = api();
+    renderAt(`/p/508?t=${TOKEN}`);
+    await flush(RETRIES_MS);
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Parada');
+    expect(screen.getByText('No se han podido cargar las llegadas.')).toBeInTheDocument();
+
+    stopReply = () => ok(STOP_508());
+    arrivalsReply = () => ok(ARRIVALS_REALTIME());
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+    await flush();
+
+    expect(calls('/stops/508?')).toBe(4);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent("Parc de l'Oest - Enguera");
+    expect(arrivalsList()).not.toBeNull();
+  });
+
+  it.each([
+    ['es', 'Datos de las 08:40, pueden no estar actualizados', 'Reintentar'],
+    ['ca', 'Dades de les 08:40, poden no estar actualitzades', 'Reintenta'],
+  ] as const)(
+    '[passenger_stop_view.AC-17] keeps the previous data marked as possibly outdated when a refresh fails (%s)',
+    async (language, stale, retry) => {
+      api();
+      renderAt(`/p/508?t=${TOKEN}`, language);
+      await flush();
+
+      arrivalsReply = () => Promise.reject(new NetworkFailure());
+      await flush(20_000 + RETRIES_MS);
+
+      expect(screen.getByText(stale)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: retry })).toBeInTheDocument();
+      expect(screen.getAllByRole('listitem').length).toBeGreaterThanOrEqual(5);
+
+      arrivalsReply = () => ok(ARRIVALS_REALTIME());
+      fireEvent.click(screen.getByRole('button', { name: retry }));
+      await flush();
+      expect(screen.queryByText(stale)).toBeNull();
+    },
+  );
+
+  it('[passenger_stop_view.AC-17] [passenger_stop_view.AC-15] a failed automatic refresh is not announced', async () => {
+    api();
+    renderAt(`/p/508?t=${TOKEN}`);
+    await flush();
+
+    arrivalsReply = () => problem(503, NETWORK_UNAVAILABLE);
+    await flush(20_000 + RETRIES_MS);
+    await flush(100);
+
+    expect(screen.getByText('No se han podido cargar las llegadas.')).toBeInTheDocument();
+    const live = document.querySelectorAll('[aria-live]');
+    live.forEach((region) => expect(region).toHaveTextContent(''));
+  });
+
+  it('[passenger_stop_view.AC-18] shows "Sin conexión" as a status and does not retry until the connection is back', async () => {
+    const { arrivalCalls } = api();
+    renderAt(`/p/508?t=${TOKEN}`);
+    await flush();
+    expect(offlineNotice()).toBeNull();
+    expect(arrivalCalls()).toBe(1);
+
+    act(() => setOnline(false));
+    await flush();
+    expect(offlineNotice()).toHaveTextContent('Sin conexión.');
+    await flush(120_000);
+    expect(arrivalCalls()).toBe(1);
+    // The data already shown stay.
+    expect(arrivalsList()).not.toBeNull();
+
+    act(() => setOnline(true));
+    await flush();
+    expect(offlineNotice()).toBeNull();
+    expect(arrivalCalls()).toBe(2);
+  });
+
+  it('[passenger_stop_view.AC-18] opened without connection, it waits for it before calling the API', async () => {
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    const { fetchMock } = api();
+    renderAt(`/p/508?t=${TOKEN}`, 'ca');
+    await flush(60_000);
+
+    expect(screen.getByText('Sense connexió.').closest('[role="status"]')).not.toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    act(() => setOnline(true));
+    await flush();
+    expect(fetchMock).toHaveBeenCalled();
+    expect(screen.queryByText('Sense connexió.')).toBeNull();
+  });
+});

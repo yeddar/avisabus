@@ -1,0 +1,38 @@
+{
+  "stop_id": "508",
+  "source": "SCHEDULED",
+  "generated_at": "2026-11-04T07:40:00Z",
+  "refresh_after_s": 20,
+  "arrivals": [
+    {
+      "line": "93",
+      "destination": "Passeig Marítim - Hospital Malva-rosa",
+      "sae_destination": null,
+      "direction_id": 0,
+      "in_network": true,
+      "kind": "CLOCK_TIME",
+      "minutes": null,
+      "arrival_at": "2026-11-04T07:52:00Z",
+      "line_color": "FE0000",
+      "line_text_color": "FFFFFF",
+      "vehicle": { "trip_id": "12345", "service_date": "2026-11-04" },
+      "occupancy": { "level": "MEDIUM", "has_free_seats": true, "free_seats": 6 },
+      "can_alert": true
+    },
+    {
+      "line": "70",
+      "destination": "Alboraia",
+      "sae_destination": null,
+      "direction_id": 0,
+      "in_network": true,
+      "kind": "CLOCK_TIME",
+      "minutes": null,
+      "arrival_at": "2026-11-04T08:05:00Z",
+      "line_color": "FE0000",
+      "line_text_color": "FFFFFF",
+      "vehicle": { "trip_id": "70_1_0805", "service_date": "2026-11-04" },
+      "occupancy": { "level": "FREE", "has_free_seats": true, "free_seats": 22 },
+      "can_alert": true
+    }
+  ]
+}

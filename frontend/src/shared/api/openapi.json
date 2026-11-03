@@ -1,0 +1,608 @@
+{
+  "components": {
+    "schemas": {
+      "ArrivalSchema": {
+        "properties": {
+          "arrival_at": {
+            "format": "date-time",
+            "title": "Arrival At",
+            "type": "string"
+          },
+          "can_alert": {
+            "title": "Can Alert",
+            "type": "boolean"
+          },
+          "destination": {
+            "description": "GTFS headsign when the direction is resolved, otherwise the SAE text.",
+            "title": "Destination",
+            "type": "string"
+          },
+          "direction_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direction Id"
+          },
+          "in_network": {
+            "title": "In Network",
+            "type": "boolean"
+          },
+          "kind": {
+            "enum": ["MINUTES", "CLOCK_TIME"],
+            "title": "Kind",
+            "type": "string"
+          },
+          "line": {
+            "title": "Line",
+            "type": "string"
+          },
+          "line_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line Color"
+          },
+          "line_text_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line Text Color"
+          },
+          "minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minutes"
+          },
+          "occupancy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OccupancySchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sae_destination": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Destination as given by the SAE; null when source is SCHEDULED.",
+            "title": "Sae Destination"
+          },
+          "vehicle": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VehicleSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "line",
+          "destination",
+          "sae_destination",
+          "direction_id",
+          "in_network",
+          "kind",
+          "minutes",
+          "arrival_at",
+          "line_color",
+          "line_text_color",
+          "vehicle",
+          "occupancy",
+          "can_alert"
+        ],
+        "title": "ArrivalSchema",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "const": "ok",
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": ["status", "version"],
+        "title": "HealthResponse",
+        "type": "object"
+      },
+      "OccupancySchema": {
+        "properties": {
+          "free_seats": {
+            "title": "Free Seats",
+            "type": "integer"
+          },
+          "has_free_seats": {
+            "title": "Has Free Seats",
+            "type": "boolean"
+          },
+          "level": {
+            "enum": ["FREE", "MEDIUM", "FULL"],
+            "title": "Level",
+            "type": "string"
+          }
+        },
+        "required": ["level", "has_free_seats", "free_seats"],
+        "title": "OccupancySchema",
+        "type": "object"
+      },
+      "ProblemSchema": {
+        "properties": {
+          "status": {
+            "title": "Status",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": ["type", "title", "status"],
+        "title": "ProblemSchema",
+        "type": "object"
+      },
+      "StopArrivalsResponse": {
+        "examples": [
+          {
+            "arrivals": [
+              {
+                "arrival_at": "2026-11-02T19:55:03Z",
+                "can_alert": true,
+                "destination": "Passeig Marítim - Hospital Malva-rosa",
+                "direction_id": 0,
+                "in_network": true,
+                "kind": "MINUTES",
+                "line": "93",
+                "line_color": "FE0000",
+                "line_text_color": "FFFFFF",
+                "minutes": 7,
+                "occupancy": {
+                  "free_seats": 6,
+                  "has_free_seats": true,
+                  "level": "MEDIUM"
+                },
+                "sae_destination": "Pass. Marítim",
+                "vehicle": {
+                  "service_date": "2026-11-02",
+                  "trip_id": "93_994_561_488_2271_2_122"
+                }
+              },
+              {
+                "arrival_at": "2026-11-02T21:41:00Z",
+                "can_alert": false,
+                "destination": "Est.del Nord",
+                "in_network": false,
+                "kind": "CLOCK_TIME",
+                "line": "N4",
+                "sae_destination": "Est.del Nord"
+              }
+            ],
+            "generated_at": "2026-11-02T19:48:03Z",
+            "refresh_after_s": 20,
+            "source": "REALTIME",
+            "stop_id": "508"
+          }
+        ],
+        "properties": {
+          "arrivals": {
+            "description": "Sorted by arrival_at.",
+            "items": {
+              "$ref": "#/components/schemas/ArrivalSchema"
+            },
+            "title": "Arrivals",
+            "type": "array"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "refresh_after_s": {
+            "description": "Seconds after which the client should refresh.",
+            "title": "Refresh After S",
+            "type": "integer"
+          },
+          "source": {
+            "enum": ["REALTIME", "SCHEDULED"],
+            "title": "Source",
+            "type": "string"
+          },
+          "stop_id": {
+            "title": "Stop Id",
+            "type": "string"
+          }
+        },
+        "required": ["stop_id", "source", "generated_at", "refresh_after_s", "arrivals"],
+        "title": "StopArrivalsResponse",
+        "type": "object"
+      },
+      "StopLineSchema": {
+        "properties": {
+          "color": {
+            "title": "Color",
+            "type": "string"
+          },
+          "direction_id": {
+            "title": "Direction Id",
+            "type": "integer"
+          },
+          "headsign": {
+            "title": "Headsign",
+            "type": "string"
+          },
+          "line": {
+            "title": "Line",
+            "type": "string"
+          },
+          "text_color": {
+            "title": "Text Color",
+            "type": "string"
+          }
+        },
+        "required": ["line", "direction_id", "headsign", "color", "text_color"],
+        "title": "StopLineSchema",
+        "type": "object"
+      },
+      "StopResponse": {
+        "examples": [
+          {
+            "lines": [
+              {
+                "color": "FE0000",
+                "direction_id": 1,
+                "headsign": "Alboraia",
+                "line": "70",
+                "text_color": "FFFFFF"
+              },
+              {
+                "color": "FE0000",
+                "direction_id": 0,
+                "headsign": "Passeig Marítim - Hospital Malva-rosa",
+                "line": "93",
+                "text_color": "FFFFFF"
+              }
+            ],
+            "name": "Parc de l'Oest - Enguera",
+            "stop_id": "508"
+          }
+        ],
+        "properties": {
+          "lines": {
+            "description": "Lines serving the stop, in natural order.",
+            "items": {
+              "$ref": "#/components/schemas/StopLineSchema"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "name": {
+            "description": "Stop name as it comes in the GTFS.",
+            "title": "Name",
+            "type": "string"
+          },
+          "stop_id": {
+            "title": "Stop Id",
+            "type": "string"
+          }
+        },
+        "required": ["stop_id", "name", "lines"],
+        "title": "StopResponse",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": ["loc", "msg", "type"],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "VehicleSchema": {
+        "properties": {
+          "service_date": {
+            "format": "date",
+            "title": "Service Date",
+            "type": "string"
+          },
+          "trip_id": {
+            "title": "Trip Id",
+            "type": "string"
+          }
+        },
+        "required": ["trip_id", "service_date"],
+        "title": "VehicleSchema",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "AvisaBus",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "operationId": "health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health",
+        "tags": ["health"]
+      }
+    },
+    "/api/v1/stops/{stop_id}": {
+      "get": {
+        "operationId": "get_stop_api_v1_stops__stop_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stop_id",
+            "required": true,
+            "schema": {
+              "title": "Stop Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Signed stop token of the QR (22 characters).",
+            "in": "query",
+            "name": "t",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Signed stop token of the QR (22 characters).",
+              "title": "T"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StopResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 404,
+                  "title": "Not Found",
+                  "type": "https://avisabus/problems/stop-not-found"
+                }
+              }
+            },
+            "description": "Missing or invalid token, or unknown stop (same body in every case)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 503,
+                  "title": "Service Unavailable",
+                  "type": "https://avisabus/problems/network-unavailable"
+                }
+              }
+            },
+            "description": "No active GTFS feed."
+          }
+        },
+        "summary": "Get Stop",
+        "tags": ["stops"]
+      }
+    },
+    "/api/v1/stops/{stop_id}/arrivals": {
+      "get": {
+        "operationId": "get_stop_arrivals_api_v1_stops__stop_id__arrivals_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stop_id",
+            "required": true,
+            "schema": {
+              "title": "Stop Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Signed stop token of the QR (22 characters).",
+            "in": "query",
+            "name": "t",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Signed stop token of the QR (22 characters).",
+              "title": "T"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StopArrivalsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 404,
+                  "title": "Not Found",
+                  "type": "https://avisabus/problems/stop-not-found"
+                }
+              }
+            },
+            "description": "Missing or invalid token, or unknown stop (same body in every case)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 503,
+                  "title": "Service Unavailable",
+                  "type": "https://avisabus/problems/network-unavailable"
+                }
+              }
+            },
+            "description": "No active GTFS feed."
+          }
+        },
+        "summary": "Get Stop Arrivals",
+        "tags": ["stops"]
+      }
+    }
+  }
+}

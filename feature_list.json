@@ -159,7 +159,7 @@
       "order": 7,
       "block": 2,
       "title": "i18n castellano/valenciano, selector de idioma y base de accesibilidad del frontend",
-      "status": "spec_approved",
+      "status": "done",
       "depends_on": [
         "project_scaffold"
       ],
@@ -176,14 +176,14 @@
       "spec": "specs/frontend_i18n/",
       "needs_exploration": false,
       "review_cycles": 0,
-      "passes": false
+      "passes": true
     },
     {
       "id": "passenger_stop_view",
       "order": 8,
       "block": 2,
       "title": "Vista de parada del pasajero con refresco y ocupación",
-      "status": "spec_approved",
+      "status": "done",
       "depends_on": [
         "stop_arrivals_api",
         "frontend_i18n"
@@ -205,7 +205,7 @@
       "spec": "specs/passenger_stop_view/",
       "needs_exploration": false,
       "review_cycles": 0,
-      "passes": false
+      "passes": true
     },
     {
       "id": "position_estimation",

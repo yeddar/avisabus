@@ -1,6 +1,6 @@
 # Estimación de la posición del autobús — requirements
 
-> Feature: `position_estimation` · Versión: 1.0 · Estado: APPROVED
+> Feature: `position_estimation` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-12, RNF-01 · Casos de uso: CU-02 · Depende de: gtfs_import, stop_arrivals_api
 
 ## Contexto
@@ -121,9 +121,13 @@ las líneas.
 
 - **position_estimation.AC-17** — CON la red de `gtfs_mini` y la reproducción de `stop_508_peak`,
   todas las posiciones `REALTIME` estimadas para la parada 508 DEBERÁN estar a menos de 30 m de la
-  forma de su viaje y, para un mismo viaje en instantes sucesivos de la reproducción, la distancia
-  a la parada NO DEBERÁ aumentar más de 50 m.
-  *Verificación:* integration (propiedades sobre toda la sesión)
+  forma de su viaje y, para un mismo viaje en dos instantes sucesivos de la reproducción **en los
+  que los minutos del SAE para esa llegada no aumentan**, la distancia a la parada NO DEBERÁ
+  aumentar más de 50 m. (v1.1) Cuando el SAE retrasa una llegada entre dos consultas, el autobús
+  estimado puede retroceder: es consecuencia de AC-01/AC-02 y de que el SAE no identifica
+  vehículos (LIM-03, ADR-013), y se acepta sin suavizado.
+  *Verificación:* integration (propiedades sobre toda la sesión; el test informa además del
+  número de pares excluidos por aumento de minutos)
 
 ## Trazabilidad
 
@@ -140,3 +144,4 @@ las líneas.
 | Versión | Fecha | Cambio | Motivo |
 |---|---|---|---|
 | 1.0 | 2026-11-03 | Versión inicial aprobada (PR #7), con la guía visual `docs/design.md`. | CP-1 del bloque 2. Aprobada por la persona. |
+| 1.1 | 2026-11-03 | AC-17: la propiedad de distancia no creciente se limita a pares sucesivos en que los minutos del SAE no aumentan (los retrocesos por retraso del SAE se aceptan); design §3: parámetro `stop_coordinates` de `estimate_position` (AC-06) y frontera de `NOT_STARTED` según AC-04. | CP-3 de `position_estimation` (T-07): en `stop_508_peak` la distancia aumenta 5 veces, todas cuando el SAE sube los minutos. D-03 y D-04 del implementer. Aprobada por la persona (PR #25). |
