@@ -186,4 +186,4 @@ TypeScript generados desde el OpenAPI del backend, con un test que detecta desfa
 | Versión | Fecha | Cambio | Motivo |
 |---|---|---|---|
 | 1.0 | 2026-11-03 | Versión inicial aprobada (PR #7), con la guía visual `docs/design.md`. | CP-1 del bloque 2. Aprobada por la persona. |
-| 1.1 | 2026-11-03 | AC-17: mensaje de error sobre "los datos" y "Reintentar" repite también la petición de la parada; AC-24: anuncio y foco tras una acción manual. T-11. Design: `overrides` de `openapi-typescript` para TypeScript 6 (deuda técnica). | Hallazgos N-1, N-2 y desviación 1 de la revisión de `passenger_stop_view`. Pendiente de aprobación. |
+| 1.1 | 2026-11-03 | AC-17: mensaje de error sobre "los datos" y "Reintentar" repite también la petición de la parada; AC-24: anuncio y foco tras una acción manual. T-11. Design: `overrides` de `openapi-typescript` para TypeScript 6 (deuda técnica). | Hallazgos N-1, N-2 y desviación 1 de la revisión de `passenger_stop_view`. Aprobada por la persona (PR #24). |

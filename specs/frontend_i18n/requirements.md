@@ -136,4 +136,4 @@ de las fuentes de datos (RNF-14).
 | Versión | Fecha | Cambio | Motivo |
 |---|---|---|---|
 | 1.0 | 2026-11-03 | Versión inicial aprobada (PR #7), con la guía visual `docs/design.md`. | CP-1 del bloque 2. Aprobada por la persona. |
-| 1.1 | 2026-11-03 | Solo documentación, sin cambios de código: design §3 con `initAsync`, el post-procesador de AC-05 en DEV y el complemento `no-restricted-syntax` de AC-07, como está implementado. | Hallazgo N-01 de la revisión de `frontend_i18n`. Pendiente de aprobación. |
+| 1.1 | 2026-11-03 | Solo documentación, sin cambios de código: design §3 con `initAsync`, el post-procesador de AC-05 en DEV y el complemento `no-restricted-syntax` de AC-07, como está implementado. | Hallazgo N-01 de la revisión de `frontend_i18n`. Aprobada por la persona (PR #24). |
