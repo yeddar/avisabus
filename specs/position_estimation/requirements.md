@@ -144,4 +144,4 @@ las líneas.
 | Versión | Fecha | Cambio | Motivo |
 |---|---|---|---|
 | 1.0 | 2026-11-03 | Versión inicial aprobada (PR #7), con la guía visual `docs/design.md`. | CP-1 del bloque 2. Aprobada por la persona. |
-| 1.1 | 2026-11-03 | AC-17: la propiedad de distancia no creciente se limita a pares sucesivos en que los minutos del SAE no aumentan (los retrocesos por retraso del SAE se aceptan); design §3: parámetro `stop_coordinates` de `estimate_position` (AC-06) y frontera de `NOT_STARTED` según AC-04. | CP-3 de `position_estimation` (T-07): en `stop_508_peak` la distancia aumenta 5 veces, todas cuando el SAE sube los minutos. D-03 y D-04 del implementer. Pendiente de aprobación. |
+| 1.1 | 2026-11-03 | AC-17: la propiedad de distancia no creciente se limita a pares sucesivos en que los minutos del SAE no aumentan (los retrocesos por retraso del SAE se aceptan); design §3: parámetro `stop_coordinates` de `estimate_position` (AC-06) y frontera de `NOT_STARTED` según AC-04. | CP-3 de `position_estimation` (T-07): en `stop_508_peak` la distancia aumenta 5 veces, todas cuando el SAE sube los minutos. D-03 y D-04 del implementer. Aprobada por la persona (PR #25). |
