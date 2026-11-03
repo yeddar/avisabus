@@ -3,28 +3,26 @@
 > Fichero vivo: lo reescribe el orquestador al final de cada sesión.
 
 **Fecha:** 2026-11-03
-**Fase:** Inicio del Bloque 2 (Pasajero)
-**Feature en curso:** ninguna. Bloque 1 cerrado (CP-6 aprobado). Specs del bloque 2 aprobadas (CP-1, PR #7).
+**Fase:** Implementación — Bloque 2
+**Feature en curso:** `frontend_i18n` v1.0 — `done`, PR abierta (sin fusionar)
 
 ## Último paso
-CP-1 del bloque 2: la persona aprueba la PR #7 con `frontend_i18n`, `passenger_stop_view`,
-`position_estimation` y `passenger_map_view` (v1.0, `spec_approved`), la guía visual
-`docs/design.md` y los ajustes documentales `sae_arrivals_source` 1.4, `occupancy_sensor` 1.3 y
-`stop_arrivals_api` 1.5 (sin cambios de código).
+`frontend_i18n` v1.0: T-01…T-08. Revisión ciclo 1: **APPROVED** sin bloqueantes (`CI=1 ./init.sh verify
+--e2e` en verde: 150 Vitest, 24 e2e en 3 perfiles, axe sin violaciones en `es`/`ca`; AC-17 cotejado con
+capturas e2e y tokens de `docs/design.md` §4/§5.1). PR contra `develop` abierta.
 
 ## Siguiente paso
-1. La persona fusiona la PR #7 en `develop`.
-2. `frontend_i18n`: `spec_approved → exploring` (la spec dice que no hace falta explorar) →
-   `implementing` → revisión.
-3. Después, `passenger_stop_view` y `position_estimation` (ambas dependen solo de features en
-   `done` o de `frontend_i18n`), y por último `passenger_map_view`.
-4. Las features de frontend siguen `docs/design.md`; su AC de conformidad visual se revisa con
-   capturas de las pruebas e2e y en CP-6.
-
-## Checkpoints pendientes
-Ninguno (CP-1 del bloque 2 aprobado).
+1. La persona fusiona la PR de `frontend_i18n`. AC-17 incluye además validación manual de la persona
+   (en CP-6 del bloque 2); textos nuevos (`app.tagline`, `home.title`, `home.scanQr` en valenciano)
+   a revisar entonces.
+2. Siguiente del bloque 2 por orden: `passenger_stop_view` / `position_estimation` / `passenger_map_view`.
 
 ## Pendiente para specs futuras
+- **frontend_i18n N-01:** design §3 desfasado para i18next 26 (AC-05: post-procesador solo en
+  desarrollo, `initAsync`) y sin los huecos de `eslint-plugin-i18next` 6.1 (AC-07: `no-restricted-syntax`).
+  N-02: `eslint.config.js` importa un módulo interno del plugin. N-03: falso aviso del post-procesador
+  con `t(key, { lng })`. N-04 → PWA offline / `deployment_rpi`: el service worker no precachea los
+  `woff2` (sin conexión, `system-ui`). Capturas e2e: con `CI=1` o puerto 4173 libre.
 - **stop_arrivals_api P-1:** ~~resuelto en la PR #7 (solo docs)~~ · AC-06 dice "superar" el umbral; design §3 dice `≥` (el código sigue el
   design; el único caso real en el límite, 1266 "C. Benlloch", da igual con ambas lecturas).
 - **stop_arrivals_api P-2 / O-5:** ~~resuelto en la PR #7 (solo docs)~~ · la verificación de AC-19 cita C1 en integración, pero `gtfs_mini`
@@ -82,7 +80,7 @@ Ninguno (CP-1 del bloque 2 aprobado).
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-**CP-6 — fin del bloque 1** (tras fusionar la PR de `stop_arrivals_api`): validación de la persona.
+Ninguno. CP-6 del bloque 1 superado (la persona da paso al bloque 2, 2026-11-03).
 
 ## Bloqueos
 Ninguno. 

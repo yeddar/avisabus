@@ -24,7 +24,10 @@ describe('ESLint accessibility rules', () => {
     const code = 'export function Ok() {\n  return <img src="/x.png" alt="Bus" />;\n}\n';
     const [result] = await eslint().lintText(code, { filePath: 'src/Ok.tsx' });
 
-    expect(result?.errorCount).toBe(0);
+    // Only accessibility rules matter here: the literal alt text is an i18n error on its own
+    // (frontend_i18n.AC-07, see eslint-i18n.test.ts).
+    const a11yErrors = (result?.messages ?? []).filter((m) => m.ruleId?.startsWith('jsx-a11y/'));
+    expect(a11yErrors).toEqual([]);
   }, 30_000);
 
   it('[project_scaffold.AC-15] enables the react-hooks rules', async () => {

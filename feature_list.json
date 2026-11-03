@@ -159,7 +159,7 @@
       "order": 7,
       "block": 2,
       "title": "i18n castellano/valenciano, selector de idioma y base de accesibilidad del frontend",
-      "status": "spec_approved",
+      "status": "done",
       "depends_on": [
         "project_scaffold"
       ],
@@ -176,7 +176,7 @@
       "spec": "specs/frontend_i18n/",
       "needs_exploration": false,
       "review_cycles": 0,
-      "passes": false
+      "passes": true
     },
     {
       "id": "passenger_stop_view",

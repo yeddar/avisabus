@@ -210,3 +210,16 @@
 - La persona aprueba la PR #7: `frontend_i18n`, `passenger_stop_view`, `position_estimation` y
   `passenger_map_view` v1.0, guía visual `docs/design.md` v1.0 y los ajustes documentales del
   bloque 1 (`sae_arrivals_source` 1.4, `occupancy_sensor` 1.3, `stop_arrivals_api` 1.5).
+
+## 2026-11-03 · CP-6 bloque 1 superado · frontend_i18n · spec_approved → implementing
+- PR #21 fusionada (bloque 1: 6/6). PR #7 fusionada: specs del bloque 2 (CP-1) y `docs/design.md`.
+- `frontend_i18n` no necesita exploración; rama `feat/frontend_i18n`.
+
+## 2026-11-03 · frontend_i18n · implementing → in_review
+- T-01…T-08; `./init.sh verify --e2e` en verde (150 Vitest, 24 e2e en 3 perfiles). 4 desviaciones
+  del design anotadas en el impl (i18next 26, huecos de `eslint-plugin-i18next`, test de AC-15 de
+  `project_scaffold`). Capturas e2e en `frontend/e2e-captures/frontend_i18n/` (no versionadas).
+
+## 2026-11-03 · frontend_i18n · in_review → done
+- Revisión ciclo 1: APPROVED; las 4 desviaciones del design no requieren CP-3 (N-01 para la spec).
+  PR contra `develop` sin fusionar. Bloque 2: 1/4 en `done`.
