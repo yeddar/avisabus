@@ -5,8 +5,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { routes } from '../../../../app/routes';
 import type { Language } from '../../../../shared/i18n/languages';
 import { ARRIVALS_REALTIME, STOP_508 } from '../../../../test/fixtures/api';
-import { deferred, mockApi, ok, setVisibility, type FakeReply } from '../../../../test/mockApi';
+import {
+  STOP_NOT_FOUND,
+  deferred,
+  mockApi,
+  ok,
+  problem,
+  setVisibility,
+  type FakeReply,
+} from '../../../../test/mockApi';
 import { renderWithProviders } from '../../../../test/render';
+import { getLastStop } from '../lastStop';
 import { spokenText } from './helpers';
 
 const TOKEN = 'AbCdEfGhIjKlMnOpQrStUv';
@@ -38,11 +47,13 @@ function arrivalItems(): HTMLElement[] {
 }
 
 describe('StopPage', () => {
+  let stopReply: () => FakeReply;
   let arrivalsReply: () => FakeReply | Promise<FakeReply>;
 
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(GENERATED_AT);
+    stopReply = () => ok(STOP_508());
     arrivalsReply = () => ok(ARRIVALS_REALTIME());
   });
 
@@ -56,7 +67,7 @@ describe('StopPage', () => {
 
   function api() {
     return mockApi((url) => {
-      if (url.pathname === '/api/v1/stops/508') return ok(STOP_508());
+      if (url.pathname === '/api/v1/stops/508') return stopReply();
       if (url.pathname === '/api/v1/stops/508/arrivals') return arrivalsReply();
       throw new Error(`unexpected request ${url.pathname}`);
     });
@@ -93,6 +104,31 @@ describe('StopPage', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'Línies' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 2, name: 'Pròximes arribades' })).toBeVisible();
     expect(document.title).toBe("Parc de l'Oest - Enguera · AvisaBus");
+  });
+
+  it('[passenger_stop_view.AC-19] remembers the stop id, name and token once the stop has loaded', async () => {
+    api();
+    expect(getLastStop()).toBeNull();
+
+    renderStop();
+    await flush();
+
+    expect(getLastStop()).toEqual({
+      stopId: '508',
+      name: "Parc de l'Oest - Enguera",
+      token: TOKEN,
+    });
+  });
+
+  it('[passenger_stop_view.AC-19] does not remember a stop that was not found', async () => {
+    stopReply = () => problem(404, STOP_NOT_FOUND);
+    arrivalsReply = () => problem(404, STOP_NOT_FOUND);
+    api();
+
+    renderStop();
+    await flush();
+
+    expect(getLastStop()).toBeNull();
   });
 
   it('[passenger_stop_view.AC-12] refreshes every refresh_after_s seconds without clearing the list', async () => {
