@@ -242,3 +242,6 @@
 ## 2026-11-03 · position_estimation · implementing → spec_blocked (CP-3)
 - T-01…T-06 hechas. AC-17 (distancia a la parada no aumenta > 50 m) falla con `stop_508_peak` cuando
   el SAE retrasa la llegada (5 casos). Propuesta recomendada: limitar la propiedad a minutos no crecientes.
+
+## 2026-11-03 · position_estimation · spec_blocked → spec_approved (v1.1, PR #25) → implementing
+- Opción 1: AC-17 limitado a pares de instantes con minutos del SAE no crecientes. Se reanuda en T-07.
