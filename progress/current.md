@@ -4,18 +4,16 @@
 
 **Fecha:** 2026-11-02
 **Fase:** Implementación — Bloque 1 (Cimientos y datos)
-**Feature en curso:** `sae_arrivals_source` v1.3 y `occupancy_sensor` v1.2 — `done`, PR abierta (sin fusionar).
-Siguiente: `stop_arrivals_api` v1.4.
+**Feature en curso:** `stop_arrivals_api` v1.4 — `implementing` (rama `feat/stop_arrivals_api`)
 
 ## Último paso
-`fix/sae-occupancy-v1.3`: T-14/T-15 (`sae_arrivals_source` v1.3) y T-09/T-10 (`occupancy_sensor` v1.2).
-Revisión ciclo 1: **APPROVED** las dos, sin bloqueantes (verify en verde, 665 tests). PR abierta.
+PR #20 fusionada (`sae_arrivals_source` v1.3, `occupancy_sensor` v1.2). `feat/stop_arrivals_api`
+rebasada sobre `develop` (sin commits propios pendientes: la exploración entró en la PR #19).
+`stop_arrivals_api` → `implementing`; implementer con todas las tareas de v1.4 (T-01…T-09, T-05b, T-05c).
 
 ## Siguiente paso
-1. La persona fusiona la PR de `fix/sae-occupancy-v1.3`.
-2. Tras la fusión: rebase de `feat/stop_arrivals_api` sobre `develop`, `implementing`, implementer con
-   todas las tareas de v1.4 (overrides iniciales = los de la exploración traducidos a headsign;
-   conservar solo los que un test demuestre necesarios) → reviewer nuevo → PR → **parar**. → CP-6.
+1. Reviewer nuevo → `done` → PR contra `develop` sin fusionar → **parar**. Cierre del bloque 1 → **CP-6**.
+2. T-08b de `sae_arrivals_source` (nocturna) opcional.
 
 ## Pendiente para specs futuras
 - **sae_arrivals_source v1.3:** SP-1 design §3 sin `ParseResult.without_time` (D-24); SP-2 design §8
