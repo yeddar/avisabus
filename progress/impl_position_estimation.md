@@ -18,10 +18,9 @@ Spec: specs/position_estimation/ (v1.1, APPROVED; T-01…T-06 hechas con la v1.0
       las posiciones `REALTIME` a < 30 m de su forma; 139 pares sucesivos del mismo viaje con
       minutos del SAE no crecientes sin aumento > 50 m; 5 pares excluidos (minutos que suben) y
       listados en la salida. Antes, la v1.1 alinea la firma de `estimate_position` (commit
-      0b32f39).
-- [ ] T-08 Contrato del frontend (`npm run gen:api`) y verificación completa — contrato ya
-      regenerado en T-05 y T-06 (D-16); la verificación completa falla solo por la trazabilidad de
-      AC-17 (pendiente de B-01).
+      0b32f39). (commit f031c21)
+- [x] T-08 Contrato del frontend (`npm run gen:api`: sin cambios respecto a T-06) y verificación
+      completa `CI=1 ./init.sh verify --e2e` en verde (commit de este fichero)
 
 ## Decisiones locales
 
@@ -184,11 +183,13 @@ pares.)
 
 ## Verificación
 
-`CI=1 ./init.sh verify --e2e` (2026-11-03, tras T-06):
+`CI=1 ./init.sh verify --e2e` (2026-11-03, spec v1.1, tras T-07; salida "verify: todo en verde"):
 
-- backend: format OK · lint OK · types OK (mypy, 92 ficheros) · architecture OK (2 contratos) ·
-  tests OK (965 passed, 6 deselected; cobertura `domain`+`application` 99,39 %)
+- backend: format OK · lint OK · types OK (mypy) · architecture OK (2 contratos) · tests OK
+  (969 passed, 6 deselected; cobertura `domain`+`application` 99,39 %). Salida de AC-17:
+  "139 pairs checked, 5 excluded because the SAE minutes increased".
 - frontend: format OK · lint OK · types OK · tests OK (35 ficheros, 278 tests) · build OK ·
   e2e + a11y OK (60 passed)
-- harness: `feature_list.json` OK · **trazabilidad FAIL**: `position_estimation.AC-17: ningún
-  test lo cita` (bloqueo B-01).
+- harness: `feature_list.json` OK · trazabilidad AC→test OK
+
+Ejecución anterior (v1.0, tras T-06): todo en verde salvo la trazabilidad de AC-17 (B-01).
