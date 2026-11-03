@@ -245,3 +245,7 @@
 
 ## 2026-11-03 · position_estimation · spec_blocked → spec_approved (v1.1, PR #25) → implementing
 - Opción 1: AC-17 limitado a pares de instantes con minutos del SAE no crecientes. Se reanuda en T-07.
+
+## 2026-11-03 · position_estimation · implementing → in_review
+- T-07 (sesión real, 139 pares válidos, 5 excluidos) y T-08; firma alineada con design v1.1.
+  `CI=1 ./init.sh verify --e2e` en verde (969 backend, 278 Vitest, 60 e2e).
