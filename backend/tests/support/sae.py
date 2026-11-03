@@ -8,7 +8,7 @@ SAE_RECORDINGS = Path(__file__).resolve().parent.parent / "fixtures" / "sae_reco
 SAMPLES = SAE_RECORDINGS / "samples"
 E01 = SAMPLES / "e01_2026-11-02"
 DERIVED_NO_ARRIVALS = SAMPLES / "derived_no_arrivals"
-DERIVED_CLOCK_TIME = SAMPLES / "derived_clock_time"
+NIGHT = SAMPLES / "night_2026-11-02"
 STOP_508_PEAK = SAE_RECORDINGS / "stop_508_peak"
 
 
@@ -27,7 +27,10 @@ STOP_508_MINUTES = sample_body(E01, "508", 62)  # 93 5 min, 70 8 min, 93 13 min,
 STOP_2070_NEXT = sample_body(E01, "2070", 50)  # first entry: 95 "Tres Creus - Próximo"
 STOP_99999_UNKNOWN = sample_body(E01, "99999", 54)  # 200 with an empty header
 STOP_508_NO_ARRIVALS = sample_body(DERIVED_NO_ARRIVALS, "508", 0)
-STOP_508_CLOCK_TIME = sample_body(DERIVED_CLOCK_TIME, "508", 0)  # last entry "Alboraia - 22:41"
+# 23:32 in Madrid: 73 "Sant Isidre - 10 min.", 99 "La Malva-rosa - 00:42:28" and "… - 01:52:28"
+STOP_2070_NIGHT = sample_body(NIGHT, "2070", 0)
+# 23:32 in Madrid: five entries "{destination} -" without time and 62 "Benimàmet - 54 min."
+STOP_2312_WITHOUT_TIME = sample_body(NIGHT, "2312", 6)
 
 
 def replace_once(body: bytes, old: str, new: str) -> bytes:

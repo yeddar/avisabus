@@ -1,4 +1,4 @@
-"""`parse_qrphp_html` over the real and derived QR.php samples (sae_arrivals_source T-03)."""
+"""`parse_qrphp_html` over the real and derived QR.php samples (sae_arrivals_source T-03, T-14)."""
 
 from datetime import UTC, datetime, timedelta
 
@@ -15,11 +15,14 @@ from avisabus.adapters.outbound.sae.qrphp_parser import (
 from avisabus.domain.errors import ArrivalsUnavailableError
 from avisabus.domain.models.arrivals import ArrivalKind, SaeArrival
 from tests.support.sae import (
-    STOP_508_CLOCK_TIME,
+    NIGHT,
     STOP_508_MINUTES,
     STOP_508_NO_ARRIVALS,
     STOP_2070_NEXT,
+    STOP_2070_NIGHT,
+    STOP_2312_WITHOUT_TIME,
     STOP_99999_UNKNOWN,
+    recording_json,
     replace_once,
 )
 
@@ -40,9 +43,14 @@ def _minutes(line: str, destination: str, minutes: int) -> SaeArrival:
     )
 
 
+NIGHT_2070_AT = datetime.fromisoformat(recording_json(NIGHT, "2070", 0)["captured_at"])
+NIGHT_2312_AT = datetime.fromisoformat(recording_json(NIGHT, "2312", 6)["captured_at"])
+LAST_NIGHT_ENTRY = "La Malva-rosa - 01:52:28"
+
+
 def _clock_time(text: str, fetched_at: datetime) -> datetime:
-    body = replace_once(STOP_508_CLOCK_TIME, "Alboraia - 22:41", f"Alboraia - {text}")
-    arrival = parse_qrphp_html(body, "508", fetched_at).arrivals[-1]
+    body = replace_once(STOP_2070_NIGHT, LAST_NIGHT_ENTRY, f"La Malva-rosa - {text}")
+    arrival = parse_qrphp_html(body, "2070", fetched_at).arrivals[-1]
     assert arrival.kind is ArrivalKind.CLOCK_TIME
     assert arrival.minutes is None
     return arrival.arrival_at
@@ -78,21 +86,65 @@ def test_arrival_at_is_utc() -> None:
     assert first.arrival_at.utcoffset() == timedelta(0)
 
 
-# --- AC-03: HH:MM ------------------------------------------------------------------------------
+# --- AC-03: HH:MM and HH:MM:SS ----------------------------------------------------------------
+
+
+@pytest.mark.spec("sae_arrivals_source.AC-03")
+@pytest.mark.spec("sae_arrivals_source.AC-19")
+def test_real_night_clock_times_with_seconds_cross_midnight() -> None:
+    # Real 2070 page at 23:32:01 in Madrid (Monday 2026-11-02): two HH:MM:SS of line 99.
+    assert NIGHT_2070_AT.isoformat() == "2026-11-02T22:32:01.467466+00:00"
+    result = parse_qrphp_html(STOP_2070_NIGHT, "2070", NIGHT_2070_AT)
+    assert result == ParseResult(
+        arrivals=(
+            SaeArrival(
+                line="73",
+                destination="Sant Isidre",
+                kind=ArrivalKind.MINUTES,
+                minutes=10,
+                arrival_at=NIGHT_2070_AT + timedelta(minutes=10),
+            ),
+            SaeArrival(
+                line="99",
+                destination="La Malva-rosa",
+                kind=ArrivalKind.CLOCK_TIME,
+                minutes=None,
+                arrival_at=datetime(2026, 11, 2, 23, 42, 28, tzinfo=UTC),  # 00:42:28 on 3 Nov
+            ),
+            SaeArrival(
+                line="99",
+                destination="La Malva-rosa",
+                kind=ArrivalKind.CLOCK_TIME,
+                minutes=None,
+                arrival_at=datetime(2026, 11, 3, 0, 52, 28, tzinfo=UTC),  # 01:52:28 on 3 Nov
+            ),
+        ),
+        skipped=(),
+    )
 
 
 @pytest.mark.spec("sae_arrivals_source.AC-03")
 def test_clock_time_is_the_same_day_in_madrid_when_still_ahead() -> None:
-    result = parse_qrphp_html(STOP_508_CLOCK_TIME, "508", FETCHED_AT)
-    assert result.skipped == ()
-    assert result.arrivals[-1] == SaeArrival(
-        line="70",
-        destination="Alboraia",
-        kind=ArrivalKind.CLOCK_TIME,
-        minutes=None,
-        arrival_at=datetime(2026, 11, 2, 21, 41, tzinfo=UTC),  # 22:41 in Madrid (UTC+1)
+    fetched_at = datetime(2026, 11, 2, 11, 0, 11, tzinfo=UTC)  # 12:00:11 in Madrid (UTC+1)
+    assert _clock_time("22:41", fetched_at) == datetime(2026, 11, 2, 21, 41, tzinfo=UTC)
+    assert _clock_time("22:41:07", fetched_at) == datetime(2026, 11, 2, 21, 41, 7, tzinfo=UTC)
+
+
+@pytest.mark.spec("sae_arrivals_source.AC-03")
+def test_clock_time_keeps_the_seconds() -> None:
+    fetched_at = datetime(2026, 11, 2, 22, 30, tzinfo=UTC)  # 23:30 in Madrid
+    assert _clock_time("23:59:59", fetched_at) == datetime(2026, 11, 2, 22, 59, 59, tzinfo=UTC)
+    assert _clock_time("00:00:01", fetched_at) == datetime(2026, 11, 2, 23, 0, 1, tzinfo=UTC)
+    assert _clock_time("9:05:30", datetime(2026, 11, 2, 7, 0, tzinfo=UTC)) == datetime(
+        2026, 11, 2, 8, 5, 30, tzinfo=UTC
     )
-    assert [a.kind for a in result.arrivals[:3]] == [ArrivalKind.MINUTES] * 3
+
+
+@pytest.mark.spec("sae_arrivals_source.AC-03")
+def test_clock_time_with_seconds_up_to_five_minutes_in_the_past_stays_today() -> None:
+    fetched_at = datetime(2026, 11, 2, 21, 45, 30, tzinfo=UTC)  # 22:45:30 in Madrid
+    assert _clock_time("22:40:30", fetched_at) == datetime(2026, 11, 2, 21, 40, 30, tzinfo=UTC)
+    assert _clock_time("22:40:29", fetched_at) == datetime(2026, 11, 3, 21, 40, 29, tzinfo=UTC)
 
 
 @pytest.mark.spec("sae_arrivals_source.AC-03")
@@ -192,6 +244,9 @@ def test_html_entities_are_unescaped() -> None:
         ("Alboraia - Sin estimación", "Sin estimación"),  # unknown time marker
         ("Alboraia 8 min.", "no separator"),
         ("Alboraia - 25:61", "25:61"),  # not a valid clock time
+        ("Alboraia - 22:41:60", "22:41:60"),  # not a valid clock time (seconds)
+        ("Alboraia - 22:41:5", "22:41:5"),  # seconds need two digits
+        ("Alboraia - 22:41:05:00", "22:41:05:00"),
         ("Alboraia - 8 minutos", "8 minutos"),
     ],
 )
@@ -243,6 +298,71 @@ def test_valid_page_without_arrivals_is_an_empty_list() -> None:
     assert parse_qrphp_html(STOP_508_NO_ARRIVALS, "508", FETCHED_AT) == ParseResult((), ())
     snapshot = build_snapshot(parse_qrphp_html, STOP_508_NO_ARRIVALS, "508", FETCHED_AT)
     assert (snapshot.stop_id, snapshot.fetched_at, snapshot.arrivals) == ("508", FETCHED_AT, ())
+
+
+# --- AC-23: entries without time --------------------------------------------------------------
+
+
+@pytest.mark.spec("sae_arrivals_source.AC-23")
+@pytest.mark.spec("sae_arrivals_source.AC-19")
+def test_real_night_entries_without_time_are_discarded_but_not_unparsed() -> None:
+    # Real 2312 page (terminus) at 23:32:08 in Madrid: 5 of its 6 entries are "{destination} -".
+    result = parse_qrphp_html(STOP_2312_WITHOUT_TIME, "2312", NIGHT_2312_AT)
+    assert result == ParseResult(
+        arrivals=(
+            SaeArrival(
+                line="62",
+                destination="Benimàmet",
+                kind=ArrivalKind.MINUTES,
+                minutes=54,
+                arrival_at=NIGHT_2312_AT + timedelta(minutes=54),
+            ),
+        ),
+        skipped=(),
+        without_time=("7", "9", "62", "60", "9"),
+    )
+
+
+@pytest.mark.spec("sae_arrivals_source.AC-23")
+def test_entries_without_time_are_logged_only_at_debug_level_with_stop_and_line() -> None:
+    with capture_logs() as logs:
+        snapshot = build_snapshot(parse_qrphp_html, STOP_2312_WITHOUT_TIME, "2312", NIGHT_2312_AT)
+    assert [(a.line, a.minutes) for a in snapshot.arrivals] == [("62", 54)]
+    assert [log for log in logs if log["event"] == "sae.unparsed_entry"] == []
+    events = [log for log in logs if log["event"] == "sae.entry_without_time"]
+    assert events == [
+        {"event": "sae.entry_without_time", "log_level": "debug", "stop_id": "2312", "line": line}
+        for line in ("7", "9", "62", "60", "9")
+    ]
+    assert "Benimàmet" not in str(logs)  # no destination nor anything else from the page
+    assert "Est.del Nord" not in str(logs)
+
+
+@pytest.mark.spec("sae_arrivals_source.AC-23")
+@pytest.mark.parametrize(
+    "new_text",
+    [
+        "Alboraia -",
+        "Alboraia - ",
+        "Alboraia -&nbsp;",
+        "Natzaret - Port -",  # the separator inside the destination does not make it a time
+    ],
+)
+def test_entry_ending_in_a_dash_is_without_time(new_text: str) -> None:
+    body = replace_once(STOP_508_MINUTES, "Alboraia - 8 min.", new_text)
+    result = parse_qrphp_html(body, "508", FETCHED_AT)
+    assert [(a.line, a.minutes) for a in result.arrivals] == [("93", 5), ("93", 13), ("70", 20)]
+    assert (result.skipped, result.without_time) == ((), ("70",))
+
+
+@pytest.mark.spec("sae_arrivals_source.AC-23")
+@pytest.mark.parametrize("new_text", ["-", " - ", "&nbsp;-", "Alboraia-", "Alboraia--"])
+def test_a_dash_without_a_destination_or_a_separator_is_still_unparsed(new_text: str) -> None:
+    body = replace_once(STOP_508_MINUTES, "Alboraia - 8 min.", new_text)
+    result = parse_qrphp_html(body, "508", FETCHED_AT)
+    assert len(result.arrivals) == 3
+    assert len(result.skipped) == 1
+    assert result.without_time == ()
 
 
 # --- AC-21: stop header ------------------------------------------------------------------------

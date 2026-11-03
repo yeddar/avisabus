@@ -1,0 +1,11 @@
+{
+  "started_at": "2026-11-02T22:32:01.318236Z",
+  "stops": [
+    "2070",
+    "2312"
+  ],
+  "interval_s": null,
+  "source_url_template": "https://www.emtvalencia.es/QR.php?sec=est&p={stop_id}",
+  "source_format": "qrphp_html",
+  "note": "Real night responses (Monday 2026-11-02, 23:32 in Madrid) of exploration E-01 of stop_arrivals_api: one 'avisabus sae record --duration 1' per stop. Two single-request sessions merged into one; started_at is the one of stop 2070. Bodies unchanged. Converted from progress/explore_destinations_samples/night_20261102/."
+}

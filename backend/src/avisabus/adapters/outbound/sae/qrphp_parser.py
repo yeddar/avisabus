@@ -3,7 +3,9 @@
 `parse_qrphp_html` is a pure function over the raw body, shared by the HTTP and the replay
 sources so that recorded sessions exercise the production code. The page is a jQuery Mobile
 fragment: a header `<div style="background: grey…">{stop_id} - {name}</div>` and, per arrival,
-an `<img title="{line}">` followed by a `<span>` with `"{destination} - {time}"`.
+an `<img title="{line}">` followed by a `<span>` with `"{destination} - {time}"`. The time is
+`{N} min.`, `Próximo`, `HH:MM` or `HH:MM:SS` (seen at night, v1.3); an entry with no time at all
+(`"{destination} -"`, seen at termini at the end of the service) is discarded silently (AC-23).
 """
 
 import re
@@ -22,12 +24,13 @@ from avisabus.domain.models.arrivals import ArrivalKind, ArrivalsSnapshot, SaeAr
 
 MADRID = ZoneInfo("Europe/Madrid")
 CLOCK_TIME_TOLERANCE = timedelta(minutes=5)
-"""A `HH:MM` up to this much before `fetched_at` is still today's (AC-03)."""
+"""A `HH:MM[:SS]` up to this much before `fetched_at` is still today's (AC-03)."""
 
 SEPARATOR = " - "
+WITHOUT_TIME_SUFFIX = " -"
 _HEADER_STYLE = re.compile(r"background\s*:\s*grey", re.IGNORECASE)
 _MINUTES = re.compile(r"(\d+) min\.?")
-_CLOCK_TIME = re.compile(r"(\d{1,2}):(\d{2})")
+_CLOCK_TIME = re.compile(r"(\d{1,2}):(\d{2})(?::(\d{2}))?")
 _NEXT = "proximo"
 _ICON_CLASS = "imagenParada"
 _MAX_REASON_TEXT = 60
@@ -48,6 +51,8 @@ class ParseResult:
     arrivals: tuple[SaeArrival, ...]
     skipped: tuple[str, ...]
     """Reasons of the discarded entries (AC-06); never the whole body."""
+    without_time: tuple[str, ...] = ()
+    """Lines of the entries discarded because they carry no time (AC-23); not `skipped`."""
 
 
 Parser = Callable[[bytes, str, datetime], ParseResult]
@@ -68,13 +73,18 @@ def parse_qrphp_html(body: bytes, stop_id: str, fetched_at: datetime) -> ParseRe
 
     arrivals: list[SaeArrival] = []
     skipped: list[str] = []
+    without_time: list[str] = []
     for line, entry_text in page.entries:
         arrival = _arrival(line, entry_text, fetched_at)
         if isinstance(arrival, SaeArrival):
             arrivals.append(arrival)
+        elif isinstance(arrival, _WithoutTime):
+            without_time.append(arrival.line)
         else:
             skipped.append(arrival)
-    return ParseResult(arrivals=tuple(arrivals), skipped=tuple(skipped))
+    return ParseResult(
+        arrivals=tuple(arrivals), skipped=tuple(skipped), without_time=tuple(without_time)
+    )
 
 
 PARSERS: Mapping[str, Parser] = MappingProxyType({"qrphp_html": parse_qrphp_html})
@@ -86,6 +96,8 @@ def build_snapshot(
 ) -> ArrivalsSnapshot:
     """Parse `body` into a snapshot, logging `sae.unparsed_entry` for each skipped entry.
 
+    Entries without time are only logged as `sae.entry_without_time` at debug level (AC-23).
+
     Raises `ArrivalsUnavailableError(stop_id, "unparseable")` when the whole body is not valid.
     """
     try:
@@ -94,17 +106,28 @@ def build_snapshot(
         raise ArrivalsUnavailableError(stop_id, "unparseable") from None
     for reason in result.skipped:
         log.warning("sae.unparsed_entry", stop_id=stop_id, reason=reason)
+    for line in result.without_time:
+        log.debug("sae.entry_without_time", stop_id=stop_id, line=line)
     return ArrivalsSnapshot(stop_id=stop_id, fetched_at=fetched_at, arrivals=result.arrivals)
 
 
-def _arrival(line: str, entry_text: str | None, fetched_at: datetime) -> SaeArrival | str:
-    """The normalised arrival, or the reason why the entry is skipped."""
+@dataclass(frozen=True, slots=True)
+class _WithoutTime:
+    line: str
+
+
+def _arrival(
+    line: str, entry_text: str | None, fetched_at: datetime
+) -> SaeArrival | _WithoutTime | str:
+    """The normalised arrival, an entry without time, or the reason why the entry is skipped."""
     line = line.strip()
     if not line:
         return "entry without line"
     if entry_text is None:
         return "entry without text"
     text = entry_text.strip()
+    if text.endswith(WITHOUT_TIME_SUFFIX):  # "{destination} -" (AC-23)
+        return _WithoutTime(line)
     if SEPARATOR not in text:
         return f"no separator in {_short(text)}"
     destination, raw_time = text.rsplit(SEPARATOR, 1)
@@ -117,14 +140,15 @@ def _arrival(line: str, entry_text: str | None, fetched_at: datetime) -> SaeArri
         return _minutes(line, destination, 0, fetched_at)
     if clock_match := _CLOCK_TIME.fullmatch(raw_time):
         hour, minute = int(clock_match.group(1)), int(clock_match.group(2))
-        if hour > 23 or minute > 59:
+        second = int(clock_match.group(3) or 0)
+        if hour > 23 or minute > 59 or second > 59:
             return f"invalid clock time {_short(raw_time)}"
         return SaeArrival(
             line=line,
             destination=destination,
             kind=ArrivalKind.CLOCK_TIME,
             minutes=None,
-            arrival_at=_next_occurrence(time(hour, minute), fetched_at),
+            arrival_at=_next_occurrence(time(hour, minute, second), fetched_at),
         )
     return f"unrecognised time {_short(raw_time)}"
 

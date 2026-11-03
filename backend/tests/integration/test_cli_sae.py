@@ -20,9 +20,9 @@ from avisabus.adapters.inbound.cli.sae import SaeCliRuntime
 from avisabus.config import Settings
 from tests.support.fake_clock import FakeClock
 from tests.support.sae import (
-    STOP_508_CLOCK_TIME,
     STOP_508_MINUTES,
     STOP_508_NO_ARRIVALS,
+    STOP_2070_NIGHT,
     STOP_99999_UNKNOWN,
 )
 
@@ -102,10 +102,13 @@ def test_fetch_shows_line_destination_and_minutes(harness: Harness) -> None:
 
 @pytest.mark.spec("sae_arrivals_source.AC-18")
 def test_fetch_shows_clock_times_in_madrid(harness: Harness) -> None:
-    harness.handler = _html(STOP_508_CLOCK_TIME)
-    result = runner.invoke(app, ["sae", "fetch", "--stop", "508"])
+    harness.handler = _html(STOP_2070_NIGHT)  # real night page: 99 at 00:42:28 and 01:52:28
+    result = runner.invoke(app, ["sae", "fetch", "--stop", "2070"])
     assert result.exit_code == 0, result.output
-    assert result.stdout.splitlines()[-1].split() == ["70", "Alboraia", "22:41"]
+    assert [line.split() for line in result.stdout.splitlines()[-2:]] == [
+        ["99", "La", "Malva-rosa", "00:42"],
+        ["99", "La", "Malva-rosa", "01:52"],
+    ]
 
 
 @pytest.mark.spec("sae_arrivals_source.AC-18")
