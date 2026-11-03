@@ -5,7 +5,8 @@
   },
   "home": {
     "title": "Inici",
-    "scanQr": "Escaneja el codi QR de la teua parada per a vore quan arriba el teu autobús i sol·licitar parada al conductor."
+    "scanQr": "Escaneja el codi QR de la teua parada per a vore quan arriba el teu autobús i sol·licitar parada al conductor.",
+    "lastStop": "La teua última parada: <name>{{name}}</name>"
   },
   "language": {
     "label": "Llengua"
@@ -23,5 +24,60 @@
   "distance": {
     "meters": "{{value}} m",
     "kilometers": "{{value}} km"
+  },
+  "stop": {
+    "title": "Parada",
+    "code": "Parada {{code}}",
+    "lineName": "Línia {{line}}",
+    "towards": "cap a",
+    "lines": "Línies",
+    "arrivals": "Pròximes arribades",
+    "updatedAt": "Actualitzat a les {{time}}",
+    "refresh": "Actualitza",
+    "refreshed": "Dades actualitzades",
+    "empty": "No hi ha arribades previstes en este moment",
+    "scheduledNotice": "<strong>Sense dades en temps real:</strong> es mostra l'horari programat",
+    "scheduledSuffix": "programat",
+    "scheduledTime": "{{time}} segons l'horari programat",
+    "minutes": "<number>{{value}}</number> <unit>min</unit>",
+    "arriving": "Línia {{line}} cap a {{destination}} està arribant",
+    "rowLabel": "Línia {{line}}, cap a <destination>{{destination}}</destination>, {{time}}, {{occupancy}}",
+    "rowLabelNoOccupancy": "Línia {{line}}, cap a <destination>{{destination}}</destination>, {{time}}",
+    "arrivesIn": "arriba en {{duration}}",
+    "arrivesAt": "arriba a les {{time}}",
+    "arrivingNow": "està arribant",
+    "loading": "Carregant les pròximes arribades…",
+    "notFound": {
+      "title": "Parada no trobada",
+      "body": "Torna a escanejar el codi QR de la parada per a vore les pròximes arribades."
+    },
+    "error": {
+      "body": "<strong>No s'han pogut carregar les arribades.</strong> Comprova la connexió i torna-ho a intentar.",
+      "retry": "Reintenta"
+    },
+    "stale": "Dades de les {{time}}, poden no estar actualitzades"
+  },
+  "occupancy": {
+    "FREE": "Poc ocupat",
+    "MEDIUM": "Ocupació mitjana",
+    "FULL": "Ple",
+    "seatsYes": "hi ha seients lliures",
+    "seatsNo": "sense seients lliures",
+    "unavailable": "Ocupació no disponible",
+    "spoken": {
+      "FREE": "poc ocupat",
+      "MEDIUM": "ocupació mitjana",
+      "FULL": "ple",
+      "unavailable": "ocupació no disponible"
+    },
+    "spokenWithSeats": "{{level}}, {{seats}}"
+  },
+  "network": {
+    "offline": "<strong>Sense connexió.</strong> Les dades s'actualitzaran quan torne la connexió."
+  },
+  "notFound": {
+    "title": "Pàgina no trobada",
+    "body": "L'adreça que has obert no existix.",
+    "home": "Ves a la portada"
   }
 }

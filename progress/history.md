@@ -223,3 +223,15 @@
 ## 2026-11-03 · frontend_i18n · in_review → done
 - Revisión ciclo 1: APPROVED; las 4 desviaciones del design no requieren CP-3 (N-01 para la spec).
   PR contra `develop` sin fusionar. Bloque 2: 1/4 en `done`.
+
+## 2026-11-03 · frontend_i18n PR #22 fusionada (AC-17 validado) · passenger_stop_view · spec_approved → implementing
+- Sin exploración según su `tasks.md`; rama `feat/passenger_stop_view`.
+
+## 2026-11-03 · passenger_stop_view · implementing → in_review
+- T-01…T-10; `CI=1 ./init.sh verify --e2e` en verde (861 backend, 278 Vitest, 60 e2e, JS inicial
+  138,7 KB gzip). 4 desviaciones a validar (TS 6 con `openapi-typescript`, rojo EMT `#e50000`, aviso
+  de horario, `avisabus.lastStop` frente a `docs/conventions.md` §4).
+
+## 2026-11-03 · passenger_stop_view · in_review → done
+- Revisión ciclo 1: APPROVED; desviaciones sin CP-3. CP-4 pendiente (`docs/conventions.md` §4 por
+  `avisabus.lastStop`). PR contra `develop` sin fusionar. Bloque 2: 2/4 en `done`.

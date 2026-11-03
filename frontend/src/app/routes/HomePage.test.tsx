@@ -2,6 +2,7 @@ import { screen } from '@testing-library/react';
 import { RouterProvider, createMemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { setLastStop } from '../../features/passenger/stop/lastStop';
 import type { Language } from '../../shared/i18n/languages';
 import { renderWithProviders } from '../../test/render';
 import { routes } from '../routes';
@@ -51,5 +52,51 @@ describe('HomePage', () => {
 
     expect(await screen.findByText(/Escaneja el codi QR/)).toBeInTheDocument();
     expect(document.title).toBe('Inici · AvisaBus');
+  });
+});
+
+describe('HomePage last stop', () => {
+  afterEach(() => {
+    localStorage.clear();
+    document.title = '';
+  });
+
+  it.each([
+    ['es', "Tu última parada: Parc de l'Oest - Enguera"],
+    ['ca', "La teua última parada: Parc de l'Oest - Enguera"],
+  ] as const)(
+    '[passenger_stop_view.AC-19] offers a link to the last stop opened on the device (%s)',
+    (language, name) => {
+      setLastStop({
+        stopId: '508',
+        name: "Parc de l'Oest - Enguera",
+        token: 'AbCdEfGhIjKlMnOpQrStUv',
+      });
+
+      renderHome(language);
+
+      const link = screen.getByRole('link', { name });
+      expect(link).toHaveAttribute('href', '/p/508?t=AbCdEfGhIjKlMnOpQrStUv');
+      const name_ = screen.getByText("Parc de l'Oest - Enguera");
+      if (language === 'es') expect(name_).toHaveAttribute('lang', 'ca-ES-valencia');
+      else expect(name_).not.toHaveAttribute('lang');
+    },
+  );
+
+  it('[passenger_stop_view.AC-19] shows no link when no stop has been opened', () => {
+    renderHome('es');
+
+    expect(screen.queryByRole('link', { name: /última parada/ })).toBeNull();
+  });
+
+  it('[passenger_stop_view.AC-19] encodes the stop id and token in the link', () => {
+    setLastStop({ stopId: 'a/b', name: 'X', token: 'to+k/en' });
+
+    renderHome('es');
+
+    expect(screen.getByRole('link', { name: 'Tu última parada: X' })).toHaveAttribute(
+      'href',
+      '/p/a%2Fb?t=to%2Bk%2Fen',
+    );
   });
 });
