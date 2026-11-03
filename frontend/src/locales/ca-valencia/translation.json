@@ -1,0 +1,27 @@
+{
+  "app": {
+    "name": "AvisaBus",
+    "tagline": "Pròxims autobusos de l'EMT València i sol·licitud de parada, accessibles per a totes les persones."
+  },
+  "home": {
+    "title": "Inici",
+    "scanQr": "Escaneja el codi QR de la teua parada per a vore quan arriba el teu autobús i sol·licitar parada al conductor."
+  },
+  "language": {
+    "label": "Llengua"
+  },
+  "layout": {
+    "skipToContent": "Botar al contingut",
+    "attribution": "Dades: EMT València (GTFS i temps d'arribada) · Ajuntament de València"
+  },
+  "time": {
+    "minutesShort": "{{count}} min",
+    "minutes_one": "{{count}} minut",
+    "minutes_other": "{{count}} minuts",
+    "arriving": "Arribant"
+  },
+  "distance": {
+    "meters": "{{value}} m",
+    "kilometers": "{{value}} km"
+  }
+}
