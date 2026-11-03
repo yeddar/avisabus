@@ -4,21 +4,27 @@
 
 **Fecha:** 2026-11-03
 **Fase:** Implementación — Bloque 2
-**Feature en curso:** `position_estimation` v1.1 — `implementing` (T-07, T-08)
+**Feature en curso:** `position_estimation` v1.1 — `done`, PR abierta (sin fusionar)
 
 ## Último paso
-CP-3 de `position_estimation` resuelto con la opción 1 (PR #25, v1.1: AC-17 solo en pares de minutos no
-crecientes; `stop_coordinates` y frontera de `NOT_STARTED` en el design). Rama subida y actualizada con
-`develop` (merge); feature → `implementing` para T-07 y T-08.
+`position_estimation` v1.1: T-01…T-08. Revisión ciclo 1: **APPROVED** sin bloqueantes (`CI=1 ./init.sh
+verify --e2e` en verde: 969 backend, 278 Vitest, 60 e2e; AC-17 con 139 pares comprobados y 5 excluidos).
+PR contra `develop` abierta.
 
 ## Siguiente paso
-1. `position_estimation`: implementer (T-07, T-08) → reviewer nuevo → `done` → PR sin fusionar.
+1. La persona fusiona la PR de `position_estimation`.
 2. **Cuando la #24 esté fusionada:** `passenger_stop_view` → `implementing` (v1.1, solo T-11: AC-17 y
    AC-24) con revisión nueva. **Va antes de `passenger_map_view`.**
 3. `passenger_map_view`. CP-6 del bloque 2: textos nuevos, anuncios de "llegando" con lector de
    pantalla, foco tras "Actualizar" fallido.
 
 ## Pendiente para specs futuras
+- **position_estimation H-01 (spec):** AC-03 y AC-04 se solapan si la parada objetivo es la primera del
+  viaje (implementado: `AT_STOP`; no ocurre en EMT). H-02: viaje sin `shape_dist_traveled` y con una
+  parada ausente del feed activo → 500 en vez de `NO_VEHICLE` (solo si el feed cambia entre consultas).
+  H-03 → `nfr_validation`: `shape_stops` 17–24 ms en el peor caso (design: 20 ms; el coste está en leer
+  horarios, el índice apenas ayuda). H-04: el test de AC-17 exige que los pares excluidos retrocedan
+  (más estricto que la spec). H-05: integración de AC-09/AC-10 usa `estimate_position` como oráculo.
 - **passenger_stop_view N-1 (accesibilidad):** si "Actualizar" falla no se anuncia nada y el foco se
   pierde (el botón desaparece); igual al acertar con "Reintentar". N-2: si solo falla la petición de
   la parada, el aviso habla de "las llegadas" y no se recupera solo. N-3: comentario desfasado en

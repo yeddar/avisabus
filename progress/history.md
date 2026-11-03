@@ -249,3 +249,7 @@
 ## 2026-11-03 · position_estimation · implementing → in_review
 - T-07 (sesión real, 139 pares válidos, 5 excluidos) y T-08; firma alineada con design v1.1.
   `CI=1 ./init.sh verify --e2e` en verde (969 backend, 278 Vitest, 60 e2e).
+
+## 2026-11-03 · position_estimation · in_review → done
+- Revisión ciclo 1 (v1.1): APPROVED; H-01…H-05 no bloqueantes. PR contra `develop` sin fusionar.
+  Bloque 2: 3/4 en `done` (falta `passenger_map_view`; antes, `passenger_stop_view` v1.1 tras la #24).
