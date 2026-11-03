@@ -226,3 +226,8 @@
 
 ## 2026-11-03 · frontend_i18n PR #22 fusionada (AC-17 validado) · passenger_stop_view · spec_approved → implementing
 - Sin exploración según su `tasks.md`; rama `feat/passenger_stop_view`.
+
+## 2026-11-03 · passenger_stop_view · implementing → in_review
+- T-01…T-10; `CI=1 ./init.sh verify --e2e` en verde (861 backend, 278 Vitest, 60 e2e, JS inicial
+  138,7 KB gzip). 4 desviaciones a validar (TS 6 con `openapi-typescript`, rojo EMT `#e50000`, aviso
+  de horario, `avisabus.lastStop` frente a `docs/conventions.md` §4).
