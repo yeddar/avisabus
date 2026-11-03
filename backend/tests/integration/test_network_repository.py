@@ -32,7 +32,7 @@ from avisabus.domain.models.network import (
     TripStopTime,
 )
 from avisabus.domain.ports.network import NetworkRepository
-from avisabus.domain.services.gtfs_time import parse_gtfs_time
+from avisabus.domain.services.gtfs_time import format_gtfs_time, parse_gtfs_time
 from tests.support.fake_clock import FakeClock
 from tests.support.gtfs import GTFS_MINI, append_rows, copy_gtfs_mini, read_rows, write_rows
 
@@ -399,4 +399,167 @@ async def test_trip_line_only_sees_the_active_feed_version(tmp_path: Path) -> No
     assert repo.trip_line(trip_id) == ROUTE_LINES[row["route_id"]]
     await _import(engine, feed)
     assert repo.trip_line(trip_id) is None
+    engine.dispose()
+
+
+# --- Service days crossing midnight (stop_arrivals_api v1.2, AC-18; T-05b) ---
+
+SYNTHETIC_TRIP = "70_1058_601_synthetic_0020"
+"""Copy of `70_1058_601_500_2030_3_001` (Alboraia, Mon–Thu) shifted so that it stops at 508 at
+00:20:00 of its service day."""
+
+
+def _add_trip_at_0020(feed: Path) -> None:
+    source = "70_1058_601_500_2030_3_001"
+    shift = parse_gtfs_time("06:09:49") - parse_gtfs_time("00:20:00")
+    append_rows(
+        feed / "trips.txt",
+        [["1058", "70_1058_601", SYNTHETIC_TRIP, "Alboraia", SYNTHETIC_TRIP, "1058_500_2030"]],
+    )
+    header, *rows = read_rows(feed / "stop_times.txt")
+    copied = []
+    for row in rows:
+        if row[0] != source:
+            continue
+        times = [format_gtfs_time(parse_gtfs_time(value) - shift) for value in row[1:3]]
+        copied.append([SYNTHETIC_TRIP, *times, *row[3:]])
+    assert any(row[3] == "508" and row[1] == "00:20:00" for row in copied)
+    append_rows(feed / "stop_times.txt", copied)
+
+
+@pytest.fixture(scope="module")
+def midnight_repo(tmp_path_factory: pytest.TempPathFactory) -> Iterator[SqliteNetworkRepository]:
+    tmp = tmp_path_factory.mktemp("midnight")
+    feed = copy_gtfs_mini(tmp / "feed")
+    _add_trip_at_0020(feed)
+    engine = _engine(tmp / "avisabus.sqlite")
+    asyncio.run(_import(engine, feed))
+    yield SqliteNetworkRepository(engine)
+    engine.dispose()
+
+
+def _brute_force(
+    repo: SqliteNetworkRepository,
+    feed_rows: list[dict[str, str]],
+    stop_id: str,
+    at: datetime,
+    window: timedelta,
+    days: list[date],
+) -> list[tuple[str, date, int]]:
+    trips = {row["trip_id"]: row for row in _csv("trips.txt")}
+    trips[SYNTHETIC_TRIP] = {"service_id": "70_1058_601"}
+    result = []
+    for service_date in days:
+        active = repo.active_service_ids(service_date)
+        start = datetime(
+            service_date.year, service_date.month, service_date.day, 12, tzinfo=MADRID
+        ).astimezone(UTC) - timedelta(hours=12)
+        for row in feed_rows:
+            if row["stop_id"] != stop_id or trips[row["trip_id"]]["service_id"] not in active:
+                continue
+            arrival_s = parse_gtfs_time(row["arrival_time"])
+            if at <= start + timedelta(seconds=arrival_s) <= at + window:
+                result.append((row["trip_id"], service_date, arrival_s, start))
+    result.sort(key=lambda r: (r[3] + timedelta(seconds=r[2]), r[0]))
+    return [(trip, day, arrival_s) for trip, day, arrival_s, _ in result]
+
+
+@pytest.mark.spec("stop_arrivals_api.AC-18")
+def test_scheduled_stop_times_include_the_next_service_day(
+    midnight_repo: SqliteNetworkRepository,
+) -> None:
+    # Monday 2026-11-09 at 23:45 in València with a 90 min window: the synthetic trip runs on
+    # Tuesday's service day at 00:20, alongside Monday's trips after 24:00.
+    at = datetime(2026, 11, 9, 23, 45, tzinfo=MADRID)
+    window = timedelta(minutes=90)
+    got = midnight_repo.scheduled_stop_times("508", at, window)
+    tuesday = [s for s in got if s.service_date == date(2026, 11, 10)]
+    assert [(s.trip_id, s.arrival_s) for s in tuesday] == [(SYNTHETIC_TRIP, 1200)]
+    assert tuesday[0].line == "70"
+    assert tuesday[0].headsign == "Alboraia"
+    assert any(s.service_date == date(2026, 11, 9) and s.arrival_s >= 86400 for s in got)
+    rows = [*STOP_TIMES, {"trip_id": SYNTHETIC_TRIP, "stop_id": "508", "arrival_time": "00:20:00"}]
+    expected = _brute_force(
+        midnight_repo,
+        rows,
+        "508",
+        at,
+        window,
+        [date(2026, 11, 8), date(2026, 11, 9), date(2026, 11, 10)],
+    )
+    assert [(s.trip_id, s.service_date, s.arrival_s) for s in got] == expected
+
+
+@pytest.mark.spec("stop_arrivals_api.AC-18")
+def test_scheduled_stop_times_with_a_window_of_several_days(
+    midnight_repo: SqliteNetworkRepository,
+) -> None:
+    # From Sunday 23:00 to Tuesday 01:00: Saturday (D − 1) to Tuesday (fecha(at + window)).
+    at = datetime(2026, 11, 8, 23, 0, tzinfo=MADRID)
+    window = timedelta(hours=26)
+    got = midnight_repo.scheduled_stop_times("508", at, window)
+    rows = [*STOP_TIMES, {"trip_id": SYNTHETIC_TRIP, "stop_id": "508", "arrival_time": "00:20:00"}]
+    days = [date(2026, 11, 7), date(2026, 11, 8), date(2026, 11, 9), date(2026, 11, 10)]
+    expected = _brute_force(midnight_repo, rows, "508", at, window, days)
+    assert [(s.trip_id, s.service_date, s.arrival_s) for s in got] == expected
+    assert {s.service_date for s in got} == {
+        date(2026, 11, 8),
+        date(2026, 11, 9),
+        date(2026, 11, 10),
+    }
+
+
+# --- departing_directions (stop_arrivals_api v1.4, AC-19; T-05c) ---
+
+
+def _expected_departing(repo: SqliteNetworkRepository, stop_id: str, line: str) -> set[int]:
+    """From the CSV: directions (via the shape of the trip) of the trips of `line` whose first
+    stop (minimum stop_sequence) is `stop_id`."""
+    direction_of_shape = {
+        shape: d for d in (0, 1) for shape, _ in repo.shapes_for_direction(line, d)
+    }
+    first: dict[str, tuple[int, str]] = {}
+    for row in STOP_TIMES:
+        sequence = int(row["stop_sequence"])
+        if row["trip_id"] not in first or sequence < first[row["trip_id"]][0]:
+            first[row["trip_id"]] = (sequence, row["stop_id"])
+    return {
+        direction_of_shape[TRIPS[trip_id]["shape_id"]]
+        for trip_id, (_, stop) in first.items()
+        if stop == stop_id and ROUTE_LINES[TRIPS[trip_id]["route_id"]] == line
+    }
+
+
+@pytest.mark.spec("stop_arrivals_api.AC-19")
+@pytest.mark.parametrize("stop_id", ["166", "691", "1057", "346"])
+def test_departing_directions_at_the_c2_terminals(
+    repo: SqliteNetworkRepository, stop_id: str
+) -> None:
+    # Each terminal of C2 serves both directions (one half loop ends, the other one starts).
+    assert {h.direction_id for h in repo.headsigns_at_stop(stop_id, "C2")} == {0, 1}
+    got = repo.departing_directions(stop_id, "C2")
+    assert isinstance(got, frozenset)
+    assert len(got) == 1
+    assert got == _expected_departing(repo, stop_id, "C2")
+
+
+@pytest.mark.spec("stop_arrivals_api.AC-19")
+def test_departing_directions_of_the_c2_half_loops(repo: SqliteNetworkRepository) -> None:
+    # Shapes are named <route>_<first stop>_<last stop>: 651_166_691 and 996_1057_346 are
+    # direction 0, 651_691_166 and 996_346_1057 direction 1 (shapes_for_direction).
+    assert repo.departing_directions("166", "C2") == {0}
+    assert repo.departing_directions("1057", "C2") == {0}
+    assert repo.departing_directions("691", "C2") == {1}
+    assert repo.departing_directions("346", "C2") == {1}
+
+
+@pytest.mark.spec("stop_arrivals_api.AC-19")
+def test_departing_directions_elsewhere(repo: SqliteNetworkRepository, tmp_path: Path) -> None:
+    assert repo.departing_directions("487", "98") == {0}
+    assert repo.departing_directions("487", "98") == _expected_departing(repo, "487", "98")
+    assert repo.departing_directions("508", "93") == frozenset()  # intermediate stop
+    assert repo.departing_directions("166", "93") == frozenset()  # line not at the stop
+    assert repo.departing_directions("166", "N4") == frozenset()  # line not in the network
+    engine = _engine(tmp_path / "empty.sqlite")
+    assert SqliteNetworkRepository(engine).departing_directions("166", "C2") == frozenset()
     engine.dispose()

@@ -186,3 +186,15 @@
 ## 2026-11-03 · sae_arrivals_source v1.3, occupancy_sensor v1.2 · in_review → done
 - Revisión ciclo 1: APPROVED las dos (mutaciones incluidas). No bloqueantes y SP anotados en
   `current.md`. PR de `fix/sae-occupancy-v1.3` contra `develop`, sin fusionar.
+
+## 2026-11-03 · PR #20 fusionada · stop_arrivals_api · spec_approved → implementing (v1.4)
+- Exploración E-01…E-03 ya en `develop` (PR #19). Implementer con todas las tareas de v1.4; overrides
+  iniciales = los de la exploración traducidos a headsign, solo los que un test demuestre necesarios.
+
+## 2026-11-03 · stop_arrivals_api · implementing → in_review
+- T-01…T-09 (+T-05b, T-05c); verify en verde (853 tests, cobertura 99,66 %). Ningún override
+  necesario: las 139 entradas reales se resuelven con alias, umbral 0,2 y sentido que sale.
+
+## 2026-11-03 · stop_arrivals_api · in_review → done · bloque 1 completo
+- Revisión ciclo 1 (v1.4): APPROVED sin bloqueantes; overrides vacíos verificados de forma
+  independiente. PR contra `develop` sin fusionar. Bloque 1: 6/6 en `done` → CP-6.

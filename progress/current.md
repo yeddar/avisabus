@@ -3,21 +3,33 @@
 > Fichero vivo: lo reescribe el orquestador al final de cada sesión.
 
 **Fecha:** 2026-11-02
-**Fase:** Implementación — Bloque 1 (Cimientos y datos)
-**Feature en curso:** `sae_arrivals_source` v1.3 y `occupancy_sensor` v1.2 — `done`, PR abierta (sin fusionar).
-Siguiente: `stop_arrivals_api` v1.4.
+**Fase:** Fin del Bloque 1 (Cimientos y datos) — CP-6 pendiente
+**Feature en curso:** `stop_arrivals_api` v1.4 — `done`, PR abierta (sin fusionar). **Bloque 1 completo (6/6) → CP-6.**
 
 ## Último paso
-`fix/sae-occupancy-v1.3`: T-14/T-15 (`sae_arrivals_source` v1.3) y T-09/T-10 (`occupancy_sensor` v1.2).
-Revisión ciclo 1: **APPROVED** las dos, sin bloqueantes (verify en verde, 665 tests). PR abierta.
+`stop_arrivals_api` v1.4: T-01…T-09 (+T-05b, T-05c). Revisión ciclo 1: **APPROVED** sin bloqueantes
+(853 tests, cobertura 99,66 %, 17 mutaciones detectadas, tests `slow` en verde). Overrides: ninguno
+necesario (`backend/config/direction_overrides.json` = `{}`; 139/139 entradas reales en red y
+1142/1142 con las grabaciones se resuelven sin ellos). PR contra `develop` abierta.
 
 ## Siguiente paso
-1. La persona fusiona la PR de `fix/sae-occupancy-v1.3`.
-2. Tras la fusión: rebase de `feat/stop_arrivals_api` sobre `develop`, `implementing`, implementer con
-   todas las tareas de v1.4 (overrides iniciales = los de la exploración traducidos a headsign;
-   conservar solo los que un test demuestre necesarios) → reviewer nuevo → PR → **parar**. → CP-6.
+1. La persona fusiona la PR de `stop_arrivals_api`.
+2. **CP-6 (fin del bloque 1):** la persona valida el bloque antes de empezar el bloque 2
+   (`frontend_i18n` y siguientes; specs del bloque 2 en PR #7).
+3. T-08b de `sae_arrivals_source` (nocturna) opcional.
 
 ## Pendiente para specs futuras
+- **stop_arrivals_api P-1:** AC-06 dice "superar" el umbral; design §3 dice `≥` (el código sigue el
+  design; el único caso real en el límite, 1266 "C. Benlloch", da igual con ambas lecturas).
+- **stop_arrivals_api P-2 / O-5:** la verificación de AC-19 cita C1 en integración, pero `gtfs_mini`
+  no tiene C1 (cubierto en unitarios con datos reales y en test `slow` con el feed completo).
+- **stop_arrivals_api O-1/NB-4:** overrides validados solo al arrancar (sin feed se ignoran; tras
+  reimportar no se revalidan). O-2: el formato por headsign no expresa un texto que cubre dos medios
+  bucles (`C3|Campanar`). O-3: AC-09 no fija el headsign mostrado con override o sentido que sale.
+  O-4: fichero de overrides ilegible no especificado (implementado: `ConfigurationError`).
+- **stop_arrivals_api NB-1…NB-3:** similitudes mal anotadas en el impl (1751: 0,333; 229: 0,25);
+  `FakeLogger` importado de otro test → `tests/support/`; ruta de overrides relativa a `backend/`
+  en `.env.example` (→ `deployment_rpi`).
 - **sae_arrivals_source v1.3:** SP-1 design §3 sin `ParseResult.without_time` (D-24); SP-2 design §8
   sigue citando la muestra derivada `HH:MM`. NB-1: `sae fetch` muestra `HH:MM` sin segundos. NB-2: en la
   sesión `night_2026-11-02` la 2312 empieza en el segundo 6. AC-19 (b) sigue con muestra derivada.
@@ -64,7 +76,7 @@ Revisión ciclo 1: **APPROVED** las dos, sin bloqueantes (verify en verde, 665 t
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Ninguno (CP-3 de `stop_arrivals_api` resuelto en la PR #19). Próximo: CP-6 al cerrar el bloque 1.
+**CP-6 — fin del bloque 1** (tras fusionar la PR de `stop_arrivals_api`): validación de la persona.
 
 ## Bloqueos
 Ninguno. 

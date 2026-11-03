@@ -130,7 +130,7 @@
       "order": 6,
       "block": 1,
       "title": "API de parada y llegadas: sentido, viaje asociado, ocupación y respaldo por horario",
-      "status": "spec_approved",
+      "status": "done",
       "depends_on": [
         "gtfs_import",
         "stop_tokens_qr",
@@ -152,7 +152,7 @@
       "spec": "specs/stop_arrivals_api/",
       "needs_exploration": true,
       "review_cycles": 0,
-      "passes": false
+      "passes": true
     },
     {
       "id": "frontend_i18n",

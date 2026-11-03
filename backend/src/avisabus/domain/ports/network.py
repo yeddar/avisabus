@@ -43,7 +43,16 @@ class NetworkRepository(Protocol):
     def scheduled_stop_times(
         self, stop_id: str, at: datetime, window: timedelta
     ) -> list[ScheduledStopTime]:
-        """Passages in `[at, at + window]` of the service days `D` and `D - 1`, by time."""
+        """Passages in `[at, at + window]`, by time, of every service day from `date(at) - 1` to
+        `date(at + window)` in the feed's zone (stop_arrivals_api AC-18)."""
+        ...
+
+    def departing_directions(self, stop_id: str, line: str) -> frozenset[int]:
+        """Directions of `line` with some trip of the active feed whose first stop (minimum
+        `stop_sequence`) is `stop_id`.
+
+        Port extension defined by stop_arrivals_api design §3 ("Sentidos que salen", AC-19).
+        """
         ...
 
     def trip_stop_times(self, trip_id: str) -> list[TripStopTime]: ...

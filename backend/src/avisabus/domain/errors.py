@@ -31,3 +31,14 @@ class ArrivalsUnavailableError(DomainError):
         self.stop_id = stop_id
         self.reason = reason
         super().__init__(f"arrivals unavailable ({reason})")
+
+
+class StopNotFoundError(DomainError):
+    """The stop token is missing or invalid, or the stop does not exist (stop_arrivals_api AC-02).
+
+    The three cases are deliberately the same error. The stop is in `stop_id`.
+    """
+
+    def __init__(self, stop_id: str) -> None:
+        self.stop_id = stop_id
+        super().__init__("stop not found")

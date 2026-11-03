@@ -5,6 +5,7 @@ The backend runs from `backend/`, so the repository-root `.env` is read as `../.
 Every variable must be documented in the repository's `.env.example`.
 """
 
+import json
 from pathlib import Path
 from typing import Literal, Self
 
@@ -52,6 +53,11 @@ class Settings(BaseSettings):
     sae_max_concurrency: int = Field(default=4, ge=1)
     sae_replay_dir: Path = Path("tests/fixtures/sae_recordings/stop_508_peak")
     sae_contact: str = ""
+    trip_match_tolerance_min: float = Field(default=10, gt=0)
+    scheduled_window_min: float = Field(default=90, gt=0)
+    scheduled_per_direction: int = Field(default=2, ge=1)
+    direction_overrides_file: str = ""
+    direction_min_score: float = Field(default=0.2, ge=0, le=1)
 
     @model_validator(mode="after")
     def _check_occupancy(self) -> Self:
@@ -130,6 +136,33 @@ class Settings(BaseSettings):
         if self.stop_token_secret is None or not self.stop_token_secret.get_secret_value():
             return DEV_STOP_TOKEN_SECRET
         return self.stop_token_secret.get_secret_value().encode()
+
+
+def read_direction_overrides(settings: Settings) -> dict[str, str]:
+    """Raw entries `"{line}|{SAE destination}": "{GTFS headsign}"` of
+    `AVISABUS_DIRECTION_OVERRIDES_FILE` (stop_arrivals_api design §4); `{}` when it is unset.
+
+    Raises `ConfigurationError` if the file cannot be read or is not a JSON object of strings:
+    the entries themselves are checked against the network later (AC-20).
+    """
+    if not settings.direction_overrides_file:
+        return {}
+    path = Path(settings.direction_overrides_file)
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        raise ConfigurationError(
+            f"cannot read the direction overrides file {path} ({type(error).__name__}); "
+            "check AVISABUS_DIRECTION_OVERRIDES_FILE"
+        ) from None
+    if not isinstance(data, dict) or not all(
+        isinstance(key, str) and isinstance(value, str) for key, value in data.items()
+    ):
+        raise ConfigurationError(
+            f"the direction overrides file {path} must be a JSON object of strings "
+            '("{line}|{SAE destination}": "{GTFS headsign}")'
+        )
+    return dict(data)
 
 
 def log_dev_stop_token_secret_warning(settings: Settings) -> None:
