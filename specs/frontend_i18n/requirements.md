@@ -26,6 +26,8 @@ de las fuentes de datos (RNF-14).
   vista, región de anuncios, estilos de foco visible y tamaño mínimo de objetivos táctiles.
 - Pie con atribución de fuentes de datos.
 - `HomePage` traducida.
+- Base visual común según `docs/design.md`: tipografía autoalojada y tokens de color en el tema
+  de Tailwind, que usan todas las vistas.
 
 ## Fuera de alcance
 
@@ -105,6 +107,19 @@ de las fuentes de datos (RNF-14).
   parada, sin textos literales.
   *Verificación:* unit + e2e (axe en los dos idiomas)
 
+### Base visual
+
+- **frontend_i18n.AC-16** — LA APLICACIÓN DEBERÁ usar la tipografía Atkinson Hyperlegible
+  (400 y 700) servida desde su propio origen, con respaldo `system-ui, sans-serif`, y NO DEBERÁ
+  hacer peticiones a otros orígenes para cargar tipografías, iconos u hojas de estilo.
+  *Verificación:* e2e (la portada carga la fuente desde el propio origen y no hay peticiones a
+  otros orígenes)
+- **frontend_i18n.AC-17** — EL TEMA DE ESTILOS DEBERÁ definir los tokens de color de
+  `docs/design.md` §4 con sus nombres y valores, y la cabecera, el pie y los componentes base
+  DEBERÁN seguir `docs/design.md` §5.1 y §5.5.
+  *Verificación:* revisión (reviewer, contra `src/index.css` y capturas e2e) + manual (persona en
+  CP-6)
+
 ## Trazabilidad
 
 | Requisito | AC |
@@ -112,6 +127,6 @@ de las fuentes de datos (RNF-14).
 | RF-31 Castellano y valenciano con selector y persistencia | AC-01, AC-02, AC-03, AC-04, AC-05 |
 | RF-32 Nombres del GTFS sin traducir | AC-06 |
 | RNF-15 Internacionalización (sin literales, ambos idiomas) | AC-07, AC-08, AC-09 |
-| RNF-03 Accesibilidad | AC-04, AC-06, AC-10, AC-11, AC-12, AC-13, AC-15 |
+| RNF-03 Accesibilidad | AC-04, AC-06, AC-10, AC-11, AC-12, AC-13, AC-15, AC-16, AC-17 |
 | RNF-14 Atribución | AC-14 |
 | CU-06 Cambiar idioma | AC-01, AC-02 |

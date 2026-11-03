@@ -108,6 +108,7 @@ class VehiclePosition:
     stop: Stop
     line: str
     direction_id: int
+    headsign: str                     # LineDirection.headsign de (stop, line, direction_id)
     source: ArrivalSource
     status: PositionStatus
     generated_at: datetime
@@ -129,10 +130,11 @@ class GetVehiclePosition:
 ```json
 {
   "stop": {"stop_id": "508", "name": "Parc de l'Oest - Enguera", "lat": 39.46794, "lon": -0.39568},
-  "line": "93", "direction_id": 0,
+  "line": "93", "direction_id": 0, "headsign": "Passeig Marítim - Hospital Malva-rosa",
   "source": "REALTIME", "status": "EN_ROUTE",
   "generated_at": "2026-11-04T07:40:00Z", "refresh_after_s": 20,
-  "arrival": {"kind": "MINUTES", "minutes": 4, "arrival_at": "2026-11-04T07:44:00Z"},
+  "arrival": {"kind": "MINUTES", "minutes": 4, "arrival_at": "2026-11-04T07:44:00Z",
+              "destination": "Passeig Marítim - Hospital Malva-rosa", "sae_destination": "Pass. Marítim"},
   "vehicle": {"trip_id": "…", "service_date": "2026-11-04"},
   "shape_id": "994_…",
   "position": {

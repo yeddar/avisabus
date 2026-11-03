@@ -1,6 +1,6 @@
 # API de parada y llegadas — design
 
-> Feature: `stop_arrivals_api` · Versión: 1.4 · Estado: APPROVED
+> Feature: `stop_arrivals_api` · Versión: 1.5 · Estado: APPROVED
 > Requisitos: RF-06, RF-09, RF-11, RF-15, RF-32, RNF-01, RNF-08 · Casos de uso: CU-01 · Depende de: gtfs_import, stop_tokens_qr, sae_arrivals_source, occupancy_sensor
 
 ## 1. Resumen
@@ -177,6 +177,14 @@ existente en algún sentido de esa línea); las inválidas se registran (`arriva
 y se ignoran. En cada consulta, `GetStopArrivals` busca `(line, destination)` y pasa el headsign a
 `resolve_direction`, que lo traduce al sentido con los candidatos de esa parada.
 
+**Headsign devuelto (v1.5, AC-09):** `resolve_destination(...) -> DestinationResolution | None`
+devuelve el sentido y el headsign: con sentido único, el headsign más frecuente de ese sentido en
+la parada; con *override*, el del *override*; con texto o sentido que sale, el headsign de ese
+sentido con mayor similitud al texto del SAE (empate: el más frecuente). `GetStopArrivals` usa
+`destination = resolution.headsign` si hay resolución y el texto del SAE si no;
+`sae_destination` es siempre el texto del SAE (y `None` con horario programado, donde
+`destination` = headsign del viaje).
+
 Candidatos de `TripMatcher`: `network.scheduled_stop_times(stop_id, at=arrival_at − tolerance,
 window=2·tolerance + rango de llegadas)` filtrados por línea y sentido, convertidos a
 `TripCandidate` con `scheduled_at` = inicio del día de servicio (Europe/Madrid) + `arrival_s`.
@@ -195,7 +203,7 @@ parada.
   "name": "Parc de l'Oest - Enguera",
   "lines": [
     {"line": "70", "direction_id": 0, "headsign": "Alboraia", "color": "FE0000", "text_color": "FFFFFF"},
-    {"line": "93", "direction_id": 0, "headsign": "Pg. Marítim", "color": "FE0000", "text_color": "FFFFFF"}
+    {"line": "93", "direction_id": 0, "headsign": "Passeig Marítim - Hospital Malva-rosa", "color": "FE0000", "text_color": "FFFFFF"}
   ]
 }
 ```
@@ -256,6 +264,16 @@ Sin tablas nuevas. *Overrides* de sentido opcionales en un JSON:
 sentido que sale (AC-19) algunos pueden dejar de ser necesarios: se conservan solo los que un test
 demuestre necesarios.)
 
+**Limitaciones conocidas de los *overrides* (v1.5):**
+- Se validan contra la red **solo al arrancar**: si al arrancar no hay feed activo, ninguno se
+  puede validar y se ignoran todos; tras reimportar el GTFS no se revalidan hasta reiniciar
+  (`deployment_rpi` documenta reiniciar tras reimportar). En cada consulta, un headsign que ya no
+  existe en la parada se ignora (paso 2 de `resolve_direction`).
+- El formato `línea|destino → headsign` asigna **un** headsign: no puede expresar un texto del SAE
+  que cubre dos medios bucles del mismo sentido (p. ej. `C3|Campanar`). En la práctica no hace
+  falta, porque el sentido ya se resuelve por la regla del sentido único o del texto; si un caso
+  real lo necesitara, requeriría una versión nueva de la spec.
+
 ## 5. Errores y logs
 
 | Evento | Campos |
@@ -271,8 +289,12 @@ demuestre necesarios.)
 | `AVISABUS_TRIP_MATCH_TOLERANCE_MIN` | `10` |
 | `AVISABUS_SCHEDULED_WINDOW_MIN` | `90` |
 | `AVISABUS_SCHEDULED_PER_DIRECTION` | `2` |
-| `AVISABUS_DIRECTION_OVERRIDES_FILE` | *(vacío)* |
+| `AVISABUS_DIRECTION_OVERRIDES_FILE` | *(vacío)*; `.env.example` usa `config/direction_overrides.json` |
 | `AVISABUS_DIRECTION_MIN_SCORE` | `0.2` |
+
+Las rutas relativas (fichero de *overrides*, base de datos SQLite) se resuelven desde el
+directorio de trabajo: los comandos del backend se ejecutan desde `backend/` (`docs/conventions.md`
+§8). En producción se usan rutas absolutas dentro del contenedor (`deployment_rpi`).
 
 ## 7. Estrategia de test
 

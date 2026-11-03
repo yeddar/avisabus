@@ -1,6 +1,6 @@
 # Sensor de ocupación — requirements
 
-> Feature: `occupancy_sensor` · Versión: 1.2 · Estado: APPROVED
+> Feature: `occupancy_sensor` · Versión: 1.3 · Estado: APPROVED
 > Requisitos: RF-14, RF-15 · Casos de uso: CU-01 (y, más adelante, CU-09) · Depende de: project_scaffold, gtfs_import
 
 ## Contexto
@@ -92,8 +92,9 @@ libres (RF-15), y al conductor como plazas libres (RF-29, feature `driver_demand
   (otro proceso) en un máximo de 5 segundos sin reiniciar la aplicación.
   *Verificación:* integration (caché de 5 s con FakeClock)
 
-- **occupancy_sensor.AC-15** — CUANDO la aplicación se compone en `main.py` (y en el contenedor de
-  la CLI), EL SISTEMA DEBERÁ pasar al sensor y al clasificador los umbrales, la capacidad, los
+- **occupancy_sensor.AC-15** — CUANDO la aplicación se compone en `main.py` (y, si alguna vez lo
+  hace, cuando el contenedor de la CLI componga el sensor o el clasificador; hoy no los compone),
+  EL SISTEMA DEBERÁ pasar al sensor y al clasificador los umbrales, la capacidad, los
   asientos y la semilla **configurados**, no los valores por defecto.
   *Verificación:* integration (arranque con valores no estándar y comprobación de que el sensor
   compuesto los usa)
@@ -113,3 +114,4 @@ libres (RF-15), y al conductor como plazas libres (RF-29, feature `driver_demand
 | 1.0 | 2026-10-31 | Versión inicial aprobada (PR #2) | — |
 | 1.1 | 2026-11-02 | AC-03 rechaza configuraciones con algún nivel sin enteros posibles; AC-11 válido con cualquier configuración válida; design: proporciones del forzado = punto medio de cada banda, con ajuste por redondeo; T-07. | Hallazgo SP-01 de la revisión de `occupancy_sensor`. Aprobada por la persona. |
 | 1.2 | 2026-11-03 | AC-15: test de composición con configuración no estándar. T-09 y T-10. | Hallazgo NB-1 de la revisión de los ajustes del bloque 1. Aprobada por la persona. |
+| 1.3 | 2026-11-03 | Solo documentación: AC-15 aclara que el contenedor de la CLI no compone hoy sensor ni clasificador; design §3 escribe `progress` con el día de servicio (regla "mediodía − 12 h"), como está implementado. | Hallazgos SP-1 (O-02) y SP-02 de las revisiones de `occupancy_sensor`. Pendiente de aprobación (PR #7). |

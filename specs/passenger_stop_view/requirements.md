@@ -26,11 +26,12 @@ TypeScript generados desde el OpenAPI del backend, con un test que detecta desfa
 - Recordar la última parada consultada y ofrecerla en la portada.
 - Página genérica "no encontrado" para rutas desconocidas.
 - Presupuesto de tamaño del JavaScript inicial.
+- Aspecto según la guía visual `docs/design.md` (§3–§5).
 
 ## Fuera de alcance
 
 - Botón "Ver en el mapa" y vista de mapa (`passenger_map_view`).
-- Botón "Avisar" y estado del aviso (`passenger_alert_ui`).
+- Botón "Solicitar" (solicitar parada) y estado de la solicitud (`passenger_alert_ui`, bloque 3).
 - Búsqueda de paradas sin QR.
 
 ## Criterios de aceptación
@@ -59,9 +60,16 @@ TypeScript generados desde el OpenAPI del backend, con un test que detecta desfa
   *Verificación:* unit + e2e
 - **passenger_stop_view.AC-05** — LA VISTA DEBERÁ mostrar las llegadas en el orden de la API como
   una lista en la que cada elemento indica: línea, destino, tiempo de llegada y ocupación, y
-  cuyo texto accesible completo sea del tipo "Línea 93, hacia Pg. Marítim, llega en 4 minutos,
-  ocupación media, hay asientos libres".
-  *Verificación:* unit
+  cuyo texto accesible completo sea del tipo "Línea 93, hacia Passeig Marítim - Hospital
+  Malva-rosa, llega en 4 minutos, ocupación media, hay asientos libres". El destino DEBERÁ
+  tomarse así:
+  - **en pantalla**, `sae_destination` si no es nulo (es lo que el pasajero ve en el letrero del
+    autobús) y, si es nulo (horario programado), `destination`;
+  - **en el texto accesible** y en los nombres accesibles de las acciones de la llegada,
+    siempre `destination` (headsign del GTFS si el sentido está resuelto: más legible al oírlo
+    que las abreviaturas del SAE).
+  *Verificación:* unit (casos: tiempo real con sentido resuelto, tiempo real sin sentido,
+  horario programado)
 - **passenger_stop_view.AC-06** — EL TIEMPO DE LLEGADA DEBERÁ mostrarse como "N min" si
   `kind = MINUTES` y N ≥ 1; como "Llegando" si N = 0; y como hora `HH:MM` si
   `kind = CLOCK_TIME`.
@@ -104,7 +112,7 @@ TypeScript generados desde el OpenAPI del backend, con un test que detecta desfa
 - **passenger_stop_view.AC-15** — LOS REFRESCOS AUTOMÁTICOS NO DEBERÁN generar anuncios para
   lectores de pantalla, salvo CUANDO la primera llegada de una línea y destino pase a
   "Llegando", en cuyo caso LA VISTA DEBERÁ anunciar una sola vez, de forma educada,
-  "Línea {línea} hacia {destino} está llegando".
+  "Línea {línea} hacia {destino} está llegando" (destino del texto accesible de AC-05).
   *Verificación:* unit
 
 ### Errores y conectividad
@@ -138,6 +146,10 @@ TypeScript generados desde el OpenAPI del backend, con un test que detecta desfa
   móvil y tablet, en castellano y en valenciano, y axe NO DEBERÁ reportar violaciones WCAG 2.1
   A/AA.
   *Verificación:* e2e
+- **passenger_stop_view.AC-23** — LA VISTA DEBERÁ seguir la guía visual `docs/design.md`
+  (tipografía, tokens de color, distintivo de línea, tarjeta de llegada, insignia de ocupación,
+  botones y avisos de estado).
+  *Verificación:* revisión (reviewer, contra capturas de las pruebas e2e) + manual (persona en CP-6)
 
 ## Trazabilidad
 
@@ -148,7 +160,7 @@ TypeScript generados desde el OpenAPI del backend, con un test que detecta desfa
 | RF-15 Ocupación sin depender del color | AC-07 |
 | RF-32 Nombres del GTFS | AC-04, AC-05 |
 | RNF-01 Rendimiento | AC-21 |
-| RNF-03 Accesibilidad | AC-05, AC-07, AC-09, AC-11, AC-15, AC-18, AC-22 |
+| RNF-03 Accesibilidad | AC-05, AC-07, AC-09, AC-11, AC-15, AC-18, AC-22, AC-23 |
 | RNF-04 Sin registro ni instalación | AC-04 (acceso directo por URL) |
 | RNF-05 Compatibilidad móvil/tablet | AC-22 |
 | RNF-14 Atribución | (pie de `frontend_i18n`, presente en la vista; AC-22) |

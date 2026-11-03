@@ -22,8 +22,7 @@ frontend/src/features/passenger/map/
 ├── busIcon.ts               # L.divIcon con SVG rotado por bearing_deg
 ├── useInitialFit.ts         # encuadre solo en la primera carga (AC-08)
 ├── usePositionQueries.ts    # usePosition, useShape
-├── useProximityAnnouncements.ts
-└── MapLegend.tsx
+└── useProximityAnnouncements.ts
 ```
 
 Cambios en `features/passenger/stop/ArrivalRow.tsx`: enlace "Ver en el mapa" (AC-01).
@@ -75,9 +74,12 @@ export function buildMapModel(shape: ShapeResponse, position: PositionResponse):
 - Contenedor: `<section role="region" aria-label={t('map.region')} aria-describedby="summary-id">`.
   Altura: 60 dvh en móvil, 70 dvh en tablet.
 - Paradas: `CircleMarker` radio 5 (la del pasajero: radio 9, borde grueso, `Tooltip` permanente
-  con su nombre). El autobús: `Marker` con `divIcon` (SVG de autobús, flecha rotada con
+  con el texto `t('map.yourStop')` = "Tu parada"; el nombre de la parada ya está en el resumen y en
+  la vista de parada). El autobús: `Marker` con `divIcon` (SVG de autobús, flecha rotada con
   `bearing_deg`, texto visible "Estimada"/"Según horario" bajo el icono; borde discontinuo si
   `scheduled`).
+- Sin leyenda (AC-05; `docs/design.md` §5.7): las etiquetas "Tu parada" y "Estimada" hacen su
+  función.
 - Ningún marcador es enfocable con teclado (la información está en el resumen); el mapa sí lo es
   para desplazarse.
 
@@ -91,7 +93,8 @@ export function buildMapModel(shape: ShapeResponse, position: PositionResponse):
 ```
 stop.viewOnMap ("Ver en el mapa"), stop.viewOnMapLabel ("Ver en el mapa la línea {{line}} hacia {{destination}}"),
 map.title ("Línea {{line}} hacia {{destination}}"), map.back, map.loading, map.region, map.regionDescription,
-map.estimated, map.scheduled, map.enRoute, map.stopsAway_one, map.stopsAway_other, map.nextIsYours,
+map.estimated, map.scheduled, map.busEstimated ("Estimada"), map.busScheduled ("Según horario"),
+map.yourStop ("Tu parada"), map.summaryTitle ("Dónde está el autobús"), map.enRoute, map.stopsAway_one, map.stopsAway_other, map.nextIsYours,
 map.atStop, map.notStarted, map.unavailable, map.reasonNoArrival, map.reasonNoVehicle,
 map.notFound, map.zoomIn, map.zoomOut, map.osmAttribution, map.announceOneStop, map.announceArriving
 ```
@@ -109,13 +112,15 @@ map.notFound, map.zoomIn, map.zoomOut, map.osmAttribution, map.announceOneStop, 
 | AC-08 | `useInitialFit.test.ts` |
 | AC-09, AC-10, AC-11 | `BusMap.test.tsx` (opciones pasadas a `MapContainer`, `matchMedia` simulado) + e2e (teclado: `+`/`-` y flechas) |
 | AC-12 | `MapPage.test.tsx` con temporizadores falsos (una sola petición de trazado) |
+| AC-15 | Revisión: el reviewer compara las capturas de `e2e/map-view.spec.ts` (en `test-results/`, no versionadas) con `docs/design.md` §5.7; la persona lo revisa en CP-6 |
 | AC-14 | `e2e/map-view.spec.ts`: `page.route('**/api/v1/**')` con fixtures y `page.route('**/tile.openstreetmap.org/**')` → PNG 1×1 local |
 
 ## 6. Decisiones locales permitidas
 
 - `lazy` del router frente a `React.lazy`.
-- Estilo de los marcadores e iconos (manteniendo texto visible y contraste).
-- Altura del mapa.
+- Estilo de los marcadores e iconos dentro de lo que fija `docs/design.md` §5.7 (manteniendo texto
+  visible y contraste).
+- Altura del mapa (referencia: 60 dvh en móvil, 70 dvh en tablet; ≈ 360 px en el boceto).
 
 ## 7. Preguntas abiertas
 

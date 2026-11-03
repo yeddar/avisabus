@@ -26,14 +26,14 @@
   - Ficheros: `src/features/passenger/map/{usePositionQueries,summary,mapModel}.ts`, tests
   - Verificación: `cd frontend && npm run test -- passenger/map`
 
-- [ ] **T-03** — `PositionSummary`, `MapLegend` y `useProximityAnnouncements`.
+- [ ] **T-03** — `PositionSummary` (con la insignia "Posición estimada") y `useProximityAnnouncements`.
   - AC: passenger_map_view.AC-04, AC-05, AC-06
-  - Ficheros: `src/features/passenger/map/{PositionSummary,MapLegend}.tsx`, `useProximityAnnouncements.ts`, tests
+  - Ficheros: `src/features/passenger/map/PositionSummary.tsx`, `useProximityAnnouncements.ts`, tests
   - Verificación: `cd frontend && npm run test -- PositionSummary useProximityAnnouncements`
 
 - [ ] **T-04** — `BusMap` (Leaflet: teselas configurables, atribución, trazado, paradas, autobús
   orientado, teclado, zoom traducido, movimiento reducido, región accesible) y `useInitialFit`.
-  - AC: passenger_map_view.AC-07, AC-08, AC-09, AC-10, AC-11
+  - AC: passenger_map_view.AC-05, AC-07, AC-08, AC-09, AC-10, AC-11
   - Ficheros: `src/features/passenger/map/{BusMap.tsx,busIcon.ts,useInitialFit.ts}`, `frontend/.env.example`, tests
   - Verificación: `cd frontend && npm run test -- BusMap useInitialFit`
 
@@ -43,8 +43,9 @@
   - Verificación: `cd frontend && npm run test -- MapPage`
 
 - [ ] **T-06** — Presupuesto de bundle ampliado (Leaflet fuera del fragmento inicial) y E2E con
-  API y teselas simuladas, estados `EN_ROUTE`/`NOT_STARTED`/`NO_ARRIVAL`, teclado y axe.
-  - AC: passenger_map_view.AC-02, AC-07, AC-09, AC-11, AC-14
+  API y teselas simuladas, estados `EN_ROUTE`/`NOT_STARTED`/`NO_ARRIVAL`, teclado, axe y capturas
+  para la revisión visual.
+  - AC: passenger_map_view.AC-02, AC-07, AC-09, AC-11, AC-14, AC-15
   - Ficheros: `src/__tests__/bundle-budget.test.ts`, `e2e/map-view.spec.ts`, `e2e/fixtures/*`
   - Verificación: `cd frontend && npm run e2e`
 

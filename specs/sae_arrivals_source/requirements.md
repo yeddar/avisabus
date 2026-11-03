@@ -1,6 +1,6 @@
 # Fuente de llegadas del SAE — requirements
 
-> Feature: `sae_arrivals_source` · Versión: 1.3 · Estado: APPROVED
+> Feature: `sae_arrivals_source` · Versión: 1.4 · Estado: APPROVED
 > Requisitos: RF-07, RF-08, RF-11, RF-35, RNF-08, RNF-10, RNF-13 · Casos de uso: CU-01 · Depende de: project_scaffold
 
 ## Contexto
@@ -185,3 +185,4 @@ nuevo tras el mismo puerto.
 | 1.1 | 2026-11-02 | Fuente `QR.php` (HTML) en lugar de `getSAE` (XML); reglas del parser en design §4; AC-04 cita `Próximo`; AC-21 (cabecera de parada obligatoria, parada inexistente = `unparseable`); AC-22 (`source_format` en las grabaciones); AC-19 (d) admite la parada inexistente como caso de error; T-08b (grabación nocturna opcional). | CP-3 tras la exploración E-01 (`progress/explore_sae.md`): `getSAE` está cerrado a terceros. Aprobada por la persona. |
 | 1.2 | 2026-11-02 | AC-11: instancia nueva del error en cada acierto de la caché negativa. Design: nombre del módulo `qrphp_parser.py` en §3, `build_arrivals_source` devuelve `CachedArrivalsSource`, `interval_s` admite `null`. T-11 y T-12 (README de regeneración y clientes HTTP en tests). | Hallazgos NB-1, NB-4, NB-6 y NB-7 de la revisión de `sae_arrivals_source`. Aprobada por la persona. |
 | 1.3 | 2026-11-03 | AC-03 acepta `HH:MM:SS`; AC-23 (entradas sin tiempo: descarte con evento `debug`); AC-19 (c) con la muestra nocturna real. T-14 y T-15. | Exploración de `stop_arrivals_api` (H-5): de noche el parser descartaba el 29 % de las entradas. Aprobada por la persona. |
+| 1.4 | 2026-11-03 | Solo documentación, sin cambios de código ni tareas nuevas: design §3 incluye `ParseResult.without_time` (AC-23); design §3 (CLI) fija el formato de `sae fetch` (`HH:MM` sin segundos); design §8 cita la muestra nocturna real en lugar de la derivada `HH:MM`. | Hallazgos SP-1, SP-2 y NB-1 de la revisión de los ajustes de `sae_arrivals_source` (v1.3). Pendiente de aprobación (PR #7). |

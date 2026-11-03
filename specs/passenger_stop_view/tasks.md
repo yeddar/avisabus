@@ -28,10 +28,10 @@ No necesaria.
   - Verificación: `cd frontend && npm run test -- contrast useServerNow useOnline lastStop`
 
 - [ ] **T-04** — Componentes de presentación: `LineBadge`, `ArrivalTime`, `OccupancyInfo` (iconos),
-  `ArrivalRow` (texto accesible), `ArrivalsList`, `SourceNotice`, estado vacío; claves i18n en ambos
-  idiomas.
+  `ArrivalRow` (texto accesible; destino visible y hablado con `destination.ts`), `ArrivalsList`,
+  `SourceNotice`, estado vacío; claves i18n en ambos idiomas; estilos según `docs/design.md`.
   - AC: passenger_stop_view.AC-05, AC-06, AC-07, AC-08, AC-09, AC-10, AC-11
-  - Ficheros: `src/features/passenger/stop/*.tsx`, `src/locales/**`, `src/test/fixtures/api/*.json`, tests
+  - Ficheros: `src/features/passenger/stop/*.tsx`, `src/features/passenger/stop/destination.ts`, `src/locales/**`, `src/test/fixtures/api/*.json`, tests
   - Verificación: `cd frontend && npm run test -- passenger/stop`
 
 - [ ] **T-05** — `useStopQueries` y `StopPage` (ruta `/p/:stopId`, cabecera, título, refresco con
@@ -58,8 +58,9 @@ No necesaria.
   - Verificación: `cd frontend && npm run test -- HomePage NotFoundPage`
 
 - [ ] **T-09** — E2E con API simulada (tiempo real, programado, vacío, no encontrada) en `es` y
-  `ca`, con axe; presupuesto de bundle (`test:bundle` encadenado a `e2e`).
-  - AC: passenger_stop_view.AC-04, AC-16, AC-21, AC-22
+  `ca`, con axe y capturas para la revisión visual; presupuesto de bundle (`test:bundle`
+  encadenado a `e2e`).
+  - AC: passenger_stop_view.AC-04, AC-16, AC-21, AC-22, AC-23
   - Ficheros: `e2e/stop-view.spec.ts`, `e2e/fixtures/*.json`, `src/__tests__/bundle-budget.test.ts`, `package.json`
   - Verificación: `cd frontend && npm run e2e`
 

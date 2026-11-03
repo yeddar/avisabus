@@ -1,6 +1,6 @@
 # API de parada y llegadas — requirements
 
-> Feature: `stop_arrivals_api` · Versión: 1.4 · Estado: APPROVED
+> Feature: `stop_arrivals_api` · Versión: 1.5 · Estado: APPROVED
 > Requisitos: RF-06, RF-09, RF-11, RF-15, RF-32, RNF-01, RNF-08 · Casos de uso: CU-01 · Depende de: gtfs_import, stop_tokens_qr, sae_arrivals_source, occupancy_sensor
 
 ## Contexto
@@ -62,7 +62,7 @@ Es el backend de la vista de parada (CU-01). Une las piezas del bloque 1:
   SISTEMA DEBERÁ comparar el destino del SAE con **todos** los headsigns de los viajes de esa
   línea que paran allí (`NetworkRepository.headsigns_at_stop`), tras normalizar (minúsculas, sin
   acentos ni puntuación, abreviaturas expandidas según la tabla de alias), y elegir el sentido del
-  headsign más parecido, siempre que la similitud supere el umbral (0,2 por defecto) y la mejor
+  headsign más parecido, siempre que la similitud alcance el umbral (≥ 0,2 por defecto) y la mejor
   similitud de ese sentido sea estrictamente mayor que la mejor de cualquier otro sentido. El orden
   completo de resolución está en design §3 (sentido único → override → texto → sentido que sale →
   sin resolver).
@@ -77,8 +77,13 @@ Es el backend de la vista de parada (CU-01). Une las piezas del bloque 1:
   *Verificación:* integration (grabación con línea fuera de red: en `gtfs_mini` solo la 98 de las
   líneas de la parada 2070 es de la red, así que la 73, la 95 y la 99 de la sesión grabada sirven
   como caso **real** de línea fuera de red)
-- **stop_arrivals_api.AC-09** — EL SISTEMA DEBERÁ devolver como `destination` el `headsign` del
-  GTFS cuando el sentido está resuelto, y el texto del SAE en otro caso.
+- **stop_arrivals_api.AC-09** — EL SISTEMA DEBERÁ devolver como `destination` un `headsign` del
+  GTFS cuando el sentido está resuelto, y el texto del SAE en otro caso. El headsign se elige
+  según cómo se resolvió el sentido:
+  - sentido único: el headsign más frecuente de ese sentido entre los viajes que paran allí;
+  - *override*: el headsign del *override*;
+  - texto o sentido que sale: el headsign de ese sentido más parecido al texto del SAE (misma
+    similitud de AC-06); a igualdad, el más frecuente en la parada.
   *Verificación:* unit
 - **stop_arrivals_api.AC-10** — CUANDO hay llegadas con sentido resuelto, EL SISTEMA DEBERÁ
   emparejar, por cada línea y sentido, el **conjunto** de sus llegadas con viajes programados
@@ -102,14 +107,18 @@ Es el backend de la vista de parada (CU-01). Une las piezas del bloque 1:
   texto, Y exactamente uno de los sentidos de la línea tiene viajes que **empiezan** en esa parada,
   ENTONCES EL SISTEMA DEBERÁ asignar ese sentido ("sentido que sale"): en una cabecera, el autobús
   al que se sube el pasajero es el que sale.
-  *Verificación:* unit + integration (cabeceras de C1, 1959 y 2277, con el texto genérico real
-  "Cntr.Històric")
+  *Verificación:* unit (cabeceras de C1, 1959 y 2277, con el texto genérico real "Cntr.Històric" y
+  candidatos tomados del feed real) + integration (`gtfs_mini` no contiene la C1: el caso de
+  integración se ejecuta con el feed completo en un test marcado `slow`)
 - **stop_arrivals_api.AC-20** — LOS *OVERRIDES* DE SENTIDO DEBERÁN expresarse como
   `"{línea}|{destino SAE}" → "{headsign GTFS}"` (no por número de sentido, que puede cambiar al
   importar un feed nuevo) y resolverse a sentido en cada consulta a partir de los headsigns de la
   parada; SI al arrancar algún override nombra una línea o un headsign inexistentes en la red
   activa, ENTONCES EL SISTEMA DEBERÁ registrar `arrivals.override_invalid` con la entrada y
-  ignorarla (sin impedir el arranque).
+  ignorarla (sin impedir el arranque). SI el fichero de *overrides* configurado no existe o no es
+  un JSON válido con ese formato, ENTONCES EL SISTEMA DEBERÁ negarse a arrancar con un error de
+  configuración. La validación contra la red se hace **solo al arrancar** (limitaciones en design
+  §4).
   *Verificación:* unit + integration
 - **stop_arrivals_api.AC-21** — CADA LLEGADA DEBERÁ incluir `sae_destination` con el texto de
   destino tal como lo da el SAE (`null` si `source = "SCHEDULED"`), además de `destination`
@@ -178,3 +187,4 @@ Es el backend de la vista de parada (CU-01). Une las piezas del bloque 1:
 | 1.2 | 2026-10-31 | AC-18: horarios que cruzan el cambio de día (incluye el día de servicio siguiente). T-05b modifica `SqliteNetworkRepository.scheduled_stop_times` (código de `gtfs_import`). | Hallazgo N-07 de `progress/review_gtfs_import.md`: la consulta solo miraba `D − 1` y `D`. Aprobada por la persona. |
 | 1.3 | 2026-11-02 | AC-08 y design §7: en `gtfs_mini`, las líneas 73, 95 y 99 de la parada 2070 son un caso real de línea fuera de red en los tests. Sin cambios de código ni de tareas. | Observación del orquestador tras `sae_arrivals_source` (la sesión grabada incluye la 2070). Aprobada por la persona. |
 | 1.4 | 2026-11-03 | Orden de resolución del sentido con la regla del **sentido que sale** (AC-19); overrides por headsign y validados (AC-20); umbral 0,2; alias revisados (sin `c → carrer`, con palabras vacías y abreviaturas de E-01); emparejamiento **óptimo con orden** y tolerancia de 10 min (AC-10); `sae_destination` (AC-21); entradas duplicadas (AC-22). T-02, T-03, T-05c, T-06 y T-07 ampliadas. | CP-3 tras las exploraciones E-01, E-02 y E-03 (`progress/explore_destinations.md`). Aprobada por la persona. |
+| 1.5 | 2026-11-03 | Solo documentación, sin cambios de código ni tareas nuevas: AC-06 "alcanza" (≥) el umbral, como design §3; AC-09 fija qué headsign se devuelve según cómo se resolvió el sentido (lo implementado); AC-19 aclara que la C1 se cubre con muestras reales y un test `slow` (no está en `gtfs_mini`); AC-20 recoge el error de configuración con fichero ilegible y la validación solo al arrancar; design §3 con el headsign real de la 93, §4 con limitaciones de los *overrides* y §6 con la ruta relativa a `backend/`. | Hallazgos P-1, P-2, O-1…O-4 y NB-3 de la revisión de `stop_arrivals_api`. Pendiente de aprobación (PR #7). |

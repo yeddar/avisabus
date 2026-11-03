@@ -18,7 +18,9 @@ vista de parada (presupuesto de `passenger_stop_view.AC-21`).
 - Botón "Ver en el mapa" en las llegadas de la vista de parada que lo admiten.
 - Ruta `/p/{stop_id}/map/{line}/{direction_id}?t={token}` cargada bajo demanda.
 - Resumen textual de la posición y anuncios de proximidad.
-- Mapa con trazado, paradas, parada del pasajero y autobús; leyenda; atribución de OSM.
+- Mapa con trazado, paradas, parada del pasajero ("Tu parada") y autobús ("Estimada"), sin
+  leyenda; atribución de OSM.
+- Aspecto según la guía visual `docs/design.md` §5.7.
 - Refresco periódico.
 
 ## Fuera de alcance
@@ -40,8 +42,9 @@ vista de parada (presupuesto de `passenger_stop_view.AC-21`).
   fragmento de JavaScript aparte, de modo que el presupuesto de `passenger_stop_view.AC-21` se siga
   cumpliendo; mientras se carga, DEBERÁ mostrarse un indicador "Cargando mapa…" con `role="status"`.
   *Verificación:* unit (presupuesto de bundle) + e2e
-- **passenger_map_view.AC-03** — LA VISTA DEBERÁ tener como `h1` "Línea {línea} hacia {destino}",
-  título de documento acorde y un enlace "Volver a la parada" que conserva el token.
+- **passenger_map_view.AC-03** — LA VISTA DEBERÁ tener como `h1` "Línea {línea} hacia {destino}"
+  (destino = `arrival.destination` si hay llegada y, si no, el `headsign` de la respuesta de
+  posición), título de documento acorde y un enlace "Volver a la parada" que conserva el token.
   *Verificación:* unit
 
 ### Resumen textual (alternativa al mapa)
@@ -54,8 +57,10 @@ vista de parada (presupuesto de `passenger_stop_view.AC-21`).
   - `NOT_STARTED`: "El autobús aún no ha salido de {primera parada}. Llega en {tiempo}.";
   - `NO_ARRIVAL` / `NO_VEHICLE`: "Posición no disponible en este momento." más el motivo.
   *Verificación:* unit
-- **passenger_map_view.AC-05** — LA VISTA DEBERÁ indicar siempre, junto al resumen y en la leyenda
-  del mapa, "Posición estimada" (o "Posición según horario" si `source = "SCHEDULED"`).
+- **passenger_map_view.AC-05** — LA VISTA DEBERÁ indicar siempre, junto al resumen, "Posición
+  estimada" (o "Posición según horario" si `source = "SCHEDULED"`), y el marcador del autobús DEBERÁ
+  llevar una etiqueta de texto visible "Estimada" (o "Según horario"). EL MAPA NO DEBERÁ tener
+  leyenda: la parada del pasajero lleva la etiqueta visible "Tu parada".
   *Verificación:* unit
 - **passenger_map_view.AC-06** — LOS REFRESCOS NO DEBERÁN generar anuncios, salvo CUANDO
   `stops_away` pase a 0 ("El autobús llegará a tu parada en la siguiente") o el estado pase a
@@ -67,7 +72,8 @@ vista de parada (presupuesto de `passenger_stop_view.AC-21`).
 
 - **passenger_map_view.AC-07** — EL MAPA DEBERÁ dibujar el trazado del viaje (`shape_id` de la
   respuesta de posición) con el color accesible de la línea, las paradas del trazado, la parada del
-  pasajero destacada y el autobús con un icono orientado según `bearing_deg`; SI `position` es
+  pasajero destacada con la etiqueta "Tu parada" y el autobús con un icono orientado según
+  `bearing_deg`; SI `position` es
   `null`, ENTONCES DEBERÁ dibujar solo el trazado y las paradas.
   *Verificación:* unit (componentes con Leaflet en jsdom o capa de presentación aislada) + e2e
 - **passenger_map_view.AC-08** — EN LA PRIMERA CARGA, EL MAPA DEBERÁ encuadrar el autobús y la parada
@@ -102,6 +108,9 @@ vista de parada (presupuesto de `passenger_stop_view.AC-21`).
   móvil y tablet, y axe NO DEBERÁ reportar violaciones WCAG 2.1 A/AA. Solo puede excluirse del
   análisis el panel de teselas de Leaflet (`.leaflet-tile-pane`, imágenes decorativas).
   *Verificación:* e2e
+- **passenger_map_view.AC-15** — LA VISTA DE MAPA DEBERÁ seguir la guía visual `docs/design.md`
+  §5.7 (resumen destacado, etiquetas sobre el mapa, botones de zoom, atribución, sin leyenda).
+  *Verificación:* revisión (reviewer, contra capturas de las pruebas e2e) + manual (persona en CP-6)
 
 ## Trazabilidad
 
@@ -109,7 +118,7 @@ vista de parada (presupuesto de `passenger_stop_view.AC-21`).
 |---|---|
 | RF-13 Mapa con parada, trazado y autobús "posición estimada" | AC-01, AC-03, AC-05, AC-07, AC-08, AC-12 |
 | RNF-01 Rendimiento | AC-02, AC-12 |
-| RNF-03 Accesibilidad | AC-01, AC-04, AC-06, AC-09, AC-10, AC-11, AC-14 |
+| RNF-03 Accesibilidad | AC-01, AC-04, AC-05, AC-06, AC-09, AC-10, AC-11, AC-14, AC-15 |
 | RNF-05 Compatibilidad | AC-14 |
 | RNF-14 Atribución (OSM) | AC-09 |
 | CU-02 flujos 1a, 1b | AC-04, AC-05, AC-13 |

@@ -47,6 +47,7 @@ frontend/src/
 │   ├── ArrivalRow.tsx
 │   ├── ArrivalTime.tsx
 │   ├── OccupancyInfo.tsx
+│   ├── destination.ts        # visibleDestination / spokenDestination (AC-05)
 │   ├── SourceNotice.tsx
 │   ├── StopNotFound.tsx
 │   ├── useStopQueries.ts     # useStop, useStopArrivals
@@ -129,17 +130,28 @@ en consola.
 </main>
 ```
 
-`ArrivalRow`: contenido visual (badge, destino, tiempo grande, ocupación con icono SVG
+`ArrivalRow`: contenido visual (badge, "hacia" + destino, tiempo grande, ocupación con icono SVG
 `aria-hidden`) + un texto `VisuallyHidden` con la frase completa de AC-05; el contenido visual
-lleva `aria-hidden="true"` para que el lector no lo lea dos veces.
+lleva `aria-hidden="true"` para que el lector no lo lea dos veces. Disposición y medidas de la
+tarjeta: `docs/design.md` §5.3.
 
-Iconos de ocupación: tres SVG propios (una, dos o tres siluetas), `aria-hidden`. Colores:
-verde/ámbar/rojo con contraste ≥ 3:1 contra el fondo, siempre acompañados de texto (AC-07).
+```ts
+// features/passenger/stop/destination.ts (puro)
+export function visibleDestination(a: Arrival): string { return a.sae_destination ?? a.destination; }
+export function spokenDestination(a: Arrival): string  { return a.destination; }
+```
+
+El destino visible lleva `lang="ca-ES-valencia"` mediante `GtfsText` (también el del SAE, que
+viene en valenciano).
+
+Iconos de ocupación: tres siluetas SVG propias (`aria-hidden`), rellenas o en contorno según el
+nivel, con los colores de `docs/design.md` §4 (contraste ≥ 4,5:1 del texto sobre su fondo),
+siempre acompañados de texto (AC-07).
 
 ## 4. Datos (claves i18n nuevas, extracto)
 
 ```
-stop.title, stop.code ("Parada {{code}}"), stop.lines, stop.arrivals, stop.updatedAt,
+stop.title, stop.code ("Parada {{code}}"), stop.towards ("hacia"), stop.lines, stop.arrivals, stop.updatedAt,
 stop.refresh, stop.refreshed, stop.empty, stop.scheduledNotice, stop.scheduledSuffix,
 stop.arriving ("Línea {{line}} hacia {{destination}} está llegando"),
 stop.rowLabel ("Línea {{line}}, hacia {{destination}}, {{time}}, {{occupancy}}"),
@@ -161,6 +173,7 @@ occupancy.unavailable, network.offline, home.lastStop, notFound.title, notFound.
 | AC-19, AC-20 | `lastStop.test.ts`, `HomePage.test.tsx`, `NotFoundPage.test.tsx` |
 | AC-21 | `src/__tests__/bundle-budget.test.ts`: suma el tamaño gzip del `<script type="module">` inicial de `dist/index.html` y de sus `modulepreload`; si no existe `dist/`, el test se omite con aviso (ver nota) |
 | AC-22 | `e2e/stop-view.spec.ts` con `page.route('**/api/v1/**', …)` sirviendo `e2e/fixtures/*.json` |
+| AC-23 | Revisión: el reviewer compara las capturas de `e2e/stop-view.spec.ts` (`page.screenshot` en `test-results/`, no versionadas) con `docs/design.md`; la persona lo revisa en CP-6 |
 
 *Nota AC-21:* en `./init.sh verify` el paso `test` va antes de `build`. Para no depender del
 orden, el script `test:bundle` (`npm run build && vitest run src/__tests__/bundle-budget.test.ts`)
@@ -168,13 +181,14 @@ se añade al final de `npm run e2e` (`"e2e": "playwright test && npm run test:bu
 construye la app. Así el presupuesto se verifica con `./init.sh verify --e2e`.
 
 Las fixtures de API del frontend (`src/test/fixtures/api/`, `e2e/fixtures/`) se escriben con los
-ejemplos de `specs/stop_arrivals_api/design.md` §3 y se tipan con `types.ts` (si el contrato
+ejemplos de `specs/stop_arrivals_api/design.md` §3 (incluido `sae_destination` distinto de
+`destination`, p. ej. `"Pass. Marítim"` frente a `"Passeig Marítim - Hospital Malva-rosa"`) y se tipan con `types.ts` (si el contrato
 cambia, `tsc` las rompe).
 
 ## 6. Decisiones locales permitidas
 
-- Maquetación y estilos (respetando contraste, tamaños y foco).
-- Diseño de los iconos de ocupación.
+- Detalles de maquetación que `docs/design.md` no fije (respetando contraste, tamaños y foco).
+- Trazado exacto de los iconos de ocupación (manteniendo la regla relleno/contorno de la guía).
 - Redacción de textos (manteniendo claves y sentido).
 
 ## 7. Preguntas abiertas

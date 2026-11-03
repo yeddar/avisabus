@@ -139,14 +139,24 @@ implementer; la persona los revisa en CP-6 (decisión local permitida: redacció
 ámbito distinto a estas).
 
 `HomePage`: `h1` = nombre de la app; párrafo con `home.scanQr` ("Escanea el código QR de tu
-parada para ver cuándo llega tu autobús y avisar al conductor.").
+parada para ver cuándo llega tu autobús y solicitar parada al conductor."; terminología de
+`docs/design.md` §7).
 
 ## 5. Estilos
 
-En `index.css`:
-- `:focus-visible { outline: 3px solid #0b3d91; outline-offset: 2px; }` (contraste ≥ 3:1 sobre
-  blanco), y variante clara sobre fondos oscuros.
-- `Button`/`LinkButton`: `min-h-11 min-w-11` (44 px) y `px-4`.
+Guía de referencia: `docs/design.md`. En `index.css`:
+- Fuente: `@import "@fontsource/atkinson-hyperlegible/400.css"` y `.../700.css` (dependencia
+  `@fontsource/atkinson-hyperlegible`; los `woff2` los empaqueta Vite en el propio origen).
+  `--font-sans: "Atkinson Hyperlegible", system-ui, sans-serif` en `@theme` (AC-16).
+- Tokens de color de `docs/design.md` §4 en `@theme` como `--color-<token>` (`--color-text`,
+  `--color-text-muted`, `--color-accent`, `--color-accent-hover`, `--color-accent-surface`,
+  `--color-border`, `--color-divider`, `--color-control-border`, y los de ocupación
+  `--color-occ-free-bg`/`-fg`, `-medium-`, `-full-`, `-none-`) (AC-17).
+- `:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }` (contraste
+  ≥ 3:1 sobre blanco), y variante clara sobre fondos oscuros.
+- `Button`/`LinkButton`: `min-h-11 min-w-11` (44 px) y `px-4`; variantes `primary` y `secondary`
+  de `docs/design.md` §5.5 (radio 10 px, borde 2 px, texto 700).
+- Cabecera y pie según `docs/design.md` §5.1; contenido centrado con ancho máximo de 640 px.
 - `SkipLink`: oculto hasta recibir foco.
 
 ## 6. Estrategia de test
@@ -167,6 +177,8 @@ En `index.css`:
 | AC-12 | `Announcer.test.tsx` |
 | AC-13 | `Button.test.tsx` (clases/estilos mínimos) + e2e axe |
 | AC-15 | `HomePage.test.tsx` en ambos idiomas + e2e `i18n.spec.ts` con axe en `es` y `ca` |
+| AC-16 | e2e `i18n.spec.ts`: registra las peticiones de la portada (`page.on('request')`) y comprueba que todas son del propio origen y que se ha cargado un `woff2` de Atkinson Hyperlegible; `document.fonts.check('16px "Atkinson Hyperlegible"')` |
+| AC-17 | Revisión: el reviewer coteja los tokens de `src/index.css` con `docs/design.md` §4 y las capturas de `i18n.spec.ts` con §5.1 |
 
 Los tests de componentes usan un helper `renderWithProviders(ui, { language })` en
 `src/test/render.tsx` que inicializa i18n en el idioma pedido y monta `AnnouncerProvider`.
@@ -177,7 +189,7 @@ intención (sigue habiendo un `h1` y un `main`).
 ## 7. Decisiones locales permitidas
 
 - Redacción exacta de los textos (manteniendo las claves y el significado).
-- Maquetación visual de cabecera y pie.
+- Detalles de maquetación de cabecera y pie que `docs/design.md` no fije.
 
 ## 8. Preguntas abiertas
 

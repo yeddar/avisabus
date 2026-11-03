@@ -32,21 +32,23 @@ No necesaria.
   - Ficheros: `src/shared/i18n/{format.ts,GtfsText.tsx}`, tests
   - Verificación: `cd frontend && npm run test -- format GtfsText`
 
-- [ ] **T-05** — Componentes base de UI (`Button`, `LinkButton`, `SkipLink`, `VisuallyHidden`),
-  estilos de foco, `AnnouncerProvider`/`useAnnounce`, `usePageTitle`.
-  - AC: frontend_i18n.AC-11, AC-12, AC-13
-  - Ficheros: `src/shared/ui/**`, `src/index.css`, tests
+- [ ] **T-05** — Tema visual (`@fontsource/atkinson-hyperlegible`, tokens de `docs/design.md` §4
+  en `@theme`), componentes base de UI (`Button` y `LinkButton` con variantes `primary`/`secondary`,
+  `SkipLink`, `VisuallyHidden`), estilos de foco, `AnnouncerProvider`/`useAnnounce`, `usePageTitle`.
+  - AC: frontend_i18n.AC-11, AC-12, AC-13, AC-17
+  - Ficheros: `package.json`, `src/shared/ui/**`, `src/index.css`, tests
   - Verificación: `cd frontend && npm run test -- ui`
 
 - [ ] **T-06** — `Layout` accesible (cabecera con selector, `main#main`, pie con atribución,
-  anuncios) y `LanguageSelector`.
+  anuncios) y `LanguageSelector`, con el aspecto de `docs/design.md` §5.1.
   - AC: frontend_i18n.AC-02, AC-04, AC-10, AC-14
   - Ficheros: `src/app/Layout.tsx`, `src/shared/i18n/LanguageSelector.tsx`, tests
   - Verificación: `cd frontend && npm run test -- Layout LanguageSelector`
 
 - [ ] **T-07** — `HomePage` traducida (quitar el literal temporal) y E2E de idioma con axe en `es`
-  y `ca` (incluida la persistencia tras recargar).
-  - AC: frontend_i18n.AC-02, AC-04, AC-10, AC-13, AC-15
+  y `ca` (incluida la persistencia tras recargar), comprobación de peticiones solo al propio origen
+  y capturas para la revisión visual.
+  - AC: frontend_i18n.AC-02, AC-04, AC-10, AC-13, AC-15, AC-16, AC-17
   - Ficheros: `src/app/routes/HomePage.tsx`, `e2e/i18n.spec.ts`
   - Verificación: `cd frontend && npm run e2e`
 

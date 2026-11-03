@@ -81,8 +81,10 @@ las líneas.
   `GET /api/v1/stops/{stop_id}/lines/{line}/position?direction_id={d}&t={token}`, LA API DEBERÁ
   usar la primera llegada de esa línea y sentido calculada por `GetStopArrivals` (la misma caché del
   SAE, **sin** peticiones adicionales) y devolver `status`, `source`, `generated_at`,
-  `refresh_after_s`, la llegada, el viaje, `shape_id` del viaje, la parada y la posición
-  (`lat`, `lon`, `bearing_deg`, `distance_to_stop_m`, `stops_away`, `next_stop`).
+  `refresh_after_s`, la llegada (con `destination` y `sae_destination`, como en la API de
+  llegadas), el viaje, `shape_id` del viaje, la parada, el `headsign` de esa línea y sentido en la
+  parada (el de `lines` de `GET /stops/{stop_id}`, para titular la vista aunque no haya llegada) y
+  la posición (`lat`, `lon`, `bearing_deg`, `distance_to_stop_m`, `stops_away`, `next_stop`).
   *Verificación:* integration (replay + contador de peticiones)
 - **position_estimation.AC-10** — CUANDO la llegada procede del horario programado, LA API DEBERÁ
   devolver `source = "SCHEDULED"` con la posición calculada sobre el horario (`δ = 0`).

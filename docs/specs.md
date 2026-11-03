@@ -75,6 +75,10 @@ Secciones (omitir las que no apliquen, nunca dejar vacías):
 9. **Decisiones locales permitidas**: lo que el implementer puede decidir.
 10. **Preguntas abiertas** (deben estar vacías para aprobar, salvo las delegadas a exploración).
 
+En features de frontend, el aspecto visual se toma de `docs/design.md`: el `design.md` de la
+feature cita las secciones que aplica y solo detalla lo que la guía no fija. Su conformidad se
+verifica con un AC de tipo `revisión` (capturas de las pruebas e2e) y en CP-6.
+
 ## 5. `tasks.md`
 
 ```markdown
