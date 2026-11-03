@@ -5,8 +5,9 @@ Spec: specs/position_estimation/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Ag
 - [x] T-01 Geometría: `haversine_m`, `cumulative_distances`, `shape_distances`, `point_at_distance`,
       `bearing_deg`, `project_onto_shape` (monótona) (AC-05, AC-06) (commit 211dfa8)
 - [x] T-02 Modelos de posición y `estimate_position` (AC-01, AC-02, AC-03, AC-04, AC-06, AC-07,
-      AC-08)
-- [ ] T-03 Ampliación de `NetworkRepository`: `trip_shape_id`, `shape_stops`, `shape_line`
+      AC-08) (commit 29f1ad1)
+- [x] T-03 Ampliación de `NetworkRepository`: `trip_shape_id`, `shape_stops`, `shape_line`
+      (soporte de AC-09 y AC-13)
 - [ ] T-04 `GetVehiclePosition`
 - [ ] T-05 `GetShape` y endpoint `/shapes/{shape_id}`
 - [ ] T-06 Endpoint de posición, `GZipMiddleware`, composición en `main.py`
@@ -26,7 +27,6 @@ Spec: specs/position_estimation/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Ag
   `PointOnShape(lat, lon, bearing_deg)` que devuelve `point_at_distance`. Puntos repetidos (tramos
   de longitud 0): rumbo del siguiente tramo real (o del anterior al final); forma de un solo punto:
   `bearing_deg = None`.
-
 - **D-03 (T-02) Coordenadas de las paradas para la proyección:** la firma de `estimate_position`
   del design §3 no recibe coordenadas de las paradas, pero el paso 2 del algoritmo (AC-06) las
   necesita para proyectarlas sobre la forma cuando faltan `shape_dist_traveled`. Se añade un
@@ -46,6 +46,17 @@ Spec: specs/position_estimation/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Ag
   (`arrival = departure`). `f = 0` también si `s_{i+1} ≤ s_i` (datos incoherentes).
 - **D-06 (T-02)** `next_stop.name` sale de `stop_names` (cadena vacía si falta, no ocurre con el
   caso de uso). Forma vacía: `ValueError`.
+- **D-07 (T-03) "Viaje más frecuente con esa forma"** (`shape_stops`, design §3): se agrupan los
+  viajes de la forma por su secuencia de paradas (patrón); gana el patrón con más viajes y, a
+  igualdad, el que contiene el `trip_id` menor; las paradas y sus `sequence` son las del `trip_id`
+  menor de ese patrón. En `gtfs_mini` y en el feed real cada forma tiene un único patrón; el caso
+  con varios se prueba con un feed modificado. `shape_line`: la línea con más viajes de la forma
+  (empate: nombre menor).
+- **D-08 (T-03) Sin índice nuevo** (design §4): `shape_stops` consulta primero los viajes de la
+  forma y luego sus horarios por clave primaria (el `JOIN` directo recorría todos los horarios de
+  la versión: 110–260 ms). Medido sobre una copia de la BD real (`data/avisabus.sqlite`, 94
+  formas): 1,6–15,7 ms, por debajo de los 20 ms del design, así que no se añade el índice
+  `(fv, shape_id)`.
 
 ## Bloqueos
 
