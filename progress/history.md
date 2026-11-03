@@ -253,3 +253,7 @@
 ## 2026-11-03 · position_estimation · in_review → done
 - Revisión ciclo 1 (v1.1): APPROVED; H-01…H-05 no bloqueantes. PR contra `develop` sin fusionar.
   Bloque 2: 3/4 en `done` (falta `passenger_map_view`; antes, `passenger_stop_view` v1.1 tras la #24).
+
+## 2026-11-03 · position_estimation PR #27 fusionada · passenger_stop_view · done → implementing (v1.1)
+- Solo T-11 (AC-17, AC-24), en `feat/passenger_stop_view-v1.1` desde `specs/ajustes-bloque-2` (PR #24,
+  aprobada, sin fusionar). La persona fusionará la #24 y la PR de T-11 seguidas.

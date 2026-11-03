@@ -4,22 +4,21 @@
 
 **Fecha:** 2026-11-03
 **Fase:** Implementación — Bloque 2
-**Feature en curso:** `position_estimation` v1.1 — `done`, PR abierta (sin fusionar)
+**Feature en curso:** `passenger_stop_view` v1.1 — `implementing` (solo T-11), rama
+`feat/passenger_stop_view-v1.1` (desde `specs/ajustes-bloque-2` + merge de `develop`)
 
 ## Último paso
-`position_estimation` v1.1: T-01…T-08. Revisión ciclo 1: **APPROVED** sin bloqueantes (`CI=1 ./init.sh
-verify --e2e` en verde: 969 backend, 278 Vitest, 60 e2e; AC-17 con 139 pares comprobados y 5 excluidos).
-PR contra `develop` abierta.
+PR #27 (`position_estimation`) fusionada: bloque 2 con 3/4 en `done`. La #24 (CP-4, `passenger_stop_view`
+v1.1, `frontend_i18n` v1.1 solo docs) está aprobada pero no se fusiona sola (AC-24 dejaría `develop` en
+rojo): T-11 se implementa en una rama creada desde `specs/ajustes-bloque-2`.
 
 ## Siguiente paso
-1. La persona fusiona la PR de `position_estimation`.
-2. **Cuando la #24 esté fusionada:** `passenger_stop_view` → `implementing` (v1.1, solo T-11: AC-17 y
-   AC-24) con revisión nueva. **Va antes de `passenger_map_view`.**
-3. `passenger_map_view`. CP-6 del bloque 2: textos nuevos, anuncios de "llegando" con lector de
-   pantalla, foco tras "Actualizar" fallido.
+1. Implementer (T-11; AC-17 y AC-24) → reviewer nuevo → `done` → PR contra `develop`. La persona
+   fusionará la #24 y esa seguidas.
+2. `passenger_map_view`. Después, CP-6 del bloque 2 (textos nuevos, anuncios con lector de pantalla).
 
 ## Pendiente para specs futuras
-- **position_estimation H-01 (spec):** AC-03 y AC-04 se solapan si la parada objetivo es la primera del
+- **position_estimation (H-01, H-02, H-04 → spec-writer en la próxima revisión; H-03 → `nfr_validation`) H-01 (spec):** AC-03 y AC-04 se solapan si la parada objetivo es la primera del
   viaje (implementado: `AT_STOP`; no ocurre en EMT). H-02: viaje sin `shape_dist_traveled` y con una
   parada ausente del feed activo → 500 en vez de `NO_VEHICLE` (solo si el feed cambia entre consultas).
   H-03 → `nfr_validation`: `shape_stops` 17–24 ms en el peor caso (design: 20 ms; el coste está en leer
