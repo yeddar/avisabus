@@ -1,6 +1,6 @@
 # Mapa del autobús — requirements
 
-> Feature: `passenger_map_view` · Versión: 1.0 · Estado: DRAFT
+> Feature: `passenger_map_view` · Versión: 1.0 · Estado: APPROVED
 > Requisitos: RF-13, RNF-01, RNF-03, RNF-05, RNF-14 · Casos de uso: CU-02 · Depende de: passenger_stop_view, position_estimation
 
 ## Contexto
@@ -122,3 +122,9 @@ vista de parada (presupuesto de `passenger_stop_view.AC-21`).
 | RNF-05 Compatibilidad | AC-14 |
 | RNF-14 Atribución (OSM) | AC-09 |
 | CU-02 flujos 1a, 1b | AC-04, AC-05, AC-13 |
+
+## Historial
+
+| Versión | Fecha | Cambio | Motivo |
+|---|---|---|---|
+| 1.0 | 2026-11-03 | Versión inicial aprobada (PR #7), con la guía visual `docs/design.md`. | CP-1 del bloque 2. Aprobada por la persona. |

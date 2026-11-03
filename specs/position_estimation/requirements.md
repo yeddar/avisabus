@@ -1,6 +1,6 @@
 # Estimación de la posición del autobús — requirements
 
-> Feature: `position_estimation` · Versión: 1.0 · Estado: DRAFT
+> Feature: `position_estimation` · Versión: 1.0 · Estado: APPROVED
 > Requisitos: RF-12, RNF-01 · Casos de uso: CU-02 · Depende de: gtfs_import, stop_arrivals_api
 
 ## Contexto
@@ -134,3 +134,9 @@ las líneas.
 | RNF-01 Rendimiento | AC-09 (sin peticiones extra al SAE), AC-14, AC-16 |
 | CU-02 flujos 1a y 1b | AC-11, AC-10 |
 | LIM-03 Posición estimada | AC-01 … AC-08 |
+
+## Historial
+
+| Versión | Fecha | Cambio | Motivo |
+|---|---|---|---|
+| 1.0 | 2026-11-03 | Versión inicial aprobada (PR #7), con la guía visual `docs/design.md`. | CP-1 del bloque 2. Aprobada por la persona. |

@@ -1,6 +1,6 @@
 # Guía visual — AvisaBus
 
-> Estado: **BORRADOR** (v1.0 · 2026-11-03). Se aprueba junto con las specs del bloque 2 (CP-1).
+> Estado: **APROBADO** (v1.0 · 2026-11-03, PR #7).
 > Deriva de `docs/requirements.md` (RNF-03, RNF-05, RNF-14, RNF-15) y del boceto revisado por la
 > persona el 2026-11-03.
 
@@ -191,4 +191,4 @@ actualizar, mapa, mano (Solicitar), información, siluetas de ocupación, flecha
 
 | Versión | Fecha | Cambio | Motivo |
 |---|---|---|---|
-| 1.0 | 2026-11-03 | Versión inicial a partir del boceto | Revisión visual de la persona tras el bloque 1 |
+| 1.0 | 2026-11-03 | Versión inicial a partir del boceto | Revisión visual de la persona tras el bloque 1. Aprobada por la persona (PR #7). |

@@ -1,6 +1,6 @@
 # Idiomas y base de accesibilidad del frontend — requirements
 
-> Feature: `frontend_i18n` · Versión: 1.0 · Estado: DRAFT
+> Feature: `frontend_i18n` · Versión: 1.0 · Estado: APPROVED
 > Requisitos: RF-31, RF-32, RNF-03, RNF-14, RNF-15 · Casos de uso: CU-06 · Depende de: project_scaffold
 
 ## Contexto
@@ -130,3 +130,9 @@ de las fuentes de datos (RNF-14).
 | RNF-03 Accesibilidad | AC-04, AC-06, AC-10, AC-11, AC-12, AC-13, AC-15, AC-16, AC-17 |
 | RNF-14 Atribución | AC-14 |
 | CU-06 Cambiar idioma | AC-01, AC-02 |
+
+## Historial
+
+| Versión | Fecha | Cambio | Motivo |
+|---|---|---|---|
+| 1.0 | 2026-11-03 | Versión inicial aprobada (PR #7), con la guía visual `docs/design.md`. | CP-1 del bloque 2. Aprobada por la persona. |

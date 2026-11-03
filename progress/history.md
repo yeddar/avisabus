@@ -205,3 +205,8 @@
 - Specs del bloque 2 actualizadas en la PR #7 con la guía visual (`docs/design.md`, del boceto
   revisado) y ajustes solo documentales de `sae_arrivals_source` 1.4, `occupancy_sensor` 1.3 y
   `stop_arrivals_api` 1.5. Pendiente de CP-1.
+
+## 2026-11-03 · bloque 2 · spec_draft → spec_approved (CP-1)
+- La persona aprueba la PR #7: `frontend_i18n`, `passenger_stop_view`, `position_estimation` y
+  `passenger_map_view` v1.0, guía visual `docs/design.md` v1.0 y los ajustes documentales del
+  bloque 1 (`sae_arrivals_source` 1.4, `occupancy_sensor` 1.3, `stop_arrivals_api` 1.5).

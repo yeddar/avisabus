@@ -1,6 +1,6 @@
 # Vista de parada del pasajero — design
 
-> Feature: `passenger_stop_view` · Versión: 1.0 · Estado: DRAFT
+> Feature: `passenger_stop_view` · Versión: 1.0 · Estado: APPROVED
 > Requisitos: RF-06, RF-10, RF-15, RF-32, RNF-01, RNF-03, RNF-04, RNF-05, RNF-14 · Casos de uso: CU-01 · Depende de: stop_arrivals_api, frontend_i18n
 
 ## 1. Resumen

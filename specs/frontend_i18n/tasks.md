@@ -1,6 +1,6 @@
 # Idiomas y base de accesibilidad del frontend — tasks
 
-> Feature: `frontend_i18n` · Versión: 1.0 · Estado: DRAFT
+> Feature: `frontend_i18n` · Versión: 1.0 · Estado: APPROVED
 > Requisitos: RF-31, RF-32, RNF-03, RNF-14, RNF-15 · Casos de uso: CU-06 · Depende de: project_scaffold
 
 ## Exploración

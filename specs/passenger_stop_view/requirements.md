@@ -1,6 +1,6 @@
 # Vista de parada del pasajero — requirements
 
-> Feature: `passenger_stop_view` · Versión: 1.0 · Estado: DRAFT
+> Feature: `passenger_stop_view` · Versión: 1.0 · Estado: APPROVED
 > Requisitos: RF-06, RF-10, RF-15, RF-32, RNF-01, RNF-03, RNF-04, RNF-05, RNF-14 · Casos de uso: CU-01 · Depende de: stop_arrivals_api, frontend_i18n
 
 ## Contexto
@@ -166,3 +166,9 @@ TypeScript generados desde el OpenAPI del backend, con un test que detecta desfa
 | RNF-14 Atribución | (pie de `frontend_i18n`, presente en la vista; AC-22) |
 | ADR-010 Contrato tipado | AC-01, AC-02, AC-03 |
 | CU-01 flujos alternativos 2a, 4a, 5a, 5b, 5c, 5d | AC-16, AC-09, AC-08, AC-06, AC-07, AC-10 |
+
+## Historial
+
+| Versión | Fecha | Cambio | Motivo |
+|---|---|---|---|
+| 1.0 | 2026-11-03 | Versión inicial aprobada (PR #7), con la guía visual `docs/design.md`. | CP-1 del bloque 2. Aprobada por la persona. |
