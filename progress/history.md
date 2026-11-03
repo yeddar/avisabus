@@ -178,3 +178,7 @@
 ## 2026-11-03 · CP-3 stop_arrivals_api resuelto (PR #19) · sae_arrivals_source, occupancy_sensor · → implementing
 - Opción (c) "sentido que sale" para C1 (`stop_arrivals_api` v1.4). Reabiertas `sae_arrivals_source`
   v1.3 (T-14/T-15) y `occupancy_sensor` v1.2 (T-09/T-10) en la rama `fix/sae-occupancy-v1.3`.
+
+## 2026-11-03 · sae_arrivals_source v1.3, occupancy_sensor v1.2 · implementing → in_review
+- T-14/T-15 (`HH:MM:SS`, entradas sin tiempo, muestra nocturna real 2070+2312) y T-09/T-10 (test de
+  composición AC-15); `./init.sh verify` en verde (665 tests).
