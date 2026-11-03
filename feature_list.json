@@ -212,7 +212,7 @@
       "order": 9,
       "block": 2,
       "title": "Estimación de posición del autobús y API de trazado/posición",
-      "status": "spec_approved",
+      "status": "implementing",
       "depends_on": [
         "gtfs_import",
         "stop_arrivals_api"

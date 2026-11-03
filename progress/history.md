@@ -235,3 +235,6 @@
 ## 2026-11-03 · passenger_stop_view · in_review → done
 - Revisión ciclo 1: APPROVED; desviaciones sin CP-3. CP-4 pendiente (`docs/conventions.md` §4 por
   `avisabus.lastStop`). PR contra `develop` sin fusionar. Bloque 2: 2/4 en `done`.
+
+## 2026-11-03 · passenger_stop_view PR #23 fusionada · position_estimation · spec_approved → implementing
+- CP-4 y `passenger_stop_view` v1.1 en la PR #24 (pendiente). `position_estimation` sin exploración.

@@ -4,20 +4,19 @@
 
 **Fecha:** 2026-11-03
 **Fase:** Implementación — Bloque 2
-**Feature en curso:** `passenger_stop_view` v1.0 — `done`, PR abierta (sin fusionar)
+**Feature en curso:** `position_estimation` v1.0 — `implementing` (rama `feat/position_estimation`)
 
 ## Último paso
-`passenger_stop_view` v1.0: T-01…T-10. Revisión ciclo 1: **APPROVED** sin bloqueantes (`CI=1 ./init.sh
-verify --e2e` en verde: 861 backend, 278 Vitest, 60 e2e, JS inicial 138,7 KB gzip; AC-23 cotejado con
-capturas en `frontend/test-results/passenger_stop_view/`). PR contra `develop` abierta.
+PR #23 (`passenger_stop_view`) fusionada. CP-4 (`docs/conventions.md` §4) y specs `passenger_stop_view`
+v1.1 / `frontend_i18n` v1.1 en la PR #24, pendiente de aprobación de la persona.
+`position_estimation` (sin exploración) → `implementing`.
 
 ## Siguiente paso
-1. La persona fusiona la PR. **CP-4:** actualizar `docs/conventions.md` §4 para incluir
-   `avisabus.lastStop` (AC-19; texto propuesto en `progress/review_passenger_stop_view.md`).
-2. Siguientes del bloque 2: `position_estimation`, `passenger_map_view`.
-3. CP-6 del bloque 2: revisar textos nuevos (lista en `progress/impl_passenger_stop_view.md`), anuncios
-   de "llegando" con lector de pantalla (sin anuncio en la primera carga) y foco tras un "Actualizar"
-   fallido (N-1).
+1. `position_estimation`: implementer → reviewer nuevo → `done` → PR sin fusionar.
+2. **Cuando la #24 esté fusionada:** `passenger_stop_view` → `implementing` (v1.1, solo T-11: AC-17 y
+   AC-24) con revisión nueva. **Va antes de `passenger_map_view`.**
+3. `passenger_map_view`. CP-6 del bloque 2: textos nuevos, anuncios de "llegando" con lector de
+   pantalla, foco tras "Actualizar" fallido.
 
 ## Pendiente para specs futuras
 - **passenger_stop_view N-1 (accesibilidad):** si "Actualizar" falla no se anuncia nada y el foco se
