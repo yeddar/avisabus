@@ -43,7 +43,8 @@ class NetworkRepository(Protocol):
     def scheduled_stop_times(
         self, stop_id: str, at: datetime, window: timedelta
     ) -> list[ScheduledStopTime]:
-        """Passages in `[at, at + window]` of the service days `D` and `D - 1`, by time."""
+        """Passages in `[at, at + window]`, by time, of every service day from `date(at) - 1` to
+        `date(at + window)` in the feed's zone (stop_arrivals_api AC-18)."""
         ...
 
     def trip_stop_times(self, trip_id: str) -> list[TripStopTime]: ...

@@ -502,8 +502,7 @@ class SqliteNetworkRepository:
             if timezone is None:
                 return []
             zone = ZoneInfo(timezone)
-            today = at.astimezone(zone).date()
-            for service_date in (today - timedelta(days=1), today):
+            for service_date in _service_days(at, window, zone):
                 services = _active_service_ids(conn, service_date)
                 if not services:
                     continue
@@ -689,6 +688,14 @@ def _active_service_ids(conn: Connection, service_date: date) -> frozenset[str]:
         )
     ]
     return active_services(service_date, calendars, exceptions)
+
+
+def _service_days(at: datetime, window: timedelta, zone: ZoneInfo) -> list[date]:
+    """Service days whose passages may fall in `[at, at + window]`: from `date(at) − 1` (trips
+    after 24:00) to `date(at + window)` (stop_arrivals_api AC-18), in the feed's zone."""
+    first = at.astimezone(zone).date() - timedelta(days=1)
+    last = (at + window).astimezone(zone).date()
+    return [first + timedelta(days=n) for n in range((last - first).days + 1)]
 
 
 def service_day_start(service_date: date, zone: ZoneInfo) -> datetime:
