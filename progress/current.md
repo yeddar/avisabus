@@ -4,18 +4,19 @@
 
 **Fecha:** 2026-11-03
 **Fase:** Implementación — Bloque 2
-**Feature en curso:** `passenger_stop_view` v1.1 — `implementing` (solo T-11), rama
-`feat/passenger_stop_view-v1.1` (desde `specs/ajustes-bloque-2` + merge de `develop`)
+**Feature en curso:** `passenger_stop_view` v1.1 — `done`, PR abierta (sin fusionar; va justo después de la #24).
+Siguiente: `passenger_map_view`.
 
 ## Último paso
-PR #27 (`position_estimation`) fusionada: bloque 2 con 3/4 en `done`. La #24 (CP-4, `passenger_stop_view`
-v1.1, `frontend_i18n` v1.1 solo docs) está aprobada pero no se fusiona sola (AC-24 dejaría `develop` en
-rojo): T-11 se implementa en una rama creada desde `specs/ajustes-bloque-2`.
+`passenger_stop_view` v1.1 (T-11, AC-17 y AC-24) en `feat/passenger_stop_view-v1.1`. Revisión ciclo 1 de la
+v1.1: **APPROVED** sin bloqueantes (`CI=1 ./init.sh verify --e2e` en verde: 969 backend, 287 Vitest, 60 e2e).
+PR contra `develop` abierta; la persona fusionará la #24 y esta seguidas.
 
 ## Siguiente paso
-1. Implementer (T-11; AC-17 y AC-24) → reviewer nuevo → `done` → PR contra `develop`. La persona
-   fusionará la #24 y esa seguidas.
-2. `passenger_map_view`. Después, CP-6 del bloque 2 (textos nuevos, anuncios con lector de pantalla).
+1. La persona fusiona la #24 y la PR de T-11.
+2. `passenger_map_view` (rama desde `develop` ya con ambas).
+3. CP-6 del bloque 2: textos (tablas es/ca en `progress/impl_passenger_stop_view.md`), anuncios de
+   "llegando" con lector de pantalla, foco tras acciones manuales y tras un refresco automático (N-8).
 
 ## Pendiente para specs futuras
 - **position_estimation (H-01, H-02, H-04 → spec-writer en la próxima revisión; H-03 → `nfr_validation`) H-01 (spec):** AC-03 y AC-04 se solapan si la parada objetivo es la primera del
@@ -24,7 +25,12 @@ rojo): T-11 se implementa en una rama creada desde `specs/ajustes-bloque-2`.
   H-03 → `nfr_validation`: `shape_stops` 17–24 ms en el peor caso (design: 20 ms; el coste está en leer
   horarios, el índice apenas ayuda). H-04: el test de AC-17 exige que los pares excluidos retrocedan
   (más estricto que la spec). H-05: integración de AC-09/AC-10 usa `estimate_position` como oráculo.
-- **passenger_stop_view N-1 (accesibilidad):** si "Actualizar" falla no se anuncia nada y el foco se
+- **passenger_stop_view v1.1 → spec v1.2:** N-7: tras un 404 en una acción manual no hay "Reintentar"
+  que enfocar (propuesta: foco al `h1` "Parada no encontrada"). N-8: si "Actualizar" falla y luego un
+  refresco automático acierta, desaparece "Reintentar" y el foco cae en `body`. N-10: `Button` sin `ref`
+  (dos envoltorios `div`). Siguen abiertos N-5 (repeticiones de estilo) y N-6 (OpenAPI desde
+  `create_app(schema_only=True)`). Deuda: `overrides` de `openapi-typescript` con TS 6.
+- **passenger_stop_view v1.0 (resueltos N-1…N-4 en v1.1) N-1 (accesibilidad):** si "Actualizar" falla no se anuncia nada y el foco se
   pierde (el botón desaparece); igual al acertar con "Reintentar". N-2: si solo falla la petición de
   la parada, el aviso habla de "las llegadas" y no se recupera solo. N-3: comentario desfasado en
   `shared/device/storage.ts`. N-6: el OpenAPI exportado sale de `create_app(schema_only=True)`, no de
