@@ -15,8 +15,8 @@ la red; suelo 91,6 %) → no salta el umbral de CP-3 del 90 %.
 ## Siguiente paso
 1. **La persona revisa la exploración** (pedido explícito) y decide los puntos de
    "Checkpoints pendientes". Después: implementer → reviewer → PR. Fin del bloque 1 (CP-6).
-2. Consultas diurnas a las cabeceras de C1 (1959, 2277) y C2 (166, 346, 691, 1057) antes de cerrar T-02
-   (recomendación del explorer).
+2. E-03 hecha (cabeceras e intermedias de C1/C2 de día). La persona prepara la PR de specs con las
+   decisiones del CP-3; **no lanzar el implementer** hasta que esté fusionada.
 3. T-08b de `sae_arrivals_source` (nocturna): parcialmente cubierta por las muestras de E-01 de
    `stop_arrivals_api` (`night_20261102/`).
 
@@ -70,8 +70,13 @@ Revisión de la exploración de `stop_arrivals_api` por la persona. Decisiones p
 4. **CP-3 de `sae_arrivals_source` (feature `done`):** el parser descarta el 29 % de las entradas
    nocturnas (15/52): llegadas > ~60 min vienen como `HH:MM:SS` (no `HH:MM`) y en cabeceras como
    `"{destino} -"` sin tiempo. La muestra real `night_20261102/2070` podría sustituir a la derivada.
-5. C1 y C2 no observadas (no circulan a las 23:30): si su texto en cabecera fuera genérico, 6 paradas
-   quedarían con `direction_id = null` (degradación acotada, no bloqueo).
+5. **E-03 (2026-11-03, 10 paradas de día):** C2 se resuelve en sus 4 cabeceras con alias + nuevo
+   *override* `C2|Av. Aragó → 1`. **C1 da el genérico "Cntr.Històric"**: en 1959 y 2277 no se
+   resuelve con la spec actual (≈ 23,5 % de las pasadas de C1). Opciones: (a) aceptar degradación
+   (AC-07), (b) *overrides* con parada opcional `C1|Cntr.Històric|1959: 0`, `…|2277: 1`
+   (recomendada por el explorer), (c) regla "sentido que sale" (139/139 sin *overrides*, amplía
+   `NetworkRepository`). Línea 30 en la 166 sin viajes en el GTFS (caso real de AC-08). Entradas
+   duplicadas idénticas del SAE → conviene un test en `match_trips`. Sin formatos nuevos de día.
 
 ## Bloqueos
 Ninguno. 

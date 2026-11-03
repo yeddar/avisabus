@@ -1,5 +1,5 @@
 # Exploración: destinos del SAE frente a headsigns del GTFS, y tolerancia de emparejamiento
-Feature(s): stop_arrivals_api (v1.3, E-01 y E-02) · Fecha: 2026-11-02 · Agente: explorer
+Feature(s): stop_arrivals_api (v1.3, E-01, E-02 y E-03) · Fecha: 2026-11-02 (E-03: 2026-11-03) · Agente: explorer
 
 ## Pregunta(s)
 
@@ -9,6 +9,10 @@ Feature(s): stop_arrivals_api (v1.3, E-01 y E-02) · Fecha: 2026-11-02 · Agente
   da el SAE en las circulares C1, C2 y C3.
 - **E-02:** con `stop_508_peak` y `gtfs_mini`, distribución de `|arrival_at − scheduled_at|` del
   mejor candidato. Confirmar la tolerancia de 20 min o proponer otra.
+- **E-03 (complemento de E-01, pedido por la persona el 2026-11-03):** consultar de día las
+  cabeceras de C1 y C2 (1959, 2277, 166, 346, 691 y 1057) y 2 paradas intermedias de sentido único
+  de cada línea. Para cada una: texto del SAE, headsigns GTFS, si es de sentido único y si el
+  prototipo, con los alias y *overrides* propuestos, resuelve el sentido.
 
 ## Hallazgos
 
@@ -38,6 +42,9 @@ Feature(s): stop_arrivals_api (v1.3, E-01 y E-02) · Fecha: 2026-11-02 · Agente
      - No se ha usado ningún endpoint cerrado ni se ha falseado ninguna cabecera.
      - Las respuestas están en `explore_destinations_samples/night_20261102/<stop>/` (formato de grabación, sin datos de contacto).
      - Paradas: 508, 2070; cabeceras 2277, 2312, 2230, 1751, 2271, 487, 2403, 2014, 1959 (C1) y 166 (C2); C3 1265, 1266, 229, 231 (cabeceras), 1679 y 605 (mitad de bucle); otras 2281, 1349, 2203 y 830.
+  4. **E-03 (diurnas)**: 10 paradas, **1 consulta por parada**, separadas ≥ 21 s entre sí (en total, no solo por parada), entre las 09:59:00 y las 10:02:16 (hora de Madrid) del martes 2026-11-03.
+     - Mismo comando de la CLI que en 3 (`sae record … --duration 1`, una sola petición; se usa en lugar de `sae fetch` porque `fetch` no guarda el HTML en bruto).
+     - Las respuestas están en `explore_destinations_samples/day_20261103/<stop>/`, sin datos de contacto (comprobado con `grep`). Las 10 dieron HTTP 200.
   - **Limitación:** las consultas se hicieron a las 23:32 porque esa era la hora de la sesión. C1 (último servicio a las 22:13) y C2 (22:37) ya no circulaban. Sí había C3 (hasta las 02:37) y otras 22 líneas (`lastrun` sobre el GTFS del lunes).
 
 ### H-1. Estructura del GTFS: el 91,6 % de las pasadas tiene un único sentido en su parada
@@ -154,8 +161,9 @@ Con propuestas (ver "Impacto en la spec"):
   | C2 | 56 | 4 (166, 346, 691, 1057) | 430 / 3 221 (13,4 %) |
   | C3 | 72 | 4 (229, 231, 1265, 1266) | 3 678 / 34 966 (10,5 %) |
 
-- **C1 y C2: no observadas** (sin servicio a la hora de la consulta). En las paradas intermedias se
-  resuelven seguro. En sus 6 cabeceras depende del texto:
+- **C1 y C2:** no se observaron en E-01 (sin servicio a las 23:32); **resultado en H-7 (E-03)**:
+  C2 usa nombres de medio bucle (se resuelve), C1 usa un texto genérico, "Cntr.Històric" (no se
+  resuelve en sus 2 cabeceras con la spec actual). Lo que se preveía antes de E-03, en sus 6 cabeceras:
   - si, como en C3, es un nombre de medio bucle o de zona → alias/*overrides*;
   - si es genérico ("Circular", "Centre Històric") → en la cabecera es ambiguo de verdad. Un *override* (línea, destino) no sirve, porque el sentido que **sale** es 0 en una cabecera y 1 en la otra. Quedaría `direction_id = null` y `can_alert = false` (AC-07). Es una degradación acotada, no un bloqueo.
   - El ejemplo `"C2|Circular": 0` de design §4 no tiene base observada.
@@ -220,6 +228,70 @@ Para cada llegada, el candidato más próximo de su línea y sentido, sin restri
   jueves/viernes, del 20261016 al 20261122). Los resultados de 70, 93 y 98 son idénticos con
   `gtfs_mini` y con el feed completo: no hace falta regenerar `gtfs_mini` (design §7).
 
+### H-7. E-03: C1 y C2 de día (martes 2026-11-03, 09:59–10:02)
+
+Llegadas brutas: `out_day_dump.txt`. Resolución: `out_e03_day_default.txt`,
+`out_e03_day_proposal_aliases_only.txt`, `out_e03_day_proposal_full_v2.txt`. Horario de las
+cabeceras: `c1term_e03.py` → `out_e03_terminal_schedule.txt` (GTFS, martes, 09:55–10:35).
+
+| Parada | Papel | Línea | Destino SAE (n) | ¿Genérico? | Headsigns GTFS en la parada | ¿Un solo sentido? | Default | Alias | Alias + *overrides* v2 |
+|---|---|---|---|---|---|---|---|---|---|
+| 1959 | cabecera C1 | C1 | Cntr.Històric (2) | **sí** | 0: Xàtiva - Institut Lluís Vives; 1: Blanqueria - Pare d'Òrfens | no | None (0 / 0) | None | **None** |
+| 2277 | cabecera C1 | C1 | Cntr.Històric (2) | **sí** | 0: Xàtiva - Institut Lluís Vives; 1: Blanqueria - Pare d'Òrfens | no | None (0 / 0) | None | **None** |
+| 2223 | intermedia C1 (sentido 0) | C1 | Cntr.Històric (2) | sí | 0: Xàtiva - Institut Lluís Vives | **sí** | 0 | 0 | 0 |
+| 795 | intermedia C1 (sentido 1) | C1 | Cntr.Històric (2) | sí | 1: Blanqueria - Pare d'Òrfens | **sí** | 1 | 1 | 1 |
+| 166 | cabecera C2 | C2 | Pl. Espanya (2) | no | 0: Plaça d'Espanya - Ermita; 1: Blasco Ibáñez - Facultat de Geografia | no | 0 (0,5) | 0 (0,667) | 0 |
+| 691 | cabecera C2 | C2 | Blasco Ibáñez (2) | no | 0: Plaça d'Espanya - Ermita; 1: Blasco Ibáñez - Facultat de Geografia | no | 1 (0,4) | 1 (0,5) | 1 |
+| 1057 | cabecera C2 | C2 | Est. Autobusos (2) | no | 0: Estació d'autobusos; 1: Estadi de Mestalla (front) | no | 0 (0,667) | 0 (1,0) | 0 |
+| 346 | cabecera C2 | C2 | Av. Aragó (2) | no (zona del medio bucle) | 0: Estació d'autobusos; 1: Estadi de Mestalla (front) | no | None (0 / 0) | None | **1** (*override* nuevo `C2\|Av. Aragó`) |
+| 688 | intermedia C2 (sentido 0, bucle 651) | C2 | Pl. Espanya (2) | no | 0: Plaça d'Espanya - Ermita | **sí** | 0 | 0 | 0 |
+| 701 | intermedia C2 (sentido 1, bucle 996) | C2 | Av. Aragó (2) | no | 1: Estadi de Mestalla (front) | **sí** | 1 | 1 | 1 |
+
+Paradas intermedias elegidas en el GTFS completo: 2223 (Tetuan, `1018_1959_2277`), 795
+(Guillem de Castro - Beneficència, `1018_2277_1959`), 688 (Marqués del Túria - Hernán Cortés,
+`651_166_691`) y 701 (Ferran el Catòlic - Gabriel Miró, `996_346_1057`). En las cuatro,
+`stop_line_headsign` da un único sentido para la línea.
+
+- **C1 usa un texto genérico, "Cntr.Històric"** (de `route_long_name` "C1 - CENTRE HISTÒRIC"), en los
+  dos medios bucles. En las intermedias da igual (AC-05). En las 2 cabeceras **no hay forma de
+  resolverlo con la spec actual**:
+  - Jaccard da 0 frente a los dos headsigns.
+  - Un *override* `(línea, destino)` no sirve, porque el sentido correcto depende de la parada (0 en 1959, 1 en 2277).
+  - Resultado con la spec: `direction_id = null`, `can_alert = false` y `arrivals.direction_unresolved` (AC-07) en esas 2 paradas.
+- **C2 usa nombres por medio bucle:** "Pl. Espanya" (sentido 0, bucle 651), "Est. Autobusos"
+  (sentido 0, bucle 996), "Blasco Ibáñez" (sentido 1, bucle 651) y "Av. Aragó" (sentido 1, bucle
+  996). Tres de las cuatro cabeceras se resuelven por texto. "Av. Aragó" frente a "Estadi de Mestalla
+  (front)" necesita el *override* `C2|Av. Aragó → 1`.
+  - Es estable: en 701, de sentido único, "Av. Aragó" es el sentido 1.
+- **En las cabeceras, el SAE muestra el viaje que SALE.** Lo comprobé comparando las ETA con el horario GTFS:
+  - 2277/C1: ETA 10:05 y 10:14, que coinciden con las salidas del sentido 1 (10:05, 10:14) y no con las llegadas del sentido 0 (10:08, 10:17).
+  - 346/C2: ETA 10:18 y 10:34 frente a las salidas del sentido 1 (10:17, 10:33).
+  - 691/C2: ETA 10:08 y 10:24 frente a las salidas del sentido 1 (10:08, 10:24).
+  - 166/C2 y 1057/C2: los textos son los del sentido que sale.
+  - En 1959/C1, la llegada del sentido 1 y la salida del sentido 0 tienen la misma hora (el mismo autobús continúa el bucle). El sentido útil para el pasajero es el que sale, el 0.
+- **Regla alternativa evaluada, "sentido que sale"** (`departing_rule_e03.py`, **no está en la
+  spec**): si `resolve_direction` devuelve `None` y exactamente uno de los sentidos candidatos tiene
+  viajes que **empiezan** en esa parada, se elige ese sentido.
+  - Con solo los alias, sin ningún *override*, resuelve **139/139** entradas en red (noche + día; `out_e03_departing_rule_aliases_only.txt`).
+  - En los 9 casos en que actúa elige lo mismo que los *overrides* propuestos, y además resuelve C1 en 1959 (0) y en 2277 (1).
+  - Necesita saber si la parada es la primera de los viajes de cada sentido. `HeadsignAtStop` no lo expone, así que habría que ampliar el puerto `NetworkRepository` (código de `gtfs_import`).
+- **Resolución diurna** (87 entradas en red de 89; la línea 30 sale en el SAE en 166 pero no tiene
+  viajes en el GTFS, `route_id` 982 ignorado en la importación, así que es un caso real de AC-08 con línea diurna):
+
+  | Configuración | Resueltas | % |
+  |---|---|---|
+  | default | 79/87 | 90,8 % |
+  | alias propuestos | 81/87 | 93,1 % |
+  | alias + *overrides* v2 | 83/87 | 95,4 % (solo fallan las 4 de C1 en cabecera) |
+  | alias + *overrides* v2 + *overrides* por parada para C1, o regla "sentido que sale" | 87/87 | 100 % |
+
+  - Con los *overrides* v2, la muestra nocturna sigue en 52/52.
+  - Otra prueba en contra del alias `c → carrer`: "C.Art.Faller" (línea 28 en 2277) es *Ciutat* de l'Artista Faller. Con `c → carrer` puntúa 0,333 y no se resuelve; sin ese alias y con las palabras vacías, 0,5 y se resuelve.
+- **Formatos del parser de día:** 0 entradas descartadas de 89.
+  - No apareció `HH:MM:SS`: la ETA máxima fue de 34 min, por debajo del umbral de unos 60 min de H-5.
+  - Tampoco apareció `"{destino} -"`, ni siquiera en las 6 cabeceras. Lo de las entradas sin tiempo de 2312 parece propio del final del servicio o de la noche.
+  - Novedad: **entradas duplicadas** con la misma línea, destino y minuto (1057: `12 C.Art.Faller - 7 min.` dos veces). Para `match_trips` son dos llegadas con el mismo `arrival_at`; el orden estricto les obliga a tomar viajes distintos. Conviene un test.
+
 ## Impacto en la spec
 
 Ningún hallazgo bloquea implementar `stop_arrivals_api` tal como está escrita. Los AC-05 a AC-11 se
@@ -232,9 +304,10 @@ pueden cumplir. Propuestas:
 2. **Decisión local permitida: *overrides*** (`proposal_full.json`):
    ```json
    {"99|La Malva-rosa": 0, "99|P. Congressos": 1, "C3|Campanar": 0, "C3|Ed. Bosca": 1,
-    "C3|C. Benlloch": 1, "16|Vinalesa": 1, "26|Moncada": 1}
+    "C3|C. Benlloch": 1, "16|Vinalesa": 1, "26|Moncada": 1, "C2|Av. Aragó": 1}
    ```
-   - Con 1 y 2, 52/52 en la muestra nocturna y 883/883 en `stop_508_peak`.
+   - `C2|Av. Aragó` es nuevo tras E-03 (`proposal_full_v2.json`).
+   - Con 1 y 2: 52/52 de noche, 883/883 en `stop_508_peak` y 83/87 de día. Las 4 que faltan son C1 en sus cabeceras (punto 8).
    - Estos casos sirven como tabla de casos reales para T-02 (AC-06, design §7).
    - Ojo: los sentidos son los que deriva `gtfs_import` sobre el feed `23-10-2026`. Si un feed nuevo invierte la referencia, los *overrides* por número de sentido dejan de valer (ver Riesgos).
 3. **Requiere cambio de spec (menor, no bloqueante): quitar `"c": "carrer"` de `DEFAULT_ALIASES`**
@@ -261,16 +334,28 @@ pueden cumplir. Propuestas:
    - sustituir `derived_clock_time` por la muestra real `night_20261102/2070`.
 
    Afecta a AC-04 de esta feature ("una entrada por llegada del SAE") solo a través del parser.
+   - E-03 no añade formatos nuevos (de día no hubo `HH:MM:SS` ni entradas sin tiempo). Sí aparecieron entradas duplicadas idénticas, que el parser ya acepta.
+8. **C1 en cabeceras (E-03, CP-3 ligero, no bloqueante):** el SAE da el genérico "Cntr.Històric" y
+   la spec no puede resolverlo en 1959 y 2277. Hay tres opciones, a elegir por la persona:
+   - (a) **Aceptarlo** como degradación de AC-07: `direction_id = null` y sin avisos para C1 en esas 2 paradas (656 de 2 787 pasadas de C1, el 0,13 % de la red). Sin cambio de spec.
+   - (b) ***Overrides* con parada opcional** (cambio mínimo en design §3/§4: clave `línea|destino|parada`, que tiene prioridad sobre `línea|destino`):
+     `{"C1|Cntr.Històric|1959": 0, "C1|Cntr.Històric|2277": 1}`. Cambia la firma de `resolve_direction` (necesita `stop_id`) y el formato del fichero (T-02, T-07).
+   - (c) **Regla "sentido que sale"** (H-7): si el texto no resuelve y solo un sentido empieza en la parada, se elige ese. Resuelve 139/139 sin *overrides* y haría casi innecesario el fichero de *overrides*. Pero amplía `NetworkRepository`/`HeadsignAtStop` (código de `gtfs_import`) y cambia el algoritmo de design §3: es el cambio más grande.
+
+   Recomiendo **(b)** si se quiere resolver ya, por ser el cambio más pequeño, o **(a)** si no se quiere tocar la spec ahora. (c) es la solución general si en el futuro aparecen más textos genéricos.
 
 ## Riesgos
 
-- **Sesgo de la muestra:** solo hay datos de tarde (20:42–21:07) y de noche (23:32) de un lunes. No
-  hay hora punta, ni C1/C2, ni fin de semana. El porcentaje ponderado (≈ 95,5 %) extrapola 13 casos
+- **Sesgo de la muestra:** hay datos de tarde (20:42–21:07) y de noche (23:32) de un lunes, y de
+  mañana (09:59–10:02) de un martes solo en paradas de C1 y C2. No hay hora punta completa ni fin de
+  semana. El porcentaje ponderado (≈ 95,5 %) extrapola 13 casos
   de cabecera a 98 pares.
-- **C1/C2 en cabeceras:** si el SAE usa un texto genérico, quedan 6 paradas con `direction_id = null`
-  (el 23,5 % de las pasadas de C1 y el 13,4 % de las de C2). Recomiendo 6–8 consultas diurnas
-  (1959, 2277, 166, 346, 691, 1057 y dos paradas intermedias), ≤ 1 cada 20 s por parada, antes de
-  cerrar T-02 o en T-08.
+- **C1 en cabeceras (confirmado en E-03):** con la spec actual, 1959 y 2277 quedan con
+  `direction_id = null` para C1 (el 23,5 % de las pasadas de C1). Ver el punto 8 de "Impacto en la
+  spec". C2 queda resuelta con alias y el *override* `C2|Av. Aragó`.
+- **Textos del SAE que cambian:** los destinos salen de `route_long_name` abreviado. Si EMT renombra
+  una línea, los *overrides* por texto dejan de aplicarse en silencio (se vería en
+  `arrivals.direction_unresolved`). La regla "sentido que sale" (opción 8c) no depende del texto.
 - ***Overrides* atados al número de sentido derivado:** `direction_id` se deriva al importar (sentido 0
   = patrón más frecuente). Un feed nuevo puede intercambiar 0 y 1, y un *override* quedaría
   invertido en silencio. Mitigaciones posibles: validar los *overrides* al cargar (el sentido debe
@@ -282,7 +367,7 @@ pueden cumplir. Propuestas:
 - **Interpretación del Jaccard con prefijos:** design §3 no fija cómo se cuentan los pares de prefijo
   (1-1 o todos contra todos). Aquí he usado 1-1 voraz. Conviene que el implementer lo documente y lo
   fije con un test.
-- **Consultas al SAE:** 22 en esta exploración, 1 por parada. Sin errores (todas HTTP 200).
+- **Consultas al SAE:** 22 en E-01 (1 por parada) y 10 en E-03 (1 por parada, ≥ 21 s entre peticiones). Todas HTTP 200.
 
 ## Recomendación
 
@@ -294,14 +379,18 @@ Antes de implementar, que la persona decida en un **CP-3 ligero, no bloqueante p
 T-01/T-04/T-05/T-05b**:
 - (a) si se quita `c → carrer`;
 - (b) si se cambia `match_trips` a la asignación óptima con orden, o se mantiene el voraz con tolerancia 10;
-- (c) si se abre CP-3 sobre `sae_arrivals_source` por `HH:MM:SS` y las entradas sin tiempo.
+- (c) si se abre CP-3 sobre `sae_arrivals_source` por `HH:MM:SS` y las entradas sin tiempo;
+- (d) **tras E-03:** qué hacer con C1 en sus cabeceras: (a) aceptar `null`, (b) *overrides* por parada (recomendada) o (c) regla "sentido que sale".
 
-Programar una consulta diurna corta a las cabeceras de C1 y C2.
+Añadir `C2|Av. Aragó → 1` a los *overrides* y usar las filas de H-7 como casos reales de T-02. La
+consulta diurna de C1/C2 ya está hecha (E-03).
 
 ---
 **Resumen para el orquestador:**
 - El 91,6 % de las pasadas del GTFS está en paradas donde la línea tiene un solo sentido, así que AC-05 las resuelve sin texto. Resolución observada: 99,2 % (964/972); estimación ponderada en la red ≈ 95,5 % (mínimo 91,6 %). **No se dispara el CP-3 del 90 %.**
-- Los fallos se concentran en las cabeceras. Se arreglan con alias y 7 *overrides* (52/52 y 883/883).
-- C3 da destinos de zona ("Campanar", "Ed. Bosca", "C. Benlloch"), no "Circular", y se resuelve. C1 y C2 no se pudieron observar (sin servicio a las 23:32): solo sus 6 cabeceras dependen del texto.
+- Los fallos se concentran en las cabeceras. Se arreglan con alias y 8 *overrides* (52/52 de noche, 883/883 en `stop_508_peak`, 83/87 de día).
+- C3 y C2 dan nombres de zona o de medio bucle (C3: "Campanar", "Ed. Bosca", "C. Benlloch"; C2: "Pl. Espanya", "Est. Autobusos", "Blasco Ibáñez", "Av. Aragó") y se resuelven con alias y 8 *overrides* (se añade `C2|Av. Aragó → 1`).
+- **E-03:** C1 da el genérico "Cntr.Històric". Las intermedias se resuelven (sentido único), pero las cabeceras 1959 y 2277 quedan sin sentido con la spec actual. Se proponen *overrides* por parada o la regla "sentido que sale" (139/139): CP-3 ligero.
+- En las cabeceras, el SAE muestra el viaje que sale (confirmado con los horarios).
 - E-02: |Δ| máximo de 6,6 min (p95 5,4). Propongo una tolerancia de 10 min y cambiar el emparejamiento voraz por uno óptimo con orden, porque el voraz hace oscilar la identidad del autobús.
-- La spec puede implementarse tal cual. Hay un **CP-3 ligero opcional** (alias `c`, algoritmo de emparejamiento) y un **CP-3 aparte para `sae_arrivals_source`** (`HH:MM:SS` y entradas sin tiempo: 29 % de entradas descartadas de noche).
+- La spec puede implementarse tal cual. Hay un **CP-3 ligero opcional** (alias `c`, algoritmo de emparejamiento, C1 en cabeceras) y un **CP-3 aparte para `sae_arrivals_source`** (`HH:MM:SS` y entradas sin tiempo: 29 % de entradas descartadas de noche).

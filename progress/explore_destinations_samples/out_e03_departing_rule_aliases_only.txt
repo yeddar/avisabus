@@ -1,0 +1,10 @@
+1266 | C3 | C. Benlloch | n=1 | departing -> 1
+1751 | 99 | P. Congressos | n=2 | departing -> 1
+1959 | C1 | Cntr.Històric | n=2 | departing -> 0
+2014 | 16 | Vinalesa | n=2 | departing -> 1
+2230 | 99 | La Malva-rosa | n=2 | departing -> 0
+2277 | C1 | Cntr.Històric | n=2 | departing -> 1
+229 | C3 | Campanar | n=1 | departing -> 0
+231 | C3 | Campanar | n=1 | departing -> 0
+346 | C2 | Av. Aragó | n=2 | departing -> 1
+TOTAL in_network=139 resolved=139 pct=100.0%
