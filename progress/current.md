@@ -4,21 +4,20 @@
 
 **Fecha:** 2026-11-02
 **Fase:** Implementación — Bloque 1 (Cimientos y datos)
-**Feature en curso:** `stop_arrivals_api` v1.3 — `exploring` (rama `feat/stop_arrivals_api`)
+**Feature en curso:** `sae_arrivals_source` v1.3 (T-14/T-15) y `occupancy_sensor` v1.2 (T-09/T-10) en
+`fix/sae-occupancy-v1.3` — `implementing`. Después: `stop_arrivals_api` v1.4.
 
 ## Último paso
-PR #18 fusionada. `stop_arrivals_api` en `exploring`: E-01 y E-02 completadas
-(`progress/explore_destinations.md`, muestras nocturnas en `progress/explore_destinations_samples/`,
-22 consultas al SAE). Resolución de sentido 99,2 % de las llegadas reales (≈ 95,5 % estimado en toda
-la red; suelo 91,6 %) → no salta el umbral de CP-3 del 90 %.
+PR #19 fusionada: CP-3 de `stop_arrivals_api` resuelto con la opción (c) "sentido que sale" (v1.4:
+AC-19…AC-22, T-05c, umbral 0,2, tolerancia 10 min, emparejamiento óptimo, overrides por headsign).
+Reabiertas `sae_arrivals_source` v1.3 (T-14/T-15: `HH:MM:SS`, entradas sin tiempo) y
+`occupancy_sensor` v1.2 (T-09/T-10). `stop_tokens_qr` v1.3: solo redacción.
 
 ## Siguiente paso
-1. **La persona revisa la exploración** (pedido explícito) y decide los puntos de
-   "Checkpoints pendientes". Después: implementer → reviewer → PR. Fin del bloque 1 (CP-6).
-2. E-03 hecha (cabeceras e intermedias de C1/C2 de día). La persona prepara la PR de specs con las
-   decisiones del CP-3; **no lanzar el implementer** hasta que esté fusionada.
-3. T-08b de `sae_arrivals_source` (nocturna): parcialmente cubierta por las muestras de E-01 de
-   `stop_arrivals_api` (`night_20261102/`).
+1. Implementer (T-14, T-15, T-09, T-10) → reviewer nuevo → `done` → PR → **parar** hasta la fusión.
+2. Tras la fusión: rebase de `feat/stop_arrivals_api` sobre `develop`, `implementing`, implementer con
+   todas las tareas de v1.4 (overrides iniciales = los de la exploración traducidos a headsign;
+   conservar solo los que un test demuestre necesarios) → reviewer nuevo → PR → **parar**. → CP-6.
 
 ## Pendiente para specs futuras
 - **stop_tokens_qr O-01:** `sae fetch|record` ya no emiten `security.dev_stop_token_secret` (no usan
@@ -59,11 +58,7 @@ la red; suelo 91,6 %) → no salta el umbral de CP-3 del 90 %.
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Ninguno. CP-3 de `stop_arrivals_api` resuelto por la persona (2026-11-03), opción (c) para C1:
-spec v1.4 (sentido que sale, overrides por headsign, umbral 0,2, alias revisados, emparejamiento
-óptimo con tolerancia de 10 min, `sae_destination`, duplicados). Se reabren `sae_arrivals_source`
-v1.3 (`HH:MM:SS`, entradas sin tiempo, muestra nocturna real) y `occupancy_sensor` v1.2 (test de
-composición). `stop_tokens_qr` v1.3: solo redacción de AC-05.
+Ninguno (CP-3 de `stop_arrivals_api` resuelto en la PR #19). Próximo: CP-6 al cerrar el bloque 1.
 
 ## Bloqueos
 Ninguno. 

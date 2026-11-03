@@ -174,3 +174,7 @@
 - Resolución de sentido observada: 99,2 %. C1 usa "Cntr.Històric" en ambos sentidos → regla del
   sentido que sale (opción c). Emparejamiento óptimo con orden y tolerancia de 10 min.
 - Reabiertas `sae_arrivals_source` (v1.3) y `occupancy_sensor` (v1.2); `stop_tokens_qr` v1.3 sin código.
+
+## 2026-11-03 · CP-3 stop_arrivals_api resuelto (PR #19) · sae_arrivals_source, occupancy_sensor · → implementing
+- Opción (c) "sentido que sale" para C1 (`stop_arrivals_api` v1.4). Reabiertas `sae_arrivals_source`
+  v1.3 (T-14/T-15) y `occupancy_sensor` v1.2 (T-09/T-10) en la rama `fix/sae-occupancy-v1.3`.
