@@ -35,6 +35,7 @@
     "updatedAt": "Actualizado a las {{time}}",
     "refresh": "Actualizar",
     "refreshed": "Datos actualizados",
+    "refreshFailed": "No se han podido actualizar los datos",
     "empty": "No hay llegadas previstas en este momento",
     "scheduledNotice": "<strong>Sin datos en tiempo real:</strong> se muestra el horario programado",
     "scheduledSuffix": "programado",
@@ -52,7 +53,7 @@
       "body": "Vuelve a escanear el código QR de la parada para ver sus próximas llegadas."
     },
     "error": {
-      "body": "<strong>No se han podido cargar las llegadas.</strong> Comprueba la conexión y vuelve a intentarlo.",
+      "body": "<strong>No se han podido cargar los datos.</strong> Comprueba la conexión y vuelve a intentarlo.",
       "retry": "Reintentar"
     },
     "stale": "Datos de las {{time}}, pueden no estar actualizados"

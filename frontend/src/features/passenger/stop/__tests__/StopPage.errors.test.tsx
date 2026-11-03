@@ -9,6 +9,7 @@ import {
   NETWORK_UNAVAILABLE,
   NetworkFailure,
   STOP_NOT_FOUND,
+  deferred,
   mockApi,
   ok,
   problem,
@@ -44,6 +45,20 @@ function arrivalsList(): HTMLElement | null {
     .getByRole('heading', { level: 2, name: 'Próximas llegadas' })
     .closest('section')!;
   return within(section).queryByRole('list');
+}
+
+function politeRegion(): HTMLElement {
+  const region = document.querySelector<HTMLElement>('[aria-live="polite"]');
+  if (region === null) throw new Error('no polite region');
+  return region;
+}
+
+/** Puts the keyboard focus on a button and activates it, as a keyboard or screen reader user. */
+function press(name: string): HTMLElement {
+  const button = screen.getByRole('button', { name });
+  button.focus();
+  fireEvent.click(button);
+  return button;
 }
 
 function offlineNotice(): HTMLElement | null {
@@ -135,7 +150,7 @@ describe('StopPage errors and connectivity', () => {
       await flush(RETRIES_MS);
 
       expect(arrivalCalls()).toBe(3);
-      expect(screen.getByText('No se han podido cargar las llegadas.')).toBeInTheDocument();
+      expect(screen.getByText('No se han podido cargar los datos.')).toBeInTheDocument();
       expect(arrivalsList()).toBeNull();
 
       arrivalsReply = () => ok(ARRIVALS_REALTIME());
@@ -143,7 +158,7 @@ describe('StopPage errors and connectivity', () => {
       await flush();
 
       expect(arrivalsList()).not.toBeNull();
-      expect(screen.queryByText('No se han podido cargar las llegadas.')).toBeNull();
+      expect(screen.queryByText('No se han podido cargar los datos.')).toBeNull();
       expect(screen.queryByRole('button', { name: 'Reintentar' })).toBeNull();
     },
   );
@@ -156,7 +171,7 @@ describe('StopPage errors and connectivity', () => {
     await flush(RETRIES_MS);
 
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Parada');
-    expect(screen.getByText('No se han podido cargar las llegadas.')).toBeInTheDocument();
+    expect(screen.getByText('No se han podido cargar los datos.')).toBeInTheDocument();
 
     stopReply = () => ok(STOP_508());
     arrivalsReply = () => ok(ARRIVALS_REALTIME());
@@ -192,7 +207,120 @@ describe('StopPage errors and connectivity', () => {
     },
   );
 
-  it('[passenger_stop_view.AC-17] [passenger_stop_view.AC-15] a failed automatic refresh is not announced', async () => {
+  it('[passenger_stop_view.AC-17] when only the stop request fails, the message speaks of the data and "Reintentar" asks for the stop again', async () => {
+    stopReply = () => problem(503, NETWORK_UNAVAILABLE);
+    const { calls } = api();
+    renderAt(`/p/508?t=${TOKEN}`);
+    await flush(RETRIES_MS);
+
+    expect(calls('/stops/508?')).toBe(3);
+    expect(screen.getByText('No se han podido cargar los datos.')).toBeInTheDocument();
+    expect(screen.queryByText(/las llegadas/)).toBeNull();
+    expect(arrivalsList()).not.toBeNull();
+
+    stopReply = () => ok(STOP_508());
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+    await flush();
+
+    expect(calls('/stops/508?')).toBe(4);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent("Parc de l'Oest - Enguera");
+    expect(screen.queryByText('No se han podido cargar los datos.')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Reintentar' })).toBeNull();
+  });
+
+  it('[passenger_stop_view.AC-17] the error message speaks of the data in Valencian too', async () => {
+    arrivalsReply = () => problem(503, NETWORK_UNAVAILABLE);
+    api();
+    renderAt(`/p/508?t=${TOKEN}`, 'ca');
+    await flush(RETRIES_MS);
+
+    expect(screen.getByText("No s'han pogut carregar les dades.")).toBeInTheDocument();
+  });
+
+  it.each([
+    ['es', 'Actualizar', 'Reintentar', 'No se han podido actualizar los datos'],
+    ['ca', 'Actualitza', 'Reintenta', "No s'han pogut actualitzar les dades"],
+  ] as const)(
+    '[passenger_stop_view.AC-24] a failed "Actualizar" is announced and moves the focus to "Reintentar" (%s)',
+    async (language, refresh, retry, failed) => {
+      api();
+      renderAt(`/p/508?t=${TOKEN}`, language);
+      await flush();
+
+      arrivalsReply = () => problem(503, NETWORK_UNAVAILABLE);
+      press(refresh);
+      await flush(RETRIES_MS);
+      await flush(100);
+
+      expect(politeRegion()).toHaveTextContent(failed);
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: retry }));
+      expect(screen.queryByRole('button', { name: refresh })).toBeNull();
+    },
+  );
+
+  it.each([
+    ['the arrivals', 'arrivals'],
+    ['the stop', 'stop'],
+    ['the refresh of the arrivals', 'refresh'],
+  ] as const)(
+    '[passenger_stop_view.AC-24] a successful "Reintentar" after a failure of %s announces "Datos actualizados" and moves the focus to "Actualizar"',
+    async (_name, failing) => {
+      if (failing === 'stop') stopReply = () => problem(503, NETWORK_UNAVAILABLE);
+      if (failing === 'arrivals') arrivalsReply = () => problem(503, NETWORK_UNAVAILABLE);
+      api();
+      renderAt(`/p/508?t=${TOKEN}`);
+      await flush(RETRIES_MS);
+      if (failing === 'refresh') {
+        arrivalsReply = () => Promise.reject(new NetworkFailure());
+        await flush(20_000 + RETRIES_MS);
+      }
+      await flush(100);
+      expect(politeRegion()).toHaveTextContent('');
+
+      stopReply = () => ok(STOP_508());
+      arrivalsReply = () => ok(ARRIVALS_REALTIME());
+      press('Reintentar');
+      await flush();
+      await flush(100);
+
+      expect(politeRegion()).toHaveTextContent('Datos actualizados');
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Actualizar' }));
+    },
+  );
+
+  it.each([
+    ['the arrivals', 'arrivals'],
+    ['the stop', 'stop'],
+  ] as const)(
+    '[passenger_stop_view.AC-24] a failed "Reintentar" after a failure of %s is announced and keeps the focus on "Reintentar"',
+    async (_name, failing) => {
+      if (failing === 'stop') stopReply = () => problem(503, NETWORK_UNAVAILABLE);
+      else arrivalsReply = () => problem(503, NETWORK_UNAVAILABLE);
+      api();
+      renderAt(`/p/508?t=${TOKEN}`);
+      await flush(RETRIES_MS);
+
+      const pending = deferred<FakeReply>();
+      if (failing === 'stop') stopReply = () => pending.promise;
+      else arrivalsReply = () => pending.promise;
+      const button = press('Reintentar');
+      await flush(100);
+      // While the request is in flight the button stays where the focus is.
+      expect(document.activeElement).toBe(button);
+      expect(politeRegion()).toHaveTextContent('');
+
+      if (failing === 'stop') stopReply = () => problem(503, NETWORK_UNAVAILABLE);
+      else arrivalsReply = () => problem(503, NETWORK_UNAVAILABLE);
+      pending.resolve(problem(503, NETWORK_UNAVAILABLE));
+      await flush(RETRIES_MS);
+      await flush(100);
+
+      expect(politeRegion()).toHaveTextContent('No se han podido actualizar los datos');
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Reintentar' }));
+    },
+  );
+
+  it('[passenger_stop_view.AC-17] [passenger_stop_view.AC-15] [passenger_stop_view.AC-24] a failed automatic refresh is not announced', async () => {
     api();
     renderAt(`/p/508?t=${TOKEN}`);
     await flush();
@@ -201,7 +329,7 @@ describe('StopPage errors and connectivity', () => {
     await flush(20_000 + RETRIES_MS);
     await flush(100);
 
-    expect(screen.getByText('No se han podido cargar las llegadas.')).toBeInTheDocument();
+    expect(screen.getByText('No se han podido cargar los datos.')).toBeInTheDocument();
     const live = document.querySelectorAll('[aria-live]');
     live.forEach((region) => expect(region).toHaveTextContent(''));
   });

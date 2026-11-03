@@ -35,6 +35,7 @@
     "updatedAt": "Actualitzat a les {{time}}",
     "refresh": "Actualitza",
     "refreshed": "Dades actualitzades",
+    "refreshFailed": "No s'han pogut actualitzar les dades",
     "empty": "No hi ha arribades previstes en este moment",
     "scheduledNotice": "<strong>Sense dades en temps real:</strong> es mostra l'horari programat",
     "scheduledSuffix": "programat",
@@ -52,7 +53,7 @@
       "body": "Torna a escanejar el codi QR de la parada per a vore les pròximes arribades."
     },
     "error": {
-      "body": "<strong>No s'han pogut carregar les arribades.</strong> Comprova la connexió i torna-ho a intentar.",
+      "body": "<strong>No s'han pogut carregar les dades.</strong> Comprova la connexió i torna-ho a intentar.",
       "retry": "Reintenta"
     },
     "stale": "Dades de les {{time}}, poden no estar actualitzades"

@@ -1,7 +1,8 @@
 /**
- * Device-local state (conventions §4): only device_id, language and accessibility profile live
- * here. Access to localStorage can throw (private mode, disabled storage, quota), so every call
- * is guarded and failures degrade to "nothing stored".
+ * Device-local state (conventions §4): only device_id, language, accessibility profile and the
+ * last stop viewed (stop_id, name and the public QR token; passenger_stop_view.AC-19) live here.
+ * Access to localStorage can throw (private mode, disabled storage, quota), so every call is
+ * guarded and failures degrade to "nothing stored".
  */
 export const safeStorage = {
   get(key: string): string | null {
