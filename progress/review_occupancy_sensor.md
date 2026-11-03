@@ -1,4 +1,72 @@
-# Revisión: occupancy_sensor — v1.1
+# Revisión: occupancy_sensor — v1.2
+Ciclo: 1 (v1.2) · Fecha: 2026-11-03 · Agente: reviewer · Spec: `specs/occupancy_sensor/` v1.2 (APPROVED) · Rama: `fix/sae-occupancy-v1.3` (commits `c0dbd32` T-09 y `d3f3d37` T-10 sobre `develop`)
+
+## Veredicto: APPROVED
+
+T-09 y T-10 están hechas. AC-15 (nuevo) tiene un test de composición real: importa `avisabus.main`
+en un subproceso con `AVISABUS_OCCUPANCY_*` no estándar. He comprobado por mutación que detecta
+una composición que use los valores por defecto. `main.py` no cambia, porque la composición ya
+era correcta. Los 15 AC tienen evidencia y `./init.sh verify` está en verde. Ningún hallazgo
+bloqueante. Hay un problema de spec no bloqueante (O-02 del implementer) sobre la redacción de
+AC-15.
+
+## Matriz AC → evidencia
+
+| AC | Test(s) | Resultado | Nota |
+|---|---|---|---|
+| AC-01 … AC-14 | `tests/unit/test_occupancy_classifier.py`, `test_occupancy_simulation.py`, `test_simulated_occupancy_sensor.py`, `test_set_occupancy_override.py`; `tests/integration/test_occupancy_override_repository.py`, `test_cli_occupancy.py`, `test_main_composition.py` | OK | Sin cambios desde v1.1 (aprobada). La trazabilidad sigue en verde. |
+| **AC-15 (nuevo)** | `tests/integration/test_occupancy_composition.py::test_main_composes_the_sensor_and_the_classifier_with_the_configured_values` (:231), `::test_the_configuration_of_the_test_is_far_enough_from_the_defaults` (:257), `::test_the_cli_container_composes_no_occupancy_sensor_nor_classifier` (:286) | OK | (1) Un subproceso importa `avisabus.main` con capacidad 60, asientos 20, semilla `composition-test` y umbrales 0,30/0,70. Usa un directorio de trabajo sin `.env`, la variable `AVISABUS_*` del entorno filtrada y una copia temporal de una BD con `gtfs_mini` y forzados. Lee con `main.occupancy_sensor` 3 viajes de cada línea forzada (93 FULL, 70 FREE, C2 MEDIUM) y 20 de la 98. Compara cada lectura (capacidad, asientos, ocupados) con la de un `SimulatedOccupancySensor` construido en el test con los valores configurados y `FakeClock`. Comprueba también que `main.occupancy_thresholds` son los configurados y que los forzados dan `override_occupied(nivel, 60, umbrales)` clasificado en su nivel. (2) El test guarda demuestra que dejar cualquiera de los 4 valores en su valor por defecto cambia alguna lectura de referencia, así que el test (1) no puede pasar por casualidad. (3) La CLI no compone sensor ni umbrales (ver SP-1). **Mutación verificada por mí:** con `main.py` mutado para usar la semilla `"avisabus"`, `capacity=90` o `OccupancyThresholds()` por defecto, el test (1) falla por aserción. La copia sin mutar pasa (3 passed). |
+
+## Verificación ejecutada
+
+- `./init.sh verify` → **todo en verde** (exit 0): format, lint, mypy, lint-imports, pytest con
+  665 passed y 2 deselected (cobertura `domain`+`application` del 99,52 %), frontend OK,
+  `feature_list.json` y trazabilidad (incluido `occupancy_sensor.AC-15`).
+- **Mutaciones** de `main.py` en una copia de `src/` en el scratchpad con `PYTHONPATH`, sin tocar
+  el repo: `pytest --no-cov tests/integration/test_occupancy_composition.py -k main_composes` da
+  1 failed (`AssertionError` en `composed["readings"] == expected`) en cada una de las 3
+  mutaciones (semilla, capacidad y umbrales del sensor). La copia de control da 3 passed.
+- `git status` limpio tras la revisión.
+
+## Comprobación de `docs/verification.md` §4 (lo nuevo)
+
+- **Contrato:** AC-15 se cumple en `main.py:31-41,54-55`, que pasa `occupancy_capacity`,
+  `occupancy_seats`, `occupancy_seed` y `occupancy_thresholds()` de `Settings`.
+- **Arquitectura:** sin cambios de código de producción.
+- **Tests:** el proceso de pytest no usa red ni reloj real: la referencia usa `FakeClock`. El
+  subproceso sí usa `SystemClock` (es la raíz de composición real), pero el resultado no depende
+  de él: las lecturas llevan `at` explícito y los forzados caducan en 2100. Ver NB-1. La BD es
+  temporal y nunca se usa `data/` ni un `.env` de desarrollo.
+- **Privacidad:** no aplica (sin registros nuevos).
+- **Convenciones:** commits `test(occupancy_sensor)` y `chore(occupancy_sensor)` con la tarea.
+- **Alcance:** solo un fichero de test nuevo más los ficheros de progreso.
+
+## Hallazgos
+
+### Bloqueantes
+Ninguno.
+
+### No bloqueantes
+- **NB-1 — El subproceso del test de AC-15 queda fuera de las salvaguardas de pytest**
+  (`backend/tests/integration/test_occupancy_composition.py:211`).
+  - `pytest-socket` no bloquea los sockets de un subproceso, y `main.py` usa `SystemClock`.
+  - Hoy no hay riesgo: con `AVISABUS_ENV=test` la fuente de llegadas es replay sobre E-01, y nada
+    depende de la hora real.
+  - Es el mismo patrón que `test_main_composition.py`, ya aprobado.
+  - Lo anoto para que, si `main.py` llega a hacer I/O de red al importarse, el test se revise.
+
+### Problemas de spec (no bloqueantes; para el spec-writer)
+- **SP-1 — AC-15 cita "el contenedor de la CLI", pero la CLI no compone sensor ni clasificador**
+  (`specs/occupancy_sensor/requirements.md:95`; O-02 en `progress/impl_occupancy_sensor.md`).
+  - `CliContainer` (`adapters/inbound/cli/container.py`) solo compone los casos de uso de
+    forzado, que guardan el nivel, no plazas.
+  - El implementer no ha inventado un sensor para la CLI, y es correcto. El test (3) fija que,
+    si algún día lo compone, habrá que escribir un test como el de `main.py`.
+  - Propuesta: "(y en el contenedor de la CLI, si compone alguno)", o quitar el paréntesis.
+
+---
+
+# Revisión: occupancy_sensor — v1.1 (revisión anterior)
 Ciclo: 1 (v1.1) · Fecha: 2026-11-02 · Agente: reviewer · Spec: `specs/occupancy_sensor/` v1.1 (APPROVED) · Rama: `fix/bloque-1-ajustes` (commits `4d09934` T-07 y `ffb8f9d` T-08 sobre `develop`)
 
 ## Veredicto: APPROVED

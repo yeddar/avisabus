@@ -57,14 +57,25 @@ Cada sesión es una carpeta:
   la página real de la parada inexistente, pero con cabecera válida.
 - **Por qué derivada:** en E-01 no se observó ninguna parada existente sin llegadas.
 
-### `samples/derived_clock_time/` — derivada (AC-19 c)
+### `samples/night_2026-11-02/` — real (AC-19 c)
 
-- **Origen:** el mismo fichero que la anterior.
-- **Cambio:** el texto de la última llegada (línea 70) `Alboraia - 20 min.` pasa a
-  `Alboraia - 22:41`; nada más.
-- **Por qué derivada:** en E-01 no apareció ninguna hora `HH:MM`; el formato
-  `"{destino} - HH:MM"` es un **supuesto** de design §4. La grabación nocturna opcional (T-08b)
-  debe confirmarlo o desmentirlo.
+- **Fecha:** lunes 2026-11-02, a las 23:32 en Madrid (22:32:01 y 22:32:08 UTC).
+- **Cómo se obtuvo:** en la exploración E-01 de `stop_arrivals_api`
+  (`progress/explore_destinations.md`, hallazgo H-5), con la CLI de la feature y una sola consulta
+  por parada (`avisabus sae record --stop <id> --interval 20 --duration 1 --out …`, con el
+  User-Agent del proyecto). Se juntaron en una sola sesión las grabaciones de dos de esas
+  paradas, desde `progress/explore_destinations_samples/night_20261102/<id>/` (cada respuesta lo
+  indica en `source_sample`): `started_at` es el de la 2070 y el `offset_s` de la 2312 se
+  recalcula desde él (6 s). Los cuerpos y los demás campos no cambian; `interval_s` es `null`
+  porque no son ciclos de una misma grabación. No contienen datos de contacto.
+- **Sustituye** a la antigua derivada `derived_clock_time` (v1.3), que suponía el formato `HH:MM`:
+  de noche, el SAE da la hora **con segundos** (`HH:MM:SS`) para las llegadas a más de unos 60 min.
+- **Contenido:**
+
+| Parada | `offset_s` | Caso |
+|---|---|---|
+| 2070 | 0 | **Hora `HH:MM:SS`** (AC-03): `73 Sant Isidre - 10 min.`, `99 La Malva-rosa - 00:42:28` y `99 La Malva-rosa - 01:52:28` (ya del día siguiente) |
+| 2312 | 6 | **Entradas sin tiempo** (AC-23): cabecera de líneas al final del servicio; 5 de sus 6 entradas son `"{destino} -"` (líneas 7, 9, 62, 60 y 9) y la otra es `62 Benimàmet - 54 min.` |
 
 ### `stop_508_peak/` — real (AC-19 a)
 
@@ -119,5 +130,6 @@ Para usarla como sesión de replay, apunta `AVISABUS_SAE_REPLAY_DIR` a la carpet
 `test_sae_fixtures.py`) es una decisión aparte: hay que borrar o renombrar antes la carpeta
 existente y revisar esos tests y su documentación arriba.
 
-Las muestras de `samples/` no se regeneran: proceden de la exploración E-01 y se convirtieron una
-sola vez con un script desechable que aplicaba exactamente las reglas descritas arriba.
+Las muestras de `samples/` no se regeneran: proceden de las exploraciones E-01 de
+`sae_arrivals_source` y de `stop_arrivals_api`, y se convirtieron una sola vez con un script
+desechable que aplicaba exactamente las reglas descritas arriba.

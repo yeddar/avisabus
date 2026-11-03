@@ -1,4 +1,92 @@
-# Revisión: sae_arrivals_source — v1.2
+# Revisión: sae_arrivals_source — v1.3
+Ciclo: 1 (v1.3) · Fecha: 2026-11-03 · Agente: reviewer · Spec: `specs/sae_arrivals_source/` v1.3 (APPROVED) · Rama: `fix/sae-occupancy-v1.3` (commits `15e9d14` T-14 y `0200e75` T-15 sobre `develop`)
+
+## Veredicto: APPROVED
+
+T-14 y T-15 están hechas. AC-03 (amplía a `HH:MM:SS`), AC-19 (c) (muestra nocturna real) y AC-23
+(nuevo: entradas sin tiempo) tienen tests que verifican el comportamiento. Con el parser de
+`develop`, 17 de esos tests fallan. Los 23 AC conservan su evidencia, no hay regresiones y
+`./init.sh verify` está en verde. Ningún hallazgo bloqueante. Dejo dos problemas de spec no
+bloqueantes para el spec-writer. T-08b sigue siendo opcional.
+
+## Matriz AC → evidencia
+
+| AC | Test(s) | Resultado | Nota |
+|---|---|---|---|
+| AC-01 | `tests/integration/test_sae_http_source.py` | OK | Sin cambios |
+| AC-02 | `tests/unit/test_sae_parser.py` | OK | Sin cambios. Además, `test_real_night_clock_times_with_seconds_cross_midnight` comprueba `73 Sant Isidre - 10 min.` → `MINUTES`, `fetched_at + 10 min`. |
+| **AC-03 (v1.3)** | `test_sae_parser.py::test_real_night_clock_times_with_seconds_cross_midnight` (:94), `::test_clock_time_is_the_same_day_in_madrid_when_still_ahead` (:127), `::test_clock_time_keeps_the_seconds` (:134), `::test_clock_time_with_seconds_up_to_five_minutes_in_the_past_stays_today` (:144), y los anteriores de cruce de medianoche, tolerancia de 5 min, horario de verano y hora de un dígito | OK | (1) Página real de la 2070 a las 23:32:01 en Madrid: `00:42:28` → 2026-11-02T23:42:28Z y `01:52:28` → 2026-11-03T00:52:28Z, es decir, del día siguiente (cruce de medianoche con `HH:MM:SS` real), `skipped == ()`. (2) Se conservan los segundos (`23:59:59`, `00:00:01`, `9:05:30`). (3) La frontera de `fetched_at − 5 min` va al segundo: `22:40:30` sigue siendo de hoy y `22:40:29` pasa a mañana. `HH:MM` sigue cubierto, ahora sobre la página nocturna real con la última entrada sustituida. Los segundos inválidos (`22:41:60`, `22:41:5`, `22:41:05:00`) se descartan como AC-06 (parametrización de `test_unparseable_entry…`, :247-249). Implementación: `qrphp_parser.py:33` (regex de design §4), `:144` (validación) y `_next_occurrence` sin cambios. |
+| AC-04 … AC-07 | `test_sae_parser.py` | OK | Sin cambios. En AC-06 hay casos nuevos de segundos inválidos (ver AC-03). |
+| AC-08 … AC-18 | `test_sae_http_source.py`, `test_sae_cache.py`, `test_sae_compose.py`, `test_main_sae.py`, `test_sae_recording.py`, `test_sae_replay.py`, `test_cli_sae.py` | OK | Sin cambios, salvo AC-18: `test_cli_sae.py::test_fetch_shows_clock_times_in_madrid` (:104) usa ahora la página nocturna real de la 2070 (antes, la derivada que se ha borrado) y espera `99 La Malva-rosa 00:42` / `01:52`. Ver NB-1. |
+| **AC-19 (v1.3, c)** | `test_sae_fixtures.py::test_c_response_with_clock_time_is_the_real_night_one_of_stop_2070`, `::test_readme_describes_every_session`; `test_sae_parser.py` (:94, :308) | OK | Comprueba que `derived_clock_time` ya no existe, que la sesión `night_2026-11-02` tiene `source_format = qrphp_html`, que la respuesta de la 2070 es real (sin `derived_from` y con `source_sample` en `progress/explore_destinations_samples/night_…`), que el cuerpo contiene `00:42:28` tal como lo sirve el SAE y que se interpreta con 2 `CLOCK_TIME` y sin descartes. **Lo he comprobado aparte:** los campos `body`, `captured_at`, `status`, `content_type` y `error` de las dos fixtures coinciden con los originales de `progress/explore_destinations_samples/night_20261102/{2070,2312}/…/000000.json`. Solo cambian `offset_s` de la 2312 (6 s = 22:32:08.31 − 22:32:01.32, truncado) y `source_sample`. El README documenta la sesión (fecha, cómo se obtuvo, fusión de las dos grabaciones y sustitución de la derivada). (a), (b) y (d) no cambian. |
+| AC-20 … AC-22 | `test_sae_compose.py`, `test_main_sae.py`, `test_sae_parser.py`, `test_sae_http_source.py`, `test_sae_replay.py`, `test_sae_recording.py` | OK | Sin cambios |
+| **AC-23 (nuevo)** | `test_sae_parser.py::test_real_night_entries_without_time_are_discarded_but_not_unparsed` (:308), `::test_entries_without_time_are_logged_only_at_debug_level_with_stop_and_line` (:327), `::test_entry_ending_in_a_dash_is_without_time` (:351, 4 casos), `::test_a_dash_without_a_destination_or_a_separator_is_still_unparsed` (:360, 5 casos) | OK | (1) Página real de la 2312: 5 entradas `"{destino} -"` descartadas (`without_time = ("7","9","62","60","9")`), `skipped == ()` y se conserva `62 Benimàmet - 54 min.`. (2) Con `build_snapshot`, que es la ruta que usan HTTP (`http_source.py:91`) y replay (`replay.py:67`), hay exactamente 5 eventos `sae.entry_without_time` con `log_level = debug`, `stop_id` y `line`, ninguno `sae.unparsed_entry`, y ni el destino ni el texto aparecen en los logs. (3) Los casos límite (`-`, `Alboraia-`, `&nbsp;-`) siguen siendo AC-06. **Mutación:** con `log.info` en lugar de `log.debug` falla el test (2). Implementación: `qrphp_parser.py:129` (antes de separar por el último `" - "`, design §4) y `:110`. |
+
+## Verificación ejecutada
+
+- `./init.sh verify` → **todo en verde** (exit 0): format, lint, mypy, lint-imports, pytest con
+  665 passed y 2 deselected (cobertura `domain`+`application` del 99,52 %), frontend
+  format/lint/types/tests (7)/build, `feature_list.json` y trazabilidad AC→test (incluido
+  `sae_arrivals_source.AC-23`). Hay 2 warnings, los esperados de `test_no_network.py`.
+- **Mutación del parser** (copia de `src/` en el scratchpad con `PYTHONPATH`, sin tocar el repo):
+  con `qrphp_parser.py` de `develop`, `pytest tests/unit/test_sae_parser.py
+  tests/unit/test_sae_fixtures.py tests/integration/test_cli_sae.py` da **17 failed** / 53 passed.
+  Fallan todos los tests nuevos de AC-03, AC-19 (c) y AC-23, y el de AC-18 con hora.
+- **Mutación del nivel de log** (`debug` → `info`): 1 failed (el test de AC-23 sobre el nivel).
+- **Barrido de las 22 respuestas nocturnas** de `progress/explore_destinations_samples/night_20261102/`
+  con el parser nuevo (script en el scratchpad): 47 llegadas, **0 `skipped`** y 5 sin tiempo, que
+  son las de la 2312. El 29 % de descartes de H-5 desaparece.
+- `git status` limpio tras la revisión.
+
+## Comprobación de `docs/verification.md` §4 (lo nuevo)
+
+- **Contrato:** las reglas de design §4 v1.3 (regex `^\d{1,2}:\d{2}(:\d{2})?$`, segundos
+  conservados, texto que termina en `" -"` → `sae.entry_without_time` en `debug`) coinciden con
+  el código. `ParseResult` gana el campo `without_time` con valor por defecto (D-24). El parser
+  sigue siendo puro y `build_snapshot` registra los eventos. Design §3 no recoge el campo: ver SP-1.
+- **Arquitectura:** solo cambia `adapters/outbound/sae/qrphp_parser.py`; `domain/` no se toca y
+  no se usa el reloj real.
+- **Tests:** sin red ni reloj real. Las fixtures son pequeñas (2 respuestas) y su origen está
+  documentado en el README y en `source_sample`. Los tests no son tautológicos (ver mutaciones).
+- **Privacidad:** `sae.entry_without_time` solo registra `stop_id` y `line`; no hay cuerpo,
+  destino, `device_id` ni contacto. Las fixtures no contienen datos de contacto.
+- **Convenciones:** commits `feat(sae_arrivals_source)` y `chore(sae_arrivals_source)` con el
+  número de tarea; nombres en inglés.
+- **Alcance:** el diff con `develop` solo toca el parser, las fixtures y su README, `tests/support/sae.py`,
+  tests de la feature y ficheros de progreso. `test_cli_sae.py` no figura en la lista de T-14,
+  pero dependía de la fixture borrada (D-28). Es un cambio justificado.
+
+## Hallazgos
+
+### Bloqueantes
+Ninguno.
+
+### No bloqueantes
+- **NB-1 — `sae fetch` muestra `HH:MM` aunque el SAE dé `HH:MM:SS`**
+  (`backend/src/avisabus/adapters/inbound/cli/sae.py:167`, `strftime("%H:%M")`).
+  - Cumple AC-18 ("minutos u hora"), y T-14 no pide cambiar la salida (D-28).
+  - Lo anoto para que `stop_arrivals_api` decida la precisión que muestra al usuario.
+  - No requiere acción en esta feature.
+- **NB-2 — La 2312 no tiene grabación antes de `offset_s = 6` en la sesión `night_2026-11-02`.**
+  - Si alguien usa esa sesión como `AVISABUS_SAE_REPLAY_DIR`, la 2312 da `ArrivalsUnavailableError`
+    durante los primeros 6 s (AC-16). Es coherente con el formato.
+  - Hoy ningún test la usa como replay.
+  - Sugerencia opcional: mencionarlo en la tabla del README.
+
+### Problemas de spec (no bloqueantes; para el spec-writer, sin CP-3 urgente)
+- **SP-1 — design §3 no recoge `ParseResult.without_time`** (`specs/sae_arrivals_source/design.md:61-63`).
+  - La interfaz documentada solo tiene `arrivals` y `skipped`. El campo nuevo (D-24) es aditivo y
+    tiene valor por defecto.
+  - Propuesta: añadirlo a design §3 con el comentario "líneas de las entradas sin tiempo (AC-23)".
+- **SP-2 — design §8 sigue hablando de la derivada `HH:MM`** (`specs/sae_arrivals_source/design.md:210-211`).
+  - Dice "con las derivadas (sin llegadas, `HH:MM`)", pero desde la v1.3 la hora es la muestra
+    nocturna real de la 2070 (AC-19 c).
+  - Propuesta: "con la derivada sin llegadas y la muestra nocturna real (`HH:MM:SS`, entradas sin
+    tiempo)".
+
+---
+
+# Revisión: sae_arrivals_source — v1.2 (revisión anterior)
 Ciclo: 1 (v1.2) · Fecha: 2026-11-02 · Agente: reviewer · Spec: `specs/sae_arrivals_source/` v1.2 (APPROVED) · Rama: `fix/bloque-1-ajustes` (commits `d90898a` T-11, `dd60eae` T-12 y `485a88f` T-13 sobre `develop`)
 
 ## Veredicto: APPROVED

@@ -15,9 +15,9 @@ from avisabus.adapters.outbound.sae.qrphp_parser import parse_qrphp_html
 from avisabus.adapters.outbound.sae.recording import SaeRecording, read_recordings, read_session
 from avisabus.domain.models.arrivals import ArrivalKind, SaeArrival
 from tests.support.sae import (
-    DERIVED_CLOCK_TIME,
     DERIVED_NO_ARRIVALS,
     E01,
+    NIGHT,
     SAE_RECORDINGS,
     STOP_508_PEAK,
 )
@@ -100,11 +100,21 @@ def test_b_response_without_arrivals_is_derived_and_documented() -> None:
 
 
 @pytest.mark.spec("sae_arrivals_source.AC-19")
-def test_c_response_with_clock_time_is_derived_and_documented() -> None:
-    recording = _derived(DERIVED_CLOCK_TIME)
+def test_c_response_with_clock_time_is_the_real_night_one_of_stop_2070() -> None:
+    assert not (SAE_RECORDINGS / "samples" / "derived_clock_time").exists()  # replaced (v1.3)
+    session = read_session(NIGHT)
+    assert "2070" in session.stops
+    assert session.source_format == "qrphp_html"
+    (recording,) = read_recordings(NIGHT)["2070"]
+    data = json.loads((NIGHT / "2070" / "000000.json").read_text(encoding="utf-8"))
+    assert "derived_from" not in data  # real
+    assert data["source_sample"].startswith("progress/explore_destinations_samples/night_")
+    assert recording.status == 200
     assert recording.body is not None
-    arrivals = parse_qrphp_html(recording.body, "508", recording.captured_at).arrivals
-    assert [a.kind for a in arrivals].count(ArrivalKind.CLOCK_TIME) == 1
+    assert "La Malva-rosa - 00:42:28" in recording.body.decode("utf-8")  # HH:MM:SS as served
+    parsed = parse_qrphp_html(recording.body, "2070", recording.captured_at)
+    assert parsed.skipped == ()
+    assert [a.kind for a in parsed.arrivals].count(ArrivalKind.CLOCK_TIME) == 2
 
 
 @pytest.mark.spec("sae_arrivals_source.AC-19")
@@ -118,7 +128,7 @@ def test_d_real_error_case_is_the_unknown_stop() -> None:
 @pytest.mark.spec("sae_arrivals_source.AC-19")
 def test_readme_describes_every_session() -> None:
     readme = (SAE_RECORDINGS / "README.md").read_text(encoding="utf-8")
-    for session in ("e01_2026-11-02", "derived_no_arrivals", "derived_clock_time", "stop_508_peak"):
+    for session in ("e01_2026-11-02", "derived_no_arrivals", "night_2026-11-02", "stop_508_peak"):
         assert f"`{session}" in readme or f"/{session}/" in readme, session
 
 
