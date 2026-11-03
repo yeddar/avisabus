@@ -195,6 +195,29 @@ describe('StopPage', () => {
     expect(screen.getByText('Actualizado a las 08:40:07')).toBeInTheDocument();
   });
 
+  it('[passenger_stop_view.AC-15] announces once when an automatic refresh brings the first 93 at 0 minutes', async () => {
+    api();
+    renderStop();
+    await flush();
+    expect(politeRegion()).toHaveTextContent('');
+
+    const next = ARRIVALS_REALTIME();
+    next.generated_at = '2026-11-04T07:40:20Z';
+    next.arrivals[1] = { ...next.arrivals[1]!, minutes: 0, arrival_at: '2026-11-04T07:40:20Z' };
+    arrivalsReply = () => ok(next);
+    await flush(20_000);
+    await flush(100);
+    expect(politeRegion()).toHaveTextContent(
+      'Línea 93 hacia Passeig Marítim - Hospital Malva-rosa está llegando',
+    );
+
+    // Following refreshes do not repeat it.
+    politeRegion().textContent = '';
+    await flush(20_000);
+    await flush(100);
+    expect(politeRegion()).toHaveTextContent('');
+  });
+
   it('[passenger_stop_view.AC-14] [passenger_stop_view.AC-15] does not announce automatic refreshes', async () => {
     api();
     renderStop();

@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useParams, useSearchParams } from 'react-router-dom';
 
+import type { Arrival } from '../../../shared/api/types';
 import { useServerNow } from '../../../shared/hooks/useServerNow';
 import { useAnnounce } from '../../../shared/ui/Announcer';
 import { Button } from '../../../shared/ui/Button';
@@ -10,6 +11,7 @@ import { ArrivalsList } from './ArrivalsList';
 import { SourceNotice } from './SourceNotice';
 import { StopHeader } from './StopHeader';
 import { formatUpdateTime } from './time';
+import { useArrivingAnnouncements } from './useArrivingAnnouncements';
 import { useStop, useStopArrivals } from './useStopQueries';
 import { useUiLanguage } from './useUiLanguage';
 
@@ -19,6 +21,12 @@ export function StopPage() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('t') ?? '';
   return <StopView key={`${stopId}|${token}`} stopId={stopId} token={token} />;
+}
+
+/** Mounted only once there are data, so arrivals already "Llegando" on load are not announced. */
+function ArrivingAnnouncer({ arrivals, now }: { arrivals: Arrival[]; now: Date }) {
+  useArrivingAnnouncements(arrivals, now);
+  return null;
 }
 
 function StopView({ stopId, token }: { stopId: string; token: string }) {
@@ -61,6 +69,7 @@ function StopView({ stopId, token }: { stopId: string; token: string }) {
                 {t('stop.refresh')}
               </Button>
             </div>
+            <ArrivingAnnouncer arrivals={arrivals.data.arrivals} now={now} />
             <SourceNotice source={arrivals.data.source} />
             <ArrivalsList
               arrivals={arrivals.data.arrivals}
