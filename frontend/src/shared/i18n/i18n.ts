@@ -1,8 +1,6 @@
 import { createInstance, type i18n as I18n, type PostProcessorModule } from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-import ca from '../../locales/ca-valencia/translation.json';
-import es from '../../locales/es/translation.json';
 import { safeStorage } from '../device/storage';
 import { detectInitialLanguage } from './detectLanguage';
 import {
@@ -12,12 +10,7 @@ import {
   type Language,
   toHtmlLang,
 } from './languages';
-
-/** Valencian resources live in locales/ca-valencia/ and are registered under the `ca` code. */
-const resources = {
-  es: { translation: es },
-  ca: { translation: ca },
-} as const;
+import { resources } from './resources';
 
 const FALLBACK_WARNING = 'devFallbackWarning';
 
