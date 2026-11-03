@@ -194,3 +194,7 @@
 ## 2026-11-03 · stop_arrivals_api · implementing → in_review
 - T-01…T-09 (+T-05b, T-05c); verify en verde (853 tests, cobertura 99,66 %). Ningún override
   necesario: las 139 entradas reales se resuelven con alias, umbral 0,2 y sentido que sale.
+
+## 2026-11-03 · stop_arrivals_api · in_review → done · bloque 1 completo
+- Revisión ciclo 1 (v1.4): APPROVED sin bloqueantes; overrides vacíos verificados de forma
+  independiente. PR contra `develop` sin fusionar. Bloque 1: 6/6 en `done` → CP-6.
