@@ -4,22 +4,28 @@
 
 **Fecha:** 2026-11-02
 **Fase:** Implementación — Bloque 1 (Cimientos y datos)
-**Feature en curso:** `sae_arrivals_source` v1.3 (T-14/T-15) y `occupancy_sensor` v1.2 (T-09/T-10) en
-`fix/sae-occupancy-v1.3` — `implementing`. Después: `stop_arrivals_api` v1.4.
+**Feature en curso:** `sae_arrivals_source` v1.3 y `occupancy_sensor` v1.2 — `done`, PR abierta (sin fusionar).
+Siguiente: `stop_arrivals_api` v1.4.
 
 ## Último paso
-PR #19 fusionada: CP-3 de `stop_arrivals_api` resuelto con la opción (c) "sentido que sale" (v1.4:
-AC-19…AC-22, T-05c, umbral 0,2, tolerancia 10 min, emparejamiento óptimo, overrides por headsign).
-Reabiertas `sae_arrivals_source` v1.3 (T-14/T-15: `HH:MM:SS`, entradas sin tiempo) y
-`occupancy_sensor` v1.2 (T-09/T-10). `stop_tokens_qr` v1.3: solo redacción.
+`fix/sae-occupancy-v1.3`: T-14/T-15 (`sae_arrivals_source` v1.3) y T-09/T-10 (`occupancy_sensor` v1.2).
+Revisión ciclo 1: **APPROVED** las dos, sin bloqueantes (verify en verde, 665 tests). PR abierta.
 
 ## Siguiente paso
-1. Implementer (T-14, T-15, T-09, T-10) → reviewer nuevo → `done` → PR → **parar** hasta la fusión.
+1. La persona fusiona la PR de `fix/sae-occupancy-v1.3`.
 2. Tras la fusión: rebase de `feat/stop_arrivals_api` sobre `develop`, `implementing`, implementer con
    todas las tareas de v1.4 (overrides iniciales = los de la exploración traducidos a headsign;
    conservar solo los que un test demuestre necesarios) → reviewer nuevo → PR → **parar**. → CP-6.
 
 ## Pendiente para specs futuras
+- **sae_arrivals_source v1.3:** SP-1 design §3 sin `ParseResult.without_time` (D-24); SP-2 design §8
+  sigue citando la muestra derivada `HH:MM`. NB-1: `sae fetch` muestra `HH:MM` sin segundos. NB-2: en la
+  sesión `night_2026-11-02` la 2312 empieza en el segundo 6. AC-19 (b) sigue con muestra derivada.
+- **occupancy_sensor v1.2:** SP-1 (O-02) AC-15 cita "el contenedor de la CLI", que no compone sensor
+  ni clasificador → "(si compone alguno)" o quitarlo. NB-1: subproceso sin `pytest-socket` y con
+  `SystemClock` (mismo patrón que `test_main_composition.py`).
+- **→ `stop_arrivals_api`:** al rebasar, adaptar usos de `derived_clock_time`/`STOP_508_CLOCK_TIME`
+  (sustituida por `samples/night_2026-11-02/`).
 - **stop_tokens_qr O-01:** `sae fetch|record` ya no emiten `security.dev_stop_token_secret` (no usan
   `build_cli_container`); AC-05 dice "al ejecutar la CLI" sin matizar → precisar en la spec.
 - **stop_tokens_qr O-02:** `test_main_stop_token.py` importa `avisabus.main` en un subproceso sin

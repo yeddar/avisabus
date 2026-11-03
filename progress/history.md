@@ -182,3 +182,7 @@
 ## 2026-11-03 · sae_arrivals_source v1.3, occupancy_sensor v1.2 · implementing → in_review
 - T-14/T-15 (`HH:MM:SS`, entradas sin tiempo, muestra nocturna real 2070+2312) y T-09/T-10 (test de
   composición AC-15); `./init.sh verify` en verde (665 tests).
+
+## 2026-11-03 · sae_arrivals_source v1.3, occupancy_sensor v1.2 · in_review → done
+- Revisión ciclo 1: APPROVED las dos (mutaciones incluidas). No bloqueantes y SP anotados en
+  `current.md`. PR de `fix/sae-occupancy-v1.3` contra `develop`, sin fusionar.
