@@ -72,6 +72,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/stops/{stop_id}/lines/{line}/position': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Vehicle Position */
+    get: operations['get_vehicle_position_api_v1_stops__stop_id__lines__line__position_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -130,6 +147,13 @@ export interface components {
       /** Version */
       version: string;
     };
+    /** NextStopSchema */
+    NextStopSchema: {
+      /** Name */
+      name: string;
+      /** Stop Id */
+      stop_id: string;
+    };
     /** OccupancySchema */
     OccupancySchema: {
       /** Free Seats */
@@ -141,6 +165,74 @@ export interface components {
        * @enum {string}
        */
       level: 'FREE' | 'MEDIUM' | 'FULL';
+    };
+    /** PositionArrivalSchema */
+    PositionArrivalSchema: {
+      /**
+       * Arrival At
+       * Format: date-time
+       */
+      arrival_at: string;
+      /**
+       * Destination
+       * @description GTFS headsign when the direction is resolved, otherwise the SAE text.
+       */
+      destination: string;
+      /**
+       * Kind
+       * @enum {string}
+       */
+      kind: 'MINUTES' | 'CLOCK_TIME';
+      /** Minutes */
+      minutes: number | null;
+      /**
+       * Sae Destination
+       * @description Destination as given by the SAE; null when source is SCHEDULED.
+       */
+      sae_destination: string | null;
+    };
+    /** PositionSchema */
+    PositionSchema: {
+      /**
+       * Bearing Deg
+       * @description Bearing of the shape segment, 0–360°.
+       */
+      bearing_deg: number | null;
+      /**
+       * Distance To Stop M
+       * @description Along the shape up to the stop, in metres.
+       */
+      distance_to_stop_m: number;
+      /**
+       * Lat
+       * @description Estimated latitude (6 decimals).
+       */
+      lat: number;
+      /**
+       * Lon
+       * @description Estimated longitude (6 decimals).
+       */
+      lon: number;
+      next_stop: components['schemas']['NextStopSchema'];
+      /**
+       * Stops Away
+       * @description Stops before this one still ahead of the bus.
+       */
+      stops_away: number;
+    };
+    /** PositionStopSchema */
+    PositionStopSchema: {
+      /** Lat */
+      lat: number;
+      /** Lon */
+      lon: number;
+      /**
+       * Name
+       * @description Stop name as it comes in the GTFS.
+       */
+      name: string;
+      /** Stop Id */
+      stop_id: string;
     };
     /** ProblemSchema */
     ProblemSchema: {
@@ -346,6 +438,90 @@ export interface components {
       msg: string;
       /** Error Type */
       type: string;
+    };
+    /**
+     * VehiclePositionResponse
+     * @example {
+     *       "arrival": {
+     *         "arrival_at": "2026-11-04T07:44:00Z",
+     *         "destination": "Passeig Marítim - Hospital Malva-rosa",
+     *         "kind": "MINUTES",
+     *         "minutes": 4,
+     *         "sae_destination": "Pass. Marítim"
+     *       },
+     *       "direction_id": 0,
+     *       "generated_at": "2026-11-04T07:40:00Z",
+     *       "headsign": "Passeig Marítim - Hospital Malva-rosa",
+     *       "line": "93",
+     *       "position": {
+     *         "bearing_deg": 245,
+     *         "distance_to_stop_m": 850,
+     *         "lat": 39.4701,
+     *         "lon": -0.3901,
+     *         "next_stop": {
+     *           "name": "Av. del Cid - Nicasio Benlloch",
+     *           "stop_id": "512"
+     *         },
+     *         "stops_away": 3
+     *       },
+     *       "refresh_after_s": 20,
+     *       "shape_id": "994_488_2271",
+     *       "source": "REALTIME",
+     *       "status": "EN_ROUTE",
+     *       "stop": {
+     *         "lat": 39.46794,
+     *         "lon": -0.39568,
+     *         "name": "Parc de l'Oest - Enguera",
+     *         "stop_id": "508"
+     *       },
+     *       "vehicle": {
+     *         "service_date": "2026-11-04",
+     *         "trip_id": "93_994_561_488_2271_2_122"
+     *       }
+     *     }
+     */
+    VehiclePositionResponse: {
+      /** @description First arrival of the line and direction; null with NO_ARRIVAL. */
+      arrival: components['schemas']['PositionArrivalSchema'] | null;
+      /** Direction Id */
+      direction_id: number;
+      /**
+       * Generated At
+       * Format: date-time
+       */
+      generated_at: string;
+      /**
+       * Headsign
+       * @description Headsign of the line and direction at the stop.
+       */
+      headsign: string;
+      /** Line */
+      line: string;
+      /** @description Estimated position; null with NO_ARRIVAL and NO_VEHICLE. */
+      position: components['schemas']['PositionSchema'] | null;
+      /**
+       * Refresh After S
+       * @description Seconds after which the client should refresh.
+       */
+      refresh_after_s: number;
+      /**
+       * Shape Id
+       * @description Shape of the trip, or the representative one of the line and direction.
+       */
+      shape_id: string | null;
+      /**
+       * Source
+       * @enum {string}
+       */
+      source: 'REALTIME' | 'SCHEDULED';
+      /**
+       * Status
+       * @enum {string}
+       */
+      status: 'EN_ROUTE' | 'AT_STOP' | 'NOT_STARTED' | 'NO_VEHICLE' | 'NO_ARRIVAL';
+      stop: components['schemas']['PositionStopSchema'];
+      /** @description Trip paired with the arrival, if any. */
+      vehicle: components['schemas']['VehicleSchema'] | null;
     };
     /** VehicleSchema */
     VehicleSchema: {
@@ -565,6 +741,70 @@ export interface operations {
            *       "type": "https://avisabus/problems/stop-not-found"
            *     }
            */
+          'application/problem+json': unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+      /** @description No active GTFS feed. */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProblemSchema'];
+          /**
+           * @example {
+           *       "status": 503,
+           *       "title": "Service Unavailable",
+           *       "type": "https://avisabus/problems/network-unavailable"
+           *     }
+           */
+          'application/problem+json': unknown;
+        };
+      };
+    };
+  };
+  get_vehicle_position_api_v1_stops__stop_id__lines__line__position_get: {
+    parameters: {
+      query: {
+        /** @description Direction of the line (0 or 1). */
+        direction_id: number;
+        /** @description Signed stop token of the QR (22 characters). */
+        t?: string | null;
+      };
+      header?: never;
+      path: {
+        stop_id: string;
+        line: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VehiclePositionResponse'];
+        };
+      };
+      /** @description Missing or invalid token, or unknown stop (same body as the stop endpoints); or the line and direction do not serve the stop. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProblemSchema'];
           'application/problem+json': unknown;
         };
       };

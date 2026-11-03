@@ -5,16 +5,21 @@ from contextlib import AbstractAsyncContextManager
 from typing import Any
 
 from fastapi import FastAPI
+from fastapi.middleware.gzip import GZipMiddleware
 
 import avisabus
 from avisabus.adapters.inbound.http.container import PositionUseCases, StopUseCases
 from avisabus.adapters.inbound.http.errors import register_error_handlers
 from avisabus.adapters.inbound.http.routes import health
+from avisabus.adapters.inbound.http.routes import position as position_routes
 from avisabus.adapters.inbound.http.routes import shapes as shapes_routes
 from avisabus.adapters.inbound.http.routes import stops as stops_routes
 from avisabus.config import Settings
 
 API_PREFIX = "/api/v1"
+GZIP_MINIMUM_SIZE = 1000
+"""Responses of more than ~1 KB are compressed when the client accepts gzip (position_estimation
+AC-16)."""
 
 
 Lifespan = Callable[[FastAPI], AbstractAsyncContextManager[None]]
@@ -36,6 +41,7 @@ def create_app(
     describe itself (`openapi_document`); its endpoints must not be called."""
     app = FastAPI(title="AvisaBus", version=avisabus.__version__, lifespan=lifespan)
     app.state.settings = settings
+    app.add_middleware(GZipMiddleware, minimum_size=GZIP_MINIMUM_SIZE)
     register_error_handlers(app)
     app.include_router(health.router, prefix=API_PREFIX)
     if stops is not None:
@@ -45,6 +51,7 @@ def create_app(
     if positions is not None:
         app.state.position_use_cases = positions
     if positions is not None or schema_only:
+        app.include_router(position_routes.router, prefix=API_PREFIX)
         app.include_router(shapes_routes.router, prefix=API_PREFIX)
     return app
 

@@ -179,3 +179,28 @@ async def test_shape_without_an_active_feed_is_503(tmp_path: Path) -> None:
     assert response.status_code == 503
     assert response.json()["type"] == "https://avisabus/problems/network-unavailable"
     assert response.headers["cache-control"] == "no-store"
+
+
+# --- AC-16: gzip (T-06) ---
+
+
+@pytest.mark.spec("position_estimation.AC-16")
+async def test_shapes_are_compressed_when_the_client_accepts_gzip(mini_engine: Engine) -> None:
+    clock = _clock()
+    source, _ = replay(STOP_508_PEAK, clock)
+    async with position_client(mini_engine, clock, source) as (client, _):
+        compressed = await client.get(
+            f"{API}/shapes/{SHAPE_93}", headers={"Accept-Encoding": "gzip"}
+        )
+        plain = await client.get(
+            f"{API}/shapes/{SHAPE_93}", headers={"Accept-Encoding": "identity"}
+        )
+        small = await client.get(f"{API}/shapes/ghost", headers={"Accept-Encoding": "gzip"})
+    assert len(plain.content) > 1000
+    assert "content-encoding" not in plain.headers
+    assert compressed.headers["content-encoding"] == "gzip"
+    assert compressed.json() == plain.json()  # httpx decompresses it
+    assert int(compressed.headers["content-length"]) < len(plain.content)
+    assert compressed.headers["etag"] == plain.headers["etag"]
+    assert len(small.content) < 1000
+    assert "content-encoding" not in small.headers

@@ -10,8 +10,9 @@ Spec: specs/position_estimation/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Ag
       (soporte de AC-09 y AC-13) (commit 74f6739)
 - [x] T-04 `GetVehiclePosition` y `LineNotAtStopError` (AC-09, AC-10, AC-11, AC-12) (commit d09eec9)
 - [x] T-05 `GetShape`, `ShapeNotFoundError` y endpoint `/shapes/{shape_id}` con `ETag`, `304` y
-      `Cache-Control` (AC-13, AC-14, AC-15)
-- [ ] T-06 Endpoint de posición, `GZipMiddleware`, composición en `main.py`
+      `Cache-Control` (AC-13, AC-14, AC-15) (commit 62641a7)
+- [x] T-06 Endpoint de posición, `GZipMiddleware(minimum_size=1000)`, composición en `main.py`
+      (AC-09, AC-10, AC-11, AC-12, AC-16)
 - [ ] T-07 Test de coherencia con la sesión real `stop_508_peak`
 - [ ] T-08 Contrato del frontend (`npm run gen:api`) y verificación completa
 
@@ -87,6 +88,18 @@ Spec: specs/position_estimation/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Ag
 - **D-16 (T-05/T-06) Contrato del frontend:** `npm run gen:api` se ejecuta en cada tarea que
   cambia la API (T-05 y T-06) para que el test de desfase de `passenger_stop_view` (AC-02) siga en
   verde en cada commit; T-08 lo comprueba de nuevo.
+- **D-17 (T-06) Forma de la respuesta de posición:** se sigue el ejemplo del design §3: `arrival`
+  con `kind`, `minutes`, `arrival_at`, `destination` y `sae_destination` (`null` con
+  `NO_ARRIVAL`), `vehicle` aparte (`{trip_id, service_date}` o `null`) y `stop` con `stop_id`,
+  `name`, `lat`, `lon`. `position.lat`/`lon` a 6 decimales y `distance_to_stop_m` entero;
+  `bearing_deg` sin redondear (el design no lo fija). `Cache-Control: no-store` en la respuesta
+  y en sus errores, como la API de llegadas. `direction_id` es obligatorio (sin él, `422` de
+  FastAPI).
+- **D-18 (T-06) Test de otra feature ajustado:** `tests/integration/test_main_stops.py`
+  (stop_arrivals_api) lista las rutas que empiezan por `/api/v1/stops`; la nueva ruta
+  `/api/v1/stops/{stop_id}/lines/{line}/position` entra en ese filtro, así que se añade a la
+  lista esperada (sin cambiar nada más del test). Nuevo `test_main_position.py` para la
+  composición de esta feature.
 
 ## Bloqueos
 
