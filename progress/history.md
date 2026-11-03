@@ -257,3 +257,7 @@
 ## 2026-11-03 · position_estimation PR #27 fusionada · passenger_stop_view · done → implementing (v1.1)
 - Solo T-11 (AC-17, AC-24), en `feat/passenger_stop_view-v1.1` desde `specs/ajustes-bloque-2` (PR #24,
   aprobada, sin fusionar). La persona fusionará la #24 y la PR de T-11 seguidas.
+
+## 2026-11-03 · passenger_stop_view v1.1 · implementing → in_review
+- T-11 (AC-17, AC-24): anuncio y foco tras acciones manuales; `CI=1 ./init.sh verify --e2e` en verde
+  (969 backend, 287 Vitest, 60 e2e).
