@@ -1,4 +1,57 @@
 @import 'tailwindcss';
+/* Self-hosted typeface (docs/design.md §3): Vite bundles the woff2 files in our own origin. */
+@import '@fontsource/atkinson-hyperlegible/400.css';
+@import '@fontsource/atkinson-hyperlegible/700.css';
+
+/* Design tokens: docs/design.md §3 and §4. Utilities: text-text, bg-accent, border-divider… */
+@theme {
+  --font-sans: 'Atkinson Hyperlegible', system-ui, sans-serif;
+
+  --color-text: #14171f;
+  --color-text-muted: #4b5563;
+  --color-surface: #ffffff;
+  --color-accent: #0b3d91;
+  --color-accent-hover: #072a66;
+  --color-accent-surface: #f4f7fd;
+  --color-border: #d5dae2;
+  --color-divider: #e3e6ec;
+  --color-control-border: #8a93a3;
+
+  --color-occ-free-bg: #e6f4ea;
+  --color-occ-free-fg: #1e5e2e;
+  --color-occ-medium-bg: #fff4d6;
+  --color-occ-medium-fg: #7a4a00;
+  --color-occ-full-bg: #fde7e5;
+  --color-occ-full-fg: #9b1c14;
+  --color-occ-none-bg: #f1f3f6;
+  --color-occ-none-fg: #4b5563;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+  }
+
+  /* Visible focus on every interactive element (frontend_i18n.AC-13): accent is 10:1 on white. */
+  :focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* Light variant for dark backgrounds (e.g. `text` or `accent`): white is ≥ 10:1 on both. */
+  .focus-light:focus-visible,
+  .focus-light :focus-visible {
+    outline-color: #fff;
+  }
+
+  /* Programmatic focus targets (skip link destination, h1 after navigation) are not controls. */
+  main[tabindex='-1']:focus,
+  h1[tabindex='-1']:focus {
+    outline: none;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *,

@@ -18,6 +18,7 @@
     "e2e": "playwright test"
   },
   "dependencies": {
+    "@fontsource/atkinson-hyperlegible": "^5.3.0",
     "i18next": "^26.7.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
