@@ -544,6 +544,11 @@ class SqliteNetworkRepository:
         found.sort(key=lambda item: (item[0], item[1].trip_id))
         return [passage for _, passage in found]
 
+    def departing_directions(self, stop_id: str, line: str) -> frozenset[int]:
+        with self._engine.connect() as conn:
+            rows = conn.execute(text(_DEPARTING_DIRECTIONS), {"stop": stop_id, "line": line})
+            return frozenset(int(r.direction_id) for r in rows)
+
     def trip_stop_times(self, trip_id: str) -> list[TripStopTime]:
         st = t.gtfs_stop_time
         with self._engine.connect() as conn:
@@ -703,6 +708,17 @@ def service_day_start(service_date: date, zone: ZoneInfo) -> datetime:
     noon = datetime(service_date.year, service_date.month, service_date.day, 12, tzinfo=zone)
     return noon.astimezone(UTC) - timedelta(hours=12)
 
+
+_DEPARTING_DIRECTIONS = """
+SELECT DISTINCT tr.direction_id
+FROM gtfs_stop_time st
+JOIN gtfs_trip tr ON tr.feed_version_id = st.feed_version_id AND tr.trip_id = st.trip_id
+WHERE st.feed_version_id = (SELECT id FROM feed_version WHERE is_active = 1)
+  AND st.stop_id = :stop AND tr.line = :line
+  AND st.stop_sequence = (
+      SELECT MIN(first.stop_sequence) FROM gtfs_stop_time first
+      WHERE first.feed_version_id = st.feed_version_id AND first.trip_id = st.trip_id)
+"""
 
 _REPORT_DIRECTIONS = """
 SELECT short_name, direction_id, shape_id, trip_count FROM line_direction

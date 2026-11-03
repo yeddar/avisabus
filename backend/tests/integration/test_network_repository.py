@@ -507,3 +507,59 @@ def test_scheduled_stop_times_with_a_window_of_several_days(
         date(2026, 11, 9),
         date(2026, 11, 10),
     }
+
+
+# --- departing_directions (stop_arrivals_api v1.4, AC-19; T-05c) ---
+
+
+def _expected_departing(repo: SqliteNetworkRepository, stop_id: str, line: str) -> set[int]:
+    """From the CSV: directions (via the shape of the trip) of the trips of `line` whose first
+    stop (minimum stop_sequence) is `stop_id`."""
+    direction_of_shape = {
+        shape: d for d in (0, 1) for shape, _ in repo.shapes_for_direction(line, d)
+    }
+    first: dict[str, tuple[int, str]] = {}
+    for row in STOP_TIMES:
+        sequence = int(row["stop_sequence"])
+        if row["trip_id"] not in first or sequence < first[row["trip_id"]][0]:
+            first[row["trip_id"]] = (sequence, row["stop_id"])
+    return {
+        direction_of_shape[TRIPS[trip_id]["shape_id"]]
+        for trip_id, (_, stop) in first.items()
+        if stop == stop_id and ROUTE_LINES[TRIPS[trip_id]["route_id"]] == line
+    }
+
+
+@pytest.mark.spec("stop_arrivals_api.AC-19")
+@pytest.mark.parametrize("stop_id", ["166", "691", "1057", "346"])
+def test_departing_directions_at_the_c2_terminals(
+    repo: SqliteNetworkRepository, stop_id: str
+) -> None:
+    # Each terminal of C2 serves both directions (one half loop ends, the other one starts).
+    assert {h.direction_id for h in repo.headsigns_at_stop(stop_id, "C2")} == {0, 1}
+    got = repo.departing_directions(stop_id, "C2")
+    assert isinstance(got, frozenset)
+    assert len(got) == 1
+    assert got == _expected_departing(repo, stop_id, "C2")
+
+
+@pytest.mark.spec("stop_arrivals_api.AC-19")
+def test_departing_directions_of_the_c2_half_loops(repo: SqliteNetworkRepository) -> None:
+    # Shapes are named <route>_<first stop>_<last stop>: 651_166_691 and 996_1057_346 are
+    # direction 0, 651_691_166 and 996_346_1057 direction 1 (shapes_for_direction).
+    assert repo.departing_directions("166", "C2") == {0}
+    assert repo.departing_directions("1057", "C2") == {0}
+    assert repo.departing_directions("691", "C2") == {1}
+    assert repo.departing_directions("346", "C2") == {1}
+
+
+@pytest.mark.spec("stop_arrivals_api.AC-19")
+def test_departing_directions_elsewhere(repo: SqliteNetworkRepository, tmp_path: Path) -> None:
+    assert repo.departing_directions("487", "98") == {0}
+    assert repo.departing_directions("487", "98") == _expected_departing(repo, "487", "98")
+    assert repo.departing_directions("508", "93") == frozenset()  # intermediate stop
+    assert repo.departing_directions("166", "93") == frozenset()  # line not at the stop
+    assert repo.departing_directions("166", "N4") == frozenset()  # line not in the network
+    engine = _engine(tmp_path / "empty.sqlite")
+    assert SqliteNetworkRepository(engine).departing_directions("166", "C2") == frozenset()
+    engine.dispose()

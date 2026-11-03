@@ -47,6 +47,14 @@ class NetworkRepository(Protocol):
         `date(at + window)` in the feed's zone (stop_arrivals_api AC-18)."""
         ...
 
+    def departing_directions(self, stop_id: str, line: str) -> frozenset[int]:
+        """Directions of `line` with some trip of the active feed whose first stop (minimum
+        `stop_sequence`) is `stop_id`.
+
+        Port extension defined by stop_arrivals_api design §3 ("Sentidos que salen", AC-19).
+        """
+        ...
+
     def trip_stop_times(self, trip_id: str) -> list[TripStopTime]: ...
 
     def trip_line(self, trip_id: str) -> str | None:
