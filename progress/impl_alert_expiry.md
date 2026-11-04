@@ -8,7 +8,8 @@ Rama: `feat/alert_expiry` (apilada sobre `feat/alert_cancel`, `feat/alert_create
 - [x] T-02 `GetStopArrivals.for_stop`, `ExpireAlert`, `WatchPassages` y `ExpireDueAlerts` (AC-03, AC-04,
       AC-05, AC-06, AC-08, AC-09)
 - [x] T-03 `run_periodic`, `lifespan`, configuración y `.env.example` (AC-10)
-- [ ] T-04 Integración
+- [x] T-04 Integración: caché compartida, fuente que falla, evento por WebSocket, reinicio (AC-03,
+      AC-04, AC-08, AC-09, AC-10; además AC-05 con la red real)
 - [ ] T-05 Sesión real `stop_508_peak`
 - [ ] T-06 Verificación completa
 
@@ -29,6 +30,12 @@ Rama: `feat/alert_expiry` (apilada sobre `feat/alert_cancel`, `feat/alert_create
   `container.py` no está en la lista de ficheros de T-03, pero `background/` no puede importar
   adaptadores (contrato de capas: `adapters | background` son independientes) y así los tests de
   integración componen igual que `main.py`, como ya hacen `build_alert_use_cases` y los demás.
+- T-04 (apoyo de tests de alert_create y realtime_events): `tests/support/alerts_app.py`,
+  `AlertsApp` gana el campo `expiry` (`build_alert_expiry`, como en `main.py`);
+  `tests/support/ws.py` gana `receive_json_soon(ws)`: recibe un mensaje del socket dejando correr
+  el bucle de la aplicación como mucho 1000 vueltas (sin reloj real) y falla con
+  `AssertionError` si no llega nada, en lugar de colgarse como `receive_json()` (hallazgo
+  pendiente del arnés). Lo usan solo los tests nuevos.
 
 ## Decisiones locales
 - T-01: `AVISABUS_PASSAGE_WINDOW_MIN` se queda en **2 min** (valor por defecto del design; E-01:
@@ -84,6 +91,17 @@ Rama: `feat/alert_expiry` (apilada sobre `feat/alert_cancel`, `feat/alert_create
   elegir el implementer.
 - T-03: logger de las tareas `avisabus.background`; el de `ExpireAlert` y `WatchPassages`,
   `avisabus.alerts` (el de `CreateAlert`/`CancelAlert`).
+
+- T-04 (tests): los instantes salen de la línea temporal de E-01 (`timeline_20s.txt`): la 93
+  `…_122` está a 0 min de 720 s a 760 s y desaparece a 780 s; la 98 `…_059` de la 2070 se ve por
+  última vez a 320 s a 4 min. Con la caché de producción (TTL 20 s) delante de la reproducción.
+  El reinicio (AC-09) se simula con dos composiciones sobre el mismo fichero SQLite (el primer
+  motor se cierra; la segunda instancia no tiene nada en memoria). Que el otro dispositivo no
+  recibe el evento se comprueba con `receive_json_soon` acotado (falla con "sent nothing").
+- T-04: se añade un test de AC-05 con la red real: el aviso de la 98 `…_059` caduca como
+  `NEXT_STOP` en el ciclo de 820 s (primer ciclo de 20 s ≥ 803 s, el instante que calcula E-01).
+- T-04: los tests de integración pasan a la primera porque prueban, juntas, piezas ya hechas con
+  TDD en T-01–T-03 (no hubo código nuevo de producción en T-04).
 
 ## Bloqueos
 Ninguno.
