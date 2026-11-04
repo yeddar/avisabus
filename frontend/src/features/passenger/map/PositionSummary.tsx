@@ -11,8 +11,9 @@ export interface PositionSummaryProps {
 /**
  * "Dónde está el autobús": the text alternative to the map, shown before it
  * (passenger_map_view.AC-04), with the "Posición estimada" / "Posición según horario" badge
- * (AC-05). Not a live region: refreshes update it silently (AC-06). Look of docs/design.md §5.7:
- * accent-surface box, 2 px accent border, radius 14 px, figures in bold.
+ * (AC-05), left out without a position (v1.2). Not a live region: refreshes update it silently
+ * (AC-06). Look of docs/design.md §5.7: accent-surface box, 2 px accent border, radius 14 px,
+ * figures in bold.
  */
 export function PositionSummary({ summary }: PositionSummaryProps) {
   const { t } = useTranslation();
@@ -26,9 +27,11 @@ export function PositionSummary({ summary }: PositionSummaryProps) {
       <h2 id={headingId} className="text-lg font-bold">
         {t('map.summaryTitle')}
       </h2>
-      <span className="rounded-full bg-accent px-2.5 py-0.5 text-[0.8125rem] font-bold text-white">
-        {t(summary.badge === 'scheduled' ? 'map.scheduled' : 'map.estimated')}
-      </span>
+      {summary.badge !== null && (
+        <span className="rounded-full bg-accent px-2.5 py-0.5 text-[0.8125rem] font-bold text-white">
+          {t(summary.badge === 'scheduled' ? 'map.scheduled' : 'map.estimated')}
+        </span>
+      )}
       <p className="text-base leading-snug">
         {summaryParts(summary.text).map((part, index) => {
           if (part.kind === 'strong') return <strong key={index}>{part.text}</strong>;

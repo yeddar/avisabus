@@ -1,4 +1,124 @@
 # Revisión: passenger_map_view
+
+## v1.2 · Ciclo 1
+Ciclo: 1 (v1.2) · Fecha: 2026-11-04 · Agente: reviewer
+Spec: `specs/passenger_map_view/` v1.2 (APPROVED, PR #33) · Rama: `feat/passenger_map_view-v1.2` (HEAD eb371e8; código en 4fef5c7) · Base: `origin/develop` (tras `git fetch`)
+
+## Veredicto: APPROVED
+
+T-08 cumple AC-05 v1.2. Sin posición (`NO_ARRIVAL`, `NO_VEHICLE` o respuesta con `position = null`)
+no se pinta la insignia, ni siquiera una caja vacía. Con posición, `AT_STOP` incluido, la insignia
+depende de `source`. La espera fija `page.waitForTimeout(400)` ha desaparecido y la sustituyen
+esperas a eventos de Leaflet que no usan reloj real. El test de AC-10 sigue detectando las
+animaciones (ver "Mutaciones"). `CI=1 ./init.sh verify --e2e` está en verde, no hay regresiones y
+no hay hallazgos bloqueantes. Quedan dos notas de documentación no bloqueantes (N-08 y N-09).
+
+## Matriz AC → evidencia
+
+| AC | Test(s) | Resultado | Nota |
+|---|---|---|---|
+| AC-01 | Sin cambios: `ArrivalRow.test.tsx`, E2E `map-view.spec.ts:339` | OK | Verde en este ciclo |
+| AC-02 | Sin cambios: `bundle-budget.test.ts`, `MapPage.test.tsx`, E2E `:339` | OK | `index-*.js` 141,48 KB gzip; `MapPage-*.js` 50,23 KB gzip. `test:bundle` 4/4 |
+| AC-03 | Sin cambios | OK | |
+| AC-04 | Sin cambios en los tests de texto. El test de `NO_ARRIVAL` de `summary.test.ts:181` comprueba además el texto "Posición no disponible…" | OK | |
+| AC-05 | `summary.test.ts:168`: con posición, `EN_ROUTE`, `NOT_STARTED` y `AT_STOP` × `REALTIME`/`SCHEDULED` dan la insignia de su `source` (y el test exige que `position` no sea nula). `summary.test.ts:181` (v1.2): `NO_ARRIVAL`, `NO_VEHICLE` y `EN_ROUTE` con `position = null` dan `badge === null`, con las dos fuentes. `PositionSummary.test.tsx:72` (v1.2, es/ca): ningún texto de insignia y solo `H2` + `P` en la sección. `MapPage.test.tsx:158` (v1.2): `NO_ARRIVAL` de extremo a extremo sin insignia. Siguen en verde `MapPage.test.tsx:144` (insignia con posición), `PositionSummary.test.tsx:56` y los de `busIcon`/`BusMap` ("Estimada", "Según horario", "Tu parada", sin leyenda). E2E: `:275` `NO_ARRIVAL` sin insignia (`toHaveCount(0)`, `:288`) y `:254` `NOT_STARTED` con "Posición según horario" | **OK** | Discriminan: fallan M1 a M4 y E6 (ver "Mutaciones"). Coherente con `position_estimation` (`NO_ARRIVAL`/`NO_VEHICLE` ⇒ `position = null`) |
+| AC-06 | Sin cambios | OK | |
+| AC-07 | Sin cambios | OK | |
+| AC-08 | Sin cambios | OK | |
+| AC-09 | Sin cambios: E2E `:378` | OK | |
+| AC-10 | Sin cambios en unit (`BusMap.test.tsx`). E2E `:430` × 3 perfiles: ahora espera `moveend` tras la flecha y `zoomend` tras `+` y tras "Alejar" (`:460-471`), sin `waitForTimeout` | **OK** | La espera no usa reloj real (§4 "sin sleeps reales"). Fallan E1, E3 y E4; con el gancho roto, el test falla en vez de pasar (E5) |
+| AC-11 | Sin cambios | OK | |
+| AC-12 | Sin cambios | OK | |
+| AC-13 | Sin cambios | OK | |
+| AC-14 | `e2e/map-view.spec.ts` × 3 perfiles | OK | 87 passed y ningún *flaky*. `expectNoNetworkLeaks` también en `:430` y `:275` |
+| AC-15 | Capturas de `frontend/test-results/passenger_map_view/<perfil>/` regeneradas en esta verificación | OK (revisión) | En `iphone/map-no-arrival-es.png`, el resumen tiene solo el título y el texto, sin insignia ni hueco. En `iphone/map-en-route-es.png` siguen "Posición estimada", "Estimada" y "Tu parada". El resto del aspecto se ajusta a `docs/design.md` §5.7 |
+
+## Verificación ejecutada
+
+- `cd frontend && npm run build` → OK (`index-*.js` 141,48 KB gzip; `MapPage-*.js` 50,23 KB gzip).
+- `CI=1 ./init.sh verify --e2e` (puerto 4173 libre; árbol limpio) → **`verify: todo en verde`** (EXIT=0).
+
+| Paso | Resultado |
+|---|---|
+| backend: format, lint, types, architecture | OK |
+| backend: tests | 988 passed, 6 deselected; cobertura 99,46 % |
+| frontend: format, lint, types | OK |
+| frontend: tests | 44 ficheros, 414 tests OK |
+| frontend: build | OK |
+| frontend: e2e + a11y | 87 passed, sin *flaky* ni reintentos; `test:bundle` 4/4 |
+| harness: feature_list.json, trazabilidad AC→test | OK |
+
+`grep -rn waitForTimeout frontend/e2e/` no devuelve nada.
+
+### Mutaciones
+
+Las hice en una copia del frontend en el scratchpad (`git archive HEAD`, con `node_modules`
+enlazado). Al terminar, la copia volvía a ser idéntica a HEAD y el árbol del repositorio sigue
+limpio. Los e2e se lanzaron con `CI=1 … --retries=0 -g …`.
+
+| Mutación | Unit (`passenger/map`, 105 tests) | E2E |
+|---|---|---|
+| Base (HEAD) | 105/105 | AC-10: 3/3 en verde |
+| M1: `badge` según `source` siempre (código anterior) | **Fallan 3**: `summary.test.ts:181` ×2 y `MapPage.test.tsx:158` | E6: `NO_ARRIVAL` **falla** en los 3 perfiles (`Expected: 0, Received: 1`) |
+| M2: `badge` siempre `null` | **Fallan 4**: `summary.test.ts:168` ×2, `MapPage.test.tsx:144` y el `NOT_STARTED` de `MapPage` | — |
+| M3: `null` solo con `status === 'NO_ARRIVAL'` (no por posición) | **Fallan 2**: `summary.test.ts:181` ×2 (`NO_VEHICLE` y `EN_ROUTE` sin posición) | — |
+| M4: `PositionSummary` pinta la caja de la insignia vacía | **Fallan 2**: `PositionSummary.test.tsx:72` es/ca | — |
+| E1: sin `zoomAnimation: false` | — | AC-10 **falla** en los 3 perfiles, en 2 ejecuciones (12 `leaflet-zoom-anim` registradas) |
+| E2: E1 sin las esperas de `zoomend` | — | También falla en los 3 perfiles en 2 ejecuciones, pero con menos registros (7). Sin espera, la detección depende del tiempo; con la espera, se recorre la animación entera |
+| E3: `InstantPans` sin efecto | — | AC-10 **falla** en los 3 perfiles: el panel no se mueve tras la flecha |
+| E4: `reducedMotion: 'no-preference'` en el test | — | AC-10 **falla** en los 3 perfiles (`leaflet-pan-anim` y `leaflet-zoom-anim`) |
+| E5: sin `exposeLeafletMap` (gancho no instalado) | — | AC-10 **falla** en los 3 perfiles con `TypeError` en `nextMapEvent`: no se queda esperando ni pasa en silencio |
+
+### Comprobación de la espera nueva (docs/verification.md §4)
+
+- `exposeLeafletMap` (`e2e/map-view.spec.ts:158`) usa `page.addInitScript` para interceptar la
+  asignación de `window.L` con un *setter* y registra `L.Map.addInitHook`, que es API pública de
+  Leaflet. Comprobé que el build de producción asigna `window.L` (`leaflet` 1.9.4 resuelve a
+  `dist/leaflet-src.js`, el UMD; en `dist/assets/MapPage-*.js` aparece `window.L=`). No cambia
+  código de producción.
+- `nextMapEvent` (`:177`) se suscribe con `map.once` **antes** de la acción, así que no hay
+  carrera. Si el evento no llega, el test acaba por el *timeout* de Playwright, no por una espera
+  fija. Con movimiento reducido, `moveend` y `zoomend` se emiten en el mismo ciclo y el test no se
+  ralentiza (unos 0,7–1 s por perfil).
+- No usa red: solo `addInitScript` y `evaluate` en la página. `mockNetwork` y
+  `expectNoNetworkLeaks` no cambian.
+
+## Hallazgos
+
+### Bloqueantes
+Ninguno.
+
+### No bloqueantes
+- **N-08 — Problema de spec menor (deuda documental): `Summary.badge` admite `null` y el design
+  §3 no lo recoge.** Afecta a `frontend/src/features/passenger/map/summary.ts:18` frente a
+  `specs/passenger_map_view/design.md` §3 (`badge: 'estimated' | 'scheduled'`).
+  - *Valoración:* cabe y **no requiere CP-3**. Es un tipo interno de la feature, no un contrato
+    con otras features ni con la API. AC-05 v1.2, que manda sobre el design, exige que la
+    insignia pueda faltar. T-08 cita `summary.ts` entre los ficheros que hay que tocar, y la única
+    razón para tocarlo es cambiar la insignia que devuelve. `null` es el cambio mínimo y coherente
+    con la regla "MIENTRAS haya posición" de AC-05. La alternativa, pasar la posición a
+    `PositionSummary`, sacaría la lógica de la función pura, en contra del §1 del design.
+  - *Propuesta:* en la próxima revisión de la spec, el spec-writer actualiza el design §3:
+    `badge: 'estimated' | 'scheduled' | null` (null sin posición, AC-05 v1.2). La decisión está
+    documentada en `progress/impl_passenger_map_view.md`.
+- **N-09 — `docs/design.md` §5.7, punto 3, no matiza que la insignia falta sin posición.** No hay
+  contradicción, porque la guía describe el caso con posición, pero quien la lea puede esperar
+  siempre la insignia. Corresponde a la persona (CP-6), que puede añadir "(solo si hay posición)".
+- *(Observación, sin acción)* La espera de AC-10 depende de que Leaflet 1.x asigne `window.L`. Si
+  una versión futura (Leaflet 2, solo ESM) deja de hacerlo, el test fallará con un `TypeError`
+  claro (E5) y no dará un falso verde. Es aceptable.
+
+### Alcance
+`git diff origin/develop..HEAD` toca solo `summary.ts`, `PositionSummary.tsx`, sus tests,
+`MapPage.test.tsx`, `e2e/map-view.spec.ts` y ficheros de progreso y orquestación
+(`feature_list.json`, `progress/*`). Todo está dentro de T-08. No cambian el backend, `docs/` ni
+`specs/`. No hay claves i18n nuevas (la paridad es/ca-valencia no cambia) ni variables de entorno.
+El commit de código, `fix(passenger_map_view): …`, sigue Conventional Commits con el ámbito de la
+feature. Privacidad: sin cambios en registros.
+
+---
+
+## v1.1 · Ciclo 2
 Ciclo: 2 · Fecha: 2026-11-04 · Agente: reviewer
 Spec: `specs/passenger_map_view/` v1.1 (APPROVED, PR #29) · Rama: `feat/passenger_map_view` (HEAD 2707ce8) · Base: `origin/develop` (tras `git fetch`)
 

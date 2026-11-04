@@ -164,10 +164,32 @@ describe('buildSummary', () => {
   it.each([
     ['REALTIME', 'estimated'],
     ['SCHEDULED', 'scheduled'],
-  ] as const)('[passenger_map_view.AC-05] source %s gives the badge "%s"', (source, badge) => {
-    for (const p of [POSITION_EN_ROUTE(), POSITION_NO_ARRIVAL()]) {
-      p.source = source;
-      expect(summarize(p).badge).toBe(badge);
-    }
-  });
+  ] as const)(
+    '[passenger_map_view.AC-05] with a position, source %s gives the badge "%s"',
+    (source, badge) => {
+      const atStop = POSITION_EN_ROUTE();
+      atStop.status = 'AT_STOP';
+      for (const p of [POSITION_EN_ROUTE(), POSITION_NOT_STARTED(), atStop]) {
+        p.source = source;
+        expect(p.position).not.toBeNull();
+        expect(summarize(p).badge).toBe(badge);
+      }
+    },
+  );
+
+  it.each(['REALTIME', 'SCHEDULED'] as const)(
+    '[passenger_map_view.AC-05] (v1.2) without a position there is no badge (source %s)',
+    (source) => {
+      const noVehicle = POSITION_NO_ARRIVAL();
+      noVehicle.status = 'NO_VEHICLE';
+      const enRouteWithoutPosition = POSITION_EN_ROUTE();
+      enRouteWithoutPosition.position = null;
+      for (const p of [POSITION_NO_ARRIVAL(), noVehicle, enRouteWithoutPosition]) {
+        p.source = source;
+        const summary = summarize(p);
+        expect(summary.plain).toMatch(/^Posición no disponible en este momento\./);
+        expect(summary.badge).toBeNull();
+      }
+    },
+  );
 });

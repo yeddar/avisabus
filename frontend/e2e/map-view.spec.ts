@@ -146,6 +146,45 @@ async function expectNoAxeViolations(page: Page) {
   expect(results.violations).toEqual([]);
 }
 
+/** The Leaflet map of the page and the map events a test is waiting for. */
+type LeafletMap = { once(type: string, listener: () => void): void };
+type MapWindow = { leafletMap?: LeafletMap; mapEvents: Record<string, Promise<void>> };
+
+/**
+ * Keeps the Leaflet map of the page in `window.leafletMap`, so a test can wait for its
+ * `moveend`/`zoomend` instead of a fixed time (docs/verification.md §4). Leaflet sets `window.L`
+ * when it loads; the setter adds an init hook (public Leaflet API) before any map is created.
+ */
+async function exposeLeafletMap(page: Page) {
+  await page.addInitScript(() => {
+    const w = window as unknown as MapWindow;
+    w.mapEvents = {};
+    let leaflet: unknown;
+    Object.defineProperty(window, 'L', {
+      configurable: true,
+      get: () => leaflet,
+      set(value: { Map: { addInitHook(hook: () => void): void } }) {
+        leaflet = value;
+        value.Map.addInitHook(function (this: LeafletMap) {
+          w.leafletMap = this;
+        });
+      },
+    });
+  });
+}
+
+/** Starts listening to the next `name` event of the map; the returned function waits for it. */
+async function nextMapEvent(page: Page, name: 'moveend' | 'zoomend') {
+  await page.evaluate((event) => {
+    const w = window as unknown as MapWindow;
+    w.mapEvents[event] = new Promise<void>((resolve) => w.leafletMap!.once(event, resolve));
+  }, name);
+  return () =>
+    page.evaluate(async (event) => {
+      await (window as unknown as MapWindow).mapEvents[event];
+    }, name);
+}
+
 function mapRegion(page: Page, lang: Lang) {
   return page.getByRole('region', { name: TEXTS[lang].region });
 }
@@ -233,7 +272,7 @@ test.describe('map view states', () => {
     await capture(page, testInfo, 'map-not-started-es');
   });
 
-  test('[passenger_map_view.AC-04] [passenger_map_view.AC-07] [passenger_map_view.AC-14] [passenger_map_view.AC-15] NO_ARRIVAL: only the route and the stops, with no WCAG 2.1 A/AA violations', async ({
+  test('[passenger_map_view.AC-04] [passenger_map_view.AC-05] [passenger_map_view.AC-07] [passenger_map_view.AC-14] [passenger_map_view.AC-15] NO_ARRIVAL: no badge, only the route and the stops, with no WCAG 2.1 A/AA violations', async ({
     page,
   }, testInfo) => {
     const network = await mockNetwork(page, {
@@ -241,9 +280,12 @@ test.describe('map view states', () => {
     });
     await page.goto(MAP_URL);
 
-    await expect(page.getByRole('region', { name: 'Dónde está el autobús' })).toContainText(
+    const summary = page.getByRole('region', { name: 'Dónde está el autobús' });
+    await expect(summary).toContainText(
       'Posición no disponible en este momento. No hay llegadas previstas de esta línea en tu parada.',
     );
+    // v1.2: no "Posición estimada" / "Posición según horario" without a position.
+    await expect(summary.getByText(/^Posición (estimada|según horario)$/)).toHaveCount(0);
     await expectMapDrawn(page, 'es');
     const map = mapRegion(page, 'es');
     await expect(map.getByText('Tu parada', { exact: true })).toBeVisible();
@@ -391,6 +433,7 @@ test.describe('map view with reduced motion', () => {
     const network = await mockNetwork(page, {
       position: { status: 200, body: POSITION_EN_ROUTE },
     });
+    await exposeLeafletMap(page);
     await page.goto(MAP_URL);
     await expectMapDrawn(page, 'es');
     const map = mapRegion(page, 'es');
@@ -414,12 +457,18 @@ test.describe('map view with reduced motion', () => {
 
     await map.locator('.leaflet-container').focus();
     const before = await pane.getAttribute('style');
+    const panned = await nextMapEvent(page, 'moveend');
     await page.keyboard.press('ArrowRight');
     // The pane jumps to its new position in the same task as the key press.
     expect(await pane.getAttribute('style')).not.toBe(before);
+    await panned();
+    // An animated zoom adds its class on the next frame: wait for the end of each zoom.
+    const zoomedIn = await nextMapEvent(page, 'zoomend');
     await page.keyboard.press('+');
+    await zoomedIn();
+    const zoomedOut = await nextMapEvent(page, 'zoomend');
     await map.getByRole('button', { name: 'Alejar' }).click();
-    await page.waitForTimeout(400); // longer than Leaflet's 0.25 s animations
+    await zoomedOut();
 
     expect(
       await page.evaluate(() => (window as unknown as { animations: string[] }).animations),

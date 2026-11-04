@@ -6,14 +6,16 @@ import type { Language } from '../../../shared/i18n/languages';
 import { currentMinutes } from '../stop/countdown';
 
 /**
- * Text summary of the bus position (passenger_map_view.AC-04) and its badge (AC-05).
+ * Text summary of the bus position (passenger_map_view.AC-04) and its badge (AC-05). The badge
+ * is null without a position (NO_ARRIVAL, NO_VEHICLE): "Posición estimada" would contradict
+ * "Posición no disponible" (v1.2).
  *
  * `text` is a sentence with two inline marks, written by the translations: `<strong>…</strong>`
  * for the distance, the stops and the time (docs/design.md §5.7) and `<name>…</name>` for GTFS
  * names, which are shown in Valencian (frontend_i18n.AC-06). `summaryParts` splits it for
  * rendering and `summaryPlainText` removes the marks.
  */
-export type Summary = { text: string; badge: 'estimated' | 'scheduled' };
+export type Summary = { text: string; badge: 'estimated' | 'scheduled' | null };
 
 export type SummaryPart = { kind: 'text' | 'strong' | 'name'; text: string };
 
@@ -73,8 +75,8 @@ export function buildSummary(
   lang: Language,
   now: Date,
 ): Summary {
-  const badge = p.source === 'SCHEDULED' ? 'scheduled' : 'estimated';
   const { position, arrival } = p;
+  const badge = position === null ? null : p.source === 'SCHEDULED' ? 'scheduled' : 'estimated';
 
   if (p.status === 'AT_STOP') return { text: t('map.atStop'), badge };
   if (p.status === 'NO_ARRIVAL') return { text: unavailable('map.reasonNoArrival', t), badge };

@@ -340,3 +340,26 @@
 ## 2026-11-04 · passenger_stop_view v1.3 · in_review → done
 - Revisión ciclo 1 de la v1.3: APPROVED (escenarios de `dist/` borrado, manipulado y fuente rota
   reproducidos). CP-4 propuesto para `docs/verification.md`. PR sin fusionar.
+
+## 2026-11-04 · passenger_stop_view v1.3 PR #34 abierta · passenger_map_view · done → implementing (v1.2, T-08)
+
+## 2026-11-04 · passenger_map_view v1.2 · implementing → in_review
+- T-08: sin posición no se muestra insignia (`badge: null`); el e2e espera `moveend`/`zoomend` en lugar
+  de `waitForTimeout(400)`. Verify --e2e en verde; e2e del mapa estable (54/54 ×2).
+
+## 2026-11-04 · passenger_map_view v1.2 · in_review → done
+- Revisión ciclo 1 de la v1.2: APPROVED (mutaciones de AC-05 y AC-10 detectadas). PR sin fusionar.
+
+## 2026-11-04 · passenger_map_view v1.2 PR #35 abierta · position_estimation · done → implementing (v1.3, T-10)
+
+## 2026-11-04 · position_estimation v1.3 · implementing → in_review
+- T-10: tests de la segunda parada (mata el mutante `k <= 1`) y del `shape_id` del viaje en el log.
+  Verify --e2e en verde (998 backend).
+
+## 2026-11-04 · position_estimation v1.3 · in_review → done · ajustes previos al bloque 3 terminados
+- Revisión ciclo 1 de la v1.3: APPROVED (16/16 mutantes). PRs #34, #35 y la de `position_estimation`
+  v1.3 abiertas. Siguiente: specs del bloque 3 (spec-writer).
+
+## 2026-11-04 · passenger_stop_view v1.3 PR #34 fusionada
+- `feat/passenger_map_view-v1.2` (#35) y `feat/position_estimation-v1.3` (#36) actualizadas con `develop`
+  y con `progress/` idéntico en ambas para que se fusionen sin conflicto en cualquier orden.
