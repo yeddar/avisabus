@@ -7,10 +7,13 @@ export interface ArrivalsListProps {
   arrivals: Arrival[];
   source: ArrivalSource;
   now: Date;
+  /** Stop of the view and token of its QR, for the links to the map. */
+  stopId: string;
+  token: string;
 }
 
 /** Arrivals in the order given by the API (passenger_stop_view.AC-05), or the empty state (AC-10). */
-export function ArrivalsList({ arrivals, source, now }: ArrivalsListProps) {
+export function ArrivalsList({ arrivals, source, now, stopId, token }: ArrivalsListProps) {
   const { t } = useTranslation();
 
   if (arrivals.length === 0) {
@@ -27,6 +30,8 @@ export function ArrivalsList({ arrivals, source, now }: ArrivalsListProps) {
           arrival={arrival}
           now={now}
           scheduled={source === 'SCHEDULED'}
+          stopId={stopId}
+          token={token}
         />
       ))}
     </ul>

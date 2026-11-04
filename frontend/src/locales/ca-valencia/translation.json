@@ -56,7 +56,9 @@
       "body": "<strong>No s'han pogut carregar les dades.</strong> Comprova la connexió i torna-ho a intentar.",
       "retry": "Reintenta"
     },
-    "stale": "Dades de les {{time}}, poden no estar actualitzades"
+    "stale": "Dades de les {{time}}, poden no estar actualitzades",
+    "viewOnMap": "Mostra en el mapa",
+    "viewOnMapLabel": "Mostra en el mapa la línia {{line}} cap a {{destination}}"
   },
   "occupancy": {
     "FREE": "Poc ocupat",
@@ -72,6 +74,39 @@
       "unavailable": "ocupació no disponible"
     },
     "spokenWithSeats": "{{level}}, {{seats}}"
+  },
+  "map": {
+    "title": "Línia {{line}} cap a <destination>{{destination}}</destination>",
+    "back": "Torna a la parada",
+    "loading": "Carregant el mapa…",
+    "region": "Mapa del recorregut",
+    "regionDescription": "La mateixa informació està en text en el resum «On està l'autobús», abans del mapa.",
+    "estimated": "Posició estimada",
+    "scheduled": "Posició segons l'horari",
+    "busEstimated": "Estimada",
+    "busScheduled": "Segons horari",
+    "yourStop": "La teua parada",
+    "summaryTitle": "On està l'autobús",
+    "enRoute": "L'autobús està a <strong>{{distance}}</strong> de la teua parada, <strong>{{stops}}</strong>. Pròxima parada: <name>{{next}}</name>. {{arrival}}",
+    "stopsAway_one": "a {{count}} parada",
+    "stopsAway_other": "a {{count}} parades",
+    "nextIsYours": "és la parada següent",
+    "atStop": "L'autobús està arribant a la teua parada.",
+    "notStarted": "L'autobús encara no ha eixit de <name>{{stop}}</name>. {{arrival}}",
+    "notStarted_elided": "L'autobús encara no ha eixit d'<name>{{stop}}</name>. {{arrival}}",
+    "notStartedUnknown": "L'autobús encara no ha eixit de la primera parada del recorregut. {{arrival}}",
+    "arrivesIn": "Arriba en <strong>{{duration}}</strong>.",
+    "arrivesAt": "Arriba a les <strong>{{time}}</strong>.",
+    "arrivingNow": "<strong>Està arribant.</strong>",
+    "unavailable": "Posició no disponible en este moment.",
+    "reasonNoArrival": "No hi ha arribades previstes d'esta línia en la teua parada.",
+    "reasonNoVehicle": "No es pot situar en el recorregut l'autobús de la pròxima arribada.",
+    "notFound": "No es troba esta línia en la teua parada",
+    "zoomIn": "Acosta",
+    "zoomOut": "Allunya",
+    "osmAttribution": "© col·laboradors d'OpenStreetMap",
+    "announceOneStop": "L'autobús arribarà a la teua parada en la següent",
+    "announceArriving": "L'autobús està arribant a la teua parada"
   },
   "network": {
     "offline": "<strong>Sense connexió.</strong> Les dades s'actualitzaran quan torne la connexió."

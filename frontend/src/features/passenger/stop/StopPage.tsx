@@ -75,6 +75,7 @@ function StopView({ stopId, token }: { stopId: string; token: string }) {
     <StopContent
       stop={stop}
       arrivals={arrivals}
+      stopId={stopId}
       token={token}
       onManualNotFound={onManualNotFound}
     />
@@ -115,12 +116,13 @@ function ArrivingAnnouncer({ arrivals, now }: { arrivals: Arrival[]; now: Date }
 interface StopContentProps {
   stop: UseQueryResult<StopResponse, ApiError>;
   arrivals: UseQueryResult<StopArrivalsResponse, ApiError>;
+  stopId: string;
   token: string;
   /** A manual action ended with a 404: the view becomes "Parada no encontrada". */
   onManualNotFound: () => void;
 }
 
-function StopContent({ stop, arrivals, token, onManualNotFound }: StopContentProps) {
+function StopContent({ stop, arrivals, stopId, token, onManualNotFound }: StopContentProps) {
   const { t } = useTranslation();
   const language = useUiLanguage();
   const announce = useAnnounce();
@@ -265,7 +267,13 @@ function StopContent({ stop, arrivals, token, onManualNotFound }: StopContentPro
             </div>
             <ArrivingAnnouncer arrivals={data.arrivals} now={now} />
             <SourceNotice source={data.source} />
-            <ArrivalsList arrivals={data.arrivals} source={data.source} now={now} />
+            <ArrivalsList
+              arrivals={data.arrivals}
+              source={data.source}
+              now={now}
+              stopId={stopId}
+              token={token}
+            />
           </>
         )}
       </section>

@@ -2,25 +2,41 @@
 
 > Fichero vivo: lo reescribe el orquestador al final de cada sesión.
 
-**Fecha:** 2026-11-03
-**Fase:** Implementación — Bloque 2
-**Feature en curso:** `passenger_stop_view` v1.2 — `done`, PR abierta. Siguiente: `position_estimation` T-09.
+**Fecha:** 2026-11-04
+**Fase:** Fin del Bloque 2 — CP-6 pendiente
+**Feature en curso:** ninguna. Bloque 2 completo; PR #31 (`passenger_stop_view` v1.2) y PR de
+`position_estimation` v1.2 abiertas (sin fusionar).
 
 ## Último paso
-`passenger_map_view` v1.1: ciclo 2 **APPROVED**; PR #30 abierta (sin fusionar). Bloque 2: 4/4 features
-hechas. `passenger_stop_view` → `implementing` para T-12 (v1.2: foco tras 404 en acción manual y tras
-refresco automático; N-7/N-8).
+- `passenger_map_view` v1.1: APPROVED (ciclo 2), PR #30 fusionada.
+- `passenger_stop_view` v1.2 (T-12): APPROVED, PR #31 abierta. Sale de `develop` antes de la #30: puede
+  necesitar rebase (ambas tocan la vista de parada).
+- `position_estimation` v1.2 (T-09): APPROVED (15/16 mutantes detectados), PR abierta.
 
 ## Siguiente paso
-1. `passenger_stop_view` T-12: APPROVED (ciclo 1 de la v1.2); PR abierta.
-2. `position_estimation` T-09 (v1.2: H-01/H-02) → reviewer nuevo → `done` → PR.
-3. **CP-6 del bloque 2** (persona): textos (`progress/impl_passenger_stop_view.md`,
-   `progress/impl_passenger_map_view.md`), lector de pantalla (anuncios y foco), N-03 del mapa.
+1. La persona fusiona la #31 y la PR de `position_estimation` v1.2.
+2. **CP-6 del bloque 2** (persona): textos es/ca (`progress/impl_passenger_stop_view.md`,
+   `progress/impl_passenger_map_view.md`); lector de pantalla (anuncios de "llegando", foco tras
+   acciones manuales, 404 tras "Actualizar", refresco automático con foco en "Reintentar"); N-03 del
+   mapa (insignia junto a "Posición no disponible").
+3. Bloque 3 (`realtime_events` y siguientes) tras el CP-6.
 
 ## Pendiente para specs futuras
-- **passenger_stop_view v1.2:** N-9 documentar en el design que el aviso de error se mantiene durante los
-  reintentos automáticos sin datos (cambio visible: ya no aparece "Cargando…" cada 20 s). N-10: un 404 en
-  un refresco automático con el foco en "Reintentar" deja el foco en `body` (AC-24 no lo regula).
+- **Harness (H-04 de la revisión de `position_estimation` v1.2):** `frontend/src/__tests__/bundle-budget.test.ts`
+  lee `frontend/dist/`, pero `init.sh` ejecuta los tests antes del build: con un `dist/` antiguo,
+  `./init.sh verify` (sin `--e2e`) puede dar falso rojo o falso verde. Origen: `passenger_map_view` T-06
+  (patrón de `passenger_stop_view` T-09).
+- **position_estimation v1.2:** H-01 añadir `logger: Logger` a la firma de `GetVehiclePosition` en el
+  design §3 (D-19). H-02 falta un test con la segunda parada como objetivo (el mutante `k <= 1`
+  sobrevive). H-03 AC-11 no dice qué `shape_id` registrar; la respuesta conserva `vehicle` con `NO_VEHICLE`.
+- **passenger_map_view:** N-01 resuelto en ciclo 2 (design §3 `aria-describedby="summary-id"` frente a §4
+  `map.regionDescription` sigue por alinear). N-05 `waitForTimeout(400)` en `e2e/map-view.spec.ts:422`
+  (sobra). N-06 preferencia de movimiento reducido leída al montar. N-07 restauración de `panBy` sin test. N-02 elisión valenciana sin i/u
+  semiconsonántica ("de Iaia"). N-03 → CP-6: insignia "Posición estimada" junto a "Posición no
+  disponible…" en NO_ARRIVAL (cumple AC-05 "siempre"). N-04 costuras de teselas solo por el PNG simulado.
+- **passenger_map_view E-01 → `deployment_rpi` / docs:** no usar `Referrer-Policy: no-referrer` en nginx
+  ni cachear teselas de OSM en el service worker; opcional `VITE_MAP_TILE_ATTRIBUTION` (la atribución
+  es fija). Alternativas si OSM bloquea: IGN Base (WMTS, CC BY 4.0, plantilla sin verificar), CARTO (clave).
 - **position_estimation (H-01, H-02, H-04 → spec-writer en la próxima revisión; H-03 → `nfr_validation`) H-01 (spec):** AC-03 y AC-04 se solapan si la parada objetivo es la primera del
   viaje (implementado: `AT_STOP`; no ocurre en EMT). H-02: viaje sin `shape_dist_traveled` y con una
   parada ausente del feed activo → 500 en vez de `NO_VEHICLE` (solo si el feed cambia entre consultas).
@@ -101,7 +117,7 @@ refresco automático; N-7/N-8).
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Ninguno. CP-3 de `position_estimation` resuelto (PR #25). PR #24 (CP-4 y `passenger_stop_view` v1.1) pendiente de la persona.
+**CP-6 — fin del bloque 2** (tras fusionar la #31 y la PR de `position_estimation` v1.2).
 
 ## Bloqueos
 Ninguno. 
