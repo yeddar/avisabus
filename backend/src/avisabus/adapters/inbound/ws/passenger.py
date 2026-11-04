@@ -26,6 +26,8 @@ from avisabus.adapters.inbound.ws.connections import (
     Connection,
     ConnectionRegistry,
 )
+from avisabus.application.alert_events import alert_payload
+from avisabus.application.list_my_alerts import ListMyAlerts
 from avisabus.domain.errors import InvalidDeviceIdError, SubscriptionOverflowError
 from avisabus.domain.models.device import parse_device_id
 from avisabus.domain.ports.device import DeviceHasher
@@ -55,10 +57,21 @@ class PassengerSnapshotProvider(Protocol):
 
 
 class EmptySnapshotProvider:
-    """No alerts yet: `alert_create` replaces it with the real provider."""
+    """No alerts: the default of `build_realtime`. The application uses
+    `AlertSnapshotProvider` (alert_create)."""
 
     async def active_alerts(self, device_hash: str) -> list[Mapping[str, object]]:
         return []
+
+
+class AlertSnapshotProvider:
+    """Active alerts of the device, with the schema of `GET /alerts/mine` (alert_create AC-11)."""
+
+    def __init__(self, list_my_alerts: ListMyAlerts) -> None:
+        self._list_my_alerts = list_my_alerts
+
+    async def active_alerts(self, device_hash: str) -> list[Mapping[str, object]]:
+        return [alert_payload(alert) for alert in await self._list_my_alerts.execute(device_hash)]
 
 
 class Logger(Protocol):

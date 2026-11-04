@@ -79,7 +79,7 @@ def test_main_mounts_the_passenger_socket_and_closes_it_on_stop(tmp_path: Path) 
     assert facts == {
         "publisher": "InMemoryEventPublisher",
         "hasher": "HmacDeviceHasher",
-        "snapshots": "EmptySnapshotProvider",
+        "snapshots": "AlertSnapshotProvider",  # alert_create: the device's active alerts
         "hello_timeout_s": 7,
         "ping_interval_s": 40,
         "snapshot": {"type": "alerts.snapshot", "alerts": []},

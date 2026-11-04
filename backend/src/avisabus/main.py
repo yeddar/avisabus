@@ -14,6 +14,8 @@ from sqlalchemy import Engine
 
 from avisabus.adapters.inbound.http.app import create_app
 from avisabus.adapters.inbound.http.container import (
+    build_alert_snapshots,
+    build_alert_use_cases,
     build_position_use_cases,
     build_realtime,
     build_stop_use_cases,
@@ -69,9 +71,13 @@ stop_use_cases = build_stop_use_cases(
 )
 # The position shares `GetStopArrivals` (and its SAE cache) with the stop endpoints.
 position_use_cases = build_position_use_cases(stop_use_cases, engine, clock)
-# Event publisher, device hasher and `/ws/passenger`; the connection registry runs in the
-# lifespan that `create_app` composes with this one (realtime_events).
-realtime = build_realtime(settings, clock)
+# Event publisher, device hasher and `/ws/passenger`, whose snapshot has the device's active
+# alerts; the connection registry runs in the lifespan that `create_app` composes with this one
+# (realtime_events, alert_create).
+realtime = build_realtime(settings, clock, snapshots=build_alert_snapshots(engine))
+# The alerts validate the bus with the stops' `GetStopArrivals` (same SAE cache) and publish their
+# confirmation through the real-time publisher (alert_create).
+alert_use_cases = build_alert_use_cases(settings, engine, clock, stop_use_cases, realtime.publisher)
 
 
 @asynccontextmanager
@@ -93,4 +99,5 @@ app = create_app(
     stops=stop_use_cases,
     positions=position_use_cases,
     realtime=realtime,
+    alerts=alert_use_cases,
 )

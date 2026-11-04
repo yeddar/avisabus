@@ -8,8 +8,8 @@ Spec: specs/alert_create/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Agente: i
 - [x] T-02 Modelos, puertos, errores e `InMemoryRateLimiter` (AC-06, AC-08) (commit c75a001)
 - [x] T-03 `SqliteAlertRepository` y tabla `alert` (AC-07, AC-12) (commit a79d05f)
 - [x] T-04 `CreateAlert`, `ListMyAlerts`, `alert_payload`, `NoDriverDirectory`,
-      `NoopDriverViewNotifier` (AC-03, AC-07, AC-08, AC-09, AC-13)
-- [ ] T-05 Endpoints `/alerts`, `AlertSnapshotProvider`, configuración y composición
+      `NoopDriverViewNotifier` (AC-03, AC-07, AC-08, AC-09, AC-13) (commit 3066888)
+- [x] T-05 Endpoints `/alerts`, `AlertSnapshotProvider`, configuración y composición
       (AC-02…AC-14)
 - [ ] T-06 Contrato del frontend (`npm run gen:api`) y verificación completa
 
@@ -37,6 +37,16 @@ Spec: specs/alert_create/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Agente: i
     podía seguir avisando; se corrige y se documenta `AVISABUS_ALERT_MAX_LEAD_MIN`.
   - El test lento `tests/integration/test_stops_api_real_feed.py` (C1 en sus cabeceras) sigue en
     verde con la regla nueva (`uv run pytest -m slow`), sin cambios.
+- T-05 (composición, design §2: `AlertSnapshotProvider` sustituye a `EmptySnapshotProvider`):
+  - `adapters/inbound/ws/passenger.py` (realtime_events): se añade `AlertSnapshotProvider`;
+    `EmptySnapshotProvider` se conserva como valor por defecto de `build_realtime` (lo usan los
+    tests de realtime_events), pero `main.py` pasa ya el proveedor de avisos.
+  - `tests/integration/test_main_realtime.py` (realtime_events.AC-07/AC-11): esperaba
+    `"snapshots": "EmptySnapshotProvider"` en la composición de `main.py`; ahora
+    `"AlertSnapshotProvider"` (la instantánea sigue vacía porque la BD no tiene avisos).
+  - `adapters/inbound/http/errors.py`, `container.py`, `app.py` y `main.py`: añadidos (manejadores
+    nuevos, `AlertUseCases`, parámetro `alerts` de `create_app`); nada existente cambia de
+    comportamiento.
 
 ## Decisiones locales
 - T-01: `alert_max_lead` es un parámetro obligatorio (sin valor por defecto) del constructor de
@@ -90,6 +100,44 @@ Spec: specs/alert_create/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Agente: i
   `needs` como lista de textos; nunca incluye `device_hash` ni `delivered_to`.
 - T-04: `ListMyAlerts.execute(device_hash)` es `async` (hace E/S) y devuelve
   `list_by_device` sin filtrar por `expires_at` (todas las filas son activas, design §4).
+
+- T-05 (`Cache-Control: no-store` en todas las respuestas de `/alerts`, AC-14): con un
+  *middleware* ASGI (`adapters/inbound/http/no_store.py`, `NoStoreMiddleware`) para
+  `/api/v1/alerts` y `/api/v1/alerts/…`, que `create_app` añade si recibe `alerts`. Así lo llevan
+  también las respuestas que construyen manejadores ajenos a la feature (`400` de
+  `X-Device-Id`, `422` de validación de FastAPI) sin tocarlos. Los manejadores nuevos (`422`
+  bus-not-requestable y `429`) ya lo ponen ellos mismos, como los de `stop_arrivals_api`.
+- T-05 (esquemas Pydantic, nombres permitidos por design §8): `CreateAlertRequest`,
+  `AlertSchema`, `MyAlertsResponse`; `needs` es `list[Need]` **obligatorio** (el cuerpo del
+  design lo incluye; vacío `[]` si no hay necesidades) con validador de repetidos
+  (`canonical_needs`); `status` es el enum `AlertStatus`. El `422` del `POST` documenta las dos
+  formas: `problem+json` (bus-not-requestable) y el error de validación de FastAPI
+  (`HTTPValidationError`). El `429` documenta la cabecera `Retry-After`.
+- T-05: la IP es `request.client.host` (design); si el servidor no la conociera se usa la clave
+  `"unknown"` (no ocurre con uvicorn).
+- T-05 (qué peticiones cuentan para el límite, AC-08): las que llegan al caso de uso, como fija
+  el design (el limitador es el paso 1 de `CreateAlert.execute`): `201`, `404`, `422`
+  bus-not-requestable, `503` y los propios `429`; no cuentan los `200` (AC-07) ni las que
+  FastAPI rechaza antes (`400` de `X-Device-Id`, `422` de cuerpo inválido), que no tocan el SAE
+  ni la BD. Lo señalo para la revisión por si "contando todas" debiera incluirlas.
+- T-05 (composición): `build_alert_snapshots(engine)` crea el `AlertSnapshotProvider` antes de
+  `build_realtime` (que lo necesita) y `build_alert_use_cases(settings, engine, clock, stops,
+  publisher)` crea `CreateAlert` con el `GetStopArrivals` de las paradas (misma caché del SAE),
+  el publicador de tiempo real, `NoDriverDirectory`, dos `InMemoryRateLimiter` y el logger
+  `avisabus.alerts`; `ListMyAlerts` sobre `SqliteAlertRepository`. `NoopDriverViewNotifier` aún
+  no se compone (lo usarán `alert_cancel`/`alert_expiry`).
+- T-05: configuración nueva (`.env.example` documentado): `AVISABUS_ALERT_MAX_AGE_MIN` (30),
+  `AVISABUS_ALERT_RATE_DEVICE` (10), `AVISABUS_ALERT_RATE_IP` (30),
+  `AVISABUS_ALERT_RATE_WINDOW_MIN` (10); todos > 0.
+- T-05 (tests): `tests/support/alerts_app.py` compone la app igual que `main.py`. La
+  concurrencia de AC-07 usa `GateSource`, que retiene las peticiones hasta que las dos han pasado
+  la comprobación de duplicado, para forzar la carrera de verdad sobre `SqliteAlertRepository`
+  (fichero temporal). Que el evento llega "en ≤ 5 s" (AC-09/RNF-02) se comprueba sin reloj real:
+  el evento ya está en la cola de la suscripción cuando llega la respuesta `201` (una vuelta del
+  bucle con `asyncio.sleep(0)`), y por `/ws/passenger` se recibe tras el `POST`. Test nuevo de
+  composición de `main.py` en subproceso (`tests/integration/test_main_alerts.py`).
+- T-05: hasta T-06 falla `test_frontend_openapi_matches_the_backend` (passenger_stop_view.AC-02):
+  el contrato del frontend se regenera en T-06, como indica `tasks.md`.
 
 ## Bloqueos
 
