@@ -268,3 +268,7 @@
 
 ## 2026-11-04 · passenger_stop_view · done → implementing (v1.2, solo T-12)
 - Spec v1.2 (PR #29): N-7/N-8 de foco. Rama `feat/passenger_stop_view-v1.2` desde `develop`.
+
+## 2026-11-04 · passenger_stop_view v1.2 · implementing → in_review
+- T-12: foco al `h1` tras 404 en acción manual; foco a "Actualizar" tras refresco automático con
+  éxito; el aviso de error se mantiene durante reintentos automáticos sin datos. Verify --e2e en verde.
