@@ -332,3 +332,7 @@
 ## 2026-11-04 · CP-6 bloque 2 aprobado · PR #32 y #33 fusionadas · passenger_stop_view · done → implementing (v1.3)
 - Ajustes previos al bloque 3: `passenger_stop_view` T-13 (H-04), `passenger_map_view` T-08,
   `position_estimation` T-10, cada una con revisión y PR propias.
+
+## 2026-11-04 · passenger_stop_view v1.3 · implementing → in_review
+- T-13: el presupuesto de bundle solo se comprueba con `npm run test:bundle` (build + test,
+  `AVISABUS_BUNDLE_CHECK=1`), que `init.sh` ejecuta con y sin `--e2e`. Verify --e2e en verde.
