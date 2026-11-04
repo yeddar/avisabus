@@ -62,7 +62,8 @@ cmd_verify() {
     run_step "frontend: lint"   "$FRONTEND" npm run --silent lint
     run_step "frontend: types"  "$FRONTEND" npm run --silent typecheck
     run_step "frontend: tests"  "$FRONTEND" npm run --silent test
-    run_step "frontend: build"  "$FRONTEND" npm run --silent build
+    # Build and, on that fresh dist/, the initial JS budget (never on an old build).
+    run_step "frontend: build + bundle" "$FRONTEND" npm run --silent test:bundle
     if $e2e; then
       run_step "frontend: e2e + a11y" "$FRONTEND" npm run --silent e2e
     fi
