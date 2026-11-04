@@ -39,6 +39,18 @@ class AlertStatus(StrEnum):
     # EXPIRED / CANCELLED only exist in the final events: the alert is deleted (RNF-06).
 
 
+class ExpiryReason(StrEnum):
+    """Why an alert expired (alert_expiry, RF-21). When several apply in the same cycle, the
+    first one in this order wins (AC-07)."""
+
+    PASSED = "PASSED"
+    """The bus has passed the stop, seen with the SAE (AC-02)."""
+    NEXT_STOP = "NEXT_STOP"
+    """The bus should already be at the next stop of its trip (AC-05)."""
+    TIMEOUT = "TIMEOUT"
+    """Max age reached (`expires_at`, AC-06)."""
+
+
 @dataclass(frozen=True, slots=True)
 class AlertTracking:
     """Tracking of the trip at the stop (used by `alert_expiry`)."""
