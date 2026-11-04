@@ -380,3 +380,7 @@
 
 ## 2026-11-04 · realtime_events · spec_blocked → spec_approved (v1.1, PR #38) → in_review
 - Sin cambios de código: la implementación ya cumple AC-11 v1.1. Rama actualizada con `develop`.
+
+## 2026-11-04 · realtime_events · in_review → done
+- Revisión ciclo 1 (v1.1): APPROVED (28/33 mutantes detectados; los 5 restantes tocan una sola capa
+  redundante del filtro de logs). PR sin fusionar.

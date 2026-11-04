@@ -4,7 +4,7 @@
 
 **Fecha:** 2026-11-04
 **Fase:** Implementación — Bloque 3 (solicitud de parada)
-**Feature en curso:** `realtime_events` v1.1 — `in_review` (T-01…T-05 hechas)
+**Feature en curso:** `realtime_events` v1.1 — `done`, PR abierta. Siguiente: `alert_create`.
 
 ## Último paso
 PR #35 y #36 fusionadas (ajustes previos al bloque 3). PR #37 fusionada: specs del bloque 3 aprobadas
@@ -20,6 +20,10 @@ Bloque 3 por orden, cada una con reviewer nuevo y PR contra `develop` sin fusion
 Las ramas se apilan sobre la anterior mientras sus PRs no estén fusionadas.
 
 ## Pendiente para specs futuras
+- **realtime_events:** N-01 `progress/impl_realtime_events.md` sigue diciendo v1.0/ciclo 0 con el CP-3
+  abierto. N-02 la composición está en `http/app.py` + `container.py`, no en `main.py` (design §2).
+  N-03 (arnés) sin timeout por test: 5 regresiones cuelgan la suite (`pytest-timeout`). N-04 las dos
+  capas del filtro de logs son redundantes y sin test por separado.
 - **passenger_map_view:** N-06 preferencia de movimiento reducido leída al montar. N-07 restauración de
   `panBy` sin test. N-02 elisión valenciana sin i/u semiconsonántica ("de Iaia"). N-04 costuras de
   teselas solo por el PNG simulado. (N-01, N-03 y N-05 resueltos en v1.1/v1.2.)
