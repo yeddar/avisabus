@@ -334,6 +334,215 @@ describe('StopPage errors and connectivity', () => {
     live.forEach((region) => expect(region).toHaveTextContent(''));
   });
 
+  function liveRegions(): HTMLElement[] {
+    return [...document.querySelectorAll<HTMLElement>('[aria-live]')];
+  }
+
+  it.each([
+    ['"Actualizar"', 'es', 'refresh', 'Actualizar', 'Parada no encontrada'],
+    ['"Actualitza"', 'ca', 'refresh', 'Actualitza', 'Parada no trobada'],
+    [
+      '"Reintentar" after a failure of the arrivals',
+      'es',
+      'arrivals',
+      'Reintentar',
+      'Parada no encontrada',
+    ],
+    [
+      '"Reintentar" after a failure of the stop',
+      'es',
+      'stop',
+      'Reintentar',
+      'Parada no encontrada',
+    ],
+    [
+      '"Reintenta" after a failure of the arrivals',
+      'ca',
+      'arrivals',
+      'Reintenta',
+      'Parada no trobada',
+    ],
+  ] as const)(
+    '[passenger_stop_view.AC-24] [passenger_stop_view.AC-16] %s answered with a 404 moves the focus to the "Parada no encontrada" h1 without announcement (%s)',
+    async (_name, language, failing, button, title) => {
+      if (failing === 'stop') stopReply = () => problem(503, NETWORK_UNAVAILABLE);
+      if (failing === 'arrivals') arrivalsReply = () => problem(503, NETWORK_UNAVAILABLE);
+      api();
+      renderAt(`/p/508?t=${TOKEN}`, language);
+      await flush(RETRIES_MS);
+      await flush(100);
+
+      if (failing === 'stop') stopReply = () => problem(404, STOP_NOT_FOUND);
+      else arrivalsReply = () => problem(404, STOP_NOT_FOUND);
+      press(button);
+      await flush();
+      await flush(100);
+
+      const heading = screen.getByRole('heading', { level: 1 });
+      expect(heading).toHaveTextContent(title);
+      expect(document.activeElement).toBe(heading);
+      liveRegions().forEach((region) => expect(region).toHaveTextContent(''));
+    },
+  );
+
+  it('[passenger_stop_view.AC-16] [passenger_stop_view.AC-24] a 404 on load does not take the focus', async () => {
+    arrivalsReply = () => problem(404, STOP_NOT_FOUND);
+    api();
+    renderAt(`/p/508?t=${TOKEN}`);
+    await flush();
+    await flush(100);
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Parada no encontrada');
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it.each([
+    ['es', 'Actualizar', 'Reintentar'],
+    ['ca', 'Actualitza', 'Reintenta'],
+  ] as const)(
+    '[passenger_stop_view.AC-24] with the focus on "Reintentar", an automatic refresh that succeeds moves it to "Actualizar" without announcement (%s)',
+    async (language, refresh, retry) => {
+      api();
+      renderAt(`/p/508?t=${TOKEN}`, language);
+      await flush();
+      arrivalsReply = () => problem(503, NETWORK_UNAVAILABLE);
+      await flush(20_000 + RETRIES_MS);
+      await flush(100);
+      screen.getByRole('button', { name: retry }).focus();
+
+      arrivalsReply = () => ok(ARRIVALS_REALTIME());
+      await flush(20_000);
+      await flush(100);
+
+      expect(screen.queryByRole('button', { name: retry })).toBeNull();
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: refresh }));
+      liveRegions().forEach((region) => expect(region).toHaveTextContent(''));
+    },
+  );
+
+  it('[passenger_stop_view.AC-24] after a failed "Actualizar", an automatic refresh that succeeds moves the focus back to "Actualizar" without announcing it', async () => {
+    api();
+    renderAt(`/p/508?t=${TOKEN}`);
+    await flush();
+    arrivalsReply = () => problem(503, NETWORK_UNAVAILABLE);
+    press('Actualizar');
+    await flush(RETRIES_MS);
+    await flush(100);
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Reintentar' }));
+    expect(politeRegion()).toHaveTextContent('No se han podido actualizar los datos');
+
+    arrivalsReply = () => ok(ARRIVALS_REALTIME());
+    await flush(20_000);
+    await flush(100);
+
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Actualizar' }));
+    expect(politeRegion()).not.toHaveTextContent('Datos actualizados');
+  });
+
+  it('[passenger_stop_view.AC-24] without data yet, "Reintentar" keeps the focus while an automatic refresh is in flight and hands it to "Actualizar" when it succeeds', async () => {
+    arrivalsReply = () => problem(503, NETWORK_UNAVAILABLE);
+    const { arrivalCalls } = api();
+    renderAt(`/p/508?t=${TOKEN}`);
+    await flush(RETRIES_MS);
+    await flush(100);
+    const button = screen.getByRole('button', { name: 'Reintentar' });
+    button.focus();
+
+    const pending = deferred<FakeReply>();
+    arrivalsReply = () => pending.promise;
+    await flush(20_000);
+    expect(arrivalCalls()).toBe(4);
+    // The automatic request is in flight: the error notice and its button stay.
+    expect(screen.getByText('No se han podido cargar los datos.')).toBeInTheDocument();
+    expect(document.activeElement).toBe(button);
+
+    pending.resolve(ok(ARRIVALS_REALTIME()));
+    await flush();
+    await flush(100);
+
+    expect(arrivalsList()).not.toBeNull();
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Actualizar' }));
+    liveRegions().forEach((region) => expect(region).toHaveTextContent(''));
+  });
+
+  it('[passenger_stop_view.AC-24] [passenger_stop_view.AC-18] without data yet and without connection, "Reintentar" keeps the focus and hands it to "Actualizar" when the data arrive', async () => {
+    arrivalsReply = () => problem(503, NETWORK_UNAVAILABLE);
+    api();
+    renderAt(`/p/508?t=${TOKEN}`);
+    await flush(RETRIES_MS);
+    await flush(100);
+    const button = screen.getByRole('button', { name: 'Reintentar' });
+    button.focus();
+
+    act(() => setOnline(false));
+    await flush(60_000);
+    expect(offlineNotice()).not.toBeNull();
+    expect(screen.getByText('No se han podido cargar los datos.')).toBeInTheDocument();
+    expect(document.activeElement).toBe(button);
+
+    arrivalsReply = () => ok(ARRIVALS_REALTIME());
+    act(() => setOnline(true));
+    await flush();
+    await flush(100);
+
+    expect(arrivalsList()).not.toBeNull();
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Actualizar' }));
+    liveRegions().forEach((region) => expect(region).toHaveTextContent(''));
+  });
+
+  it.each([
+    ['stays on body', false],
+    ['was moved by the person', true],
+  ] as const)(
+    '[passenger_stop_view.AC-24] when "Reintentar" disappears before "Actualizar" exists, the focus goes to "Actualizar" only if it %s',
+    async (_name, personMovesFocus) => {
+      // Only the stop fails while the first arrivals are still on their way.
+      stopReply = () => problem(503, NETWORK_UNAVAILABLE);
+      const firstArrivals = deferred<FakeReply>();
+      arrivalsReply = () => firstArrivals.promise;
+      api();
+      renderAt(`/p/508?t=${TOKEN}`);
+      await flush(RETRIES_MS);
+      await flush(100);
+      screen.getByRole('button', { name: 'Reintentar' }).focus();
+
+      // Reconnecting asks again for the stop automatically; it succeeds.
+      stopReply = () => ok(STOP_508());
+      act(() => setOnline(false));
+      act(() => setOnline(true));
+      await flush();
+      await flush(100);
+      expect(screen.queryByRole('button', { name: 'Reintentar' })).toBeNull();
+      const skipLink = screen.getByRole('link', { name: 'Saltar al contenido' });
+      if (personMovesFocus) skipLink.focus();
+
+      firstArrivals.resolve(ok(ARRIVALS_REALTIME()));
+      await flush();
+      await flush(100);
+
+      const refresh = screen.getByRole('button', { name: 'Actualizar' });
+      expect(document.activeElement).toBe(personMovesFocus ? skipLink : refresh);
+    },
+  );
+
+  it('[passenger_stop_view.AC-24] an automatic refresh that succeeds does not take the focus when it was not on "Reintentar"', async () => {
+    api();
+    renderAt(`/p/508?t=${TOKEN}`);
+    await flush();
+    arrivalsReply = () => problem(503, NETWORK_UNAVAILABLE);
+    await flush(20_000 + RETRIES_MS);
+    await flush(100);
+    expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
+    expect(document.activeElement).toBe(document.body);
+
+    arrivalsReply = () => ok(ARRIVALS_REALTIME());
+    await flush(20_000);
+    await flush(100);
+
+    expect(screen.getByRole('button', { name: 'Actualizar' })).toBeInTheDocument();
+    expect(document.activeElement).toBe(document.body);
+  });
+
   it('[passenger_stop_view.AC-18] shows "Sin conexión" as a status and does not retry until the connection is back', async () => {
     const { arrivalCalls } = api();
     renderAt(`/p/508?t=${TOKEN}`);
