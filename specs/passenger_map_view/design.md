@@ -1,6 +1,6 @@
 # Mapa del autobús — design
 
-> Feature: `passenger_map_view` · Versión: 1.1 · Estado: APPROVED
+> Feature: `passenger_map_view` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-13, RNF-01, RNF-03, RNF-05, RNF-14 · Casos de uso: CU-02 · Depende de: passenger_stop_view, position_estimation
 
 ## 1. Resumen
@@ -79,7 +79,9 @@ export function buildMapModel(shape: ShapeResponse | null, position: PositionRes
   `zoomInTitle`/`zoomOutTitle`), `attributionControl`.
 - Con `prefers-reduced-motion: reduce`: `zoomAnimation`, `fadeAnimation`, `markerZoomAnimation`
   a `false` e `inertia: false` (AC-10).
-- Contenedor: `<section role="region" aria-label={t('map.region')} aria-describedby="summary-id">`.
+- Contenedor: `<section role="region" aria-label={t('map.region')} aria-describedby={id}>`, donde
+  `id` apunta a un texto oculto con `t('map.regionDescription')` ("La misma información está en
+  texto en el resumen «Dónde está el autobús», antes del mapa."), no al resumen: así el lector no lo lee dos veces (v1.2, AC-11).
   Altura: 360 px (`docs/design.md` §5.7; v1.1).
 - Atribución de OpenStreetMap solo dentro del mapa (control de atribución de Leaflet, abajo a la
   derecha; AC-09). El pie de la aplicación no cambia (v1.1).

@@ -1,6 +1,6 @@
 # Vista de parada del pasajero — tasks
 
-> Feature: `passenger_stop_view` · Versión: 1.2 · Estado: APPROVED
+> Feature: `passenger_stop_view` · Versión: 1.3 · Estado: APPROVED
 > Requisitos: RF-06, RF-10, RF-15, RF-32, RNF-01, RNF-03, RNF-04, RNF-05, RNF-14 · Casos de uso: CU-01 · Depende de: stop_arrivals_api, frontend_i18n
 
 ## Exploración
@@ -77,6 +77,13 @@ No necesaria.
   - AC: passenger_stop_view.AC-24
   - Ficheros: `src/features/passenger/stop/{StopPage,StopNotFound}.tsx`, `StopPage.errors.test.tsx`
   - Verificación: `cd frontend && npm run test -- StopPage`
+
+- [ ] **T-13** — (v1.3) Presupuesto de bundle solo sobre un `dist/` recién construido: `npm run test`
+  lo omite, `npm run test:bundle` construye y lo ejecuta, `./init.sh verify` lo ejecuta tras el
+  build con y sin `--e2e`, y `npm run e2e` deja de encadenarlo.
+  - AC: passenger_stop_view.AC-21
+  - Ficheros: `frontend/package.json`, `frontend/vite.config.ts`, `src/__tests__/bundle-budget.test.ts`, `init.sh`
+  - Verificación: `rm -rf frontend/dist && ./init.sh verify` en verde; con un `dist/` manipulado, `npm run test` no lo lee
 
 - [ ] **T-10** — Verificación completa.
   - Verificación: `./init.sh verify --e2e`

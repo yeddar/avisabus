@@ -1,6 +1,6 @@
 # Vista de parada del pasajero — design
 
-> Feature: `passenger_stop_view` · Versión: 1.2 · Estado: APPROVED
+> Feature: `passenger_stop_view` · Versión: 1.3 · Estado: APPROVED
 > Requisitos: RF-06, RF-10, RF-15, RF-32, RNF-01, RNF-03, RNF-04, RNF-05, RNF-14 · Casos de uso: CU-01 · Depende de: stop_arrivals_api, frontend_i18n
 
 ## 1. Resumen
@@ -202,10 +202,13 @@ occupancy.unavailable, network.offline, home.lastStop, notFound.title, notFound.
 | AC-22 | `e2e/stop-view.spec.ts` con `page.route('**/api/v1/**', …)` sirviendo `e2e/fixtures/*.json` |
 | AC-23 | Revisión: el reviewer compara las capturas de `e2e/stop-view.spec.ts` (`page.screenshot` en `test-results/`, no versionadas) con `docs/design.md`; la persona lo revisa en CP-6 |
 
-*Nota AC-21:* en `./init.sh verify` el paso `test` va antes de `build`. Para no depender del
-orden, el script `test:bundle` (`npm run build && vitest run src/__tests__/bundle-budget.test.ts`)
-se añade al final de `npm run e2e` (`"e2e": "playwright test && npm run test:bundle"`), que ya
-construye la app. Así el presupuesto se verifica con `./init.sh verify --e2e`.
+*Nota AC-21 (v1.3):* el test del presupuesto solo mide un `dist/` recién construido. Se ejecuta
+únicamente con `npm run test:bundle` (`npm run build` y después Vitest sobre
+`bundle-budget.test.ts`, con una variable de entorno, p. ej. `AVISABUS_BUNDLE_CHECK=1`, sin la cual
+el test se omite con aviso), de modo que `npm run test` nunca lee un `dist/` antiguo.
+`./init.sh verify` sustituye su paso "frontend: build" por "frontend: build + bundle"
+(`npm run test:bundle`), con y sin `--e2e`; `npm run e2e` deja de encadenar `test:bundle`.
+Mecanismo exacto (variable, `exclude` de Vitest, etc.): decisión local.
 
 Las fixtures de API del frontend (`src/test/fixtures/api/`, `e2e/fixtures/`) se escriben con los
 ejemplos de `specs/stop_arrivals_api/design.md` §3 (incluido `sae_destination` distinto de

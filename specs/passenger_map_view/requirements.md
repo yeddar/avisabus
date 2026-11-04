@@ -1,6 +1,6 @@
 # Mapa del autobús — requirements
 
-> Feature: `passenger_map_view` · Versión: 1.1 · Estado: APPROVED
+> Feature: `passenger_map_view` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-13, RNF-01, RNF-03, RNF-05, RNF-14 · Casos de uso: CU-02 · Depende de: passenger_stop_view, position_estimation
 
 ## Contexto
@@ -67,8 +67,10 @@ vista de parada (presupuesto de `passenger_stop_view.AC-21`).
   arribant.", "Arriba a les {HH:MM}.", "L'autobús encara no ha eixit de {primera parada}." y
   "…de la primera parada del recorregut." (redacción final del implementer, revisada en CP-6).
   *Verificación:* unit (por estado, por tipo de llegada y en los dos idiomas)
-- **passenger_map_view.AC-05** — LA VISTA DEBERÁ indicar siempre, junto al resumen, "Posición
-  estimada" (o "Posición según horario" si `source = "SCHEDULED"`), y el marcador del autobús DEBERÁ
+- **passenger_map_view.AC-05** — MIENTRAS haya posición (`position` no nula), LA VISTA DEBERÁ
+  indicar junto al resumen "Posición estimada" (o "Posición según horario" si
+  `source = "SCHEDULED"`); (v1.2) SI no hay posición (`NO_ARRIVAL`, `NO_VEHICLE`), ENTONCES NO
+  DEBERÁ mostrar esa insignia, para no contradecir "Posición no disponible". El marcador del autobús DEBERÁ
   llevar una etiqueta de texto visible "Estimada" (o "Según horario"). EL MAPA NO DEBERÁ tener
   leyenda: la parada del pasajero lleva la etiqueta visible "Tu parada".
   *Verificación:* unit
@@ -144,3 +146,4 @@ vista de parada (presupuesto de `passenger_stop_view.AC-21`).
 |---|---|---|---|
 | 1.0 | 2026-11-03 | Versión inicial aprobada (PR #7), con la guía visual `docs/design.md`. | CP-1 del bloque 2. Aprobada por la persona. |
 | 1.1 | 2026-11-04 | AC-04: primera parada tomada del trazado, con texto alternativo si no está, y regla de {llegada} como `passenger_stop_view.AC-06` (minutos, hora o "Está llegando."); AC-07: color del trazado y caso sin trazado; AC-13: errores del trazado y ruta sin token o con sentido no numérico. Design: firma de `buildSummary`, altura de 360 px y atribución solo dentro del mapa. | CP-3 de `passenger_map_view` (B-01, B-02) y observaciones O-1…O-4 del implementer. Aprobada por la persona (PR #29). |
+| 1.2 | 2026-11-04 | AC-05: la insignia "Posición estimada" solo se muestra si hay posición; design §3: la región del mapa se describe con `map.regionDescription` (texto oculto que remite al resumen), no con `aria-describedby` al resumen; T-08 (insignia y espera fija del e2e). | CP-6 del bloque 2: decisión de la persona sobre N-03; N-01 y N-05 de la revisión de `passenger_map_view`. Pendiente de aprobación. |
