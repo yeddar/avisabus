@@ -293,3 +293,7 @@
 ## 2026-11-04 · passenger_map_view · implementing → in_review (ciclo 2)
 - B-01 corregido (`panBy` sin animación con movimiento reducido, tests unitarios y e2e que fallaban
   antes); N-01 resuelto. Verify --e2e en verde (395 Vitest, 87 e2e).
+
+## 2026-11-04 · passenger_map_view · in_review → done
+- Revisión ciclo 2: APPROVED (B-01 corregido; mutaciones detectadas). PR contra `develop` sin fusionar.
+  Bloque 2: 4/4 en `done`; quedan `passenger_stop_view` T-12 y `position_estimation` T-09 (v1.2) → CP-6.

@@ -1,4 +1,139 @@
 # Revisión: passenger_map_view
+Ciclo: 2 · Fecha: 2026-11-04 · Agente: reviewer
+Spec: `specs/passenger_map_view/` v1.1 (APPROVED, PR #29) · Rama: `feat/passenger_map_view` (HEAD 2707ce8) · Base: `origin/develop` (tras `git fetch`)
+
+## Veredicto: APPROVED
+
+B-01 (AC-10) está corregido. Con `prefers-reduced-motion: reduce` ya no se anima ningún movimiento
+del mapa: flechas, `+`/`-`, botones de zoom, encuadre inicial y desplazamientos programáticos.
+Los tests nuevos fallan con el código del ciclo 1 y con varias mutaciones. N-01 está resuelto. La
+verificación completa con e2e está en verde, los demás AC no tienen regresiones y no hay hallazgos
+bloqueantes.
+
+## Matriz AC → evidencia
+
+| AC | Test(s) | Resultado | Nota |
+|---|---|---|---|
+| AC-01 | Sin cambios desde el ciclo 1: `ArrivalRow.test.tsx:131-163`, E2E `map-view.spec.ts:297` | OK | Verde en este ciclo |
+| AC-02 | `bundle-budget.test.ts`, `MapPage.test.tsx:100`, E2E `:297` | OK | `index-*.js` 141,19 KB gzip (sin cambios); `MapPage-*.js` 50,21 KB gzip (+0,05 KB por `InstantPans`). `test:bundle` 4/4 |
+| AC-03 | `MapPage.test.tsx:110,128`, E2E | OK | Sin cambios |
+| AC-04 | `summary.test.ts`, `PositionSummary.test.tsx`, `MapPage.test.tsx:158,178`, E2E | OK | `PositionSummary.test.tsx` se adaptó a la retirada de `textId` (N-01). Busca el texto dentro de la región y sigue comprobando el texto completo y las negritas |
+| AC-05 | Sin cambios | OK | |
+| AC-06 | Sin cambios | OK | |
+| AC-07 | Sin cambios | OK | |
+| AC-08 | `useInitialFit.test.ts`, `mapModel.test.ts`, `MapPage.test.tsx:206` | OK | El encuadre usa `FIT_OPTIONS` con `animate: false` (`useInitialFit.ts:7`) |
+| AC-09 | `BusMap.test.tsx`, E2E `:170`, `:336` | OK | Sin cambios. Flechas, `+`/`-` y botones con teclado siguen en verde sin la preferencia |
+| AC-10 | `BusMap.test.tsx:210,222` (opciones), `:233` (flecha con movimiento reducido: panel sin `leaflet-pan-anim` y centro ya desplazado), `:244` (`panBy`/`panTo` programáticos), `:257` (control: sin la preferencia sí anima). E2E `map-view.spec.ts:388` × 3 perfiles con `reducedMotion: 'reduce'` (flecha, `+` y "Alejar" sin `leaflet-pan-anim` ni `leaflet-zoom-anim`; el panel salta en el acto) | **OK** | Discriminan: ver "Mutaciones". La sonda independiente confirma un único salto por desplazamiento y ningún zoom animado |
+| AC-11 | `BusMap.test.tsx:64-78`, E2E con axe | OK | Sin cambios. La región sigue descrita por `map.regionDescription` |
+| AC-12 | Sin cambios | OK | |
+| AC-13 | Sin cambios | OK | |
+| AC-14 | `e2e/map-view.spec.ts` × 3 perfiles | OK | El test nuevo también llama a `expectNoNetworkLeaks` |
+| AC-15 | Capturas de `frontend/test-results/passenger_map_view/<perfil>/` | OK (revisión) | Regeneradas en esta verificación. Revisé `iphone/map-en-route-es` y `pixel/map-focused-es`, iguales a las del ciclo 1. El arreglo no toca el aspecto |
+
+## Verificación ejecutada
+
+`CI=1 ./init.sh verify --e2e` (puerto 4173 libre; árbol limpio) → **`verify: todo en verde`** (EXIT=0).
+
+| Paso | Resultado |
+|---|---|
+| backend: format, lint, types, architecture | OK |
+| backend: tests | 969 passed, 6 deselected; cobertura 99,39 % |
+| frontend: format, lint, types | OK |
+| frontend: tests | 44 ficheros, 395 tests OK (+3 de AC-10) |
+| frontend: build | OK; `index-*.js` 141,19 KB gzip; `MapPage-*.js` 50,21 KB gzip |
+| frontend: e2e + a11y | 87 passed (+3: AC-10 × 3 perfiles), sin *flaky* ni reintentos. `test:bundle` 4/4 |
+| harness: feature_list.json, trazabilidad AC→test | OK |
+
+### Mutaciones
+
+Las hice en una copia del frontend en el scratchpad (`git archive HEAD`), fuera del repositorio,
+con `node_modules` enlazado. El árbol del repo sigue limpio.
+
+| Mutación | Unit `BusMap.test.tsx` | E2E AC-10 (3 perfiles) |
+|---|---|---|
+| Base (HEAD) | 18/18 en verde | — (verde en `verify`) |
+| M1: sin `<InstantPans />` | **Fallan** `:233` y `:244` | — |
+| `BusMap.tsx` del ciclo 1 (5d7cc2f) con los tests nuevos | (equivale a M1) | **Fallan** los 3. En iphone y pixel, el panel no se ha movido tras la flecha; en tablet, `["leaflet-pan-anim"]` |
+| M2: `InstantPans` siempre montado | **Falla** `:257` (control) | — |
+| M3: `panBy` sin forzar `animate: false` | **Fallan** `:233` y `:244` | — |
+| M4: sin `zoomAnimation: false` | **Falla** `:210` | **Fallan** los 3 (`leaflet-zoom-anim` registrado) |
+
+### Sonda independiente
+
+Añadí un test temporal en la copia, con el perfil pixel y la build real. Un `MutationObserver`
+registra los cambios de `transform` del panel y las clases `*-anim` con cada acción:
+
+```
+reduce         flechas →/↓/⇧←: 1 cambio de transform cada una, sin clases de animación;
+               +, -, botones Acercar/Alejar: sin leaflet-zoom-anim; contenedor sin leaflet-fade-anim
+no-preference  flechas: 16-17 fotogramas + leaflet-pan-anim; +/-/botones: leaflet-zoom-anim
+```
+
+### Cobertura de todo el movimiento (punto 1 del encargo)
+
+Leí Leaflet 1.9.4 (`node_modules/leaflet/src`) y el código de la feature:
+- **Flechas:** `Map.Keyboard.js:162` llama a `map.panBy(offset)`, que es la propiedad propia de la
+  instancia, ya sustituida → `animate: false`.
+- **`+`/`-`, botones de zoom, rueda, doble clic y zoom con caja:** `setZoom`, `zoomIn`/`zoomOut`
+  y `setZoomAround` terminan en `setView`. Con `zoomAnimation: false`, `_tryAnimatedZoom`
+  devuelve `false` y aplica `_resetView` en el acto. Si el zoom no cambia, el desplazamiento va
+  por `_tryAnimatedPan`, que termina en `this.panBy`, también sustituido.
+- **`panTo`, `setView`, `panInsideBounds` y autopan de popups:** acaban en `this.panBy` y quedan
+  cubiertos.
+- **`flyTo`/`flyToBounds`:** no se usan en `src/features/passenger/map/` (`grep`), y Leaflet no
+  los llama internamente.
+- **Encuadre inicial:** `MapContainer` aplica `bounds` antes de `_loaded`, sin animación. Después,
+  `useInitialFit` llama a `fitBounds` con `FIT_OPTIONS` y `animate: false`.
+- **Inercia de arrastre:** `inertia: false`. Si la hubiera, el `panBy` sustituido la anularía.
+- **Teselas:** `fadeAnimation: false`; el contenedor no lleva `leaflet-fade-anim` (sonda).
+- **Marcadores:** `markerZoomAnimation: false`, y `setLatLng` mueve el autobús sin animación al
+  refrescar.
+- **Restauración y fugas:** el *cleanup* de `forceInstantPans` (`BusMap.tsx:69-71`) devuelve el
+  `panBy` original. Con el doble montaje de StrictMode no se encadenan envolturas, porque al
+  restaurar queda la función del prototipo. El cierre solo retiene la propia instancia del mapa,
+  que se destruye a la vez, así que no hay referencias globales ni *listeners* sin liberar.
+
+### Alcance y convenciones
+
+- `git diff 5d7cc2f..HEAD` solo toca `BusMap.tsx`, `MapPage.tsx`, `PositionSummary.tsx`, sus tests,
+  `e2e/map-view.spec.ts` y los ficheros de `progress/` y `feature_list.json` del orquestador.
+  Todos los cambios son de B-01 o N-01, sin refactorizaciones ajenas.
+- El commit 516197e sigue Conventional Commits con el ámbito `passenger_map_view` y cita el
+  hallazgo.
+- No hay textos nuevos (nada de i18n). La privacidad no se ve afectada: no hay `console.*` ni
+  registros.
+
+## Hallazgos
+
+### Bloqueantes
+
+Ninguno. **B-01 (ciclo 1): resuelto** (commit 516197e; evidencia arriba).
+
+### No bloqueantes
+
+- **N-01 (ciclo 1): resuelto.** Se eliminaron `textId` y `SUMMARY_TEXT_ID`. La propuesta de
+  alinear el fragmento del design §3 (`aria-describedby="summary-id"`) con
+  `map.regionDescription` sigue pendiente para una futura revisión de la spec.
+- **N-02, N-03 y N-04 (ciclo 1):** siguen abiertos, sin cambios. Son decisiones de la persona o de
+  la spec (CP-6), no defectos del código.
+- **N-05 — Espera fija en el e2e.** `frontend/e2e/map-view.spec.ts:422` usa
+  `page.waitForTimeout(400)`, y es la única espera fija de la suite e2e (`docs/verification.md` §4,
+  "sin sleeps reales"). No provoca intermitencias: solo podría relajar la comprobación. Además
+  sobra, porque Leaflet añade `leaflet-pan-anim`/`leaflet-zoom-anim` de forma síncrona y el
+  `MutationObserver` las registra antes del `page.evaluate` siguiente. Se puede quitar o cambiar
+  por una espera a un evento (`moveend`/`zoomend`).
+- **N-06 — La preferencia se lee una vez al montar.** En `BusMap.tsx:131`, si la persona activa
+  "reducir movimiento" con el mapa abierto, no se aplica hasta volver a entrar en la vista. AC-10
+  dice "MIENTRAS el sistema tenga activada…". Leaflet solo lee esas opciones al crear el mapa y la
+  decisión está documentada en `progress/impl_passenger_map_view.md`, así que es aceptable. Si se
+  quiere cubrir, basta con escuchar el `change` de `matchMedia` y remontar el mapa con un `key`.
+- **N-07 — La restauración de `panBy` al desmontar no tiene test.** Afecta a
+  `BusMap.tsx:69-71`. Es solo higiene: el mapa se destruye con el componente y `reduceMotion` no
+  cambia durante la vida del mapa, así que hoy no tiene efecto observable.
+
+---
+
+## Ciclo 1
 Ciclo: 1 · Fecha: 2026-11-04 · Agente: reviewer
 Spec: `specs/passenger_map_view/` v1.1 (APPROVED, PR #29) · Rama: `feat/passenger_map_view` · Base: `origin/develop` (tras `git fetch`)
 
