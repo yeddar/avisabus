@@ -278,7 +278,7 @@
       "order": 12,
       "block": 3,
       "title": "Crear aviso: unicidad, rate limit, asignación y estado sin conductor",
-      "status": "implementing",
+      "status": "in_review",
       "depends_on": [
         "stop_arrivals_api",
         "realtime_events"

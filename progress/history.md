@@ -387,3 +387,7 @@
 
 ## 2026-11-04 · realtime_events PR #40 abierta · alert_create · spec_approved → implementing
 - Rama `feat/alert_create` apilada sobre `feat/realtime_events` (PR #40 sin fusionar).
+
+## 2026-11-04 · alert_create · implementing → in_review
+- T-01…T-06; `can_alert` con `alert_max_lead` (stop_arrivals_api 1.6, 3 tests adaptados). Verify --e2e
+  en verde (1209 backend). Tres lecturas de la spec señaladas al reviewer (orden 200/404, AC-08, `last_seen_at`).
