@@ -1,6 +1,6 @@
 # Mapa del autobús — requirements
 
-> Feature: `passenger_map_view` · Versión: 1.0 · Estado: APPROVED
+> Feature: `passenger_map_view` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-13, RNF-01, RNF-03, RNF-05, RNF-14 · Casos de uso: CU-02 · Depende de: passenger_stop_view, position_estimation
 
 ## Contexto
@@ -52,11 +52,21 @@ vista de parada (presupuesto de `passenger_stop_view.AC-21`).
 - **passenger_map_view.AC-04** — ANTES del mapa, LA VISTA DEBERÁ mostrar un resumen en texto según
   el estado:
   - `EN_ROUTE`: "El autobús está a {distancia} de tu parada, a {n} paradas. Próxima parada:
-    {nombre}. Llega en {tiempo}." (con "a 1 parada" / "es la siguiente parada" cuando `n` vale 1 o 0);
+    {nombre}. {llegada}" (con "a 1 parada" / "es la siguiente parada" cuando `n` vale 1 o 0);
   - `AT_STOP`: "El autobús está llegando a tu parada.";
-  - `NOT_STARTED`: "El autobús aún no ha salido de {primera parada}. Llega en {tiempo}.";
+  - `NOT_STARTED`: "El autobús aún no ha salido de {primera parada}. {llegada}", donde
+    {primera parada} es el nombre de la primera parada del trazado (`shape.stops[0]`); (v1.1)
+    MIENTRAS el trazado no se haya cargado, o SI su petición falla o no hay `shape_id`, ENTONCES
+    "El autobús aún no ha salido de la primera parada del recorrido. {llegada}";
   - `NO_ARRIVAL` / `NO_VEHICLE`: "Posición no disponible en este momento." más el motivo.
-  *Verificación:* unit
+
+  (v1.1) {llegada} sigue la regla de `passenger_stop_view.AC-06`: con `kind = MINUTES`, "Llega en
+  {N minutos}." con la cuenta atrás de `passenger_stop_view.AC-13` (a partir de `arrival_at` y el
+  reloj del servidor); con N = 0, "Está llegando."; con `kind = CLOCK_TIME`, "Llega a las
+  {HH:MM}." (hora de Europe/Madrid). Textos en valenciano: "Arriba en {N minuts}.", "Està
+  arribant.", "Arriba a les {HH:MM}.", "L'autobús encara no ha eixit de {primera parada}." y
+  "…de la primera parada del recorregut." (redacción final del implementer, revisada en CP-6).
+  *Verificación:* unit (por estado, por tipo de llegada y en los dos idiomas)
 - **passenger_map_view.AC-05** — LA VISTA DEBERÁ indicar siempre, junto al resumen, "Posición
   estimada" (o "Posición según horario" si `source = "SCHEDULED"`), y el marcador del autobús DEBERÁ
   llevar una etiqueta de texto visible "Estimada" (o "Según horario"). EL MAPA NO DEBERÁ tener
@@ -73,8 +83,11 @@ vista de parada (presupuesto de `passenger_stop_view.AC-21`).
 - **passenger_map_view.AC-07** — EL MAPA DEBERÁ dibujar el trazado del viaje (`shape_id` de la
   respuesta de posición) con el color accesible de la línea, las paradas del trazado, la parada del
   pasajero destacada con la etiqueta "Tu parada" y el autobús con un icono orientado según
-  `bearing_deg`; SI `position` es
-  `null`, ENTONCES DEBERÁ dibujar solo el trazado y las paradas.
+  `bearing_deg`; SI `position` es `null`, ENTONCES DEBERÁ dibujar solo el trazado y las paradas.
+  (v1.1) El color del trazado es `accessibleLineColors(color, 'FFFFFF').bg` (contraste ≥ 4,5:1
+  sobre blanco; neutro `#1f2937` si no hay color). SI no hay `shape_id` o el trazado responde
+  `404`, ENTONCES el mapa DEBERÁ dibujar solo la parada del pasajero (coordenadas de `stop` en la
+  respuesta de posición) y, si hay posición, el autobús.
   *Verificación:* unit (componentes con Leaflet en jsdom o capa de presentación aislada) + e2e
 - **passenger_map_view.AC-08** — EN LA PRIMERA CARGA, EL MAPA DEBERÁ encuadrar el autobús y la parada
   del pasajero (o todo el trazado si no hay posición) y NO DEBERÁ volver a encuadrar en los
@@ -101,7 +114,9 @@ vista de parada (presupuesto de `passenger_stop_view.AC-21`).
 - **passenger_map_view.AC-13** — SI la API de posición responde `404`, ENTONCES LA VISTA DEBERÁ
   mostrar "No se encuentra esta línea en tu parada" con enlace a la parada; SI hay error de red o
   `503`, ENTONCES DEBERÁ aplicar el mismo tratamiento que la vista de parada (reintento y datos
-  conservados).
+  conservados); un error de red o `503` del trazado recibe el mismo tratamiento. (v1.1) SI la ruta
+  no trae token (`?t=`) o `directionId` no es un entero ≥ 0, ENTONCES LA VISTA NO DEBERÁ llamar a
+  la API y DEBERÁ mostrar directamente "No se encuentra esta línea en tu parada".
   *Verificación:* unit
 - **passenger_map_view.AC-14** — LAS PRUEBAS E2E DEBERÁN abrir el mapa con la API y las teselas
   simuladas (sin red), en los estados `EN_ROUTE`, `NOT_STARTED` y `NO_ARRIVAL`, en los perfiles
@@ -128,3 +143,4 @@ vista de parada (presupuesto de `passenger_stop_view.AC-21`).
 | Versión | Fecha | Cambio | Motivo |
 |---|---|---|---|
 | 1.0 | 2026-11-03 | Versión inicial aprobada (PR #7), con la guía visual `docs/design.md`. | CP-1 del bloque 2. Aprobada por la persona. |
+| 1.1 | 2026-11-04 | AC-04: primera parada tomada del trazado, con texto alternativo si no está, y regla de {llegada} como `passenger_stop_view.AC-06` (minutos, hora o "Está llegando."); AC-07: color del trazado y caso sin trazado; AC-13: errores del trazado y ruta sin token o con sentido no numérico. Design: firma de `buildSummary`, altura de 360 px y atribución solo dentro del mapa. | CP-3 de `passenger_map_view` (B-01, B-02) y observaciones O-1…O-4 del implementer. Aprobada por la persona (PR #29). |

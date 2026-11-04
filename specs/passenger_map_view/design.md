@@ -1,6 +1,6 @@
 # Mapa del autobús — design
 
-> Feature: `passenger_map_view` · Versión: 1.0 · Estado: APPROVED
+> Feature: `passenger_map_view` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-13, RNF-01, RNF-03, RNF-05, RNF-14 · Casos de uso: CU-02 · Depende de: passenger_stop_view, position_estimation
 
 ## 1. Resumen
@@ -16,7 +16,7 @@ fina.
 frontend/src/features/passenger/map/
 ├── MapPage.tsx              # ruta lazy; h1, volver, resumen, mapa
 ├── PositionSummary.tsx      # texto según estado (AC-04, AC-05)
-├── summary.ts               # buildSummary(position, lang) → { text, badge } (puro)
+├── summary.ts               # buildSummary(position, firstStop, …) → { text, badge } (puro)
 ├── BusMap.tsx               # MapContainer, TileLayer, Polyline, CircleMarker, Marker
 ├── mapModel.ts              # buildMapModel(shape, position) → capas a dibujar (puro)
 ├── busIcon.ts               # L.divIcon con SVG rotado por bearing_deg
@@ -53,7 +53,12 @@ export function useShape(shapeId: string | null):
 
 // summary.ts
 export type Summary = { text: string; badge: 'estimated' | 'scheduled' };
-export function buildSummary(p: PositionResponse, t: TFunction, lang: Language, now: Date): Summary;
+export function buildSummary(p: PositionResponse, firstStop: string | null, t: TFunction,
+                             lang: Language, now: Date): Summary;
+// v1.1: firstStop = shape?.stops[0]?.name ?? null (AC-04). En NOT_STARTED no se usa
+// position.next_stop: en ese estado es la SEGUNDA parada (position_estimation.AC-08).
+// {llegada}: MINUTES → cuenta atrás con `now` (useServerNow) → "Llega en …" / "Está llegando.";
+// CLOCK_TIME → formatClockTime → "Llega a las HH:MM."
 
 // mapModel.ts
 export type MapModel = {
@@ -62,7 +67,10 @@ export type MapModel = {
   bus: { latLng: [number, number]; bearing: number | null; scheduled: boolean } | null;
   fitBounds: [[number, number], [number, number]];       // bus+parada o trazado completo
 };
-export function buildMapModel(shape: ShapeResponse, position: PositionResponse): MapModel;
+export function buildMapModel(shape: ShapeResponse | null, position: PositionResponse): MapModel;
+// v1.1: shape null (sin shape_id o 404) → line con coords vacías, stops = solo la del pasajero
+// (de position.stop), fitBounds = autobús + parada (o un recuadro fijo de ~300 m alrededor de la
+// parada si no hay posición). line.color = accessibleLineColors(color, 'FFFFFF').bg.
 ```
 
 ### Mapa (react-leaflet)
@@ -72,7 +80,9 @@ export function buildMapModel(shape: ShapeResponse, position: PositionResponse):
 - Con `prefers-reduced-motion: reduce`: `zoomAnimation`, `fadeAnimation`, `markerZoomAnimation`
   a `false` e `inertia: false` (AC-10).
 - Contenedor: `<section role="region" aria-label={t('map.region')} aria-describedby="summary-id">`.
-  Altura: 60 dvh en móvil, 70 dvh en tablet.
+  Altura: 360 px (`docs/design.md` §5.7; v1.1).
+- Atribución de OpenStreetMap solo dentro del mapa (control de atribución de Leaflet, abajo a la
+  derecha; AC-09). El pie de la aplicación no cambia (v1.1).
 - Paradas: `CircleMarker` radio 5 (la del pasajero: radio 9, borde grueso, `Tooltip` permanente
   con el texto `t('map.yourStop')` = "Tu parada"; el nombre de la parada ya está en el resumen y en
   la vista de parada). El autobús: `Marker` con `divIcon` (SVG de autobús, flecha rotada con
@@ -95,7 +105,7 @@ stop.viewOnMap ("Ver en el mapa"), stop.viewOnMapLabel ("Ver en el mapa la líne
 map.title ("Línea {{line}} hacia {{destination}}"), map.back, map.loading, map.region, map.regionDescription,
 map.estimated, map.scheduled, map.busEstimated ("Estimada"), map.busScheduled ("Según horario"),
 map.yourStop ("Tu parada"), map.summaryTitle ("Dónde está el autobús"), map.enRoute, map.stopsAway_one, map.stopsAway_other, map.nextIsYours,
-map.atStop, map.notStarted, map.unavailable, map.reasonNoArrival, map.reasonNoVehicle,
+map.atStop, map.notStarted, map.notStartedUnknown, map.arrivesIn, map.arrivesAt, map.arrivingNow (v1.1), map.unavailable, map.reasonNoArrival, map.reasonNoVehicle,
 map.notFound, map.zoomIn, map.zoomOut, map.osmAttribution, map.announceOneStop, map.announceArriving
 ```
 
@@ -120,7 +130,7 @@ map.notFound, map.zoomIn, map.zoomOut, map.osmAttribution, map.announceOneStop, 
 - `lazy` del router frente a `React.lazy`.
 - Estilo de los marcadores e iconos dentro de lo que fija `docs/design.md` §5.7 (manteniendo texto
   visible y contraste).
-- Altura del mapa (referencia: 60 dvh en móvil, 70 dvh en tablet; ≈ 360 px en el boceto).
+- (v1.1) La altura ya no es decisión local: 360 px (guía visual).
 
 ## 7. Preguntas abiertas
 
