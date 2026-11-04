@@ -1,6 +1,6 @@
 # Interfaz de la solicitud de parada — requirements
 
-> Feature: `passenger_alert_ui` · Versión: 1.0 · Estado: DRAFT
+> Feature: `passenger_alert_ui` · Versión: 1.0 · Estado: APPROVED
 > Requisitos: RF-16, RF-17, RF-18, RF-19, RF-22, RF-23, RNF-02, RNF-03, RNF-04, RNF-05, RNF-06 · Casos de uso: CU-03, CU-04, CU-05, CU-07 · Depende de: passenger_stop_view, alert_create, alert_cancel, alert_expiry
 
 ## Contexto
@@ -148,3 +148,9 @@ cancelada desde otra pestaña. En el bloque 3 no hay conductores, así que la so
 | RNF-06 Privacidad | AC-01, AC-02 |
 | CU-05 Perfil | AC-02 |
 | CU-07 Caducidad | AC-11 |
+
+## Historial
+
+| Versión | Fecha | Cambio | Motivo |
+|---|---|---|---|
+| 1.0 | 2026-11-04 | Versión inicial aprobada (PR #37). | CP-1 del bloque 3. Aprobada por la persona. |

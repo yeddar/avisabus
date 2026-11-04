@@ -1,6 +1,6 @@
 # Requisitos del sistema — AvisaBus
 
-> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-04: RF-17 con discapacidad visual, RF-20 con el autobús elegido, pendiente de aprobación en la PR del bloque 3). Deriva de `docs/vision.md`.
+> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-04: RF-17 con discapacidad visual, RF-20 con el autobús elegido, aprobada en la PR #37). Deriva de `docs/vision.md`.
 > Los requisitos aquí son **globales**. Cada feature en `specs/<feature>/requirements.md`
 > los refina en criterios de aceptación EARS y referencia sus IDs (trazabilidad).
 >

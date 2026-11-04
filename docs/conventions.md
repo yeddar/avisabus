@@ -1,6 +1,6 @@
 # Convenciones — AvisaBus
 
-> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-03: guía visual y terminología "Solicitar", aprobada en la PR #7; v1.2 · 2026-11-03: última parada en el estado local, aprobada en la PR #24; v1.3 · 2026-11-04: necesidad `VISUAL`, pendiente de aprobación en la PR del bloque 3). Obligatorio para personas y agentes.
+> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-03: guía visual y terminología "Solicitar", aprobada en la PR #7; v1.2 · 2026-11-03: última parada en el estado local, aprobada en la PR #24; v1.3 · 2026-11-04: necesidad `VISUAL`, aprobada en la PR #37). Obligatorio para personas y agentes.
 > Si una convención entra en conflicto con una spec, manda la spec y se anota en `progress/`.
 
 ## 1. Idiomas

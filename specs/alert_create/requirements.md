@@ -1,6 +1,6 @@
 # Crear solicitud de parada — requirements
 
-> Feature: `alert_create` · Versión: 1.0 · Estado: DRAFT
+> Feature: `alert_create` · Versión: 1.0 · Estado: APPROVED
 > Requisitos: RF-16, RF-17, RF-19, RF-20, RF-23, RNF-02, RNF-06, RNF-07 · Casos de uso: CU-03 · Depende de: stop_arrivals_api, realtime_events
 
 ## Contexto
@@ -134,3 +134,9 @@ el aviso caduca a los 30 min (RF-21).
 | RNF-07 Rate limiting y validación | AC-05, AC-06, AC-08 |
 | RNF-08 Sin peticiones extra al SAE | AC-03 |
 | CU-03 flujos 4a, 4b, 5a | AC-07, AC-08, AC-09 |
+
+## Historial
+
+| Versión | Fecha | Cambio | Motivo |
+|---|---|---|---|
+| 1.0 | 2026-11-04 | Versión inicial aprobada (PR #37). | CP-1 del bloque 3. Aprobada por la persona. |

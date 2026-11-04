@@ -1,6 +1,6 @@
 # Caducidad de las solicitudes de parada — requirements
 
-> Feature: `alert_expiry` · Versión: 1.0 · Estado: DRAFT
+> Feature: `alert_expiry` · Versión: 1.0 · Estado: APPROVED
 > Requisitos: RF-21, RF-28 (pasajero), RNF-06, RNF-08 · Casos de uso: CU-07 · Depende de: alert_create
 
 ## Contexto
@@ -110,3 +110,9 @@ un autobús que desaparece cuando aún estaba lejos no se da por pasado (LIM-02)
 | D12 Paso solo con SAE | AC-02, AC-03 |
 | LIM-02 Detección imperfecta | AC-02, AC-05, AC-11 |
 | CU-07 flujos 1a, 1b | AC-05, AC-06 |
+
+## Historial
+
+| Versión | Fecha | Cambio | Motivo |
+|---|---|---|---|
+| 1.0 | 2026-11-04 | Versión inicial aprobada (PR #37). | CP-1 del bloque 3. Aprobada por la persona. |

@@ -1,6 +1,6 @@
 # Cancelar solicitud de parada — requirements
 
-> Feature: `alert_cancel` · Versión: 1.0 · Estado: DRAFT
+> Feature: `alert_cancel` · Versión: 1.0 · Estado: APPROVED
 > Requisitos: RF-22, RF-28 (pasajero), RNF-06, RNF-07 · Casos de uso: CU-04 · Depende de: alert_create
 
 ## Contexto
@@ -56,3 +56,9 @@ uso solo deja preparado el punto en el que se le notificará.
 | RNF-06 Borrado de necesidades | AC-01, AC-05 |
 | RNF-07 Validación / autorización | AC-02, AC-03 |
 | CU-04 flujo 1a | AC-02 |
+
+## Historial
+
+| Versión | Fecha | Cambio | Motivo |
+|---|---|---|---|
+| 1.0 | 2026-11-04 | Versión inicial aprobada (PR #37). | CP-1 del bloque 3. Aprobada por la persona. |

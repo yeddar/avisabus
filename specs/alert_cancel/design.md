@@ -1,6 +1,6 @@
 # Cancelar solicitud de parada — design
 
-> Feature: `alert_cancel` · Versión: 1.0 · Estado: DRAFT
+> Feature: `alert_cancel` · Versión: 1.0 · Estado: APPROVED
 > Requisitos: RF-22, RF-28 (pasajero), RNF-06, RNF-07 · Casos de uso: CU-04 · Depende de: alert_create
 
 ## 1. Resumen

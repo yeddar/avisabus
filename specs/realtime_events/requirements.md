@@ -1,6 +1,6 @@
 # Eventos en tiempo real — requirements
 
-> Feature: `realtime_events` · Versión: 1.0 · Estado: DRAFT
+> Feature: `realtime_events` · Versión: 1.0 · Estado: APPROVED
 > Requisitos: RF-23, RF-28 (base), RNF-02, RNF-06, RNF-07, RNF-12, RNF-13 · Casos de uso: CU-03, CU-04, CU-07 (canal) · Depende de: project_scaffold
 
 ## Contexto
@@ -125,3 +125,9 @@ reutilizando el publicador.
 | RNF-13 Observabilidad | AC-13 |
 | H-01 de `project_scaffold` (`docs/conventions.md` §3) | AC-12 |
 | ADR-003 Eventos en memoria | AC-01, AC-02, AC-03 |
+
+## Historial
+
+| Versión | Fecha | Cambio | Motivo |
+|---|---|---|---|
+| 1.0 | 2026-11-04 | Versión inicial aprobada (PR #37). | CP-1 del bloque 3. Aprobada por la persona. |

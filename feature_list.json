@@ -259,7 +259,7 @@
       "order": 11,
       "block": 3,
       "title": "Publicador de eventos en memoria y WebSockets de pasajero y conductor",
-      "status": "spec_draft",
+      "status": "spec_approved",
       "depends_on": [
         "project_scaffold"
       ],
@@ -278,7 +278,7 @@
       "order": 12,
       "block": 3,
       "title": "Crear aviso: unicidad, rate limit, asignación y estado sin conductor",
-      "status": "spec_draft",
+      "status": "spec_approved",
       "depends_on": [
         "stop_arrivals_api",
         "realtime_events"
@@ -305,7 +305,7 @@
       "order": 13,
       "block": 3,
       "title": "Cancelar aviso",
-      "status": "spec_draft",
+      "status": "spec_approved",
       "depends_on": [
         "alert_create"
       ],
@@ -326,7 +326,7 @@
       "order": 14,
       "block": 3,
       "title": "Caducidad de avisos: vigilante de paso (SAE) y tiempo máximo",
-      "status": "spec_draft",
+      "status": "spec_approved",
       "depends_on": [
         "alert_create"
       ],
@@ -347,7 +347,7 @@
       "order": 15,
       "block": 3,
       "title": "UI de aviso: crear, cancelar, estado y perfil de accesibilidad local",
-      "status": "spec_draft",
+      "status": "spec_approved",
       "depends_on": [
         "passenger_stop_view",
         "alert_create",

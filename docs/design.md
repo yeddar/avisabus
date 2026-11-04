@@ -1,6 +1,6 @@
 # Guía visual — AvisaBus
 
-> Estado: **APROBADO** (v1.0 · 2026-11-03, PR #7; v1.1 · 2026-11-03, PR #24; v1.2 · 2026-11-04, PR #29; v1.3 · 2026-11-04, pendiente de aprobación en la PR del bloque 3).
+> Estado: **APROBADO** (v1.0 · 2026-11-03, PR #7; v1.1 · 2026-11-03, PR #24; v1.2 · 2026-11-04, PR #29; v1.3 · 2026-11-04, PR #37).
 > Deriva de `docs/requirements.md` (RNF-03, RNF-05, RNF-14, RNF-15) y del boceto revisado por la
 > persona el 2026-11-03.
 
@@ -215,4 +215,4 @@ actualizar, mapa, mano (Solicitar), información, siluetas de ocupación, flecha
 | 1.0 | 2026-11-03 | Versión inicial a partir del boceto | Revisión visual de la persona tras el bloque 1. Aprobada por la persona (PR #7). |
 | 1.1 | 2026-11-03 | §4: el rojo de EMT queda en `#E50000` (4,8:1); §5.6: ejemplo con el texto literal de `passenger_stop_view.AC-09`. | Desviaciones 2 y 3 de la revisión de `passenger_stop_view`. Aprobada por la persona (PR #24). |
 | 1.2 | 2026-11-04 | §5.1: la atribución del mapa va solo dentro del mapa, no en el pie. | Observación O-2 de `passenger_map_view`. Aprobada por la persona (PR #29). |
-| 1.3 | 2026-11-04 | §5.8: fila de acciones con "Solicitar", estado de la solicitud, diálogo de confirmación y "Mis necesidades". | Specs del bloque 3. Pendiente de aprobación. |
+| 1.3 | 2026-11-04 | §5.8: fila de acciones con "Solicitar", estado de la solicitud, diálogo de confirmación y "Mis necesidades". | Specs del bloque 3. Aprobada por la persona (PR #37). |
