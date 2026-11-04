@@ -4,8 +4,10 @@ Rama: `feat/alert_cancel` (apilada sobre `feat/alert_create` y `feat/realtime_ev
 
 ## Tareas
 - [x] T-01 `AlertNotFoundError` y `CancelAlert` (commit d51b25e)
-- [x] T-02 Endpoint `DELETE /alerts/{alert_id}`, error 404 y composición (commit de este fichero)
-- [ ] T-03 Contrato del frontend (`npm run gen:api`) y verificación completa
+- [x] T-02 Endpoint `DELETE /alerts/{alert_id}`, error 404 y composición (commit 7d7929f)
+- [x] T-03 Contrato del frontend (`npm run gen:api`) y verificación completa (commit de este
+      fichero: `frontend/src/shared/api/openapi.json` y `schema.d.ts` regenerados; solo
+      añadidos: ruta `/api/v1/alerts/{alert_id}` con `delete`)
 
 ## Decisiones locales
 - T-01: `AlertNotFoundError` no lleva atributos ni identificadores en el mensaje
@@ -44,4 +46,21 @@ Rama: `feat/alert_cancel` (apilada sobre `feat/alert_create` y `feat/realtime_ev
 Ninguno.
 
 ## Verificación
-Pendiente (T-03).
+`CI=1 ./init.sh verify --e2e` (2026-11-04, puerto 4173 libre, tras T-03): **todo en verde**
+(`verify: todo en verde`, exit 0).
+
+| Paso | Resultado |
+|---|---|
+| backend: format / lint / types | OK (`ruff format --check`, `ruff check`, `mypy`: 116 ficheros sin errores) |
+| backend: architecture | OK (`lint-imports`: 2 contratos respetados) |
+| backend: tests | OK: 1232 passed, 6 deselected; cobertura `domain`+`application` 99,54 % |
+| frontend: format / lint / types | OK |
+| frontend: tests | OK: 44 ficheros, 413 passed, 2 skipped |
+| frontend: build + bundle | OK (5 tests de presupuesto) |
+| frontend: e2e + a11y | OK: 87 passed |
+| harness: `feature_list.json` / trazabilidad AC→test | OK |
+
+Tests nuevos: `backend/tests/unit/test_cancel_alert.py` (10) y
+`backend/tests/integration/test_alerts_cancel_api.py` (13). Mutaciones comprobadas a mano:
+quitar la comparación del `device_hash` en `CancelAlert` rompe 2 tests (unit e integration de
+AC-02); quitar `no-store` del `500` rompe `test_an_unexpected_error_is_not_stored_either`.

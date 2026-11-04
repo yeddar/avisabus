@@ -38,6 +38,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/alerts/{alert_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Cancel Alert */
+    delete: operations['cancel_alert_api_v1_alerts__alert_id__delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/health': {
     parameters: {
       query?: never;
@@ -880,6 +897,72 @@ export interface operations {
            *       "status": 400,
            *       "title": "Bad Request",
            *       "type": "https://avisabus/problems/invalid-device-id"
+           *     }
+           */
+          'application/problem+json': unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  cancel_alert_api_v1_alerts__alert_id__delete: {
+    parameters: {
+      query?: never;
+      header?: {
+        'x-device-id'?: string | null;
+      };
+      path: {
+        /** @description `alert_id` of the alert; any other text is just not found. */
+        alert_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Alert cancelled and deleted with its needs. */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Missing or invalid X-Device-Id header. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProblemSchema'];
+          /**
+           * @example {
+           *       "status": 400,
+           *       "title": "Bad Request",
+           *       "type": "https://avisabus/problems/invalid-device-id"
+           *     }
+           */
+          'application/problem+json': unknown;
+        };
+      };
+      /** @description The alert does not exist, already expired or belongs to another device (same body in every case). */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProblemSchema'];
+          /**
+           * @example {
+           *       "status": 404,
+           *       "title": "Not Found",
+           *       "type": "https://avisabus/problems/alert-not-found"
            *     }
            */
           'application/problem+json': unknown;
