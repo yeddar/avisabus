@@ -1,6 +1,6 @@
 # Arquitectura — AvisaBus
 
-> Estado: **APROBADO** (v1.0 · 2026-10-31). Deriva de `docs/vision.md`, `docs/requirements.md`
+> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-04: avisos por viaje elegido, ADR-016, aprobada en la PR #37). Deriva de `docs/vision.md`, `docs/requirements.md`
 > y `docs/use_cases.md`. Las decisiones se registran como ADR en la sección 10.
 > Los nombres de código están en inglés; ver glosario en `docs/conventions.md`.
 
@@ -112,8 +112,8 @@ classDiagram
   class Arrival { line; destination; eta: timedelta|None; scheduled_at: time|None; source: REALTIME|SCHEDULED; in_network: bool }
   class EstimatedPosition { lat; lon; shape_distance_m; source: REALTIME|SCHEDULED }
   class Occupancy { capacity; occupied; free_seats; level: FREE|MEDIUM|FULL }
-  class Alert { alert_id; stop_id; line; direction_id; needs: set~Need~; device_hash; created_at; status; tracked_eta; delivered_to: session_id|None }
-  class Need { <<enum>> RAMP; EXTRA_TIME; SEAT }
+  class Alert { alert_id; stop_id; line; direction_id; trip_id; service_date; stop_sequence; needs: set~Need~; device_hash; created_at; status; last_seen_at; last_arrival_at; last_delay_s; delivered_to: session_id|None }
+  class Need { <<enum>> RAMP; EXTRA_TIME; SEAT; VISUAL }
   class AlertStatus { <<enum>> PENDING_DRIVER; DELIVERED; EXPIRED; CANCELLED }
   class DriverSession { session_id; code_id; line; direction_id; last_position; last_seen_at }
   class DriverCode { code_id; code_hash; revoked: bool }
@@ -127,7 +127,7 @@ classDiagram
 Notas:
 - `Line` agrupa `route_id` por `route_short_name` (RF-03).
 - `Alert.device_hash`: hash del identificador anónimo del dispositivo; nunca se guarda en claro.
-- `Alert.tracked_eta`: último ETA observado del autobús asignado; base de la detección de paso (D12).
+- `Alert.trip_id`/`service_date`: el autobús elegido por el pasajero (ADR-013, ADR-016). `last_seen_at`, `last_arrival_at` y `last_delay_s`: última observación en tiempo real de ese viaje en la parada; base de la detección de paso (D12) y de la estimación de llegada a la parada siguiente.
 - Los avisos `EXPIRED`/`CANCELLED` se **borran** (RNF-06); los estados existen solo para emitir el evento final.
 
 ### Servicios de dominio clave
@@ -138,9 +138,9 @@ Notas:
 | `DirectionResolver` | Traduce el `destino` del SAE a `direction_id` para una parada y línea, en este orden: sentido único en la parada → override (por headsign) → coincidencia de texto con los headsigns de los viajes que paran allí → **sentido que sale** de la parada (cabeceras) → sin resolver. | RF-11, RF-16 |
 | `PositionEstimator` | Dado ETA a una parada y los tiempos programados entre paradas del viaje, sitúa el autobús sobre el shape (interpolación por distancia). | RF-12 |
 | `OccupancyClassifier` | Convierte ocupación en nivel con umbrales configurables. | RF-15 |
-| `AlertAssigner` | Asigna el aviso al próximo autobús (ETA mínimo) y al conductor conectado de esa línea y sentido más cercano aguas arriba de la parada. | RF-20, RF-23 |
-| `PassageDetector` | Compara ETA previo y actual: paso si el ETA asignado desaparece o el primer ETA salta hacia arriba más de un umbral. | RF-21 |
-| `ExpiryPolicy` | Paso por la parada, llegada a la siguiente o 30 min desde la creación. | RF-21 |
+| `AlertAssigner` | Asigna el aviso al autobús elegido (viaje GTFS) y busca, mediante el puerto `DriverDirectory`, el conductor conectado que lleva ese servicio (en el bloque 3 no hay conductores: el aviso queda "sin conductor conectado"). | RF-20, RF-23 |
+| `PassageDetector` | Con cada observación en tiempo real de la parada: si el viaje del aviso aparece, actualiza su seguimiento; si desaparece y en la última observación llegaba en ≤ 2 min, ha pasado. | RF-21 |
+| `ExpiryPolicy` | Paso por la parada, llegada estimada a la siguiente (horario + último retraso) o 30 min desde la creación. | RF-21 |
 | `UpcomingStopsResolver` | Proyecta la posición GPS del conductor sobre el shape y devuelve las próximas N paradas; detecta desvío > 150 m. | RF-26 |
 | `CapacityAlertPolicy` | Σ personas esperando en próximas paradas > plazas libres. | RF-29 |
 
@@ -155,6 +155,8 @@ Notas:
 | `DriverCodeRepository` | `SqliteDriverCodeRepository` | Hash `scrypt`. |
 | `OccupancySensor` | `SimulatedOccupancySensor` | Determinista con semilla configurable. |
 | `EventPublisher` | `InMemoryEventPublisher` | Pub/sub por canal (`device:<hash>`, `driver:<session>`). |
+| `DeviceHasher` | `HmacDeviceHasher` | `device_hash` = HMAC-SHA256 del identificador anónimo con una clave derivada del secreto del servidor. |
+| `DriverDirectory` | `NoDriverDirectory` (bloque 3); el de `driver_demand` (bloque 4) | Conductor conectado que lleva un viaje. |
 | `Clock` | `SystemClock`, `FakeClock` (tests) | Siempre `datetime` UTC con zona. |
 | `StopTokenSigner` | `HmacStopTokenSigner` | Token = HMAC-SHA256(secret, stop_id) truncado, base64url. |
 
@@ -170,7 +172,7 @@ El contrato es el OpenAPI generado por FastAPI; el frontend genera sus tipos a p
 | GET | `/stops/{stop_id}/arrivals?t={token}` | Llegadas + ocupación | CU-01 |
 | GET | `/stops/{stop_id}/lines/{line}/position?direction_id=&t=` | Posición estimada del próximo autobús (incluye `shape_id` del viaje) | CU-02 |
 | GET | `/shapes/{shape_id}` | Trazado (coordenadas GeoJSON) y paradas; cacheable con `ETag` | CU-02 |
-| POST | `/alerts` | Crear aviso (`stop_id`, `token`, `line`, `direction_id`, `needs`) | CU-03 |
+| POST | `/alerts` | Crear aviso (`stop_id`, `token`, `line`, `direction_id`, `trip_id`, `service_date`, `needs`) | CU-03 |
 | GET | `/alerts/mine` | Avisos activos del dispositivo | CU-03 |
 | DELETE | `/alerts/{alert_id}` | Cancelar | CU-04 |
 | POST | `/driver/sessions` | Iniciar turno (`code`, `line`, `direction_id`) → token de sesión | CU-08 |
@@ -183,6 +185,7 @@ El contrato es el OpenAPI generado por FastAPI; el frontend genera sus tipos a p
 
 | Evento | Canal | Contenido |
 |---|---|---|
+| `alerts.snapshot` | pasajero | avisos activos del dispositivo, al conectarse (tras el mensaje `hello` con el identificador) |
 | `alert.registered` | pasajero | aviso creado, sin conductor |
 | `alert.delivered` | pasajero | entregado a la vista del conductor |
 | `alert.expired` | pasajero | motivo: `PASSED` \| `NEXT_STOP` \| `TIMEOUT` |
@@ -218,8 +221,8 @@ sequenceDiagram
   PA->>API: POST /alerts (X-Device-Id, token, line, direction_id, needs)
   API->>UC: execute(cmd)
   UC->>UC: validar token, rate limit, unicidad
-  UC->>AS: assign(stop, line, direction)
-  AS-->>UC: tracked_eta, driver_session?
+  UC->>AS: assign(stop, trip elegido)
+  AS-->>UC: driver_session?
   UC->>REPO: save(alert)
   alt hay conductor conectado
     UC->>EV: publish driver:<session> driver.view
@@ -243,13 +246,13 @@ sequenceDiagram
   W->>REPO: active alert groups (stop, line, direction)
   loop cada grupo
     W->>SRC: arrivals(stop)
-    W->>PD: passed?(tracked_eta, new arrivals)
+    W->>PD: passed?(seguimiento del viaje, new arrivals)
     alt ha pasado
       W->>REPO: delete alerts del grupo
       W->>EV: alert.expired(PASSED) a cada dispositivo
       W->>EV: driver.view al conductor afectado
     else no
-      W->>REPO: update tracked_eta
+      W->>REPO: update seguimiento (last_seen_at, last_arrival_at, last_delay_s)
     end
   end
 ```
@@ -306,6 +309,7 @@ frontend/src/
 | ADR-013 | Identidad del autobús = viaje GTFS emparejado con el ETA (`TripMatcher`) | Identificador de vehículo | El SAE no publica vehículos; el viaje da una identidad estable para posición, ocupación y avisos |
 | ADR-014 | Trazado servido por `shape_id` (no por línea y sentido) | `/lines/{line}/directions/{d}/shape` | El viaje concreto puede usar una variante de recorrido distinta de la representativa |
 | ADR-015 | Tiempos de llegada leídos de la página `QR.php` (HTML) que enlaza el Ajuntament, con User-Agent identificado | XML `getSAE` mediante `emtvlcapi`/`pyemtvlc` | EMT restringe `getSAE` a su visor; usarlo exigiría imitar al visor y eludir un control de acceso. Permiso solicitado a EMT el 2026-11-02; si lo concede, adaptador nuevo tras `ArrivalsSource` |
+| ADR-016 | El aviso se asigna al **viaje GTFS** que elige el pasajero (no al "próximo autobús") y se sigue por ese viaje | Seguir el ETA mínimo de la línea | Permite esperar a un autobús menos lleno; la identidad por viaje (ADR-013) evita confundir autobuses al detectar el paso. Si el emparejamiento cambia de viaje entre consultas, el aviso puede caducar más tarde (LIM-02) |
 
 ## 12. Riesgos técnicos
 

@@ -363,3 +363,8 @@
 ## 2026-11-04 · passenger_stop_view v1.3 PR #34 fusionada
 - `feat/passenger_map_view-v1.2` (#35) y `feat/position_estimation-v1.3` (#36) actualizadas con `develop`
   y con `progress/` idéntico en ambas para que se fusionen sin conflicto en cualquier orden.
+
+## 2026-11-04 · bloque 3 · spec_draft → spec_approved (CP-1)
+- La persona aprueba la PR #37: `realtime_events`, `alert_create`, `alert_cancel`, `alert_expiry`
+  y `passenger_alert_ui` v1.0, `stop_arrivals_api` 1.6, ADR-016 y los cambios de `docs/`.
+  Decisiones: solicitud al autobús elegido, necesidad `VISUAL` y confirmación siempre.

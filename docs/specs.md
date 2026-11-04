@@ -115,11 +115,11 @@ siempre "Verificación completa" (`./init.sh verify`). Cada AC aparece en al men
 | 8 | `passenger_stop_view` | 2 | [specs/passenger_stop_view](../specs/passenger_stop_view/) |
 | 9 | `position_estimation` | 2 | [specs/position_estimation](../specs/position_estimation/) |
 | 10 | `passenger_map_view` | 2 | [specs/passenger_map_view](../specs/passenger_map_view/) |
-| 11 | `realtime_events` | 3 | pendiente |
-| 12 | `alert_create` | 3 | pendiente |
-| 13 | `alert_cancel` | 3 | pendiente |
-| 14 | `alert_expiry` | 3 | pendiente |
-| 15 | `passenger_alert_ui` | 3 | pendiente |
+| 11 | `realtime_events` | 3 | [specs/realtime_events](../specs/realtime_events/) |
+| 12 | `alert_create` | 3 | [specs/alert_create](../specs/alert_create/) |
+| 13 | `alert_cancel` | 3 | [specs/alert_cancel](../specs/alert_cancel/) |
+| 14 | `alert_expiry` | 3 | [specs/alert_expiry](../specs/alert_expiry/) |
+| 15 | `passenger_alert_ui` | 3 | [specs/passenger_alert_ui](../specs/passenger_alert_ui/) |
 | 16 | `driver_codes_cli` | 4 | pendiente |
 | 17 | `driver_session` | 4 | pendiente |
 | 18 | `driver_demand` | 4 | pendiente |
