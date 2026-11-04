@@ -1,3 +1,163 @@
+# Revisión: passenger_stop_view — v1.2
+Ciclo: 1 (v1.2) · Fecha: 2026-11-04 · Agente: reviewer
+Spec: `specs/passenger_stop_view/` v1.2 (APPROVED, PR #29) · Rama: `feat/passenger_stop_view-v1.2`
+Alcance revisado: T-12 (`e665d86`), su registro (`b0ad197`) y los commits del orquestador
+(`27e4707`, `54bd2a9`). También se ha comprobado que no hay regresiones en el resto de AC.
+
+## Veredicto: APPROVED
+
+Las dos novedades de AC-24 v1.2 tienen tests que verifican de verdad el comportamiento: el foco
+se comprueba con `document.activeElement` y la ausencia de anuncios con las regiones `aria-live`
+del `Announcer`. Las 13 mutaciones aplicadas en una copia se detectan todas.
+`CI=1 ./init.sh verify --e2e` está en verde. Las cuatro decisiones locales caben en la spec y en
+el design. La decisión 2 cambia algo visible: un estado intermedio que ningún AC regula. No hace
+falta CP-3, pero conviene recogerla en el design en la próxima revisión de la spec (N-9).
+
+## Matriz AC → evidencia
+
+Solo se detallan AC-24 (v1.2) y los AC relacionados (AC-16, AC-18). El resto de la matriz es el
+de las secciones v1.1 y v1.0 de este fichero. Esos AC siguen en verde con los mismos tests. El
+diff del fichero de tests solo **añade** casos (`StopPage.errors.test.tsx:337-544`) y no modifica
+ninguno existente.
+
+| AC | Test(s) | Resultado | Nota |
+|---|---|---|---|
+| AC-24 (v1.2) 404 en acción manual | `StopPage.errors.test.tsx:341` (5 casos: "Actualizar"/"Actualitza"; "Reintentar" tras fallar las llegadas o la parada; "Reintenta" en `ca`) | OK | `press()` pone el foco en el botón antes del clic. Tras el 404 se comprueba que el `h1` es "Parada no encontrada"/"Parada no trobada", que `document.activeElement === h1` y que **todas** las regiones `aria-live` están vacías. El `Announcer` no borra los mensajes, así que esta última aserción es real: la mutación M6 (anunciar `stop.refreshFailed` antes de salir) la rompe. El caso de "Reintentar" tras fallar la parada pasa por `stop.refetch()` (AC-17). |
+| AC-16 / AC-24 404 al cargar | `:388` | OK | El foco sigue en `body`. Con la mutación M2 (enfocar el `h1` siempre) el test falla. Sin token, `StopPage.tsx:60` monta `StopNotFound` sin `focusHeading`. Además, `usePageTitle` no mueve el foco porque la ubicación no cambia (`frontend_i18n.AC-11`, solo navegación). |
+| AC-16 (regresión) | `:91` (es/ca, sin `stop_id` ni token), `:118` y siguientes; e2e `stop-not-found-*` | OK | El `h1` con `tabIndex=-1` no cambia el contenido ni el aspecto (captura `pixel/stop-not-found-es.png`). Axe sin violaciones. |
+| AC-24 (v1.2) refresco automático con éxito | `:399` (es/ca), `:423` (tras un "Actualizar" fallido, sin "Datos actualizados"), `:442` (sin datos, petición automática en curso controlada con `deferred`), `:468` (sin datos y sin conexión), `:493` (2 casos: "Reintentar" desaparece antes de que exista "Actualizar"), `:528` (sin foco en "Reintentar" no se mueve) | OK | Se comprueba que "Reintentar" ya no existe, que el foco está en "Actualizar"/"Actualitza" y que las regiones vivas están vacías (sin anuncio, AC-15). `:442` comprueba que el aviso y el foco siguen **durante** la petición automática (4.ª llamada) y que pasan a "Actualizar" al resolverse. `:528` evita una implementación que mueva el foco siempre (mutación M11). |
+| AC-24 (v1.1, regresión) | `:240`, `:261`, `:291`, `:323` (sin cambios) | OK | Siguen en verde. Tras un "Reintentar" con éxito llegan dos peticiones de foco a "Actualizar": la de `finish()` y la de `RetryAction` (`lost`). Las dos llevan al mismo sitio y la segunda se descarta porque el foco ya no está en `body`. |
+| AC-18 (regresión y combinación) | `:468`, `:546` y siguientes (sin cambios); e2e `stop-offline-*` | OK | Sin conexión no hay peticiones: en `:468` la petición queda en pausa (`fetchStatus: 'paused'`). Ahora, si no hay datos y había un error, se ven a la vez "Sin conexión" (`role="status"`) y el aviso de error. Con datos antiguos ya era así. AC-18 no lo prohíbe. |
+| AC-15 (regresión) | `:323`, `:399`, `:423`, `:442`, `:468` | OK | Ni el foco perdido ni el aviso que se mantiene generan anuncios. `finish()` sigue llamándose solo desde `refresh()`/`retry()`. |
+
+La parte "manual (lector de pantalla en CP-6)" de AC-24 queda para la persona. Los dos guiones
+están en `progress/impl_passenger_stop_view.md`, en "Observaciones".
+
+### Mutaciones (copia en el scratchpad; el repositorio no se ha tocado)
+Se ejecutaron `StopPage.test.tsx` y `StopPage.errors.test.tsx` (47 tests) con una mutación cada
+vez. La línea base pasa 47/47.
+
+| Mutación | Tests que fallan |
+|---|---|
+| M1 `StopNotFound` sin `focus()` | 5 (todos los de 404 manual) |
+| M2 `StopNotFound` enfoca siempre | 1 (`:388`, 404 al cargar) |
+| M3 `h1` sin `tabIndex={-1}` | 5 |
+| M4 `refresh()` sin salida por 404 | 2 ("Actualizar"/"Actualitza") |
+| M5 `retry()` sin salida por 404 | 3 |
+| M6 404 manual anuncia `stop.refreshFailed` | 2 |
+| M7 `showError` sin `isRetryingAfterError` | 2 (`:442`, `:468`) |
+| M8 `RetryAction` no avisa al desmontarse | 6 |
+| M9 `RetryAction` con `useEffect` en lugar de `useLayoutEffect` | 6 (la decisión 1 es necesaria: en la limpieza pasiva el nodo ya no está en el DOM) |
+| M10 sin la salvaguarda de "foco movido" | 1 (`:493`, la persona movió el foco) |
+| M11 `RetryAction` avisa sin comprobar el foco | 1 (`:528`) |
+| M12 el foco perdido va a "Reintentar" | 6 |
+| M13 404 en "Actualizar" llama a `onManualNotFound` pero sigue a `finish()` | 2 |
+
+La copia se restauró y se comparó con `diff -r` contra `frontend/src`: son idénticas.
+
+## Verificación ejecutada
+
+`CI=1 ./init.sh verify --e2e` con el puerto 4173 libre (`lsof` vacío antes de empezar). Código de
+salida 0, "verify: todo en verde":
+- backend: format, lint, mypy y lint-imports OK. pytest: 969 passed, 6 deselected, cobertura
+  99,39 %. Los 2 avisos de pytest ya existían y no son de esta feature.
+- frontend: format, lint (con i18n) y typecheck OK. Vitest: 35 ficheros, **301 tests passed**
+  (287 en la v1.1, +14 de T-12). Build OK (`index-*.js` 441,37 kB, **139,25 kB gzip**; el
+  presupuesto de AC-21 es 200 KB).
+- e2e + a11y: 60 passed, sin reintentos. Axe sin violaciones. `test:bundle`: 2 passed.
+- harness: `feature_list.json` OK. Trazabilidad AC→test OK (AC-24 se cita en 12 bloques de test
+  de `StopPage.errors.test.tsx`).
+
+Otras comprobaciones:
+- **Alcance:** `origin/develop` es ancestro de `HEAD`. `e665d86` solo toca los ficheros de T-12
+  (`StopPage.tsx`, `StopNotFound.tsx`, `StopPage.errors.test.tsx`). `b0ad197` solo toca
+  `progress/impl_passenger_stop_view.md`. `27e4707` y `54bd2a9` son del orquestador
+  (`feature_list.json`, `progress/current.md`, `progress/history.md`). No hay cambios en
+  `docs/`, `specs/`, `backend/` ni `e2e/`. Los commits siguen Conventional Commits con el ámbito
+  de la feature y citan la tarea.
+- **i18n:** no hay claves nuevas: el `h1` ya existía en es/ca. No hay literales, según el lint
+  de i18n.
+- **Privacidad:** no se registra nada y no hay anuncios con identificadores.
+- **Accesibilidad:** el foco programático en un `h1` no interactivo sin contorno sigue el patrón
+  ya aprobado en `frontend_i18n` (`index.css:50-51`, `usePageTitle.ts:32`). Los botones siguen
+  con el foco visible de §5.5.
+- **AC-23:** T-12 no cambia la maquetación. `RetryAction` pinta el mismo `<div className="flex">`
+  que antes. Revisada la captura regenerada `frontend/test-results/passenger_stop_view/pixel/stop-not-found-es.png`
+  (11:10): igual que en la v1.1.
+
+## Decisiones locales del implementer (v1.2)
+
+1. **`RetryAction` comprueba el foco en la limpieza de un `useLayoutEffect`**
+   (`StopPage.tsx:91-107`). Cumple literalmente el design v1.2 ("se detecta con
+   `document.activeElement` antes de desmontar el aviso"). React ejecuta las limpiezas de layout
+   de un subárbol eliminado antes de quitar sus nodos del DOM. La mutación M9 lo demuestra: con
+   `useEffect` fallan 6 tests. La comprobación se hace con `contains(document.activeElement)`, de
+   modo que no se pide foco si "Reintentar" no lo tenía (M11). **Aceptada.**
+2. **El aviso de error se mantiene durante los reintentos automáticos sin datos**
+   (`StopPage.tsx:47-52,139-143`, `isPending && fetchStatus !== 'idle' && errorUpdateCount > 0`).
+   - *Efecto visible:* sin datos y con error, antes el aviso desaparecía al **empezar** cada
+     petición automática (cada 20 s, al reconectar o al volver el foco a la ventana). Durante
+     unos 3 s (con los reintentos de 1 s y 2 s) se veía "Cargando las próximas llegadas…" y
+     luego volvía el aviso. Ahora el aviso sigue hasta que llegan los datos. Sin conexión se ve
+     junto a "Sin conexión".
+   - *¿Cabe en la spec?* Sí:
+     - Ningún AC ni el design regulan el texto de carga durante un reintento. "Cargando…" solo
+       existe como estado de la carga inicial.
+     - AC-17 pide mostrar el mensaje con "Reintentar" cuando hay un error, y el reintento
+       automático no lo resuelve hasta que acierta.
+     - AC-24 v1.2 equipara expresamente "el aviso de error desaparece" con que el refresco
+       acierte, y el design dice "antes de desmontar el aviso". Con el comportamiento anterior,
+       el botón enfocado se desmontaba al empezar la petición: el foco caía en `body` antes de
+       conocer el resultado y, si fallaba, se quedaba allí. Así no se podía cumplir AC-24.
+     - Es la misma solución que se aceptó en la v1.1 para el "Reintentar" manual (decisión 1
+       de la v1.1), y coherente con el principio de AC-12 de no borrar lo que hay mientras llegan
+       datos nuevos.
+     - Se usa `errorUpdateCount > 0` porque, en TanStack Query v5, una consulta sin datos vuelve
+       a `pending` sin `error` al pedirse de nuevo. Así la condición solo se cumple tras un fallo
+       y no afecta a la carga inicial.
+   - *Veredicto:* **aceptada, sin CP-3**. No contradice ningún nivel de la jerarquía y es la
+     forma mínima de cumplir AC-24 v1.2. Como cambia algo que ve una persona vidente, propongo
+     documentarlo en el design en la próxima revisión de la spec (N-9).
+3. **El foco solo se mueve si sigue en `body`** (`StopPage.tsx:155-168`). La guarda solo actúa
+   en las peticiones `lost`. En el caso normal no interviene: el aviso desaparece, el foco cae en
+   `body` y el efecto lo lleva a "Actualizar" en el mismo ciclo. Solo actúa si "Actualizar" aún
+   no existe (falló solo la parada y las llegadas siguen en camino) y la persona ha enfocado otra
+   cosa mientras tanto. No quitarle el foco es coherente con la decisión 2 de la v1.1 y con el
+   objetivo de AC-24 (no desorientar). Está probado en los dos sentidos (`:493`, M10).
+   **Aceptada.**
+4. **`h1` con `tabIndex={-1}`** (`StopNotFound.tsx:30`). Es literal del design v1.2 ("`h1` de
+   `StopNotFound` (`tabIndex=-1`, `focus()` al montarse si venía de una acción manual)"). El
+   `focus()` se hace en un `useEffect` sobre `focusHeading`, no solo al montarse. Así funciona
+   aunque `StopNotFound` se monte (al notificar la consulta) antes de que se resuelva la promesa
+   del `refetch()` que activa `manualNotFound`. Es equivalente al design y más robusto.
+   **Aceptada.**
+
+## Hallazgos
+
+### Bloqueantes
+Ninguno.
+
+### No bloqueantes
+- **N-9 (nota para la próxima revisión de la spec, no es CP-3):** el design §2 (tabla v1.2) no
+  dice que el aviso de error se mantiene durante los reintentos automáticos sin datos
+  (`StopPage.tsx:136-143`). Es un cambio visible respecto a la v1.1: ya no aparece "Cargando…"
+  durante el reintento y se ven a la vez el aviso de error y "Sin conexión". Propuesta: añadir una
+  línea a la tabla de "Acciones manuales: anuncio y foco" o a la estructura de la vista, para que
+  CP-6 lo valide con conocimiento de causa.
+- **N-10 (hueco de spec menor, ya anotado por el implementer):** un 404 de un refresco
+  **automático** con el foco en "Reintentar" deja el foco en `body` (`StopPage.tsx:71-73`
+  sustituye la vista entera). AC-24 solo regula el 404 de las acciones manuales, así que el
+  código cumple. Si se quiere cubrir, bastaría con extender el `focusHeading` a ese caso en una
+  versión futura. El caso es muy raro: requiere reimportar el GTFS con la vista abierta.
+- **N-11 (tests):** no hay caso `ca` para "Reintenta" tras fallar la parada con 404 (`:341`), y
+  el caso del refresco automático en `ca` solo cubre el fallo de las llegadas. Son combinaciones
+  redundantes: los textos y el camino de código ya se cubren en otros casos. No hace falta
+  añadirlas.
+- Siguen abiertas las observaciones de la v1.1 que no dependen de T-12 (por ejemplo, la propuesta
+  de que `Button` acepte `ref` para quitar los envoltorios `div`).
+
+---
+
 # Revisión: passenger_stop_view — v1.1
 Ciclo: 1 (v1.1) · Fecha: 2026-11-03 · Agente: reviewer
 Spec: `specs/passenger_stop_view/` v1.1 (APPROVED, PR #24) · Rama: `feat/passenger_stop_view-v1.1`

@@ -266,6 +266,16 @@
 - Revisión ciclo 1 de la v1.1: APPROVED; N-7/N-8 (foco) para la spec v1.2. PR contra `develop` sin
   fusionar (después de la #24). Bloque 2: 3/4 en `done`.
 
+## 2026-11-04 · passenger_stop_view · done → implementing (v1.2, solo T-12)
+- Spec v1.2 (PR #29): N-7/N-8 de foco. Rama `feat/passenger_stop_view-v1.2` desde `develop`.
+
+## 2026-11-04 · passenger_stop_view v1.2 · implementing → in_review
+- T-12: foco al `h1` tras 404 en acción manual; foco a "Actualizar" tras refresco automático con
+  éxito; el aviso de error se mantiene durante reintentos automáticos sin datos. Verify --e2e en verde.
+
+## 2026-11-04 · passenger_stop_view v1.2 · in_review → done
+- Revisión ciclo 1 de la v1.2: APPROVED (13 mutaciones detectadas); N-9/N-10 para la spec. PR sin fusionar.
+
 ## 2026-11-04 · PR #24 y #28 fusionadas · passenger_map_view · spec_approved → exploring
 - Rama `feat/passenger_map_view`; E-01 (Leaflet y teselas OSM). PR #29 (specs v1.2 de
   `passenger_stop_view` y `position_estimation`) pendiente de la persona.
