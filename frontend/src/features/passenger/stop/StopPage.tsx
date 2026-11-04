@@ -1,5 +1,5 @@
 import type { UseQueryResult } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useParams, useSearchParams } from 'react-router-dom';
 
@@ -24,6 +24,13 @@ import { isNotFound, useStop, useStopArrivals } from './useStopQueries';
 import { useUiLanguage } from './useUiLanguage';
 
 const H1 = 'text-[1.75rem] leading-[1.15] font-bold';
+
+/** Requests the person made with "Actualizar" or "Reintentar" (passenger_stop_view.AC-24). */
+type ManualAction = 'refresh' | 'retry';
+/** Control that gets the focus when a manual action ends; a new object per request. */
+type FocusRequest = { target: ManualAction };
+
+const isFailure = (result: { isError: boolean }) => result.isError;
 
 /** Route /p/:stopId?t={token}: the passenger's stop view (CU-01). */
 export function StopPage() {
@@ -63,6 +70,15 @@ function StopContent({ stop, arrivals, token }: StopContentProps) {
   const now = useServerNow(arrivals.data?.generated_at);
   const failed = stop.isError || arrivals.isError;
   const data = arrivals.data;
+  const [manualAction, setManualAction] = useState<ManualAction | null>(null);
+  const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
+  const focusDone = useRef<FocusRequest | null>(null);
+  const refreshControl = useRef<HTMLDivElement>(null);
+  const retryControl = useRef<HTMLDivElement>(null);
+  // While a retry is in flight the queries without data go back to "pending": keep the error
+  // notice so that "Reintentar" (and the focus on it) does not disappear meanwhile.
+  const showError = failed || manualAction === 'retry';
+  const showRefresh = data !== undefined && !arrivals.isError;
 
   usePageTitle(stop.data?.name ?? t('stop.title'));
 
@@ -72,14 +88,46 @@ function StopContent({ stop, arrivals, token }: StopContentProps) {
     if (loaded !== undefined) setLastStop({ stopId: loaded.stop_id, name: loaded.name, token });
   }, [loaded, token]);
 
-  async function refresh() {
-    const result = await arrivals.refetch();
-    if (!result.isError) announce(t('stop.refreshed'), 'polite');
+  // The control that must receive the focus may only appear once the new state is painted.
+  useEffect(() => {
+    if (focusRequest === null || focusDone.current === focusRequest) return;
+    const control = focusRequest.target === 'retry' ? retryControl : refreshControl;
+    const button = control.current?.querySelector('button');
+    if (button == null) return;
+    button.focus();
+    focusDone.current = focusRequest;
+  }, [focusRequest, showError, showRefresh]);
+
+  /**
+   * End of a manual action (passenger_stop_view.AC-14, AC-24): polite announcement and focus on
+   * a visible control. Automatic refreshes never get here, so they stay silent (AC-15).
+   */
+  function finish(action: ManualAction, failedNow: boolean) {
+    setManualAction(null);
+    announce(t(failedNow ? 'stop.refreshFailed' : 'stop.refreshed'), 'polite');
+    // "Actualizar" that fails is replaced by the stale data text: go to "Reintentar". A
+    // successful "Reintentar" removes the error notice: go to "Actualizar". Otherwise the
+    // focused control is still there.
+    if (action === 'refresh' && failedNow) setFocusRequest({ target: 'retry' });
+    if (action === 'retry' && !failedNow) setFocusRequest({ target: 'refresh' });
   }
 
-  function retry() {
-    if (stop.isError) void stop.refetch();
-    void arrivals.refetch();
+  async function refresh() {
+    if (manualAction !== null) return;
+    setManualAction('refresh');
+    const result = await arrivals.refetch();
+    finish('refresh', result.isError);
+  }
+
+  /** Asks again for the arrivals and, if it failed, for the stop (passenger_stop_view.AC-17). */
+  async function retry() {
+    if (manualAction !== null) return;
+    setManualAction('retry');
+    const results = await Promise.all([
+      arrivals.refetch(),
+      ...(stop.isError ? [stop.refetch()] : []),
+    ]);
+    finish('retry', results.some(isFailure));
   }
 
   return (
@@ -98,19 +146,21 @@ function StopContent({ stop, arrivals, token }: StopContentProps) {
             <Trans i18nKey="network.offline" components={{ strong: <strong /> }} />
           </StatusNotice>
         )}
-        {failed && (
+        {showError && (
           <StatusNotice
             action={
-              <Button icon={<RefreshIcon className="size-[18px]" />} onClick={retry}>
-                {t('stop.error.retry')}
-              </Button>
+              <div ref={retryControl} className="flex">
+                <Button icon={<RefreshIcon className="size-[18px]" />} onClick={() => void retry()}>
+                  {t('stop.error.retry')}
+                </Button>
+              </div>
             }
           >
             <Trans i18nKey="stop.error.body" components={{ strong: <strong /> }} />
           </StatusNotice>
         )}
         {data === undefined ? (
-          !failed && online && <p className="text-text-muted">{t('stop.loading')}</p>
+          !showError && online && <p className="text-text-muted">{t('stop.loading')}</p>
         ) : (
           <>
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -123,12 +173,14 @@ function StopContent({ stop, arrivals, token }: StopContentProps) {
                   <p className="text-text-muted">
                     {t('stop.updatedAt', { time: formatUpdateTime(data.generated_at, language) })}
                   </p>
-                  <Button
-                    icon={<RefreshIcon className="size-[18px]" />}
-                    onClick={() => void refresh()}
-                  >
-                    {t('stop.refresh')}
-                  </Button>
+                  <div ref={refreshControl} className="flex">
+                    <Button
+                      icon={<RefreshIcon className="size-[18px]" />}
+                      onClick={() => void refresh()}
+                    >
+                      {t('stop.refresh')}
+                    </Button>
+                  </div>
                 </>
               )}
             </div>

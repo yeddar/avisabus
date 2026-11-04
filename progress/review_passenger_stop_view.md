@@ -1,4 +1,136 @@
-# Revisión: passenger_stop_view
+# Revisión: passenger_stop_view — v1.1
+Ciclo: 1 (v1.1) · Fecha: 2026-11-03 · Agente: reviewer
+Spec: `specs/passenger_stop_view/` v1.1 (APPROVED, PR #24) · Rama: `feat/passenger_stop_view-v1.1`
+Alcance revisado: T-11 (`fd1825d`) y su registro (`872bcc4`); comprobación de regresiones en el resto de AC.
+
+## Veredicto: APPROVED
+
+AC-17 (v1.1) y AC-24 tienen tests que verifican de verdad el comportamiento: anuncio educado
+en la región `aria-live="polite"` del `Announcer` y foco comprobado con `document.activeElement`.
+`CI=1 ./init.sh verify --e2e` está en verde y los demás AC no tienen regresiones. Las cuatro
+decisiones locales caben dentro del design. Lo que pasa tras un 404 en una acción manual es un
+hueco de la spec. No bloquea y no requiere CP-3: queda como nota para la siguiente revisión de
+la spec.
+
+## Matriz AC → evidencia
+
+Solo se detallan los AC que cambian en la v1.1. El resto de la matriz (AC-01…AC-16, AC-18…AC-23)
+sigue siendo la de la sección v1.0 de este fichero. Siguen en verde con los mismos tests, y
+ninguno de esos tests se ha tocado salvo para cambiar el texto del mensaje de error.
+
+| AC | Test(s) | Resultado | Nota |
+|---|---|---|---|
+| AC-17 | `StopPage.errors.test.tsx:141` (503 y error de red al cargar las llegadas), `:166` (fallan parada y llegadas; "Reintentar" pide la parada otra vez: 4 llamadas), `:186` (datos conservados, es/ca), `:210` (**solo falla la parada**), `:231` (texto en `ca`), `:323`; e2e `stop-error-stale` | OK | En `:210` se ven las llegadas, el aviso dice "No se han podido cargar los datos." sin mencionar "las llegadas", y "Reintentar" pide `/stops/508` por cuarta vez y pinta el `h1` real. Sin `stop.refetch()` el test fallaría porque `useStop` tiene `staleTime: Infinity` y no se refresca solo. Textos es/ca hablan de "los datos"/"les dades". Cumple también el design ("Reintentar" pide siempre las llegadas y la parada solo si su error está activo, `StopPage.tsx:123-131`). |
+| AC-24 | `StopPage.errors.test.tsx:240` ("Actualizar" con error, es/ca), `:261` ("Reintentar" con éxito tras fallo de llegadas, de parada o de un refresco), `:291` ("Reintentar" con error, llegadas o parada, con petición pendiente controlada por `deferred`), `:323` (refresco automático fallido sin anuncios) | OK | Las tres viñetas del AC están cubiertas. Las aserciones no son tautológicas: (1) tras "Actualizar" con error, `activeElement` es "Reintentar"/"Reintenta" y "Actualizar" ya no existe, así que sin `setFocusRequest` el foco quedaría en `body`; (2) tras "Reintentar" con éxito, `activeElement` es "Actualizar" (en el caso "parada", "Actualizar" ya estaba pintado y lo que se comprueba es el movimiento); (3) "Reintentar" con error: se compara con el botón **actual**, así que si el aviso se desmontara durante la petición (el problema de `pending` de TanStack Query v5) el foco caería en `body` y el test fallaría; además se comprueba el foco **durante** la petición. Los anuncios se leen en la región polite: "No se han podido actualizar los datos" / "No s'han pogut actualitzar les dades" / "Datos actualizados", y antes de la acción se comprueba que la región está vacía. La parte "manual (lector de pantalla en CP-6)" queda para la persona. |
+| AC-14 (regresión) | `StopPage.test.tsx` (sin cambios) | OK | "Actualizar" con éxito sigue anunciando "Datos actualizados" solo al terminar (`finish('refresh', false)`). Según el design, el foco "se queda": no se llama a `focus()`. |
+| AC-15 (regresión) | `useArrivingAnnouncements.test.tsx`, `StopPage.test.tsx`, `StopPage.errors.test.tsx:323` | OK | `finish()` solo se llama desde `refresh()`/`retry()`, que solo se ejecutan con un clic; los refrescos automáticos no pasan por ahí. |
+
+## Verificación ejecutada
+
+`CI=1 ./init.sh verify --e2e` (puerto 4173 libre antes de empezar), código de salida 0, "verify: todo en verde":
+- backend: format, lint, mypy y lint-imports OK (2 contratos respetados, 0 rotos); pytest 969 passed,
+  6 deselected, cobertura 99,39 %.
+- frontend: format, lint (con i18n) y typecheck OK; Vitest 35 ficheros, 287 tests passed; build OK
+  (`index-*.js` 440,58 kB, **138,96 kB gzip**, presupuesto de AC-21: 200 KB).
+- e2e + a11y: 60 passed, sin reintentos ni tests inestables; axe sin violaciones; `test:bundle` 2 passed.
+- harness: `feature_list.json` OK; trazabilidad AC→test OK (AC-24 citado en 9 casos).
+
+Otras comprobaciones:
+- Paridad de claves es/ca-valencia (script sobre los dos `translation.json`): mismas claves en
+  los dos idiomas. `stop.refreshFailed` es el literal de AC-24 en `es` y "No s'han pogut
+  actualitzar les dades" en `ca`. `stop.error.body` es "**No se han podido cargar los datos.** …" /
+  "**No s'han pogut carregar les dades.** …". No queda ninguna referencia al texto antiguo en
+  `src/` ni en `e2e/`.
+- `frontend/src/shared/device/storage.ts:1-6`: el comentario coincide con `docs/conventions.md` §4 v1.2
+  (`device_id`, idioma, perfil de accesibilidad y última parada con `stop_id`, nombre y token del
+  QR público; cita AC-19). N-3 de la v1.0 resuelto.
+- Alcance (`git log origin/develop..HEAD`, `git show --stat` por commit): `fd1825d` solo toca los
+  ficheros de T-11 (`StopPage.tsx`, `StopPage.errors.test.tsx`, los dos `translation.json` y
+  `storage.ts`). `872bcc4` solo toca `progress/impl_passenger_stop_view.md`. `564c760` y `c97b7a3`
+  son del orquestador (`feature_list.json`, `progress/current.md`, `history.md`). Los cambios de
+  `docs/` y `specs/` vienen de `690a6a5` (rama `specs/ajustes-bloque-2`, PR #24). El merge
+  `a43d57f` no añade nada fuera de `develop` y de esa rama (`git diff origin/develop..HEAD` solo
+  muestra esos ficheros) y `origin/develop` es ancestro de `HEAD`. Commits en Conventional Commits
+  con el ámbito de la feature y la tarea citada. Sin variables de configuración nuevas.
+- Privacidad: no se registra nada; los anuncios no llevan identificadores.
+
+### Revisión visual (AC-23)
+Hay cambios de aspecto: el texto del aviso de error y el `<div className="flex">` que envuelve
+los botones. Revisadas las capturas regeneradas a las 23:28 en
+`frontend/test-results/passenger_stop_view/`: `pixel/stop-error-stale-es.png` y
+`tablet-landscape/stop-realtime-es-refresh-focused.png`. El aviso de error sigue §5.6 (fondo
+`accent-surface`, borde 2 px `accent`, icono de información, primera frase en negrita hasta el
+punto, "Reintentar" como botón secundario con icono). "Actualizar" sigue alineado a la derecha
+con el contorno de foco de §5.5. El envoltorio no cambia la maquetación ni el tamaño táctil y no
+hay desbordamientos.
+
+## Decisiones locales del implementer (v1.1)
+
+1. **El aviso se mantiene durante "Reintentar"** (`StopPage.tsx:80`, `showError = failed ||
+   manualAction === 'retry'`). Es necesario: en TanStack Query v5, una consulta sin datos vuelve a
+   `status: 'pending'` sin `error` al pedirla otra vez. Sin esto, el botón enfocado se desmontaría
+   y AC-24 ("el foco sigue en Reintentar", "nunca en `body`") no se cumpliría. Mientras tanto no
+   se muestra "Cargando…", lo cual es coherente. El test `:291` lo cubre durante la petición.
+   **Aceptada.**
+2. **El foco solo se mueve si desaparece el botón enfocado** (`StopPage.tsx:92-100,111-112`).
+   Coincide con la tabla del design ("se queda en …" para Actualizar con éxito y Reintentar con
+   error) y respeta el foco si la persona lo ha movido mientras esperaba. El efecto depende de
+   `showError`/`showRefresh` y se ejecuta una sola vez por petición (`focusDone`), así que
+   aguanta que TanStack Query notifique el nuevo estado después de resolver la promesa.
+   **Aceptada.**
+3. **`ref` en un `div` envolvente**: `ButtonProps` extiende `ButtonHTMLAttributes`, que no
+   incluye `ref`. En React 19 funcionaría en ejecución, pero no compila sin tocar
+   `shared/ui/Button.tsx` (de `frontend_i18n`, fuera de los ficheros de T-11). La solución respeta
+   el alcance y no cambia el aspecto (capturas). **Aceptada.** Propuesta no bloqueante para una
+   tarea futura: aceptar `ref` en `Button` y quitar el envoltorio.
+4. **Se ignoran los clics extra durante una acción manual** (`StopPage.tsx:116,124`). Es
+   razonable: un segundo `refetch()` con `cancelRefetch` cancelaría el primero y podría anunciar
+   "Datos actualizados" antes de tiempo. Hay un efecto secundario sin importancia: si fallan solo
+   la parada y hay un "Actualizar" en curso, un clic en "Reintentar" se ignora sin aviso. Ningún
+   AC lo cubre. **Aceptada.**
+
+## Observación del implementer: 404 en una acción manual
+
+Es un **problema de spec**, pero menor: no hace falta CP-3 ahora, basta una nota para la siguiente
+revisión de la spec. Si "Actualizar" o "Reintentar" terminan en 404, AC-16 obliga a sustituir la
+vista por "Parada no encontrada" (`StopPage.tsx:49` desmonta `StopContent`). Entonces no existe el
+"Reintentar" al que AC-24 manda el foco y la regla "nunca en `body`" no se puede cumplir sin
+inventar un destino. El implementer no ha inventado comportamiento: anuncia
+`stop.refreshFailed`, que es la parte aplicable, y deja el foco donde lo deja el cambio de página.
+No pido CP-3 porque el caso es muy raro (hace falta reimportar el GTFS con la vista abierta),
+ningún flujo principal queda bloqueado y el código no contradice nada que se pueda cumplir.
+Propuesta para la v1.2: tras un 404 en una acción manual, mover el foco al `h1` "Parada no
+encontrada" (con `tabIndex=-1`) y quizá no anunciar `stop.refreshFailed`, porque la página nueva
+ya lo explica.
+
+## Hallazgos
+
+### Bloqueantes
+Ninguno.
+
+### No bloqueantes
+- **N-7 (problema de spec, accesibilidad)**: el 404 en una acción manual (ver arriba). Nota para la
+  siguiente revisión de la spec (spec-writer), sin CP-3.
+- **N-8 (hueco de spec, accesibilidad)**, `StopPage.tsx:80-81` y `useStopQueries.ts:45-48`: tras
+  un "Actualizar" fallido el foco queda en "Reintentar". Si después un refresco **automático**
+  acierta (el `refetchInterval` sigue activo con error ≠ 404, o al volver la conexión), el aviso se
+  desmonta y el foco cae en `body` sin anuncio. Es más probable que el caso del 404. AC-24 solo
+  regula el final de las acciones manuales, así que el código cumple la spec. Propuesta para la
+  v1.2: si el control enfocado desaparece por un refresco automático, llevar el foco a
+  "Actualizar". Conviene que la persona lo pruebe en CP-6 con lector de pantalla.
+- **N-9**, `progress/impl_passenger_stop_view.md:148-170,174`: el registro del implementer tiene
+  restos de la v1.0. "Desviaciones respecto al design" presenta como pendientes las 4 que ya
+  resolvió la v1.1 (design §2, `docs/design.md` §4/§5.6 y conventions §4). "Textos nuevos para
+  revisar" cita el `stop.error.body` antiguo ("…cargar las llegadas…") y no incluye
+  `stop.refreshFailed` en `ca`. Solo es documentación, pero la persona usará esa lista en CP-6.
+- **N-10**, `StopPage.tsx:69` + `shared/ui/Button.tsx`: decisión 3. Cuando una tarea lo permita,
+  hacer que `Button` acepte `ref` y quitar los dos `div` envolventes.
+- Pendientes de la v1.0 que T-11 no tocaba: N-5 y N-6 siguen abiertos. N-1, N-2, N-3 y N-4 quedan
+  resueltos con la v1.1 (AC-24, AC-17, `storage.ts`, `docs/` en la PR #24).
+
+---
+
+# Revisión: passenger_stop_view — v1.0
 Ciclo: 1 · Fecha: 2026-11-03 · Agente: reviewer
 Spec: `specs/passenger_stop_view/` v1.0 (APPROVED) · Rama: `feat/passenger_stop_view` (11 commits sobre `develop`)
 

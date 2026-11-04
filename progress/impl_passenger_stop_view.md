@@ -1,5 +1,6 @@
 # Implementación: passenger_stop_view
-Spec: specs/passenger_stop_view/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Rama: `feat/passenger_stop_view`
+Spec: specs/passenger_stop_view/ (v1.1, APPROVED) · Ciclo de revisión: 0 (v1.1) · Rama: `feat/passenger_stop_view-v1.1`
+(v1.0: T-01…T-10 en `feat/passenger_stop_view`, revisada y APPROVED en el ciclo 1)
 
 ## Tareas
 - [x] T-01 Backend: `avisabus openapi export` y test de desfase (commit 75f6a97)
@@ -11,7 +12,8 @@ Spec: specs/passenger_stop_view/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Ra
 - [x] T-07 Errores y conectividad (commit c2950cb)
 - [x] T-08 Última parada y `NotFoundPage` (commit 544cb50)
 - [x] T-09 E2E, axe, capturas y presupuesto de bundle (commit 2114105)
-- [x] T-10 Verificación completa: `CI=1 ./init.sh verify --e2e` en verde (ver "Verificación")
+- [x] T-11 (v1.1) Anuncio y foco tras "Actualizar"/"Reintentar" (AC-24); mensaje de error sobre "los datos" y "Reintentar" que repite la petición de la parada (AC-17); `stop.refreshFailed` es/ca; comentario de `shared/device/storage.ts` (commit fd1825d)
+- [x] T-10 Verificación completa: `CI=1 ./init.sh verify --e2e` en verde (v1.0 tras T-09 y v1.1 tras T-11; ver "Verificación")
 
 Cada test se escribió antes que el código y se vio en rojo (fallo de importación o de aserción).
 Además, se comprobó con mutaciones temporales (revertidas) que los tests de AC-12
@@ -37,7 +39,8 @@ Además, se comprobó con mutaciones temporales (revertidas) que los tests de AC
 | AC-14 | `StopPage.test.tsx` ("Actualizado a las 08:40:00", botón → petición inmediata → anuncio educado "Datos actualizados" solo al terminar) |
 | AC-15 | `useArrivingAnnouncements.test.tsx` (10 casos), `StopPage.test.tsx` (refresco que pasa a 0 → un anuncio; refrescos rutinarios sin anuncios), `StopPage.errors.test.tsx` (refresco fallido sin anuncios) |
 | AC-16 | `StopPage.errors.test.tsx` (404 de parada o de llegadas, es/ca, sin `stop_id` ni token; sin token no llama a la API; un 404 ni se reintenta ni se refresca) + e2e |
-| AC-17 | `StopPage.errors.test.tsx` (503 y error de red con "Reintentar"; parada con 503 reintenta ambas; datos conservados con "Datos de las 08:40, pueden no estar actualizados" es/ca) + e2e |
+| AC-17 | `StopPage.errors.test.tsx` (503 y error de red con "Reintentar"; parada con 503 reintenta ambas; (v1.1) **solo falla la parada**: mensaje "No se han podido cargar los datos." con las llegadas visibles y "Reintentar" vuelve a pedir la parada; mensaje en `ca` "No s'han pogut carregar les dades."; datos conservados con "Datos de las 08:40, pueden no estar actualizados" es/ca) + e2e |
+| AC-24 | (v1.1) `StopPage.errors.test.tsx`: "Actualizar" con error → anuncio "No se han podido actualizar los datos" / "No s'han pogut actualitzar les dades" y `document.activeElement` = "Reintentar"/"Reintenta" (es/ca); "Reintentar" con éxito tras fallo de las llegadas, de la parada o de un refresco → "Datos actualizados" y foco en "Actualizar"; "Reintentar" con error (llegadas o parada) → anuncio y el foco sigue en "Reintentar", también mientras la petición está en curso; refresco automático fallido sin anuncios (AC-15). Mutaciones temporales (revertidas): sin conservar el aviso durante el reintento fallan 2 tests; sin `stop.refetch()` fallan 3 |
 | AC-18 | `src/shared/hooks/__tests__/useOnline.test.tsx`, `StopPage.errors.test.tsx` (aviso `role="status"`, sin peticiones mientras no hay conexión, petición al volver; abierta sin conexión no llama a la API) + e2e |
 | AC-19 | `lastStop.test.ts`, `StopPage.test.tsx` (se recuerda al cargar; no si 404), `src/app/routes/HomePage.test.tsx` (enlace es/ca, `lang`, URL codificada) + e2e |
 | AC-20 | `src/app/routes/NotFoundPage.test.tsx` (`/no-existe`, `/p`, `/p/508/otra`, enlace a la portada) + e2e |
@@ -120,47 +123,112 @@ iconos y redacción de textos) y de detalles internos no contractuales:
   renombrado rompe `tsc`). En e2e, `serviceWorkers: 'block'` para que `page.route` intercepte
   todas las peticiones.
 
-## Desviaciones respecto al design (para que el reviewer y la persona las validen)
-No cambian contratos ni comportamiento de los AC. **Propuesta:** reflejarlas en el design o en
-`docs/` en la próxima revisión.
+### Decisiones locales de T-11 (v1.1)
+- **Aviso de error durante "Reintentar":** TanStack Query v5 pasa a `pending` (sin `error`) una
+  consulta sin datos al volver a pedirla, así que el aviso y su botón desaparecían durante el
+  reintento y el foco caía en `body`. Mientras `manualAction === 'retry'` se mantiene el aviso
+  (`showError = failed || manualAction === 'retry'`) y no se muestra "Cargando…": el foco "sigue
+  en Reintentar" de verdad, sin moverlo.
+- **Foco:** solo se mueve cuando el control enfocado desaparece ("Actualizar" con error →
+  "Reintentar"; "Reintentar" con éxito → "Actualizar"). En los casos "se queda" no se llama a
+  `focus()`, para no quitar el foco si la persona lo ha movido mientras esperaba. Se pide con un
+  estado `focusRequest` y un `useEffect` que enfoca cuando el control ya está pintado (una sola
+  vez por petición).
+- **`ref` en un envoltorio:** `shared/ui/Button` (de `frontend_i18n`) no acepta `ref` en sus tipos
+  y T-11 no incluye ese fichero, así que los botones van dentro de un `<div className="flex">`
+  con `ref` y se enfoca su `button`. Sin cambio visual (capturas revisadas).
+- **Pulsaciones repetidas:** mientras hay una acción manual en curso se ignoran nuevas pulsaciones
+  de "Actualizar"/"Reintentar" (un segundo `refetch()` cancela el primero y su promesa podría
+  resolverse antes de tiempo y anunciar "Datos actualizados" sin datos nuevos).
+- **Textos (redacción, design §6):** `stop.error.body` "**No se han podido cargar los datos.**
+  Comprueba la conexión y vuelve a intentarlo." / "**No s'han pogut carregar les dades.** Comprova
+  la connexió i torna-ho a intentar."; `stop.refreshFailed` "No se han podido actualizar los
+  datos" (literal de AC-24) / "No s'han pogut actualitzar les dades".
 
-1. **`openapi-typescript` 7.13 declara `peerDependencies: typescript ^5.x`** y el proyecto usa
-   TypeScript 6.0 (no hay versión de `openapi-typescript` que admita la 6). Se instala con
-   `"overrides": { "openapi-typescript": { "typescript": "$typescript" } }` en `package.json`;
-   la generación funciona y el resultado se valida con `tsc`.
-2. **Color del rojo EMT:** el algoritmo del design (pasos de 5 puntos de L en HSL) da
-   `#e50000` (4,8:1), no exactamente el `#E40000` que cita `docs/design.md` §4 ("en torno a").
-3. **Negrita de los avisos (§5.6):** el texto de AC-09 se mantiene literal ("Sin datos en tiempo
-   real: se muestra el horario programado"), así que la negrita llega hasta los dos puntos en
-   lugar de ser una frase con punto como en el ejemplo de la guía.
-4. **`docs/conventions.md` §4** dice que en `localStorage` solo hay `device_id`, idioma y
-   perfil; AC-19 añade la última parada (`avisabus.lastStop`, con su token). Manda la spec
-   (conventions lo prevé); propuesta: añadirlo a la lista de conventions §4.
+## Desviaciones respecto al design (v1.0) y estado actual
+Las cuatro se detectaron en la v1.0. No cambian contratos ni comportamiento de los AC. La PR #24
+(spec v1.1 y CP-4 de `docs/`) las recoge todas. Esta rama sale de esa PR, que aún no está
+fusionada en `develop`.
 
-## Textos nuevos para revisar por la persona (CP-6)
-Literales de la spec: "Parada {id}", "Próximas llegadas", "Actualizado a las…", "Actualizar",
-"Datos actualizados", "No hay llegadas previstas en este momento", aviso de horario programado,
-"Línea {l} hacia {d} está llegando", "Parada no encontrada", "Reintentar", "Datos de las…",
-"Sin conexión", "Tu última parada: {nombre}", "Página no encontrada" y niveles de ocupación.
-Redactados por mí (es / ca-valencia):
-- `stop.towards` "hacia" / "cap a"; `stop.lines` "Líneas" / "Línies"; `stop.title` "Parada".
-- `stop.notFound.body` "Vuelve a escanear el código QR de la parada para ver sus próximas
-  llegadas." / "Torna a escanejar el codi QR de la parada per a vore les pròximes arribades."
-- `stop.error.body` "**No se han podido cargar las llegadas.** Comprueba la conexión y vuelve a
-  intentarlo." / "**No s'han pogut carregar les arribades.** Comprova la connexió i torna-ho a
-  intentar."; `stop.error.retry` ca "Reintenta"; `stop.refresh` ca "Actualitza".
-- `network.offline` "**Sin conexión.** Los datos se actualizarán cuando vuelva la conexión." /
-  "**Sense connexió.** Les dades s'actualitzaran quan torne la connexió."
-- `stop.scheduledTime` (frase accesible) "{hora} según el horario programado" / "segons l'horari
-  programat"; `stop.arrivingNow` "está llegando" / "està arribant"; `stop.loading` "Cargando las
-  próximas llegadas…" / "Carregant les pròximes arribades…".
-- `home.lastStop` ca "La teua última parada: {nombre}"; `notFound.body` "La dirección que has
-  abierto no existe." / "L'adreça que has obert no existix."; `notFound.home` "Ir a la portada" /
-  "Ves a la portada".
-- Ocupación ca: "Poc ocupat", "Ocupació mitjana", "Ple", "hi ha seients lliures", "sense seients
-  lliures", "Ocupació no disponible"; vacío ca "No hi ha arribades previstes en este moment".
+1. **`openapi-typescript` 7.13 con TypeScript 6 mediante `overrides`.** *Resuelta en la spec
+   (v1.1, PR #24):* el design §2 documenta el `overrides` como deuda técnica. **Sigue abierta la
+   deuda:** hay que quitar el `overrides` cuando haya una versión de `openapi-typescript`
+   compatible con TypeScript 6.
+2. **Rojo EMT `#e50000` en vez de `#E40000`.** *Resuelta en `docs/` (PR #24):*
+   `docs/design.md` §4 v1.1 dice `#E50000` (4,8:1).
+3. **Negrita del aviso de horario programado (§5.6).** *Resuelta en `docs/` (PR #24):* el
+   ejemplo de `docs/design.md` §5.6 v1.1 usa el texto literal de AC-09.
+4. **`avisabus.lastStop` frente a `docs/conventions.md` §4.** *Resuelta en `docs/` (PR #24):*
+   conventions §4 ya incluye la última parada consultada. El comentario de
+   `shared/device/storage.ts` se actualizó en T-11 (hallazgo N-3).
+
+## Textos para revisar por la persona (CP-6)
+Redacción vigente tras T-11, tal como está en `src/locales/es` y `src/locales/ca-valencia`.
+Los marcados con **(spec)** son literales de la spec en castellano; el resto los redacté yo
+(design §6). Todos los textos en valenciano son míos. `<strong>` = negrita; `{…}` = variable.
+
+### Novedades de la v1.1 (T-11)
+| Clave | es | ca-valencia |
+|---|---|---|
+| `stop.error.body` | "**No se han podido cargar los datos.** Comprueba la conexión y vuelve a intentarlo." | "**No s'han pogut carregar les dades.** Comprova la connexió i torna-ho a intentar." |
+| `stop.refreshFailed` | "No se han podido actualizar los datos" **(spec, AC-24)** | "No s'han pogut actualitzar les dades" |
+
+### Vista de parada
+| Clave | es | ca-valencia |
+|---|---|---|
+| `stop.title` | "Parada" | "Parada" |
+| `stop.code` | "Parada {código}" **(spec)** | "Parada {código}" |
+| `stop.lineName` (oculto) | "Línea {línea}" | "Línia {línea}" |
+| `stop.lines` | "Líneas" | "Línies" |
+| `stop.arrivals` | "Próximas llegadas" **(spec)** | "Pròximes arribades" |
+| `stop.updatedAt` | "Actualizado a las {hora}" **(spec)** | "Actualitzat a les {hora}" |
+| `stop.refresh` | "Actualizar" **(spec)** | "Actualitza" |
+| `stop.refreshed` (anuncio) | "Datos actualizados" **(spec)** | "Dades actualitzades" |
+| `stop.loading` | "Cargando las próximas llegadas…" | "Carregant les pròximes arribades…" |
+| `stop.empty` | "No hay llegadas previstas en este momento" **(spec)** | "No hi ha arribades previstes en este moment" |
+| `stop.scheduledNotice` | "**Sin datos en tiempo real:** se muestra el horario programado" **(spec)** | "**Sense dades en temps real:** es mostra l'horari programat" |
+| `stop.scheduledSuffix` | "programado" | "programat" |
+| `stop.towards` | "hacia" | "cap a" |
+| `stop.error.retry` | "Reintentar" **(spec)** | "Reintenta" |
+| `stop.stale` | "Datos de las {hora}, pueden no estar actualizados" **(spec)** | "Dades de les {hora}, poden no estar actualitzades" |
+| `network.offline` | "**Sin conexión.** Los datos se actualizarán cuando vuelva la conexión." (spec: "Sin conexión") | "**Sense connexió.** Les dades s'actualitzaran quan torne la connexió." |
+
+### Textos para lector de pantalla
+| Clave | es | ca-valencia |
+|---|---|---|
+| `stop.rowLabel` | "Línea {línea}, hacia {destino}, {tiempo}, {ocupación}" **(spec, AC-05)** | "Línia {línea}, cap a {destino}, {tiempo}, {ocupación}" |
+| `stop.rowLabelNoOccupancy` (AC-08) | "Línea {línea}, hacia {destino}, {tiempo}" | "Línia {línea}, cap a {destino}, {tiempo}" |
+| `stop.arrivesIn` | "llega en {duración}" **(spec)** | "arriba en {duración}" |
+| `stop.arrivesAt` | "llega a las {hora}" **(spec)** | "arriba a les {hora}" |
+| `stop.scheduledTime` | "{hora} según el horario programado" | "{hora} segons l'horari programat" |
+| `stop.arrivingNow` | "está llegando" | "està arribant" |
+| `stop.arriving` (anuncio) | "Línea {línea} hacia {destino} está llegando" **(spec)** | "Línia {línea} cap a {destino} està arribant" |
+| `occupancy.spoken.*` | "poco ocupado", "ocupación media", "lleno", "ocupación no disponible" | "poc ocupat", "ocupació mitjana", "ple", "ocupació no disponible" |
+
+### Ocupación (en pantalla)
+| Clave | es | ca-valencia |
+|---|---|---|
+| `occupancy.FREE` / `MEDIUM` / `FULL` | "Poco ocupado" / "Ocupación media" / "Lleno" **(spec)** | "Poc ocupat" / "Ocupació mitjana" / "Ple" |
+| `occupancy.seatsYes` / `seatsNo` | "hay asientos libres" / "sin asientos libres" **(spec)** | "hi ha seients lliures" / "sense seients lliures" |
+| `occupancy.unavailable` | "Ocupación no disponible" **(spec)** | "Ocupació no disponible" |
+
+### Páginas de error y portada
+| Clave | es | ca-valencia |
+|---|---|---|
+| `stop.notFound.title` | "Parada no encontrada" **(spec)** | "Parada no trobada" |
+| `stop.notFound.body` | "Vuelve a escanear el código QR de la parada para ver sus próximas llegadas." | "Torna a escanejar el codi QR de la parada per a vore les pròximes arribades." |
+| `notFound.title` | "Página no encontrada" **(spec)** | "Pàgina no trobada" |
+| `notFound.body` | "La dirección que has abierto no existe." | "L'adreça que has obert no existix." |
+| `notFound.home` | "Ir a la portada" | "Ves a la portada" |
+| `home.lastStop` | "Tu última parada: {nombre}" **(spec)** | "La teua última parada: {nombre}" |
 
 ## Observaciones (no bloqueantes)
+- (v1.1) **Hueco menor de AC-24 con un 404:** si "Actualizar" o "Reintentar" terminan con un 404
+  (la parada desaparece del GTFS con la vista abierta), AC-16 sustituye la vista por "Parada no
+  encontrada" y no existe "Reintentar" al que llevar el foco. No se ha inventado comportamiento:
+  se anuncia "No se han podido actualizar los datos" (parte de AC-24 aplicable) y el foco queda
+  donde lo deje el cambio de página. Propuesta para una revisión futura de la spec: mover el foco
+  al `h1` de "Parada no encontrada". Caso muy raro (requiere reimportar el GTFS en caliente).
 - Playwright vacía `test-results/` al inicio de cada ejecución: si se lanza solo un spec
   (`npx playwright test e2e/i18n.spec.ts`), desaparecen las capturas de esta feature hasta la
   siguiente ejecución completa.
@@ -171,7 +239,19 @@ Redactados por mí (es / ca-valencia):
 Ninguno.
 
 ## Verificación
-`CI=1 ./init.sh verify --e2e` (2026-11-03, tras T-09, puerto 4173 libre) → código 0,
+**v1.1 (tras T-11):** `CI=1 ./init.sh verify --e2e` (2026-11-03, puerto 4173 libre) → código 0,
+"verify: todo en verde":
+- backend: format, lint, types, architecture (2 contratos respetados) OK; pytest 969 passed,
+  6 deselected, cobertura 99,39 %.
+- frontend: format, lint, types OK; Vitest 35 ficheros, 287 tests passed; build OK
+  (`index-*.js` 440,58 kB, **138,96 kB gzip**).
+- frontend e2e + a11y: 60 passed, axe sin violaciones; `test:bundle` 2 passed.
+- harness: `feature_list.json` OK; trazabilidad AC→test OK.
+- Capturas regeneradas (23:25) en `frontend/test-results/passenger_stop_view/<perfil>/`;
+  `stop-error-stale-es.png` muestra el texto nuevo "No se han podido cargar los datos." y los
+  botones envueltos no cambian la maquetación (`stop-realtime-*-refresh-focused.png`).
+
+**v1.0:** `CI=1 ./init.sh verify --e2e` (2026-11-03, tras T-09, puerto 4173 libre) → código 0,
 "verify: todo en verde":
 - backend: format, lint, types, architecture OK; pytest 861 passed, 6 deselected, cobertura
   99,66 %.
