@@ -3,6 +3,8 @@ import { Trans, useTranslation } from 'react-i18next';
 import type { Arrival } from '../../../shared/api/types';
 import { formatClockTime, formatMinutes } from '../../../shared/i18n/format';
 import { GtfsText } from '../../../shared/i18n/GtfsText';
+import { MapIcon } from '../../../shared/ui/icons/MapIcon';
+import { LinkButton } from '../../../shared/ui/LinkButton';
 import { ArrivalTime } from './ArrivalTime';
 import { currentMinutes } from './countdown';
 import { spokenDestination, visibleDestination } from './destination';
@@ -14,14 +16,24 @@ export interface ArrivalRowProps {
   arrival: Arrival;
   now: Date;
   scheduled: boolean;
+  /** Stop of the view and token of its QR, kept in the link to the map. */
+  stopId: string;
+  token: string;
+}
+
+/** Map of the line and direction (passenger_map_view.AC-01): route of passenger_map_view. */
+export function mapPath(stopId: string, line: string, directionId: number, token: string): string {
+  const path = [stopId, 'map', line, String(directionId)].map(encodeURIComponent).join('/');
+  return `/p/${path}?t=${encodeURIComponent(token)}`;
 }
 
 /**
  * Arrival card (docs/design.md §5.3). Screen readers get one full sentence
  * (passenger_stop_view.AC-05); the visual content is hidden from them so it is not read twice.
- * Arrivals outside the network show only their time (AC-08).
+ * Arrivals outside the network show only their time (AC-08). Arrivals in the network with a
+ * resolved direction link to their map (passenger_map_view.AC-01).
  */
-export function ArrivalRow({ arrival, now, scheduled }: ArrivalRowProps) {
+export function ArrivalRow({ arrival, now, scheduled, stopId, token }: ArrivalRowProps) {
   const { t } = useTranslation();
   const language = useUiLanguage();
   const minutes = currentMinutes(arrival, now);
@@ -78,6 +90,22 @@ export function ArrivalRow({ arrival, now, scheduled }: ArrivalRowProps) {
         </div>
         {arrival.in_network && <OccupancyInfo occupancy={arrival.occupancy} />}
       </div>
+      {arrival.in_network && arrival.direction_id !== null && (
+        // Row 3 of the card (docs/design.md §5.3): actions 48 px high, full width while alone.
+        <div className="mt-3 flex">
+          <LinkButton
+            to={mapPath(stopId, arrival.line, arrival.direction_id, token)}
+            aria-label={t('stop.viewOnMapLabel', {
+              line: arrival.line,
+              destination: spokenDestination(arrival),
+            })}
+            icon={<MapIcon className="size-[18px]" />}
+            className="min-h-12 flex-1"
+          >
+            {t('stop.viewOnMap')}
+          </LinkButton>
+        </div>
+      )}
     </li>
   );
 }

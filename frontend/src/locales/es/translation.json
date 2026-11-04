@@ -56,7 +56,9 @@
       "body": "<strong>No se han podido cargar los datos.</strong> Comprueba la conexión y vuelve a intentarlo.",
       "retry": "Reintentar"
     },
-    "stale": "Datos de las {{time}}, pueden no estar actualizados"
+    "stale": "Datos de las {{time}}, pueden no estar actualizados",
+    "viewOnMap": "Ver en el mapa",
+    "viewOnMapLabel": "Ver en el mapa la línea {{line}} hacia {{destination}}"
   },
   "occupancy": {
     "FREE": "Poco ocupado",

@@ -56,7 +56,9 @@
       "body": "<strong>No s'han pogut carregar les dades.</strong> Comprova la connexió i torna-ho a intentar.",
       "retry": "Reintenta"
     },
-    "stale": "Dades de les {{time}}, poden no estar actualitzades"
+    "stale": "Dades de les {{time}}, poden no estar actualitzades",
+    "viewOnMap": "Mostra en el mapa",
+    "viewOnMapLabel": "Mostra en el mapa la línia {{line}} cap a {{destination}}"
   },
   "occupancy": {
     "FREE": "Poc ocupat",

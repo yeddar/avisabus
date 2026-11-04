@@ -47,7 +47,7 @@ function StopView({ stopId, token }: { stopId: string; token: string }) {
   const arrivals = useStopArrivals(stopId, token);
 
   if (isNotFound(stop.error) || isNotFound(arrivals.error)) return <StopNotFound />;
-  return <StopContent stop={stop} arrivals={arrivals} token={token} />;
+  return <StopContent stop={stop} arrivals={arrivals} stopId={stopId} token={token} />;
 }
 
 /** Mounted only once there are data, so arrivals already "Llegando" on load are not announced. */
@@ -59,10 +59,11 @@ function ArrivingAnnouncer({ arrivals, now }: { arrivals: Arrival[]; now: Date }
 interface StopContentProps {
   stop: UseQueryResult<StopResponse, ApiError>;
   arrivals: UseQueryResult<StopArrivalsResponse, ApiError>;
+  stopId: string;
   token: string;
 }
 
-function StopContent({ stop, arrivals, token }: StopContentProps) {
+function StopContent({ stop, arrivals, stopId, token }: StopContentProps) {
   const { t } = useTranslation();
   const language = useUiLanguage();
   const announce = useAnnounce();
@@ -186,7 +187,13 @@ function StopContent({ stop, arrivals, token }: StopContentProps) {
             </div>
             <ArrivingAnnouncer arrivals={data.arrivals} now={now} />
             <SourceNotice source={data.source} />
-            <ArrivalsList arrivals={data.arrivals} source={data.source} now={now} />
+            <ArrivalsList
+              arrivals={data.arrivals}
+              source={data.source}
+              now={now}
+              stopId={stopId}
+              token={token}
+            />
           </>
         )}
       </section>
