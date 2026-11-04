@@ -400,3 +400,6 @@
 ## 2026-11-04 · alert_cancel · implementing → in_review
 - T-01…T-03 (`DELETE /alerts/{id}`, 204/404, evento `alert.cancelled`); H-1 de `alert_create` corregido
   (`no-store` en todos los 500). Verify --e2e en verde (1232 backend).
+
+## 2026-11-04 · alert_cancel · in_review → done
+- Revisión ciclo 1: APPROVED (15/17 mutantes, 2 equivalentes). PR sin fusionar.

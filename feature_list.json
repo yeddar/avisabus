@@ -305,7 +305,7 @@
       "order": 13,
       "block": 3,
       "title": "Cancelar aviso",
-      "status": "in_review",
+      "status": "done",
       "depends_on": [
         "alert_create"
       ],
@@ -319,7 +319,7 @@
       "spec": "specs/alert_cancel/",
       "needs_exploration": false,
       "review_cycles": 0,
-      "passes": false
+      "passes": true
     },
     {
       "id": "alert_expiry",
