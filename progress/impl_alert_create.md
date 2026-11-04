@@ -10,8 +10,10 @@ Spec: specs/alert_create/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Agente: i
 - [x] T-04 `CreateAlert`, `ListMyAlerts`, `alert_payload`, `NoDriverDirectory`,
       `NoopDriverViewNotifier` (AC-03, AC-07, AC-08, AC-09, AC-13) (commit 3066888)
 - [x] T-05 Endpoints `/alerts`, `AlertSnapshotProvider`, configuración y composición
-      (AC-02…AC-14)
-- [ ] T-06 Contrato del frontend (`npm run gen:api`) y verificación completa
+      (AC-02…AC-14) (commit 213f114)
+- [x] T-06 Contrato del frontend (`npm run gen:api`) y verificación completa (commit de este
+      fichero: `frontend/src/shared/api/openapi.json` y `schema.d.ts` regenerados; solo
+      añadidos: rutas `/api/v1/alerts`, `/api/v1/alerts/mine` y sus esquemas)
 
 ## Cambios en código de otras features
 - T-01 (autorizado por la tarea y por la persona; `stop_arrivals_api` v1.6):
@@ -140,5 +142,55 @@ Spec: specs/alert_create/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Agente: i
   el contrato del frontend se regenera en T-06, como indica `tasks.md`.
 
 ## Bloqueos
+Ninguno que impida la entrega. Dos lecturas de la spec señaladas para la revisión (detalle en
+"Decisiones locales", T-04 y T-05), sin bloqueo porque el design fija el comportamiento:
+1. Con un aviso activo en esa parada y línea, `POST /alerts` responde `200` antes de validar el
+   token (orden del design §3 paso 2); AC-04 aplica a las demás peticiones.
+2. El límite de AC-08 cuenta las peticiones que llegan a `CreateAlert` (incluidos los `429`),
+   no las rechazadas antes por FastAPI (`400` de cabecera, `422` de cuerpo).
+Y una interpretación: `last_seen_at` al crear = instante de las llegadas si son `REALTIME`,
+`None` si son `SCHEDULED` (el design solo fija los otros dos campos de `AlertTracking`).
 
 ## Verificación
+`CI=1 ./init.sh verify --e2e` (2026-11-04, puerto 4173 libre, tras T-06): **todo en verde**
+(`verify: todo en verde`).
+
+| Paso | Resultado |
+|---|---|
+| backend: format / lint / types | OK (`ruff format --check`, `ruff check`, `mypy`: 115 ficheros sin errores) |
+| backend: architecture | OK (`lint-imports`: 2 contratos respetados) |
+| backend: tests | OK: 1209 passed, 6 deselected; cobertura `domain`+`application` 99,54 % |
+| frontend: format / lint / types | OK |
+| frontend: tests | OK: 44 ficheros, 413 passed, 2 skipped |
+| frontend: build + bundle | OK (5 tests de presupuesto) |
+| frontend: e2e + a11y | OK: 87 passed |
+| harness: `feature_list.json` / trazabilidad AC→test | OK |
+
+Además: `uv run pytest -m slow tests/integration/test_stops_api_real_feed.py` → 2 passed (regla
+nueva de `can_alert` con el feed real).
+
+Tests nuevos: `tests/unit/test_rate_limiter.py`, `tests/unit/test_alert_model.py`,
+`tests/unit/test_create_alert.py`, `tests/integration/test_alert_repository.py`,
+`tests/integration/test_alerts_api.py`, `tests/integration/test_alerts_ws.py`,
+`tests/integration/test_main_alerts.py`; casos nuevos de AC-01 en
+`tests/unit/test_get_stop_arrivals.py` y `tests/integration/test_stops_api.py`. Apoyo:
+`tests/support/alerts.py` (fakes) y `tests/support/alerts_app.py` (app compuesta como `main`).
+
+Matriz AC → tests (ficheros que la citan):
+
+| AC | Tests |
+|---|---|
+| AC-01 | `test_get_stop_arrivals.py`, `test_stops_api.py` |
+| AC-02 | `test_create_alert.py`, `test_alerts_api.py` |
+| AC-03 | `test_create_alert.py`, `test_alerts_api.py` |
+| AC-04 | `test_create_alert.py`, `test_alerts_api.py` |
+| AC-05 | `test_alerts_api.py` |
+| AC-06 | `test_alert_model.py`, `test_create_alert.py`, `test_alerts_api.py` |
+| AC-07 | `test_alert_repository.py`, `test_create_alert.py`, `test_alerts_api.py` (concurrencia) |
+| AC-08 | `test_rate_limiter.py`, `test_alert_model.py`, `test_create_alert.py`, `test_alerts_api.py`, `test_main_alerts.py` |
+| AC-09 | `test_create_alert.py`, `test_alerts_api.py`, `test_alerts_ws.py` |
+| AC-10 | `test_create_alert.py`, `test_alerts_api.py`, `test_alerts_ws.py` |
+| AC-11 | `test_alerts_ws.py`, `test_main_alerts.py` |
+| AC-12 | `test_alert_repository.py`, `test_alerts_api.py` |
+| AC-13 | `test_create_alert.py`, `test_alerts_api.py` |
+| AC-14 | `test_alerts_api.py` (+ `test_openapi_snapshot.py`, passenger_stop_view.AC-02) |
