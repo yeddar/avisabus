@@ -3,24 +3,25 @@
 > Fichero vivo: lo reescribe el orquestador al final de cada sesión.
 
 **Fecha:** 2026-11-04
-**Fase:** Fin del Bloque 2 — CP-6 pendiente
-**Feature en curso:** ninguna. Bloque 2 completo; PR #31 fusionada; PR #32 (`position_estimation` v1.2)
-abierta (sin fusionar).
+**Fase:** Cierre del Bloque 2 (CP-6 aprobado) — ajustes previos al bloque 3
+**Feature en curso:** `passenger_map_view` v1.2 (T-08) — siguiente. `passenger_stop_view` v1.3: `done`, PR abierta.
 
 ## Último paso
-- `passenger_map_view` v1.1: APPROVED (ciclo 2), PR #30 fusionada.
-- `passenger_stop_view` v1.2 (T-12): APPROVED, PR #31 fusionada (conflicto con la #30 resuelto por merge).
-- `position_estimation` v1.2 (T-09): APPROVED (15/16 mutantes detectados), PR #32 abierta.
+CP-6 del bloque 2 aprobado por la persona. PR #32 y PR #33 (cierre del bloque 2: `passenger_stop_view`
+v1.3, `passenger_map_view` v1.2, `position_estimation` v1.3) fusionadas.
 
 ## Siguiente paso
-1. La persona fusiona la #32.
-2. **CP-6 del bloque 2** (persona): textos es/ca (`progress/impl_passenger_stop_view.md`,
-   `progress/impl_passenger_map_view.md`); lector de pantalla (anuncios de "llegando", foco tras
-   acciones manuales, 404 tras "Actualizar", refresco automático con foco en "Reintentar"); N-03 del
-   mapa (insignia junto a "Posición no disponible").
-3. Bloque 3 (`realtime_events` y siguientes) tras el CP-6.
+1. `passenger_stop_view` T-13 (H-04): APPROVED; PR abierta.
+2. `passenger_map_view` T-08 (insignia sin posición, quitar `waitForTimeout`) → reviewer nuevo → PR.
+3. `position_estimation` T-10 (tests de la segunda parada y del `shape_id` registrado) → reviewer → PR.
+4. Avisar a la persona: el spec-writer redactará las specs del bloque 3.
 
 ## Pendiente para specs futuras
+- **CP-4 (persona):** `docs/verification.md:26`, fila "Build": ahora el paso de verify es
+  `npm run test:bundle` (build + presupuesto), no `npm run build`.
+- **passenger_stop_view v1.3:** N-1 la regex del test del arnés (`bundle-budget.test.ts:133-135`) no
+  está anclada (no detecta el paso dentro de `if $e2e`). N-2 la fila AC-21 de `design.md:201` conserva
+  el texto v1.0 ("si no existe `dist/`, se omite").
 - **Harness (H-04 de la revisión de `position_estimation` v1.2):** `frontend/src/__tests__/bundle-budget.test.ts`
   lee `frontend/dist/`, pero `init.sh` ejecuta los tests antes del build: con un `dist/` antiguo,
   `./init.sh verify` (sin `--e2e`) puede dar falso rojo o falso verde. Origen: `passenger_map_view` T-06
@@ -116,7 +117,7 @@ abierta (sin fusionar).
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-**CP-6 — fin del bloque 2** (tras fusionar la #32).
+Ninguno. CP-6 del bloque 2 aprobado (2026-11-04).
 
 ## Bloqueos
 Ninguno. 

@@ -1,3 +1,125 @@
+# Revisión: passenger_stop_view — v1.3
+Ciclo: 1 (v1.3) · Fecha: 2026-11-04 · Agente: reviewer
+Spec: `specs/passenger_stop_view/` v1.3 (APPROVED, PR #33) · Rama: `feat/passenger_stop_view-v1.3`
+Alcance revisado: T-13 (`a417df7`) y T-10, su registro (`e862baf`) y los commits del orquestador
+(`edbc394`, `08e524d`). Base: `origin/develop`.
+
+## Veredicto: APPROVED
+
+T-13 cumple AC-21 v1.3 y la nota del design §5. `npm run test` ya no lee `dist/`.
+`npm run test:bundle` construye y después mide. `./init.sh verify` lo ejecuta tras el build, con
+y sin `--e2e`. `npm run e2e` ya no lo encadena. He reproducido los tres escenarios de H-04 en una
+copia: no hay falso rojo con un `dist/` antiguo manipulado ni falso verde con un `dist/` antiguo
+bueno y una fuente que rompe el presupuesto. `CI=1 ./init.sh verify --e2e` está en verde. Hay tres
+hallazgos no bloqueantes (N-1 a N-3) y una propuesta de CP-4 para `docs/verification.md`.
+
+## Matriz AC → evidencia
+
+Solo se detalla AC-21 (v1.3) y `passenger_map_view.AC-02`, cuya vía de ejecución cambia. El resto
+de AC no se ha tocado (el diff de código se limita a `frontend/package.json`, `init.sh` y
+`bundle-budget.test.ts`). Siguen en verde con los tests de las secciones v1.0 a v1.2.
+
+| AC | Test(s) | Resultado | Nota |
+|---|---|---|---|
+| AC-21 (cálculo) | `bundle-budget.test.ts:80` (`dist` sintético en un directorio temporal) | OK | Se ejecuta en `npm run test`. No lee `dist/`. Comprueba que se cuentan solo el `<script type="module">` y los `modulepreload`, con gzip. Sin cambios respecto a la v1.0. |
+| AC-21 (v1.3, solo sobre un build recién hecho) | `bundle-budget.test.ts:122` (scripts de `package.json` y paso de `init.sh`) y `:150` (`it.runIf(BUNDLE_CHECK)`, ≤ 200 KB sobre el `dist/` real) | OK | `:150` solo corre con `AVISABUS_BUNDLE_CHECK=1`, que pone `test:bundle` después de `npm run build &&`. En `npm run test` aparece como omitido (↓) y con el aviso `[bundle-budget] dist/ checks skipped…` en stderr. Medido: `index-*.js` 448,27 kB, **141,49 kB gzip**. `:122` es útil: falla si `e2e` vuelve a encadenar `test:bundle` (mutación comprobada: 1 fallo). Pero no detecta que el paso se meta dentro de `if $e2e` (N-1). |
+| `passenger_map_view.AC-02` (Leaflet bajo demanda) | `bundle-budget.test.ts:103` (sintético, en `npm run test`) y `:139` (`runIf`, `dist/` real) | OK | Se sigue ejecutando por la vía nueva: en "frontend: build + bundle" hay 5/5 (los 2 de `dist/` real incluidos). `:151` también cita AC-02. `MapPage-*.js` 50,21 KB gzip y Leaflet fuera del trozo inicial. El design de `passenger_map_view` (§5, AC-02) solo exige "`bundle-budget.test.ts` ampliado" y no fija cuándo se ejecuta, así que no hay conflicto. |
+
+### Escenarios de H-04 (copia en el scratchpad)
+Copia de `init.sh`, `frontend/`, `scripts/`, `specs/`, `docs/` y `feature_list.json` en el scratchpad
+(`git archive HEAD`), con `node_modules` enlazado y sin `backend/`. Por eso "harness: trazabilidad"
+falla en la copia: faltan los tests de backend. Es ajeno a lo que se prueba.
+
+| Escenario | `npm run test` | `./init.sh verify` (pasos de frontend) |
+|---|---|---|
+| 1. `dist/` borrado | 408 passed, 2 skipped. Código 0 | "frontend: tests" OK. "frontend: build + bundle" construye y pasa 5/5 |
+| 2. `dist/` antiguo manipulado (≈400 KB aleatorios y `leaflet-pane` añadidos a `index-*.js`, 544 984 B gzip; `MapPage-*.js` borrado) | 408 passed, 2 skipped. Código 0: **no lo lee** | Sin falso rojo: "build + bundle" OK. `vite build` vacía `dist/`, que vuelve a tener `index-*.js` de 448 275 B y `MapPage-*.js`. Para comprobar que la manipulación se habría detectado, he lanzado `AVISABUS_BUNDLE_CHECK=1 vitest run …bundle-budget…` sin construir: 2 fallos (544 966 > 204 800, y Leaflet en `index-*.js`) |
+| 3. `dist/` antiguo bueno y fuente que rompe el presupuesto (`import 'leaflet'` y ~133 KB aleatorios en `src/main.tsx`) | 408 passed, 2 skipped. Código 0: no lee `dist/` | Sin falso verde: **"frontend: build + bundle" FAIL** (284 291 > 204 800, y Leaflet en el trozo inicial). "frontend: format" también falla por la línea larga del cambio temporal |
+
+Mutaciones del test del arnés (`:122`), en la misma copia:
+- `e2e` vuelve a ser `playwright test && npm run test:bundle` → 1 fallo (detectada).
+- Paso "build + bundle" movido dentro de `if $e2e; then` → 3 passed, 2 skipped (**no** detectada, N-1).
+
+La copia quedó restaurada: `init.sh`, `package.json` y `src/main.tsx` son idénticos a `HEAD`
+(`diff` con `git show`). El repositorio no se ha tocado: `git status` está limpio y solo se ha
+regenerado `frontend/dist/` (ignorado por git) durante la verificación.
+
+## Verificación ejecutada
+
+`CI=1 ./init.sh verify --e2e` en el repositorio, con el puerto 4173 libre (`lsof -i :4173` vacío
+antes y después). Código de salida 0, "verify: todo en verde":
+- backend: format, lint, mypy y lint-imports OK. pytest: 988 passed, 6 deselected, cobertura
+  99,46 %. Los 2 avisos de pytest ya existían.
+- frontend: format, lint y typecheck OK. Vitest: 44 ficheros, **408 passed | 2 skipped** (los dos
+  tests que leen `dist/`).
+- frontend: **build + bundle** OK. `vite build` (`index-*.js` 448,27 kB, 141,49 kB gzip;
+  `MapPage-*.js` 50,21 kB gzip) y luego `bundle-budget.test.ts` 5/5.
+- frontend: e2e + a11y: 87 passed, sin reintentos ni fallos. Axe sin violaciones. Después del e2e
+  ya no aparece ninguna ejecución de Vitest: `e2e` no encadena `test:bundle`.
+- harness: `feature_list.json` OK. Trazabilidad AC→test OK.
+
+## Decisiones locales del implementer (v1.3)
+
+1. **Variable `AVISABUS_BUNDLE_CHECK=1` en el propio script `test:bundle`.** Cabe en el design: la
+   nota de §5 la propone como ejemplo y deja el mecanismo como decisión local. La sintaxis
+   `VAR=1 cmd` es POSIX. Vale en macOS, Linux y la Raspberry Pi, que son los entornos del proyecto.
+2. **No tocar `vite.config.ts` (no se usa `exclude`).** Cabe. El design §5 cita "variable,
+   `exclude` de Vitest, etc." como alternativas. Que `tasks.md` liste el fichero no obliga a
+   cambiarlo. Además, gracias a esto los dos tests sintéticos (`:80`, `:103`) siguen corriendo en
+   `npm run test` y no leen `dist/`.
+3. **Con la variable y sin `dist/`, el test falla en vez de omitirse** (`builtDist()`,
+   `bundle-budget.test.ts:30-36`). Cabe en la nota v1.3, que dice que sin la variable se omite.
+   Con `test:bundle`, `dist/` siempre existe o el `&&` ya ha cortado. Es razonable y más estricto.
+   La tabla de §5 sigue diciendo "si no existe `dist/`, el test se omite con aviso" (N-2).
+4. **`webServer` de Playwright sin cambios** (`npm run build && npm run preview`). Con `--e2e` se
+   construye dos veces, una en `test:bundle` y otra en el `webServer`. No es incorrecto: el e2e
+   también prueba un build recién hecho. Solo cuesta unos segundos.
+
+## Hallazgos
+
+### Bloqueantes
+Ninguno.
+
+### No bloqueantes
+- **N-1 (test del arnés, "con y sin `--e2e`").** `frontend/src/__tests__/bundle-budget.test.ts:133-135`:
+  la regex `/run_step "frontend: build \+ bundle"\s+"\$FRONTEND" npm run --silent test:bundle\n/`
+  no está anclada a su posición en `cmd_verify`. Si el paso se mete dentro de `if $e2e; then`, el
+  test sigue en verde (mutación comprobada). Hoy `init.sh:66-67` lo ejecuta fuera del `if`, como
+  pide AC-21 v1.3: el comportamiento es correcto y se ve en la salida de `verify`. Mejora posible:
+  comprobar que la línea aparece antes de `if $e2e` y que no está indentada como el cuerpo del
+  `if`. Tampoco se comprueba que `test` vaya antes que `test:bundle`.
+- **N-2 (problema de spec menor, no requiere CP-3).** `specs/passenger_stop_view/design.md:201`
+  (tabla de §5, fila AC-21) conserva el texto de la v1.0: "si no existe `dist/`, el test se omite
+  con aviso". La nota v1.3 (`:205-211`) y el código ligan la omisión a la variable, no a la
+  existencia de `dist/`. En la próxima revisión de la spec conviene cambiar la fila a "sin
+  `AVISABUS_BUNDLE_CHECK` se omite con aviso; con ella, la ausencia de `dist/` es un fallo".
+- **N-3 (propuesta para `docs/`, CP-4).** Hace falta en `docs/verification.md` y no en
+  `docs/conventions.md`:
+  - `docs/verification.md:26` (§2, fila "Build"): dice `npm run build`, pero el paso de `verify`
+    es ahora "frontend: build + bundle" = `npm run test:bundle` (build y presupuesto de bundle,
+    AC-21). Conviene cambiarlo a `npm run test:bundle` (build + presupuesto de JS inicial). La
+    línea 29 ("`--e2e` añade `npm run e2e`") sigue siendo correcta. No es una contradicción que
+    deba resolverse con CP-3: la spec v1.3, aprobada por la persona, fija el cambio de `init.sh`.
+    El documento simplemente se ha quedado desfasado.
+  - `docs/conventions.md` §8: **no es necesario**. La tabla no tiene fila de build. La fila
+    "E2E + a11y: `npm run e2e`" sigue siendo exacta. Añadir una fila "Presupuesto de bundle:
+    `npm run test:bundle`" sería opcional.
+  Lo decide la persona (CP-4). No bloquea la feature.
+
+### Otras comprobaciones (§4 de `docs/verification.md`)
+- Alcance: `git diff origin/develop..HEAD` solo toca `frontend/package.json`, `init.sh`,
+  `bundle-budget.test.ts`, `progress/` y `feature_list.json`. El orquestador cambió los dos últimos
+  y el implementer solo `progress/impl_passenger_stop_view.md`. No hay cambios fuera del alcance de
+  T-13 ni en `specs/` o `docs/`.
+- Arquitectura, privacidad, i18n y accesibilidad: no aplican (no hay código de producción ni
+  textos nuevos). El aviso de consola está en inglés, como el resto del código.
+- Tests: sin red ni reloj. Los tests sintéticos usan directorios temporales que se borran en
+  `afterEach`.
+- Commits: `test(passenger_stop_view): … (T-13)` cumple Conventional Commits con el ámbito de la
+  feature y cita la tarea.
+
+---
+
 # Revisión: passenger_stop_view — v1.2
 Ciclo: 1 (v1.2) · Fecha: 2026-11-04 · Agente: reviewer
 Spec: `specs/passenger_stop_view/` v1.2 (APPROVED, PR #29) · Rama: `feat/passenger_stop_view-v1.2`

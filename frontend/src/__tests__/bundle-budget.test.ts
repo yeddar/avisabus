@@ -17,6 +17,23 @@ import { afterEach, describe, expect, it } from 'vitest';
 /** Initial JavaScript budget (RNF-01): 200 KB gzip, without lazily loaded chunks. */
 const BUDGET_BYTES = 200 * 1024;
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
+const PACKAGE_JSON = fileURLToPath(new URL('../../package.json', import.meta.url));
+const INIT_SH = fileURLToPath(new URL('../../../init.sh', import.meta.url));
+
+/**
+ * Set by `npm run test:bundle` right after `npm run build`: only then are the checks on the real
+ * `dist/` run, so they never measure an old build. `npm run test` leaves them out.
+ */
+const BUNDLE_CHECK = process.env.AVISABUS_BUNDLE_CHECK === '1';
+
+/** The freshly built `dist/` (`test:bundle` builds first, so it must exist). */
+function builtDist(): string {
+  expect(
+    existsSync(join(DIST, 'index.html')),
+    'dist/index.html is missing: run `npm run test:bundle` (it builds first)',
+  ).toBe(true);
+  return DIST;
+}
 
 /**
  * Initial JavaScript of a build: the `<script type="module">` of index.html and its
@@ -102,10 +119,27 @@ describe('initial JavaScript budget', () => {
     });
   });
 
-  it.skipIf(!existsSync(join(DIST, 'index.html')))(
+  it('[passenger_stop_view.AC-21] the budget is only checked on a fresh build: test:bundle builds first, test and e2e do not run it', () => {
+    const { scripts } = JSON.parse(readFileSync(PACKAGE_JSON, 'utf8')) as {
+      scripts: Record<string, string>;
+    };
+    const initSh = readFileSync(INIT_SH, 'utf8');
+
+    expect(scripts['test:bundle']).toBe(
+      'npm run build && AVISABUS_BUNDLE_CHECK=1 vitest run src/__tests__/bundle-budget.test.ts',
+    );
+    expect(scripts.test).not.toContain('AVISABUS_BUNDLE_CHECK');
+    expect(scripts.e2e).not.toContain('test:bundle');
+    expect(initSh).toMatch(
+      /run_step "frontend: build \+ bundle"\s+"\$FRONTEND" npm run --silent test:bundle\n/,
+    );
+    expect(initSh).not.toMatch(/npm run --silent build\b/);
+  });
+
+  it.runIf(BUNDLE_CHECK)(
     '[passenger_map_view.AC-02] Leaflet and the map are in a chunk loaded on demand, not in the initial JavaScript',
     () => {
-      const { all, initial } = leafletChunks(DIST);
+      const { all, initial } = leafletChunks(builtDist());
 
       expect(all).toHaveLength(1);
       expect(all[0]).toMatch(/^\/assets\/MapPage-[\w-]+\.js$/);
@@ -113,17 +147,19 @@ describe('initial JavaScript budget', () => {
     },
   );
 
-  it.skipIf(!existsSync(join(DIST, 'index.html')))(
+  it.runIf(BUNDLE_CHECK)(
     '[passenger_stop_view.AC-21] [passenger_map_view.AC-02] the built app loads at most 200 KB of gzipped JavaScript at start',
     () => {
-      const { files, bytes } = initialJsGzipBytes(DIST);
+      const { files, bytes } = initialJsGzipBytes(builtDist());
 
       expect(files.length).toBeGreaterThan(0);
       expect(bytes).toBeLessThanOrEqual(BUDGET_BYTES);
     },
   );
 
-  if (!existsSync(join(DIST, 'index.html'))) {
-    console.warn('[bundle-budget] dist/ not found: run `npm run test:bundle` (builds first).');
+  if (!BUNDLE_CHECK) {
+    console.warn(
+      '[bundle-budget] dist/ checks skipped: run `npm run test:bundle` (builds first, then measures).',
+    );
   }
 });
