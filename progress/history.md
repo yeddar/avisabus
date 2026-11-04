@@ -276,3 +276,8 @@
 ## 2026-11-04 · passenger_map_view · implementing → spec_blocked (CP-3)
 - T-01 hecha (enlace "Ver en el mapa"). AC-04: B-01 (primera parada en `NOT_STARTED` no disponible) y
   B-02 ("Llega en {tiempo}" con `CLOCK_TIME`). O-1…O-4 para la misma revisión de spec.
+
+## 2026-11-04 · passenger_map_view · spec_blocked → spec_approved (v1.1, PR #29) → implementing
+- B-01 opción A (primera parada del trazado), B-02 con la regla de `passenger_stop_view.AC-06`,
+  O-1…O-4 como se proponían. PR #29 trae también `passenger_stop_view` v1.2 (T-12) y
+  `position_estimation` v1.2 (T-09). Rama actualizada con `develop` (merge).

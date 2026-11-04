@@ -4,7 +4,7 @@
 
 **Fecha:** 2026-11-03
 **Fase:** Implementación — Bloque 2
-**Feature en curso:** `passenger_map_view` v1.0 — `spec_blocked` (CP-3 en AC-04); T-01 hecha
+**Feature en curso:** `passenger_map_view` v1.1 — `implementing` (T-02…T-07); T-01 hecha
 
 ## Último paso
 PR #24 (CP-4, `passenger_stop_view` v1.1 spec, `frontend_i18n` v1.1) y PR #28 (T-11) fusionadas.
@@ -15,11 +15,9 @@ Incidencia: el explorer envió por error el correo de contacto de la persona en 
 petición `HEAD` a `tile.openstreetmap.org` (anotado en el informe, sin el correo).
 
 ## Siguiente paso
-1. `passenger_map_view`: **la persona decide el CP-3 (B-01, B-02) y O-1…O-4** → corrección de spec →
-   implementer desde T-02 → reviewer nuevo → PR sin fusionar.
-2. **Cuando la #29 esté fusionada** (`passenger_stop_view` v1.2: N-7/N-8; `position_estimation` v1.2:
-   H-01/H-02): `passenger_stop_view` T-12 y `position_estimation` T-09, cada una con revisión nueva y
-   PR propia.
+1. `passenger_map_view` v1.1: implementer T-02…T-07 → reviewer nuevo → `done` → PR sin fusionar.
+2. Después: `passenger_stop_view` T-12 (v1.2: N-7/N-8) y `position_estimation` T-09 (v1.2: H-01/H-02),
+   cada una con revisión nueva y PR propia.
 3. CP-6 del bloque 2: textos (tablas es/ca en `progress/impl_passenger_stop_view.md`), anuncios con
    lector de pantalla, foco tras acciones manuales.
 
@@ -107,18 +105,8 @@ petición `HEAD` a `tile.openstreetmap.org` (anotado en el informe, sin el corre
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-**CP-3 `passenger_map_view` AC-04** (T-01 hecha; T-02…T-07 bloqueadas; detalle en `progress/impl_passenger_map_view.md`):
-- **B-01 `NOT_STARTED` "{primera parada}":** `PositionResponse` no la trae y en `NOT_STARTED`
-  `next_stop` es la segunda parada. A (recomendada, solo frontend): `firstStop = shape.stops[0]?.name`
-  en `buildSummary` y texto si el trazado aún no ha llegado. B: `first_stop` en la API (reabre
-  `position_estimation`).
-- **B-02 "Llega en {tiempo}" con `CLOCK_TIME`:** propuesta: misma regla que `passenger_stop_view.AC-06`
-  ("Llega en N minutos" / "Llega a las HH:MM" / "Está llegando."), con textos es/ca.
-- Observaciones (decisiones locales salvo indicación): O-1 altura del mapa 360 px (guía §5.7) frente a
-  60/70 dvh del design; O-2 atribución solo dentro del mapa (el pie exigiría tocar `Layout.tsx`); O-3
-  color del trazado con `accessibleLineColors(color, 'FFFFFF').bg`; O-4 `shape_id` nulo, trazado 404,
-  ruta sin token, `direction_id` no numérico.
-PR #29 (specs v1.2 de `passenger_stop_view` y `position_estimation`) pendiente de la persona.
+Ninguno. CP-3 de `passenger_map_view` resuelto en la PR #29 (v1.1: B-01 opción A, B-02 con la regla de
+`passenger_stop_view.AC-06`, O-1…O-4 como se proponían). Próximo: CP-6 del bloque 2.
 
 ## Bloqueos
 Ninguno. 
