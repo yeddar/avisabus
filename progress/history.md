@@ -330,3 +330,7 @@
   presupuesto de bundle solo sobre un `dist/` recién construido). Aprobados en la PR #33.
 
 ## 2026-11-04 · passenger_stop_view v1.3 PR #34 abierta · passenger_map_view · done → implementing (v1.2, T-08)
+
+## 2026-11-04 · passenger_map_view v1.2 · implementing → in_review
+- T-08: sin posición no se muestra insignia (`badge: null`); el e2e espera `moveend`/`zoomend` en lugar
+  de `waitForTimeout(400)`. Verify --e2e en verde; e2e del mapa estable (54/54 ×2).
