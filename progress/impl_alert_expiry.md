@@ -5,13 +5,14 @@ Rama: `feat/alert_expiry` (apilada sobre `feat/alert_cancel`, `feat/alert_create
 
 ## Tareas
 - [x] T-01 `ExpiryReason`, `observe_passage` y `expiry_reason` (AC-01, AC-02, AC-05, AC-06, AC-07)
+      (commit 5a8b288)
 - [x] T-02 `GetStopArrivals.for_stop`, `ExpireAlert`, `WatchPassages` y `ExpireDueAlerts` (AC-03, AC-04,
-      AC-05, AC-06, AC-08, AC-09)
-- [x] T-03 `run_periodic`, `lifespan`, configuración y `.env.example` (AC-10)
+      AC-05, AC-06, AC-08, AC-09) (commit 4571ca6)
+- [x] T-03 `run_periodic`, `lifespan`, configuración y `.env.example` (AC-10) (commit 8bb40d3)
 - [x] T-04 Integración: caché compartida, fuente que falla, evento por WebSocket, reinicio (AC-03,
-      AC-04, AC-08, AC-09, AC-10; además AC-05 con la red real)
-- [x] T-05 Sesión real `stop_508_peak` (AC-11)
-- [ ] T-06 Verificación completa
+      AC-04, AC-08, AC-09, AC-10; además AC-05 con la red real) (commit 323879f)
+- [x] T-05 Sesión real `stop_508_peak` (AC-11) (commit 69f5bf1)
+- [x] T-06 Verificación completa (commit de este fichero)
 
 ## Cambios en código de otras features
 - T-02 (autorizado por `tasks.md` y por la persona; código de `stop_arrivals_api`):
@@ -125,3 +126,42 @@ Rama: `feat/alert_expiry` (apilada sobre `feat/alert_cancel`, `feat/alert_create
 Ninguno.
 
 ## Verificación
+`CI=1 ./init.sh verify --e2e` (2026-11-04, puerto 4173 libre, tras T-05): **todo en verde**
+(`verify: todo en verde`, exit 0).
+
+| Paso | Resultado |
+|---|---|
+| backend: format / lint / types | OK (`ruff format --check`, `ruff check`, `mypy`: 122 ficheros sin errores) |
+| backend: architecture | OK (`lint-imports`: 2 contratos respetados) |
+| backend: tests | OK: 1325 passed, 6 deselected; cobertura `domain`+`application` 99,59 % |
+| frontend: format / lint / types | OK |
+| frontend: tests | OK: 44 ficheros, 413 passed, 2 skipped |
+| frontend: build + bundle | OK (5 tests de presupuesto) |
+| frontend: e2e + a11y | OK: 87 passed |
+| harness: `feature_list.json` / trazabilidad AC→test | OK |
+
+Informe de AC-11 en la salida: `[alert_expiry.AC-11] 93 at 508, 5 alerts: {'PASSED': 2,
+'NEXT_STOP': 0, 'TIMEOUT': 0, 'ALIVE': 3}`.
+
+Tests nuevos: `tests/unit/test_passage_detector.py`, `tests/unit/test_expiry_policy.py`,
+`tests/unit/test_watch_passages.py`, `tests/unit/test_expire_due_alerts.py`,
+`tests/unit/test_alert_tasks.py`, `tests/integration/test_alert_expiry.py`,
+`tests/integration/test_alert_expiry_real_session.py`. Apoyo: `tests/support/expiry.py`.
+Mutaciones comprobadas a mano: tratar como REALTIME una observación SCHEDULED, no comparar el
+`service_date` del viaje o publicar aunque el aviso ya no exista rompen tests unitarios.
+
+Matriz AC → tests (ficheros que la citan):
+
+| AC | Tests |
+|---|---|
+| AC-01 | `test_passage_detector.py`, `test_watch_passages.py` |
+| AC-02 | `test_passage_detector.py` (tabla 0 / 2 / 3 min / nunca visto), `test_watch_passages.py` |
+| AC-03 | `test_watch_passages.py`, `test_alert_expiry.py` (SAE que falla) |
+| AC-04 | `test_watch_passages.py`, `test_alert_expiry.py` (peticiones al SAE tras la caché) |
+| AC-05 | `test_expiry_policy.py`, `test_expire_due_alerts.py`, `test_watch_passages.py`, `test_alert_expiry.py` |
+| AC-06 | `test_expiry_policy.py`, `test_expire_due_alerts.py` |
+| AC-07 | `test_passage_detector.py`, `test_expiry_policy.py`, `test_expire_due_alerts.py` |
+| AC-08 | `test_expire_due_alerts.py`, `test_alert_expiry.py` (`/ws/passenger`, fila borrada) |
+| AC-09 | `test_watch_passages.py`, `test_alert_expiry.py` (reinicio sobre fichero) |
+| AC-10 | `test_alert_tasks.py`, `test_alert_expiry.py` (`lifespan` de `main.py`) |
+| AC-11 | `test_alert_expiry_real_session.py` |
