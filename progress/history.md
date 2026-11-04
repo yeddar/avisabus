@@ -330,3 +330,7 @@
   presupuesto de bundle solo sobre un `dist/` recién construido). Aprobados en la PR #33.
 
 ## 2026-11-04 · passenger_map_view v1.2 PR #35 abierta · position_estimation · done → implementing (v1.3, T-10)
+
+## 2026-11-04 · position_estimation v1.3 · implementing → in_review
+- T-10: tests de la segunda parada (mata el mutante `k <= 1`) y del `shape_id` del viaje en el log.
+  Verify --e2e en verde (998 backend).
