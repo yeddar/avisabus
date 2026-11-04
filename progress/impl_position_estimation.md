@@ -1,5 +1,5 @@
 # Implementación: position_estimation
-Spec: specs/position_estimation/ (v1.2, APPROVED; T-01…T-06 hechas con la v1.0, T-07 con la v1.1, T-09 con la v1.2) · Ciclo de revisión: 0 (de la v1.2) · Agente: implementer · Fecha: 2026-11-04 (v1.2; antes 2026-11-03)
+Spec: specs/position_estimation/ (v1.3, APPROVED; T-01…T-06 hechas con la v1.0, T-07 con la v1.1, T-09 con la v1.2, T-10 con la v1.3) · Ciclo de revisión: 0 (de la v1.3) · Agente: implementer · Fecha: 2026-11-04 (v1.2 y v1.3; antes 2026-11-03)
 
 ## Tareas
 - [x] T-01 Geometría: `haversine_m`, `cumulative_distances`, `shape_distances`, `point_at_distance`,
@@ -23,9 +23,18 @@ Spec: specs/position_estimation/ (v1.2, APPROVED; T-01…T-06 hechas con la v1.0
       AC-03) y posición no estimable → `NO_VEHICLE` con el `shape_id` representativo y
       `position.estimate_failed` (`trip_id`, `shape_id`, `reason`), nunca `500` (AC-11)
       (commit adab10e)
+- [x] T-10 (v1.3) Dos tests unitarios nuevos (AC-04, AC-11) (commit ad41c2c):
+      `test_position_estimator.py::test_with_the_target_as_the_second_stop_the_rule_of_the_first_stop_does_not_apply`
+      (objetivo `B`, `k = 1`: `NOT_STARTED` en `A` antes de la salida, también con 5 min de
+      retraso, y `EN_ROUTE` entre `A` y `B`; nunca `AT_STOP` antes de su hora) y
+      `test_get_vehicle_position.py::test_the_failure_is_logged_with_the_shape_of_the_trip`
+      (para `missing_stop_times`, `empty_shape`, `missing_stop_coordinates` y
+      `target_not_in_trip`: el log lleva `shape_93_trip`, el del viaje, y la respuesta
+      `shape_93`, el representativo). Pasan a la primera con el código actual (comportamiento ya
+      implementado en T-09); ver "Mutaciones de T-10".
 - [x] T-08 Contrato del frontend (`npm run gen:api`: sin cambios respecto a T-06; en la v1.2
-      tampoco cambia) y verificación completa `CI=1 ./init.sh verify --e2e` en verde (commit de
-      este fichero)
+      y en la v1.3 tampoco cambia) y verificación completa `CI=1 ./init.sh verify --e2e` en verde (commit de
+      este fichero; v1.3: re-ejecutada tras T-10)
 
 ## Decisiones locales
 
@@ -155,9 +164,19 @@ Spec: specs/position_estimation/ (v1.2, APPROVED; T-01…T-06 hechas con la v1.0
   v1.2 es `AT_STOP`. Se cambia solo esa aserción; la distancia (0) y la próxima parada (`A`) no
   cambian.
 
+### Mutaciones de T-10 (v1.3)
+
+Aplicadas a mano de una en una sobre el código de producción, suite completa del backend
+(`uv run pytest --no-cov`), y revertidas con `git checkout` (árbol limpio después):
+
+| Mutante | Cambio | Resultado |
+|---|---|---|
+| M02 (H-02 de la revisión v1.2) | `position_estimator.py:57`: `if k == 0 or …` → `if k <= 1 or …` | **Muerto**: 6 failed, 992 passed. Fallan solo los 6 casos del test nuevo de T-10 (antes sobrevivía a toda la suite). |
+| Log con la forma representativa | `get_vehicle_position.py:115` (solo la llamada a `warning`): `shape_id=shape_id` → `shape_id=direction.shape_id` | **Muerto**: 7 failed, 991 passed. Fallan los 4 casos del test nuevo y 3 tests anteriores de AC-11 (que ya fijaban el `shape_id` del viaje en el log). |
+
 ## Bloqueos
 
-v1.2: ninguno.
+v1.2 y v1.3: ninguno.
 
 ### B-01 (CP-3) — RESUELTO (spec v1.1, PR #25, opción 1 elegida por la persona)
 
@@ -224,6 +243,21 @@ minutos menores, avanza.
 pares.)
 
 ## Verificación
+
+`CI=1 ./init.sh verify --e2e` (2026-11-04, spec v1.3, tras T-10; antes `npm run build` en
+`frontend/`; puerto 4173 libre; salida "verify: todo en verde", código 0):
+
+- backend: format OK · lint OK · types OK (mypy, 92 ficheros) · architecture OK · tests OK
+  (998 passed, 6 deselected; cobertura 99,46 %). AC-17 sin cambios: "139 pairs checked, 5
+  excluded because the SAE minutes increased".
+- frontend: format OK · lint OK · types OK · tests OK (44 ficheros, 409 tests) · build OK ·
+  e2e + a11y OK (87 passed; `test:bundle` 4 passed)
+- harness: `feature_list.json` OK · trazabilidad AC→test OK
+- T-10 por separado: `cd backend && uv run pytest -k position` → 102 passed. `npm run gen:api`:
+  `openapi.json` y `schema.d.ts` sin cambios (git limpio). Código de producción sin cambios en
+  la v1.3.
+
+Ejecución anterior (v1.2, tras T-09):
 
 `CI=1 ./init.sh verify --e2e` (2026-11-04, spec v1.2, tras T-09; puerto 4173 libre; salida "verify:
 todo en verde", código 0):
