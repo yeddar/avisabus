@@ -305,3 +305,7 @@
 ## 2026-11-04 · position_estimation v1.2 · implementing → in_review
 - T-09 (AC-04 `AT_STOP` en la primera parada; AC-11 `NO_VEHICLE` + `position.estimate_failed`, sin 500).
   Verify --e2e en verde (988 backend). Aviso: `bundle-budget.test.ts` lee `frontend/dist/` antes del build.
+
+## 2026-11-04 · position_estimation v1.2 · in_review → done · bloque 2 completo
+- Revisión ciclo 1 de la v1.2: APPROVED; H-01…H-03 para la spec, H-04 del harness (tests de bundle
+  leen `dist/` antes del build). PR sin fusionar. Bloque 2: 4/4 en `done` → CP-6.

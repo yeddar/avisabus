@@ -1,4 +1,161 @@
 # Revisión: position_estimation
+Ciclo: 1 (v1.2) · Fecha: 2026-11-04 · Agente: reviewer
+Spec revisada: `specs/position_estimation/` v1.2 (APPROVED, PR #29) · Rama:
+`feat/position_estimation-v1.2` (HEAD `1685a69`; código en `adab10e`) · Base: `origin/develop`
+(`a5c9ca7`). Alcance de esta revisión: T-09 y T-08 de la v1.2. La revisión de la v1.1 se conserva
+más abajo, sin cambios.
+
+## Veredicto: APPROVED
+
+No hay hallazgos bloqueantes. AC-04 v1.2 y AC-11 v1.2 tienen tests que los verifican de verdad,
+y 15 de 16 mutaciones del código nuevo se detectan. `CI=1 ./init.sh verify --e2e` está en verde y
+AC-17 sigue en 139 pares comprobados y 5 excluidos. Las decisiones D-19…D-22 caben en la spec y
+ninguna requiere CP-3. D-19 deja la firma del constructor del design §3 desfasada: es un problema
+de spec menor, no bloqueante. Hay 4 observaciones no bloqueantes. Una es del harness y no
+pertenece a esta feature.
+
+## Matriz AC → evidencia (v1.2)
+
+Solo cambian AC-04 y AC-11. Los demás AC conservan la evidencia de la matriz de la v1.1 (más
+abajo) y sus tests vuelven a pasar en esta ejecución. AC-03 y AC-07 se tocan de forma indirecta y
+se incluyen.
+
+| AC | Test(s) | Resultado | Nota |
+|---|---|---|---|
+| AC-04 (v1.2) | `tests/unit/test_position_estimator.py:193` `test_with_the_target_as_the_first_stop_the_bus_is_at_the_stop` (6 casos), `:207` `test_with_the_target_as_the_first_stop_a_dwelling_bus_is_at_the_stop` (5 casos); siguen `:169` `test_before_the_departure_the_bus_is_at_the_first_stop` y `:181` `test_at_the_departure_the_bus_is_en_route` | OK | Con la parada objetivo `A` (primera), `AT_STOP` en `d_0` con `distance_to_stop_m = 0`, `stops_away = 0` y `next_stop = A`. Cubre `s` muy anterior a la salida (`-600`), justo antes (`-1`), un retraso que deja `s < 0` (`-30, 120`), un adelanto (`-300, -60`), la hora exacta y un instante posterior. El caso con parada de espera (`dwell_s = 30`) cubre `s < arrival_s[0]` y `arrival_s[0] ≤ s < departure_s[0]`, el hueco que dejaba la v1.1 (D-04). La regla base (objetivo `E`, `s < departure_s[0]`, `NOT_STARTED`) sigue probada en `:169`. Código: `position_estimator.py:57` (`k == 0 or s >= arrival_s[k]`, antes que `NOT_STARTED`), igual que el paso 5 del design v1.2. |
+| AC-03 | Los de la v1.1 y `:193` (también marcado `AC-03`) | OK | Sin cambios de comportamiento para `k > 0`. |
+| AC-07 | `test_position_estimator.py:281` `test_a_repeated_target_uses_the_occurrence_closest_to_the_arrival` | OK | D-22: para la primera aparición de la parada repetida (la primera del viaje), la aserción pasa de `NOT_STARTED` a `AT_STOP`, como exige AC-04 v1.2. La distancia (0) y `next_stop` (`A`) no cambian. La segunda aparición sigue `EN_ROUTE`. |
+| AC-11 (v1.2) | `tests/integration/test_position_api.py:274` `test_a_position_that_cannot_be_estimated_is_no_vehicle_not_500`; `tests/unit/test_get_vehicle_position.py:244` (`missing_stop_times`, `empty_shape`), `:278` (`missing_shape`), `:297` (`missing_stop_coordinates`), `:329` (`target_not_in_trip`), `:344` `test_other_errors_of_the_estimation_are_not_hidden`; `test_position_estimator.py:251`, `:259`, `:268`; siguen los de la v1.1 (`NO_ARRIVAL`, `NO_VEHICLE` sin viaje) | OK | La integración reproduce el ejemplo del AC sobre la BD `gtfs_mini` real con API real. Pone `shape_dist = NULL` en los horarios del viaje emparejado, borra su primera parada de `gtfs_stop` entre dos peticiones y comprueba: `200`, el contrato completo (`set(body) == RESPONSE_FIELDS`), `status = NO_VEHICLE`, `position = null`, `shape_id` representativo (`LineDirection.shape_id`) y `vehicle`/`arrival` iguales a los de la petición anterior. También comprueba **exactamente** un evento `position.estimate_failed` de nivel `warning` con `{trip_id, shape_id, reason}` y ningún otro campo. Los unitarios cubren cada motivo. Otro `ValueError` no se oculta: se propaga y no se registra (design: "Otros errores inesperados no se capturan"). |
+
+### Pruebas de mutación (copia en el scratchpad, `pytest -k position`)
+
+Script: `/private/tmp/claude-501/-Users-diegob-Developer-avisabus/7c6d7bf6-af5b-4ade-b145-3b1f50f59c8b/scratchpad/mutate.py`.
+Se aplica cada mutante sobre una copia de `backend/` (sin tocar el repositorio).
+
+| Mutante | Resultado | Test que lo detecta |
+|---|---|---|
+| M01 quitar `k == 0 or` | Detectado | `test_with_the_target_as_the_first_stop_the_bus_is_at_the_stop` |
+| M02 `k <= 1` en lugar de `k == 0` | **Sobrevive** (también a la suite completa) | — (ver H-02) |
+| M03 `NOT_STARTED` para `k = 0` antes de la salida | Detectado | ídem M01 |
+| M04 relanzar `PositionNotEstimableError` (500) | Detectado | integración AC-11 |
+| M05 no registrar el evento | Detectado | integración AC-11 |
+| M06 nivel `info` en lugar de `warning` | Detectado | integración AC-11 |
+| M07 registrar el `shape_id` representativo en lugar del del viaje | Detectado | `test_a_paired_trip_without_timetable_or_shape_has_no_vehicle` |
+| M08 registrar sin `reason` | Detectado | integración AC-11 |
+| M09 añadir `stop_id` al evento | Detectado | integración AC-11 (dict exacto) |
+| M10 responder `NO_ARRIVAL` | Detectado | integración AC-11 |
+| M11 responder con el `shape_id` del viaje | Detectado | unitario AC-11 |
+| M12 capturar cualquier `ValueError` | Detectado | `test_other_errors_of_the_estimation_are_not_hidden` |
+| M13 el estimador lanza `ValueError` genérico | Detectado | integración AC-11 |
+| M14 `reason` constante | Detectado | integración AC-11 |
+| M15 forma vacía → `None` (sin motivo propio) | Detectado | unitario AC-11 |
+| M16 `estimate is None` → otra excepción | Detectado | `test_a_paired_trip_without_the_stop_has_no_vehicle` |
+
+## Verificación ejecutada
+
+`CI=1 ./init.sh verify --e2e` (2026-11-04, puerto 4173 libre antes de empezar), salida final
+"verify: todo en verde", código 0, en la **primera** ejecución (el `dist/` local ya estaba
+construido desde este código):
+
+- backend: format OK · lint OK · types OK (mypy) · architecture OK (lint-imports) · tests OK
+  (988 passed, 6 deselected; cobertura `domain` + `application` 99,46 % ≥ 80 %).
+- AC-17: "139 pairs checked, 5 excluded because the SAE minutes increased". Los 5 son los mismos
+  de la v1.1: 93 ciclos 14→15; 70 `…_070` 23→24; 70 `…_071` 54→55 y 58→69; 70 `…_072` 70→71.
+  No hay regresión. Ninguna llegada de la 508 en la sesión tiene la 508 como primera parada del
+  viaje, así que la regla `k = 0` no altera la sesión.
+- frontend: format OK · lint OK · types OK · tests OK (44 ficheros, 395 tests) · build OK ·
+  e2e + a11y OK (87 passed; `test:bundle` 4 passed).
+- harness: `feature_list.json` OK · trazabilidad AC→test OK.
+
+Comprobaciones adicionales:
+
+- `git diff --stat origin/develop..HEAD`: 11 ficheros. 7 de `backend/` (código y tests de la
+  feature), `progress/impl_position_estimation.md` y 3 ficheros del orquestador
+  (`feature_list.json`, `progress/current.md`, `progress/history.md`). No cambia `specs/`,
+  `docs/` ni `frontend/`. El contrato OpenAPI no cambia: `logger` no forma parte de la API.
+- Arquitectura: `domain/services/position_estimator.py` solo importa `domain.errors` (dentro del
+  dominio). `application/get_vehicle_position.py` no importa `structlog` y usa el protocolo
+  `Logger` de `get_stop_arrivals.py`. `structlog` solo entra en la composición
+  (`adapters/inbound/http/container.py:30,94`). Sin `datetime.now()` ni `time.time()` nuevos.
+- Privacidad (AGENTS.md §6, conventions §3): el evento lleva solo `trip_id`, `shape_id` y `reason`,
+  que son datos de la red y no personales. No registra token, `stop_id`, `device_id` ni IP. En el
+  backend nadie llama a `bind_contextvars` (solo está `merge_contextvars` en `logging.py:18`), así
+  que no se cuelan campos de contexto. El mensaje de `PositionNotEstimableError`
+  (`domain/errors.py:69`) es `position not estimable (<reason>)`, sin identificadores. Lo
+  comprueba `test_position_estimator.py:259` (`"B" not in str(error)`). La aserción de dict
+  exacto en la integración impide añadir campos sin romper el test (M09).
+- Robustez frente a otros datos incoherentes: `geometry.py` trata la forma de un punto
+  (`point_at_distance`, `project_onto_shape`) y las distancias parciales (`shape_distances`). La
+  forma vacía llega antes como `empty_shape`. No he encontrado otra vía de datos de red que
+  produzca un `500` en la estimación.
+- Commits: `feat(position_estimation): …`, `chore(position_estimation): …`, `chore(progress): …`
+  (Conventional Commits).
+
+### Encaje de las decisiones locales D-19…D-22
+
+| Decisión | Encaje | ¿CP-3? |
+|---|---|---|
+| D-19 `logger: Logger` como cuarto parámetro obligatorio de `GetVehiclePosition` | La spec v1.2 obliga al caso de uso a registrar `position.estimate_failed` (AC-11, design §3 "API"), pero la firma del constructor (design §3) no se actualizó. Como `application/` no importa `structlog`, inyectar el protocolo `Logger`, igual que `GetStopArrivals`, es la única forma coherente con la arquitectura. Que sea obligatorio evita olvidarlo en la composición. Es el mismo caso que D-03 en la v1.0, que la v1.1 incorporó a la firma. | No. Es un problema de spec menor (H-01): se arregla en la próxima revisión de la spec. |
+| D-20 `PositionNotEstimableError(DomainError, ValueError)` con `reason` | El design dice literalmente "error explícito (tipo: decisión local)". Hereda de `ValueError`, así que el contrato anterior (`ValueError`) se mantiene. El caso de uso captura solo este tipo (M12 lo comprueba). Está en `domain/errors.py`, como pide conventions §3. No tiene manejador HTTP propio y nunca sale del caso de uso. | No |
+| D-21 registrar el evento en todos los casos de viaje emparejado sin posición (`missing_stop_times`, `missing_shape`, `empty_shape`, `missing_stop_coordinates`, `target_not_in_trip`) | AC-11 v1.2 habla de "datos incoherentes de la red activa (p. ej. …)". El ejemplo no agota los casos, y un viaje emparejado sin horarios, sin forma o que no pasa por la parada es justo eso. La respuesta era ya `NO_VEHICLE` desde la v1.0 (D-10), así que no cambia. Solo se añade el registro, con nivel `warning`, sin identificadores personales. El design limita la captura a "el error de `estimate_position`", pero los tres motivos que lanza el propio caso de uso (`_estimate`) usan el mismo tipo y antes ya devolvían `NO_VEHICLE` sin `500`. No amplía lo que se oculta. | No. Ver H-03, sobre qué `shape_id` va en el log. |
+| D-22 aserción de AC-07 de `NOT_STARTED` a `AT_STOP` | Es consecuencia directa de AC-04 v1.2: la primera aparición de la parada repetida es la primera parada del viaje. Solo cambia esa aserción, y el test sigue verificando AC-07 (se elige la aparición más cercana). | No |
+
+## Hallazgos
+
+### Bloqueantes
+
+Ninguno.
+
+### No bloqueantes
+
+- **H-01 (problema de spec menor, D-19).** `specs/position_estimation/design.md` §3 declara
+  `GetVehiclePosition.__init__(self, stop_arrivals, network, clock)`. El código tiene un cuarto
+  parámetro `logger: Logger` (`backend/src/avisabus/application/get_vehicle_position.py:49-59`),
+  que la propia v1.2 hace necesario. Propuesta para la próxima revisión de la spec: añadir
+  `logger: Logger` a la firma del design §3. No requiere CP-3 ahora, porque no cambia ningún
+  contrato externo (API, eventos ni errores).
+- **H-02 (tests, AC-04/AC-01).** El mutante M02 (`k <= 1` en lugar de `k == 0`,
+  `backend/src/avisabus/domain/services/position_estimator.py:57`) sobrevive a toda la suite. No
+  hay ningún caso con la **segunda** parada como objetivo (`k = 1`) antes de su hora. Por eso nada
+  fija que la regla v1.2 se limite a la primera parada. El hueco viene de la v1.0: los tests de
+  AC-01, AC-04 y AC-08 usan objetivos `C`, `D` y `E`. Propuesta: en
+  `backend/tests/unit/test_position_estimator.py`, añadir un caso con `target="B"` antes de la
+  salida (`NOT_STARTED` en `A`) y otro entre `A` y `B` (`EN_ROUTE`). No bloquea porque el
+  comportamiento del AC está verificado y el código es correcto.
+- **H-03 (ambigüedad menor de spec, D-21).** AC-11 pide registrar "`trip_id`, `shape_id` y el
+  motivo" sin decir qué `shape_id`. El código registra el del **viaje** (`None` si no tiene), y la
+  respuesta lleva el representativo (`get_vehicle_position.py:106,112-118`). Es la lectura más útil
+  para diagnosticar y la fijan los tests (M07). Conviene que la próxima versión de la spec lo
+  diga. Además, la respuesta conserva `vehicle` (`trip_id`, `service_date`) aunque el estado sea
+  `NO_VEHICLE` (`test_position_api.py:274`, `body["vehicle"] == before["vehicle"]`). AC-11 dice
+  "igual que con `NO_VEHICLE`", y con `NO_VEHICLE` sin viaje el campo `vehicle` es `null`. El
+  design solo fija `status`, `position` y `shape_id`, y el frontend
+  (`frontend/src/features/passenger/map/summary.ts:82`) decide por `status`/`position`, así que no
+  hay efecto visible. Se anota para que la spec lo aclare.
+- **H-04 (harness, no pertenece a `position_estimation`).** Confirmado:
+  `frontend/src/__tests__/bundle-budget.test.ts:105-124` lee `frontend/dist/` si existe
+  (`skipIf(!existsSync(...))`). `init.sh:64-65` ejecuta `frontend: tests` **antes** de
+  `frontend: build`, así que la primera ejecución de `verify` evalúa el `dist/` que haya en disco.
+  Lo he reproducido en una copia del frontend en el scratchpad: al quitar el chunk `MapPage-*.js`
+  del `dist/` (un `dist/` anterior al mapa), falla
+  `[passenger_map_view.AC-02] Leaflet and the map are in a chunk loaded on demand…` con
+  `expected [] to have a length of 1 but got +0`. Tras `npm run build` en la misma copia, los 4
+  tests pasan. Con `--e2e` el problema queda tapado, porque `npm run e2e` termina con
+  `test:bundle` (build y después el test). Pero `./init.sh verify` sin `--e2e` puede dar un falso
+  rojo, o un falso verde con un `dist/` antiguo que cumpla por casualidad. Origen:
+  `passenger_map_view` T-06 (commit `9a9a9dd`, el test que falla). El patrón de leer `dist/`
+  dentro de `npm run test` viene de `passenger_stop_view` T-09 (commit `2114105`,
+  `passenger_stop_view.AC-21`). Corresponde a `passenger_map_view`. Arreglarlo exige cambiar el
+  test (sacar de `npm run test` las aserciones sobre `dist/` real y dejarlas solo en
+  `test:bundle`) o el orden de `init.sh` (harness, lo decide una persona). No bloquea esta
+  feature: la v1.2 no toca el frontend.
+- **Nota para el orquestador (fuera del alcance del reviewer).** `progress/current.md` dice
+  "`implementing` (solo T-09)" y fecha 2026-11-03, pero `feature_list.json` ya está en
+  `in_review` (commit `1685a69`).
+
+---
+
+# Revisión: position_estimation
 Ciclo: 1 · Fecha: 2026-11-03 · Agente: reviewer
 Spec revisada: `specs/position_estimation/` v1.1 (APPROVED) · Rama: `feat/position_estimation`
 (HEAD `7c2b11e`) · Base: `origin/develop` (`7e8a7ff`; el `develop` local está atrasado, por eso

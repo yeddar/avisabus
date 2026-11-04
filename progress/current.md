@@ -2,26 +2,33 @@
 
 > Fichero vivo: lo reescribe el orquestador al final de cada sesión.
 
-**Fecha:** 2026-11-03
-**Fase:** Implementación — Bloque 2
-**Feature en curso:** `position_estimation` v1.2 — `implementing` (solo T-09), rama `feat/position_estimation-v1.2`
+**Fecha:** 2026-11-04
+**Fase:** Fin del Bloque 2 — CP-6 pendiente
+**Feature en curso:** ninguna. Bloque 2 completo; PR #31 (`passenger_stop_view` v1.2) y PR de
+`position_estimation` v1.2 abiertas (sin fusionar).
 
 ## Último paso
-PR #24 (CP-4, `passenger_stop_view` v1.1 spec, `frontend_i18n` v1.1) y PR #28 (T-11) fusionadas.
-`passenger_map_view`: E-01 completada (`progress/explore_map.md`): react-leaflet 5.0.0 + leaflet ^1.9.4
-compatibles (StrictMode sin errores; Leaflet en fragmento diferido de ~45 KB gzip); la demo cumple la
-política de teselas de OSM → sin CP-3. → `implementing`.
-Incidencia: el explorer envió por error el correo de contacto de la persona en el User-Agent de una
-petición `HEAD` a `tile.openstreetmap.org` (anotado en el informe, sin el correo).
+- `passenger_map_view` v1.1: APPROVED (ciclo 2), PR #30 fusionada.
+- `passenger_stop_view` v1.2 (T-12): APPROVED, PR #31 abierta. Sale de `develop` antes de la #30: puede
+  necesitar rebase (ambas tocan la vista de parada).
+- `position_estimation` v1.2 (T-09): APPROVED (15/16 mutantes detectados), PR abierta.
 
 ## Siguiente paso
-1. `passenger_map_view` v1.1: ciclo 1 CHANGES_REQUESTED (B-01, AC-10), ciclo 2 **APPROVED**. PR abierta.
-2. Después: `passenger_stop_view` T-12 (v1.2: N-7/N-8) y `position_estimation` T-09 (v1.2: H-01/H-02),
-   cada una con revisión nueva y PR propia.
-3. CP-6 del bloque 2: textos (tablas es/ca en `progress/impl_passenger_stop_view.md`), anuncios con
-   lector de pantalla, foco tras acciones manuales.
+1. La persona fusiona la #31 y la PR de `position_estimation` v1.2.
+2. **CP-6 del bloque 2** (persona): textos es/ca (`progress/impl_passenger_stop_view.md`,
+   `progress/impl_passenger_map_view.md`); lector de pantalla (anuncios de "llegando", foco tras
+   acciones manuales, 404 tras "Actualizar", refresco automático con foco en "Reintentar"); N-03 del
+   mapa (insignia junto a "Posición no disponible").
+3. Bloque 3 (`realtime_events` y siguientes) tras el CP-6.
 
 ## Pendiente para specs futuras
+- **Harness (H-04 de la revisión de `position_estimation` v1.2):** `frontend/src/__tests__/bundle-budget.test.ts`
+  lee `frontend/dist/`, pero `init.sh` ejecuta los tests antes del build: con un `dist/` antiguo,
+  `./init.sh verify` (sin `--e2e`) puede dar falso rojo o falso verde. Origen: `passenger_map_view` T-06
+  (patrón de `passenger_stop_view` T-09).
+- **position_estimation v1.2:** H-01 añadir `logger: Logger` a la firma de `GetVehiclePosition` en el
+  design §3 (D-19). H-02 falta un test con la segunda parada como objetivo (el mutante `k <= 1`
+  sobrevive). H-03 AC-11 no dice qué `shape_id` registrar; la respuesta conserva `vehicle` con `NO_VEHICLE`.
 - **passenger_map_view:** N-01 resuelto en ciclo 2 (design §3 `aria-describedby="summary-id"` frente a §4
   `map.regionDescription` sigue por alinear). N-05 `waitForTimeout(400)` en `e2e/map-view.spec.ts:422`
   (sobra). N-06 preferencia de movimiento reducido leída al montar. N-07 restauración de `panBy` sin test. N-02 elisión valenciana sin i/u
@@ -110,8 +117,7 @@ petición `HEAD` a `tile.openstreetmap.org` (anotado en el informe, sin el corre
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Ninguno. CP-3 de `passenger_map_view` resuelto en la PR #29 (v1.1: B-01 opción A, B-02 con la regla de
-`passenger_stop_view.AC-06`, O-1…O-4 como se proponían). Próximo: CP-6 del bloque 2.
+**CP-6 — fin del bloque 2** (tras fusionar la #31 y la PR de `position_estimation` v1.2).
 
 ## Bloqueos
 Ninguno. 
