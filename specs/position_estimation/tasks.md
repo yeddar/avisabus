@@ -1,6 +1,6 @@
 # Estimación de la posición del autobús — tasks
 
-> Feature: `position_estimation` · Versión: 1.1 · Estado: APPROVED
+> Feature: `position_estimation` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-12, RNF-01 · Casos de uso: CU-02 · Depende de: gtfs_import, stop_arrivals_api
 
 ## Exploración
@@ -46,6 +46,12 @@ exploración de `gtfs_import`).
   - AC: position_estimation.AC-17
   - Ficheros: `tests/integration/test_position_real_session.py`
   - Verificación: `cd backend && uv run pytest tests/integration/test_position_real_session.py`
+
+- [ ] **T-09** — (v1.2) `AT_STOP` cuando la parada objetivo es la primera del viaje; posición no
+  estimable → `NO_VEHICLE` con `position.estimate_failed` (sin `500`).
+  - AC: position_estimation.AC-04, AC-11
+  - Ficheros: `domain/services/position_estimator.py`, `application/get_vehicle_position.py`, tests unitarios y de integración
+  - Verificación: `cd backend && uv run pytest -k position`
 
 - [ ] **T-08** — Regenerar el contrato del frontend (`npm run gen:api`) si existe
   `frontend/src/shared/api/openapi.json`, y verificación completa.

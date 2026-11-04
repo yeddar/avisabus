@@ -1,6 +1,6 @@
 # Guía visual — AvisaBus
 
-> Estado: **APROBADO** (v1.0 · 2026-11-03, PR #7; v1.1 · 2026-11-03, PR #24).
+> Estado: **APROBADO** (v1.0 · 2026-11-03, PR #7; v1.1 · 2026-11-03, PR #24; v1.2 · 2026-11-04, PR #29).
 > Deriva de `docs/requirements.md` (RNF-03, RNF-05, RNF-14, RNF-15) y del boceto revisado por la
 > persona el 2026-11-03.
 
@@ -100,7 +100,7 @@ ilustrativo; no se fija ningún color de línea en el código.
   `control-border`, radio 8 px). Separador inferior `divider`. Relleno 12 × 16 px.
 - **Contenido:** relleno 20 px arriba, 16 px a los lados; secciones separadas 20 px.
 - **Pie:** 13 px, `text-muted`, separador superior `divider`, con la atribución de datos de
-  `frontend_i18n` (y la del mapa en la vista de mapa).
+  `frontend_i18n`. La atribución del mapa va dentro del propio mapa (§5.7), no en el pie.
 - **Foco:** contorno de 3 px `accent` con separación de 2 px (`frontend_i18n` design §5).
 
 ### 5.2 Distintivo de línea
@@ -196,3 +196,4 @@ actualizar, mapa, mano (Solicitar), información, siluetas de ocupación, flecha
 |---|---|---|---|
 | 1.0 | 2026-11-03 | Versión inicial a partir del boceto | Revisión visual de la persona tras el bloque 1. Aprobada por la persona (PR #7). |
 | 1.1 | 2026-11-03 | §4: el rojo de EMT queda en `#E50000` (4,8:1); §5.6: ejemplo con el texto literal de `passenger_stop_view.AC-09`. | Desviaciones 2 y 3 de la revisión de `passenger_stop_view`. Aprobada por la persona (PR #24). |
+| 1.2 | 2026-11-04 | §5.1: la atribución del mapa va solo dentro del mapa, no en el pie. | Observación O-2 de `passenger_map_view`. Aprobada por la persona (PR #29). |

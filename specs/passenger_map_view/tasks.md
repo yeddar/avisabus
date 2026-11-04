@@ -1,6 +1,6 @@
 # Mapa del autobús — tasks
 
-> Feature: `passenger_map_view` · Versión: 1.0 · Estado: APPROVED
+> Feature: `passenger_map_view` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-13, RNF-01, RNF-03, RNF-05, RNF-14 · Casos de uso: CU-02 · Depende de: passenger_stop_view, position_estimation
 
 ## Exploración
@@ -21,7 +21,8 @@
   - Ficheros: `src/features/passenger/stop/ArrivalRow.tsx`, `src/locales/**`, tests
   - Verificación: `cd frontend && npm run test -- ArrivalRow`
 
-- [ ] **T-02** — `usePosition`, `useShape` y funciones puras `buildSummary` y `buildMapModel`.
+- [ ] **T-02** — `usePosition`, `useShape` y funciones puras `buildSummary` (v1.1: `firstStop` y
+  regla de {llegada}) y `buildMapModel` (v1.1: sin trazado y color sobre blanco).
   - AC: passenger_map_view.AC-04, AC-05, AC-07, AC-12
   - Ficheros: `src/features/passenger/map/{usePositionQueries,summary,mapModel}.ts`, tests
   - Verificación: `cd frontend && npm run test -- passenger/map`
@@ -37,7 +38,8 @@
   - Ficheros: `src/features/passenger/map/{BusMap.tsx,busIcon.ts,useInitialFit.ts}`, `frontend/.env.example`, tests
   - Verificación: `cd frontend && npm run test -- BusMap useInitialFit`
 
-- [ ] **T-05** — `MapPage` (ruta diferida, fallback "Cargando mapa…", `h1`, volver, errores).
+- [ ] **T-05** — `MapPage` (ruta diferida, fallback "Cargando mapa…", `h1`, volver, errores;
+  v1.1: errores del trazado y ruta sin token o con sentido no numérico).
   - AC: passenger_map_view.AC-02, AC-03, AC-12, AC-13
   - Ficheros: `src/features/passenger/map/MapPage.tsx`, `src/app/routes.tsx`, tests
   - Verificación: `cd frontend && npm run test -- MapPage`

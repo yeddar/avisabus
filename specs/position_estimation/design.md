@@ -1,6 +1,6 @@
 # Estimación de la posición del autobús — design
 
-> Feature: `position_estimation` · Versión: 1.1 · Estado: APPROVED
+> Feature: `position_estimation` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-12, RNF-01 · Casos de uso: CU-02 · Depende de: gtfs_import, stop_arrivals_api
 
 ## 1. Resumen
@@ -91,7 +91,8 @@ Algoritmo:
    (cada parada se proyecta sobre el tramo de forma posterior a la anterior) (AC-06).
 3. Parada objetivo `k`: aparición de `target_stop_id` con `|sched_k − arrival_at|` mínimo (AC-07).
 4. `δ = arrival_at − sched_k`; `s = (now − δ − service_day_start).total_seconds()`.
-5. (v1.1, AC-04) `s < departure_s[0]` → `NOT_STARTED`, `d = d_0`; `s ≥ arrival_s[k]` → `AT_STOP`, `d = d_k`;
+5. (v1.2) Si `k = 0` (la parada objetivo es la primera del viaje) → `AT_STOP`, `d = d_0`.
+   (v1.1, AC-04) `s < departure_s[0]` → `NOT_STARTED`, `d = d_0`; `s ≥ arrival_s[k]` → `AT_STOP`, `d = d_k`;
    en otro caso, el `i < k` con `s_i ≤ s < s_{i+1}` → `EN_ROUTE`, `d` por AC-01. Para `s_i` se
    usa `departure_s` de la parada `i` y para `s_{i+1}` el `arrival_s` de la `i+1`.
 6. `point_at_distance(shape, d)` → `lat`, `lon`, `bearing_deg` del segmento (AC-05).
@@ -162,6 +163,11 @@ class GetVehiclePosition:
 ```
 
 `ETag: "<feed_version_id>-<shape_id>"`; `Cache-Control: public, max-age=86400`.
+
+(v1.2, AC-11) `GetVehiclePosition` captura el error de `estimate_position` por datos
+incoherentes (el que lanza cuando faltan coordenadas de paradas, design §3), registra
+`position.estimate_failed` (`trip_id`, `shape_id`, `reason`) y devuelve `status = NO_VEHICLE`,
+`position = null` y el `shape_id` representativo. Otros errores inesperados no se capturan.
 
 Errores (`problem+json`):
 
