@@ -409,3 +409,7 @@
 
 ## 2026-11-04 · alert_expiry · exploring → implementing
 - E-01 (`progress/explore_passage.md`): ventana de 2 min sin pasos prematuros; sin CP-3.
+
+## 2026-11-04 · alert_expiry · implementing → in_review
+- T-01…T-06; AC-11 con `stop_508_peak` coincide con E-01 (2 PASSED, 0 NEXT_STOP, 0 TIMEOUT).
+  `GetStopArrivals.for_stop` añadido (autorizado). Verify --e2e en verde (1325 backend).
