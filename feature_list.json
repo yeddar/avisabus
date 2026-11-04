@@ -305,7 +305,7 @@
       "order": 13,
       "block": 3,
       "title": "Cancelar aviso",
-      "status": "implementing",
+      "status": "in_review",
       "depends_on": [
         "alert_create"
       ],

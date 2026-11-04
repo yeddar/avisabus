@@ -396,3 +396,7 @@
 - Revisión ciclo 1: APPROVED (31/33 mutantes, 2 equivalentes); las tres lecturas caben en la spec.
 
 ## 2026-11-04 · alert_create PR #41 abierta · alert_cancel · spec_approved → implementing
+
+## 2026-11-04 · alert_cancel · implementing → in_review
+- T-01…T-03 (`DELETE /alerts/{id}`, 204/404, evento `alert.cancelled`); H-1 de `alert_create` corregido
+  (`no-store` en todos los 500). Verify --e2e en verde (1232 backend).
