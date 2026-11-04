@@ -5,8 +5,8 @@ Spec: specs/alert_create/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Agente: i
 - [x] T-01 Regla nueva de `can_alert` en `GetStopArrivals` (`alert_max_lead`,
       `AVISABUS_ALERT_MAX_LEAD_MIN`) y adaptación de los tests de `stop_arrivals_api` (AC-01)
       (commit 57b2285)
-- [x] T-02 Modelos, puertos, errores e `InMemoryRateLimiter` (AC-06, AC-08)
-- [ ] T-03 `SqliteAlertRepository` y tabla `alert` (AC-07, AC-12)
+- [x] T-02 Modelos, puertos, errores e `InMemoryRateLimiter` (AC-06, AC-08) (commit c75a001)
+- [x] T-03 `SqliteAlertRepository` y tabla `alert` (AC-07, AC-12)
 - [ ] T-04 `CreateAlert`, `ListMyAlerts`, `alert_payload`, `NoDriverDirectory`,
       `NoopDriverViewNotifier` (AC-03, AC-07, AC-08, AC-09, AC-13)
 - [ ] T-05 Endpoints `/alerts`, `AlertSnapshotProvider`, configuración y composición
@@ -55,6 +55,14 @@ Spec: specs/alert_create/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Agente: i
   `ValueError` con repetidos; lo usan el esquema de la API (AC-06) y el caso de uso.
 - T-02: `BusNotRequestableError` y `RateLimitedError(retry_after_s)` sin identificadores en el
   mensaje (`"bus not requestable"`, `"rate limited"`).
+
+- T-03: la tabla `alert` tiene su propio `MetaData` (como `occupancy_override`) y `init_db` la
+  crea. La unicidad es una restricción `UNIQUE (device_hash, stop_id, line)`
+  (`uq_alert_device_stop_line`) más el índice `ix_alert_stop_id`. `add` hace
+  `INSERT … ON CONFLICT (device_hash, stop_id, line) DO NOTHING` y, si no inserta, devuelve el
+  aviso existente leído en la misma transacción (carreras resueltas por el índice). Todas las
+  columnas son `NOT NULL` salvo `delivered_to` y `last_seen_at`. Las listas se ordenan en Python
+  por (`created_at`, `alert_id`) comparando `datetime`, no texto ISO.
 
 ## Bloqueos
 
