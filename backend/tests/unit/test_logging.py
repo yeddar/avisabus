@@ -81,14 +81,20 @@ def test_events_below_the_configured_level_are_dropped(
 
 
 @pytest.mark.spec("project_scaffold.AC-12")
-def test_exceptions_are_rendered_inside_the_json_line(
+@pytest.mark.spec("realtime_events.AC-12")
+def test_exceptions_are_reduced_to_their_type_inside_the_json_line(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
+    # Since realtime_events (H-01) the line keeps the exception type, never its message nor its
+    # traceback.
     configure_logging("INFO")
     try:
         raise RuntimeError("boom")
     except RuntimeError:
         structlog.get_logger("avisabus.tests").exception("failed")
-    (record,) = _lines(capsys.readouterr().out)
+    out = capsys.readouterr().out
+    (record,) = _lines(out)
     assert record["event"] == "failed"
-    assert "RuntimeError" in record["exception"]
+    assert record["error_type"] == "RuntimeError"
+    assert "exception" not in record
+    assert "boom" not in out
