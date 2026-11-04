@@ -391,3 +391,6 @@
 ## 2026-11-04 · alert_create · implementing → in_review
 - T-01…T-06; `can_alert` con `alert_max_lead` (stop_arrivals_api 1.6, 3 tests adaptados). Verify --e2e
   en verde (1209 backend). Tres lecturas de la spec señaladas al reviewer (orden 200/404, AC-08, `last_seen_at`).
+
+## 2026-11-04 · alert_create · in_review → done
+- Revisión ciclo 1: APPROVED (31/33 mutantes, 2 equivalentes); las tres lecturas caben en la spec.
