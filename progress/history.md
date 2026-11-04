@@ -281,3 +281,7 @@
 - B-01 opción A (primera parada del trazado), B-02 con la regla de `passenger_stop_view.AC-06`,
   O-1…O-4 como se proponían. PR #29 trae también `passenger_stop_view` v1.2 (T-12) y
   `position_estimation` v1.2 (T-09). Rama actualizada con `develop` (merge).
+
+## 2026-11-04 · passenger_map_view · implementing → in_review
+- T-02…T-07 (v1.1); `CI=1 ./init.sh verify --e2e` en verde (392 Vitest, 84 e2e, JS inicial 141,2 KB
+  gzip; Leaflet en fragmento diferido de 50,2 KB). Sin red en tests (teselas locales).
