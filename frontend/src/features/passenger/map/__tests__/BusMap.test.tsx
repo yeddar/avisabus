@@ -81,10 +81,14 @@ describe('BusMap', () => {
     const shape = SHAPE_93();
     const { region } = renderMap({ shape });
 
-    const paths = [...region.querySelectorAll('.leaflet-overlay-pane path')];
-    // One polyline and one circle per stop.
-    expect(paths).toHaveLength(1 + shape.stops.length);
-    expect(paths[0]).toHaveAttribute('stroke', '#e50000');
+    const route = [...region.querySelectorAll('.leaflet-route-pane path')];
+    expect(route).toHaveLength(1);
+    expect(route[0]).toHaveAttribute('stroke', '#e50000');
+    // One circle per stop, in a pane above the route.
+    expect(region.querySelectorAll('.leaflet-overlay-pane path')).toHaveLength(shape.stops.length);
+    const zIndex = (selector: string) =>
+      Number(region.querySelector<HTMLElement>(selector)?.style.zIndex || 400);
+    expect(zIndex('.leaflet-route-pane')).toBeLessThan(zIndex('.leaflet-overlay-pane'));
     const bus = region.querySelector('.leaflet-marker-pane [data-bus-arrow]');
     expect(bus?.getAttribute('style')).toContain('rotate(90.9deg)');
   });
@@ -113,9 +117,8 @@ describe('BusMap', () => {
     const shape = SHAPE_93();
     const { region } = renderMap({ position: POSITION_NO_ARRIVAL(), shape });
 
-    expect(region.querySelectorAll('.leaflet-overlay-pane path')).toHaveLength(
-      1 + shape.stops.length,
-    );
+    expect(region.querySelectorAll('.leaflet-route-pane path')).toHaveLength(1);
+    expect(region.querySelectorAll('.leaflet-overlay-pane path')).toHaveLength(shape.stops.length);
     expect(region.querySelector('.leaflet-marker-pane')?.children).toHaveLength(0);
   });
 

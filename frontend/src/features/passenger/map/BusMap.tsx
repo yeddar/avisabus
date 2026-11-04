@@ -8,6 +8,7 @@ import {
   CircleMarker,
   MapContainer,
   Marker,
+  Pane,
   Polyline,
   TileLayer,
   Tooltip,
@@ -23,6 +24,8 @@ import { FIT_OPTIONS, useInitialFit } from './useInitialFit';
 export const OSM_TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const OSM_COPYRIGHT_URL = 'https://www.openstreetmap.org/copyright';
 
+/** Leaflet pane of the route: class `leaflet-route-pane`, under the stops. */
+const ROUTE_PANE = 'routePane';
 const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
 /** The passenger's stop: larger, with a thick `text` border (docs/design.md §5.7). */
 const TARGET_STOP_STYLE = { color: '#14171f', weight: 4, fillColor: '#ffffff', fillOpacity: 1 };
@@ -64,6 +67,20 @@ function OsmAttribution() {
   return null;
 }
 
+/**
+ * Keys that do not depend on the position in the list ("508|0", or "508|1" for a stop repeated
+ * on a circular line): when the shape arrives the passenger's stop moves in the list, and
+ * remounting it would leave an empty "Tu parada" tooltip fading out for 200 ms.
+ */
+function stableKeys(ids: string[]): string[] {
+  const seen = new Map<string, number>();
+  return ids.map((id) => {
+    const occurrence = seen.get(id) ?? 0;
+    seen.set(id, occurrence + 1);
+    return `${id}|${occurrence}`;
+  });
+}
+
 function InitialFit({ bounds, ready }: { bounds: Bounds; ready: boolean }) {
   useInitialFit(useMap(), bounds, ready);
   return null;
@@ -88,6 +105,7 @@ export function BusMap({ model, ready, ref }: BusMapProps) {
   const { t, i18n } = useTranslation();
   const descriptionId = useId();
   const [options] = useState(motionOptions);
+  const stopKeys = useMemo(() => stableKeys(model.stops.map((stop) => stop.id)), [model.stops]);
   // Leaflet needs a view from the start; useInitialFit then frames the final bounds once.
   const [initialBounds] = useState(model.fitBounds);
   const color = model.line.color;
@@ -137,12 +155,15 @@ export function BusMap({ model, ready, ref }: BusMapProps) {
           zoomInTitle={t('map.zoomIn')}
           zoomOutTitle={t('map.zoomOut')}
         />
-        {model.line.coords.length > 0 && (
-          <Polyline positions={model.line.coords} pathOptions={lineStyle} interactive={false} />
-        )}
+        {/* The route under the stops, whatever arrives first (overlayPane is at z-index 400). */}
+        <Pane name={ROUTE_PANE} style={{ zIndex: 390 }}>
+          {model.line.coords.length > 0 && (
+            <Polyline positions={model.line.coords} pathOptions={lineStyle} interactive={false} />
+          )}
+        </Pane>
         {model.stops.map((stop, index) => (
           <CircleMarker
-            key={`${index}|${stop.id}`}
+            key={stopKeys[index]}
             center={stop.latLng}
             radius={stop.isTarget ? 9 : 5}
             pathOptions={stop.isTarget ? TARGET_STOP_STYLE : stopStyle}
