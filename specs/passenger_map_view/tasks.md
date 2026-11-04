@@ -1,6 +1,6 @@
 # Mapa del autobús — tasks
 
-> Feature: `passenger_map_view` · Versión: 1.1 · Estado: APPROVED
+> Feature: `passenger_map_view` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-13, RNF-01, RNF-03, RNF-05, RNF-14 · Casos de uso: CU-02 · Depende de: passenger_stop_view, position_estimation
 
 ## Exploración
@@ -50,6 +50,13 @@
   - AC: passenger_map_view.AC-02, AC-07, AC-09, AC-11, AC-14, AC-15
   - Ficheros: `src/__tests__/bundle-budget.test.ts`, `e2e/map-view.spec.ts`, `e2e/fixtures/*`
   - Verificación: `cd frontend && npm run e2e`
+
+- [ ] **T-08** — (v1.2) Ocultar la insignia "Posición estimada" sin posición (AC-05); quitar la
+  espera fija `page.waitForTimeout(400)` de `e2e/map-view.spec.ts` (esperar a `moveend`/`zoomend` o
+  nada, `docs/verification.md` §4).
+  - AC: passenger_map_view.AC-05
+  - Ficheros: `src/features/passenger/map/{summary.ts,PositionSummary.tsx}`, tests, `e2e/map-view.spec.ts`
+  - Verificación: `cd frontend && npm run test -- PositionSummary summary && npm run e2e`
 
 - [ ] **T-07** — Verificación completa.
   - Verificación: `./init.sh verify --e2e`

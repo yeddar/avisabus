@@ -1,6 +1,6 @@
 # Vista de parada del pasajero — requirements
 
-> Feature: `passenger_stop_view` · Versión: 1.2 · Estado: APPROVED
+> Feature: `passenger_stop_view` · Versión: 1.3 · Estado: APPROVED
 > Requisitos: RF-06, RF-10, RF-15, RF-32, RNF-01, RNF-03, RNF-04, RNF-05, RNF-14 · Casos de uso: CU-01 · Depende de: stop_arrivals_api, frontend_i18n
 
 ## Contexto
@@ -159,7 +159,8 @@ TypeScript generados desde el OpenAPI del backend, con un test que detecta desfa
   *Verificación:* unit
 - **passenger_stop_view.AC-21** — EL JAVASCRIPT inicial de la aplicación (sin trozos cargados bajo
   demanda) DEBERÁ ocupar como máximo 200 KB comprimido con gzip.
-  *Verificación:* unit (test que mide `dist/` tras `npm run build`)
+  *Verificación:* unit (test que mide `dist/` tras `npm run build`; v1.3: solo se ejecuta sobre un
+  `dist/` recién construido, nunca sobre uno antiguo)
 - **passenger_stop_view.AC-22** — LAS PRUEBAS E2E DEBERÁN abrir la vista con respuestas simuladas
   de la API (tiempo real, horario programado, sin llegadas, parada no encontrada) en los perfiles
   móvil y tablet, en castellano y en valenciano, y axe NO DEBERÁ reportar violaciones WCAG 2.1
@@ -193,3 +194,4 @@ TypeScript generados desde el OpenAPI del backend, con un test que detecta desfa
 | 1.0 | 2026-11-03 | Versión inicial aprobada (PR #7), con la guía visual `docs/design.md`. | CP-1 del bloque 2. Aprobada por la persona. |
 | 1.1 | 2026-11-03 | AC-17: mensaje de error sobre "los datos" y "Reintentar" repite también la petición de la parada; AC-24: anuncio y foco tras una acción manual. T-11. Design: `overrides` de `openapi-typescript` para TypeScript 6 (deuda técnica). | Hallazgos N-1, N-2 y desviación 1 de la revisión de `passenger_stop_view`. Aprobada por la persona (PR #24). |
 | 1.2 | 2026-11-04 | AC-24: foco al `h1` de "Parada no encontrada" tras una acción manual con 404, y foco a "Actualizar" si un refresco automático acierta con el foco en "Reintentar". T-12. | Hallazgos N-7 y N-8 de la revisión de `passenger_stop_view` 1.1. Aprobada por la persona (PR #29). |
+| 1.3 | 2026-11-04 | AC-21 y design §5: el test del presupuesto solo se ejecuta con `npm run test:bundle` (que construye antes); `npm run test` lo omite y `./init.sh verify` lo ejecuta tras el build, con y sin `--e2e`. T-13. | Hallazgo H-04 de la revisión de `position_estimation` 1.2 (arnés): con `dist/` antiguo, `verify` sin `--e2e` podía dar falso rojo o falso verde. Aprobada por la persona (PR #33). |

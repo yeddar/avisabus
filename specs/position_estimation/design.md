@@ -1,6 +1,6 @@
 # Estimación de la posición del autobús — design
 
-> Feature: `position_estimation` · Versión: 1.2 · Estado: APPROVED
+> Feature: `position_estimation` · Versión: 1.3 · Estado: APPROVED
 > Requisitos: RF-12, RNF-01 · Casos de uso: CU-02 · Depende de: gtfs_import, stop_arrivals_api
 
 ## 1. Resumen
@@ -123,7 +123,8 @@ class VehiclePosition:
     estimate: PositionEstimate | None
 
 class GetVehiclePosition:
-    def __init__(self, stop_arrivals: GetStopArrivals, network: NetworkRepository, clock: Clock) -> None: ...
+    def __init__(self, stop_arrivals: GetStopArrivals, network: NetworkRepository, clock: Clock,
+                 logger: Logger) -> None: ...                       # v1.3: logger (AC-11)
     async def execute(self, stop_id: str, token: str, line: str, direction_id: int) -> VehiclePosition: ...
     # lanza StopNotFoundError, NoActiveFeedError, LineNotAtStopError
 ```
@@ -166,7 +167,9 @@ class GetVehiclePosition:
 
 (v1.2, AC-11) `GetVehiclePosition` captura el error de `estimate_position` por datos
 incoherentes (el que lanza cuando faltan coordenadas de paradas, design §3), registra
-`position.estimate_failed` (`trip_id`, `shape_id`, `reason`) y devuelve `status = NO_VEHICLE`,
+`position.estimate_failed` (`trip_id`, `shape_id` **del viaje**, que puede ser `null`, y `reason`)
+y devuelve `status = NO_VEHICLE` (v1.3: la respuesta conserva `arrival` y `vehicle` del viaje
+emparejado),
 `position = null` y el `shape_id` representativo. Otros errores inesperados no se capturan.
 
 Errores (`problem+json`):
