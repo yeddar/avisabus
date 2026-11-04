@@ -1,6 +1,6 @@
 # API de parada y llegadas — requirements
 
-> Feature: `stop_arrivals_api` · Versión: 1.5 · Estado: APPROVED
+> Feature: `stop_arrivals_api` · Versión: 1.6 · Estado: APPROVED
 > Requisitos: RF-06, RF-09, RF-11, RF-15, RF-32, RNF-01, RNF-08 · Casos de uso: CU-01 · Depende de: gtfs_import, stop_tokens_qr, sae_arrivals_source, occupancy_sensor
 
 ## Contexto
@@ -95,8 +95,8 @@ Es el backend de la vista de parada (CU-01). Une las piezas del bloque 1:
   *Verificación:* unit (incluido el caso real de dos autobuses seguidos de la 93 en la 508, en el
   que la asignación voraz elegía un viaje a −12 min, y el caso de entradas duplicadas)
 - **stop_arrivals_api.AC-11** — SI no hay viaje dentro de la tolerancia, ENTONCES la llegada
-  DEBERÁ devolverse con `vehicle = null` y `occupancy = null`, manteniendo `can_alert = true` si
-  el sentido está resuelto.
+  DEBERÁ devolverse con `vehicle = null` y `occupancy = null`. (v1.6) `can_alert` sigue la regla
+  de `alert_create.AC-01`: sin viaje emparejado es `false`.
   *Verificación:* unit
 - **stop_arrivals_api.AC-12** — CUANDO una llegada tiene viaje emparejado, LA API DEBERÁ incluir
   `vehicle = {trip_id, service_date}` y `occupancy = {level, has_free_seats, free_seats}` según
@@ -135,7 +135,7 @@ Es el backend de la vista de parada (CU-01). Une las piezas del bloque 1:
   ENTONCES LA API DEBERÁ responder `200` con `source = "SCHEDULED"` y, por cada par (línea,
   sentido) de la parada, como máximo las 2 próximas pasadas programadas en los 90 min siguientes,
   con `kind = "CLOCK_TIME"`, `destination` = headsign, `vehicle` del viaje programado, ocupación y
-  `can_alert = true`; y EL SISTEMA DEBERÁ registrar `arrivals.fallback` con el motivo.
+  `can_alert` según `alert_create.AC-01` (v1.6: `true` si llega en ≤ 30 min); y EL SISTEMA DEBERÁ registrar `arrivals.fallback` con el motivo.
   *Verificación:* integration (fuente que falla + FakeClock)
 - **stop_arrivals_api.AC-14** — SI no hay pasadas programadas en esa ventana, ENTONCES LA API
   DEBERÁ responder `200` con la lista vacía y `source = "SCHEDULED"`.
@@ -188,3 +188,4 @@ Es el backend de la vista de parada (CU-01). Une las piezas del bloque 1:
 | 1.3 | 2026-11-02 | AC-08 y design §7: en `gtfs_mini`, las líneas 73, 95 y 99 de la parada 2070 son un caso real de línea fuera de red en los tests. Sin cambios de código ni de tareas. | Observación del orquestador tras `sae_arrivals_source` (la sesión grabada incluye la 2070). Aprobada por la persona. |
 | 1.4 | 2026-11-03 | Orden de resolución del sentido con la regla del **sentido que sale** (AC-19); overrides por headsign y validados (AC-20); umbral 0,2; alias revisados (sin `c → carrer`, con palabras vacías y abreviaturas de E-01); emparejamiento **óptimo con orden** y tolerancia de 10 min (AC-10); `sae_destination` (AC-21); entradas duplicadas (AC-22). T-02, T-03, T-05c, T-06 y T-07 ampliadas. | CP-3 tras las exploraciones E-01, E-02 y E-03 (`progress/explore_destinations.md`). Aprobada por la persona. |
 | 1.5 | 2026-11-03 | Solo documentación, sin cambios de código ni tareas nuevas: AC-06 "alcanza" (≥) el umbral, como design §3; AC-09 fija qué headsign se devuelve según cómo se resolvió el sentido (lo implementado); AC-19 aclara que la C1 se cubre con muestras reales y un test `slow` (no está en `gtfs_mini`); AC-20 recoge el error de configuración con fichero ilegible y la validación solo al arrancar; design §3 con el headsign real de la 93, §4 con limitaciones de los *overrides* y §6 con la ruta relativa a `backend/`. | Hallazgos P-1, P-2, O-1…O-4 y NB-3 de la revisión de `stop_arrivals_api`. Aprobada por la persona (PR #7). |
+| 1.6 | 2026-11-04 | AC-11 y AC-13: `can_alert` pasa a definirse en `alert_create.AC-01` (requiere viaje emparejado y llegada en ≤ 30 min). El código y sus tests los cambia `alert_create` T-01; `alert_expiry` T-02 añade `GetStopArrivals.for_stop`. | Bloque 3: la solicitud va al autobús elegido (ADR-016) y caduca a los 30 min. Pendiente de aprobación. |

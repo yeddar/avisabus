@@ -1,6 +1,6 @@
 # Casos de uso — AvisaBus
 
-> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-03: textos de botón "Solicitar"/"Cancelar solicitud" en CU-03 y CU-04, aprobada en la PR #7). Deriva de `docs/vision.md` y `docs/requirements.md`.
+> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-03: textos de botón "Solicitar"/"Cancelar solicitud" en CU-03 y CU-04, aprobada en la PR #7; v1.2 · 2026-11-04: autobús elegido en CU-03, necesidad visual en CU-05 y detección de paso por viaje en CU-07, pendiente de aprobación en la PR del bloque 3). Deriva de `docs/vision.md` y `docs/requirements.md`.
 > Cada caso de uso referencia los requisitos que cubre. Los flujos alternativos se numeran
 > `<paso><letra>` (p. ej. `3a` es una alternativa al paso 3).
 
@@ -108,10 +108,10 @@ flowchart LR
 - **Disparador:** el pasajero pulsa "Solicitar" en una llegada (en la interfaz, el aviso se presenta como **solicitud de parada**; ver glosario de `docs/conventions.md`).
 
 **Flujo principal**
-1. El pasajero pulsa "Solicitar" en la fila de la línea y destino deseados.
-2. El sistema muestra las necesidades de accesibilidad precargadas del perfil (CU-05) y el botón "confirmar aviso".
+1. El pasajero pulsa "Solicitar" en la llegada del autobús que quiere tomar (puede no ser el primero de la línea, p. ej. si va lleno).
+2. El sistema muestra un panel con las necesidades de accesibilidad precargadas del perfil (CU-05) y el botón "Solicitar parada". Siempre hay este paso de confirmación, para evitar solicitudes por un toque accidental.
 3. El pasajero confirma.
-4. El sistema registra el aviso (parada, línea, sentido, necesidades, identificador anónimo del dispositivo) y lo asigna al próximo autobús de esa línea y sentido.
+4. El sistema registra el aviso (parada, línea, sentido, viaje elegido, necesidades, identificador anónimo del dispositivo) y lo asigna a ese autobús.
 5. El sistema entrega el aviso a la vista del conductor de ese autobús (CU-09).
 6. El sistema muestra al pasajero "el conductor ha recibido tu aviso" y el estado del aviso activo.
 
@@ -150,7 +150,7 @@ flowchart LR
 - **Disparador:** el pasajero abre "mis necesidades".
 
 **Flujo principal**
-1. El sistema muestra las opciones: rampa, tiempo extra de subida, asiento.
+1. El sistema muestra las opciones: rampa, tiempo extra de subida, asiento, discapacidad visual.
 2. El pasajero marca las que necesita y guarda.
 3. El sistema guarda el perfil **solo en el dispositivo**.
 
@@ -187,7 +187,7 @@ flowchart LR
 - **1a** El autobús asignado llega a la parada siguiente → igual que el flujo principal.
 - **1b** Han pasado 30 minutos desde la creación → igual que el flujo principal ("tu aviso ha caducado").
 
-**Detección de paso** (detalle en el `design.md` de la feature): **solo con datos del SAE**, haya o no conductor conectado. Se considera que el autobús asignado ha pasado por una parada cuando su ETA desaparece de la respuesta del SAE para esa parada o el primer ETA de la línea y destino salta al siguiente autobús. El sistema consulta el SAE de las paradas con avisos activos aunque ningún pasajero tenga la vista abierta.
+**Detección de paso** (detalle en el `design.md` de `alert_expiry`): **solo con datos del SAE**, haya o no conductor conectado. El autobús asignado se sigue por su viaje GTFS (ADR-013, ADR-016): ha pasado cuando ese viaje deja de aparecer en las llegadas en tiempo real de la parada y en la última observación llegaba en muy poco tiempo. La llegada a la parada siguiente (1a) se estima con el horario del viaje y su último retraso observado, también cuando el SAE no responde. El sistema consulta el SAE de las paradas con avisos activos aunque ningún pasajero tenga la vista abierta.
 *Trabajo futuro:* usar el GPS del conductor como fuente adicional de detección de paso.
 
 **Postcondiciones:** el aviso no existe.

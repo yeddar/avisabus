@@ -1,6 +1,6 @@
 # Requisitos del sistema — AvisaBus
 
-> Estado: **APROBADO** (v1.0 · 2026-10-31). Deriva de `docs/vision.md`.
+> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-04: RF-17 con discapacidad visual, RF-20 con el autobús elegido, pendiente de aprobación en la PR del bloque 3). Deriva de `docs/vision.md`.
 > Los requisitos aquí son **globales**. Cada feature en `specs/<feature>/requirements.md`
 > los refina en criterios de aceptación EARS y referencia sus IDs (trazabilidad).
 >
@@ -53,10 +53,10 @@
 | ID | Requisito | Prio | Objetivo |
 |---|---|---|---|
 | RF-16 | El pasajero deberá poder crear un aviso "espero la línea X (destino Y)" desde la vista de la parada. | M | OBJ-04 |
-| RF-17 | El pasajero deberá poder indicar opcionalmente necesidades: rampa, tiempo extra de subida, asiento. | M | OBJ-04 |
+| RF-17 | El pasajero deberá poder indicar opcionalmente necesidades: rampa, tiempo extra de subida, asiento, discapacidad visual (el conductor anuncia la línea y espera a que suba). | M | OBJ-04 |
 | RF-18 | El sistema deberá guardar el perfil de accesibilidad en el dispositivo y precargarlo en avisos posteriores. | S | OBJ-04 |
 | RF-19 | El sistema deberá admitir un único aviso activo por dispositivo, parada y línea, identificando el dispositivo con un identificador anónimo aleatorio. | M | OBJ-04 |
-| RF-20 | El sistema deberá asignar el aviso al próximo autobús de esa línea y sentido que llegará a la parada. | M | OBJ-04, OBJ-05 |
+| RF-20 | El sistema deberá asignar el aviso al autobús que elija el pasajero entre las próximas llegadas de esa línea y sentido a la parada (identificado por su viaje GTFS, ADR-013), siempre que llegue en 30 minutos como máximo. | M | OBJ-04, OBJ-05 |
 | RF-21 | El aviso deberá caducar cuando el autobús asignado pase por la parada, cuando llegue a la parada siguiente o, en todo caso, a los 30 minutos de su creación. | M | OBJ-04 |
 | RF-22 | El pasajero deberá poder cancelar su aviso activo. | M | OBJ-04 |
 | RF-23 | El sistema deberá confirmar automáticamente al pasajero la entrega del aviso a la vista del conductor del servicio; si no hay conductor conectado, deberá indicar "aviso registrado, sin conductor conectado". | M | OBJ-04 |

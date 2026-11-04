@@ -1,6 +1,6 @@
 # Guía visual — AvisaBus
 
-> Estado: **APROBADO** (v1.0 · 2026-11-03, PR #7; v1.1 · 2026-11-03, PR #24; v1.2 · 2026-11-04, PR #29).
+> Estado: **APROBADO** (v1.0 · 2026-11-03, PR #7; v1.1 · 2026-11-03, PR #24; v1.2 · 2026-11-04, PR #29; v1.3 · 2026-11-04, pendiente de aprobación en la PR del bloque 3).
 > Deriva de `docs/requirements.md` (RNF-03, RNF-05, RNF-14, RNF-15) y del boceto revisado por la
 > persona el 2026-11-03.
 
@@ -171,6 +171,24 @@ De arriba abajo:
 5. **Sin leyenda:** las etiquetas "Tu parada" y "Estimada" sobre el propio mapa, más el resumen en
    texto, cubren lo que diría una leyenda (decisión de la persona, 2026-11-03).
 
+### 5.8 Solicitud de parada (bloque 3)
+
+- **Fila de acciones (§5.3):** "Ver en el mapa" (secundario) y "Solicitar" (principal, icono de
+  mano) a partes iguales. Si la llegada no admite solicitud, "Ver en el mapa" ocupa todo el ancho.
+- **Estado en la tarjeta:** sustituye a la fila de acciones una caja con fondo `accent-surface`,
+  borde 2 px `accent` y radio 10 px: icono de comprobación, estado en 700 ("Parada solicitada."),
+  detalle en 400 ("Aún no hay conductor conectado en esta línea."), "Has indicado: …" en
+  `text-muted` y, debajo, "Cancelar solicitud" (secundario, ancho completo, 48 px). "Ver en el
+  mapa" se mantiene encima de la caja.
+- **Otro autobús ya solicitado:** texto de 15 px `text-muted` en lugar del botón "Solicitar".
+- **Diálogo:** hoja inferior en móvil (ancho completo, radio 14 px arriba) y caja centrada de
+  hasta 480 px en tablet; fondo `surface`, telón `rgba(20, 23, 31, 0.5)`; título de 22 px en 700;
+  casillas de 24 px con su texto de 16 px en filas de ≥ 48 px; botones a ancho completo,
+  "Solicitar parada" (principal) encima de "Volver" (secundario). Mensaje de error con fondo
+  `occ-full-bg`, texto `occ-full-fg` y borde 2 px del mismo color.
+- **Mis necesidades:** mismas casillas que el diálogo; "Guardar" principal y "Borrar mis
+  necesidades" secundario.
+
 ## 6. Iconos
 
 SVG propios en línea, de trazo (2–2,2 px, extremos redondeados), `aria-hidden="true"` y
@@ -197,3 +215,4 @@ actualizar, mapa, mano (Solicitar), información, siluetas de ocupación, flecha
 | 1.0 | 2026-11-03 | Versión inicial a partir del boceto | Revisión visual de la persona tras el bloque 1. Aprobada por la persona (PR #7). |
 | 1.1 | 2026-11-03 | §4: el rojo de EMT queda en `#E50000` (4,8:1); §5.6: ejemplo con el texto literal de `passenger_stop_view.AC-09`. | Desviaciones 2 y 3 de la revisión de `passenger_stop_view`. Aprobada por la persona (PR #24). |
 | 1.2 | 2026-11-04 | §5.1: la atribución del mapa va solo dentro del mapa, no en el pie. | Observación O-2 de `passenger_map_view`. Aprobada por la persona (PR #29). |
+| 1.3 | 2026-11-04 | §5.8: fila de acciones con "Solicitar", estado de la solicitud, diálogo de confirmación y "Mis necesidades". | Specs del bloque 3. Pendiente de aprobación. |

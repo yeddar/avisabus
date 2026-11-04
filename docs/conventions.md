@@ -1,6 +1,6 @@
 # Convenciones — AvisaBus
 
-> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-03: guía visual y terminología "Solicitar", aprobada en la PR #7; v1.2 · 2026-11-03: última parada en el estado local, aprobada en la PR #24). Obligatorio para personas y agentes.
+> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-03: guía visual y terminología "Solicitar", aprobada en la PR #7; v1.2 · 2026-11-03: última parada en el estado local, aprobada en la PR #24; v1.3 · 2026-11-04: necesidad `VISUAL`, pendiente de aprobación en la PR del bloque 3). Obligatorio para personas y agentes.
 > Si una convención entra en conflicto con una spec, manda la spec y se anota en `progress/`.
 
 ## 1. Idiomas
@@ -18,7 +18,7 @@
 | Castellano | Código | Nota |
 |---|---|---|
 | Aviso (de espera) | `Alert` | En la **interfaz** se dice "solicitar parada": botón "Solicitar" / "Sol·licita", estado "Parada solicitada", acción "Cancelar solicitud" (`docs/design.md` §7). En docs y código, "aviso" / `Alert`. |
-| Necesidad de accesibilidad | `Need` | `RAMP`, `EXTRA_TIME`, `SEAT` |
+| Necesidad de accesibilidad | `Need` | `RAMP`, `EXTRA_TIME`, `SEAT`, `VISUAL` (discapacidad visual) |
 | Parada | `Stop` | `stop_id` del GTFS = código del SAE |
 | Línea | `Line` | Agrupa `route_id` por `route_short_name` |
 | Sentido | `Direction` / `direction_id` | |
