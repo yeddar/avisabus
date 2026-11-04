@@ -16,13 +16,22 @@ from typing import Any
 import pytest
 import structlog
 from fastapi import FastAPI
+from starlette.testclient import TestClient
 from uvicorn.config import Config
 from uvicorn.protocols.http.h11_impl import H11Protocol
 from uvicorn.server import ServerState
 
 from avisabus.adapters.inbound.http.app import create_app
+from avisabus.adapters.inbound.http.container import build_realtime
+from avisabus.adapters.outbound.security.hmac_device_hasher import HmacDeviceHasher
 from avisabus.config import Settings
+from avisabus.domain.models.device import parse_device_id
+from avisabus.domain.models.events import Event
+from avisabus.domain.ports.events import device_channel
 from avisabus.logging import configure_logging
+from tests.conftest import DEFAULT_NOW
+from tests.support.fake_clock import FakeClock
+from tests.support.ws import FakeSleep, wait_until_closed
 
 DEVICE = "3f2b8c1e-9a4d-4e6f-8b2a-1c3d5e7f9a0b"
 
@@ -203,3 +212,78 @@ def test_logs_without_exception_are_unchanged(capsys: pytest.CaptureFixture[str]
     records = _records(capsys.readouterr().out)
     assert [r["event"] for r in records] == ["Started server process [42]", "ws.connected"]
     assert all("error_type" not in r for r in records)
+
+
+class _FailingSnapshots:
+    def __init__(self, marker: str) -> None:
+        self.marker = marker
+
+    async def active_alerts(self, device_hash: str) -> list[Any]:
+        raise RuntimeError(self.marker)
+
+
+@pytest.mark.spec("realtime_events.AC-12")
+def test_websocket_unhandled_exception_logs_only_its_type_and_closes_with_1011(
+    settings: Settings, marker: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    configure_logging("INFO")
+    realtime = build_realtime(
+        settings, FakeClock(DEFAULT_NOW), snapshots=_FailingSnapshots(marker), sleep=FakeSleep()
+    )
+    app = create_app(settings, realtime=realtime)
+    with TestClient(app) as client, client.websocket_connect("/ws/passenger") as ws:
+        ws.send_json({"type": "hello", "device_id": DEVICE})
+        assert ws.receive() == {"type": "websocket.close", "code": 1011, "reason": ""}
+
+    out = capsys.readouterr().out
+    assert marker not in out
+    assert DEVICE not in out
+    assert "Traceback" not in out
+    records = _records(out)
+    failures = [r for r in records if r["event"] == "unhandled_exception"]
+    assert [(r["error_type"], r["endpoint"]) for r in failures] == [
+        ("RuntimeError", "/ws/passenger")
+    ]
+    closed = [r for r in records if r["event"] == "ws.closed"]
+    assert [r["code"] for r in closed] == [1011]
+    for record in records:
+        assert not {"exception", "exc_info", "stack"} & record.keys()
+
+
+@pytest.mark.spec("realtime_events.AC-05")
+@pytest.mark.spec("realtime_events.AC-13")
+def test_a_complete_websocket_session_never_logs_the_device(
+    settings: Settings, capsys: pytest.CaptureFixture[str]
+) -> None:
+    configure_logging("DEBUG")
+    realtime = build_realtime(settings, FakeClock(DEFAULT_NOW), sleep=FakeSleep())
+    app = create_app(settings, realtime=realtime)
+    device_hash = HmacDeviceHasher(settings.stop_token_secret_bytes()).hash(parse_device_id(DEVICE))
+    with TestClient(app) as client:
+        with client.websocket_connect("/ws/passenger") as ws:
+            ws.send_json({"type": "hello", "device_id": DEVICE})
+            assert ws.receive_json() == {"type": "alerts.snapshot", "alerts": []}
+            assert client.portal is not None
+            client.portal.call(
+                realtime.publisher.publish,
+                device_channel(device_hash),
+                Event(type="alert.test", payload={"n": 1}),
+            )
+            assert ws.receive_json() == {"type": "alert.test", "n": 1}
+            ws.send_json({"type": "pong"})
+            ws.close(1000)
+            wait_until_closed(client, realtime.registry)
+        with client.websocket_connect("/ws/passenger") as invalid:
+            invalid.send_json({"type": "hello", "device_id": DEVICE.upper()})
+            assert invalid.receive()["code"] == 4400
+
+    out = capsys.readouterr().out
+    assert DEVICE not in out
+    assert DEVICE.upper() not in out
+    assert device_hash not in out
+    events = [r["event"] for r in _records(out)]
+    assert events.count("ws.connected") == 1
+    assert events.count("ws.closed") == 1
+    assert events.count("ws.rejected") == 1
+    for record in _records(out):
+        assert not {"device_id", "device_hash", "channel"} & record.keys()

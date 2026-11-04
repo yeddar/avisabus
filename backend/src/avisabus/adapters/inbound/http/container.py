@@ -4,15 +4,24 @@
 a `FakeClock` and a replayed or fake arrivals source.
 """
 
+import asyncio
 import math
-from collections.abc import Mapping
+from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from datetime import timedelta
 
 import structlog
 from sqlalchemy import Engine
 
+from avisabus.adapters.inbound.ws.connections import ConnectionRegistry
+from avisabus.adapters.inbound.ws.passenger import (
+    EmptySnapshotProvider,
+    PassengerSnapshotProvider,
+    PassengerSocket,
+)
+from avisabus.adapters.outbound.events.in_memory import InMemoryEventPublisher
 from avisabus.adapters.outbound.persistence.sqlite_network import SqliteNetworkRepository
+from avisabus.adapters.outbound.security.hmac_device_hasher import HmacDeviceHasher
 from avisabus.adapters.outbound.security.hmac_stop_token import HmacStopTokenSigner
 from avisabus.application.direction_overrides import validate_direction_overrides
 from avisabus.application.get_shape import GetShape
@@ -23,11 +32,14 @@ from avisabus.application.scheduled_arrivals import ScheduledArrivalsProvider
 from avisabus.config import Settings
 from avisabus.domain.ports.arrivals import ArrivalsSource
 from avisabus.domain.ports.clock import Clock
+from avisabus.domain.ports.device import DeviceHasher
+from avisabus.domain.ports.events import EventPublisher
 from avisabus.domain.ports.occupancy import OccupancySensor
 from avisabus.domain.services.direction_resolver import DEFAULT_ALIASES
 
 ARRIVALS_LOGGER = "avisabus.arrivals"
 POSITION_LOGGER = "avisabus.position"
+WS_LOGGER = "avisabus.ws"
 
 
 @dataclass(frozen=True, slots=True)
@@ -95,3 +107,46 @@ def build_position_use_cases(stops: StopUseCases, engine: Engine, clock: Clock) 
         ),
         get_shape=GetShape(network),
     )
+
+
+@dataclass(frozen=True, slots=True)
+class Realtime:
+    """Real-time events and WebSockets (realtime_events design §2). `create_app` mounts
+    `/ws/passenger`, keeps `hasher` for `device_hash_from_header` and runs `registry` in the
+    lifespan (`ws.stats`, close with `1001` on stop)."""
+
+    publisher: EventPublisher
+    hasher: DeviceHasher
+    registry: ConnectionRegistry
+    passenger: PassengerSocket
+
+
+def build_realtime(
+    settings: Settings,
+    clock: Clock,
+    snapshots: PassengerSnapshotProvider | None = None,
+    sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
+) -> Realtime:
+    """`snapshots` defaults to `EmptySnapshotProvider` until `alert_create` provides the active
+    alerts. The device hash key derives from the stop token secret (no new variable)."""
+    logger = structlog.get_logger(WS_LOGGER)
+    publisher = InMemoryEventPublisher(queue_size=settings.event_queue_size)
+    hasher = HmacDeviceHasher(settings.stop_token_secret_bytes())
+    registry = ConnectionRegistry(
+        max_connections=settings.ws_max_connections,
+        clock=clock,
+        publisher=publisher,
+        logger=logger,
+        sleep=sleep,
+    )
+    passenger = PassengerSocket(
+        publisher=publisher,
+        hasher=hasher,
+        snapshots=snapshots or EmptySnapshotProvider(),
+        registry=registry,
+        logger=logger,
+        hello_timeout_s=settings.ws_hello_timeout_s,
+        ping_interval_s=settings.ws_ping_interval_s,
+        sleep=sleep,
+    )
+    return Realtime(publisher=publisher, hasher=hasher, registry=registry, passenger=passenger)
