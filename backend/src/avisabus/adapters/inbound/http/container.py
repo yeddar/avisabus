@@ -21,12 +21,14 @@ from avisabus.adapters.inbound.ws.passenger import (
     PassengerSocket,
 )
 from avisabus.adapters.outbound.drivers.no_driver_directory import NoDriverDirectory
+from avisabus.adapters.outbound.drivers.noop_notifier import NoopDriverViewNotifier
 from avisabus.adapters.outbound.events.in_memory import InMemoryEventPublisher
 from avisabus.adapters.outbound.persistence.sqlite_alerts import SqliteAlertRepository
 from avisabus.adapters.outbound.persistence.sqlite_network import SqliteNetworkRepository
 from avisabus.adapters.outbound.rate_limit.in_memory import InMemoryRateLimiter
 from avisabus.adapters.outbound.security.hmac_device_hasher import HmacDeviceHasher
 from avisabus.adapters.outbound.security.hmac_stop_token import HmacStopTokenSigner
+from avisabus.application.cancel_alert import CancelAlert
 from avisabus.application.create_alert import CreateAlert
 from avisabus.application.direction_overrides import validate_direction_overrides
 from avisabus.application.get_shape import GetShape
@@ -163,10 +165,11 @@ def build_realtime(
 
 @dataclass(frozen=True, slots=True)
 class AlertUseCases:
-    """Use cases of the alert endpoints (alert_create design §2)."""
+    """Use cases of the alert endpoints (alert_create and alert_cancel design §2)."""
 
     create_alert: CreateAlert
     list_my_alerts: ListMyAlerts
+    cancel_alert: CancelAlert
 
 
 def build_alert_use_cases(
@@ -177,9 +180,11 @@ def build_alert_use_cases(
     publisher: EventPublisher,
 ) -> AlertUseCases:
     """The bus is validated with the stops' `GetStopArrivals`, so it shares its SAE cache
-    (AC-03); the events go through the real-time publisher. Block 3 has no drivers."""
+    (AC-03); the events (confirmation and `alert.cancelled`) go through the real-time
+    publisher. Block 3 has no drivers nor driver views to refresh."""
     window = timedelta(minutes=settings.alert_rate_window_min)
     alerts = SqliteAlertRepository(engine)
+    logger = structlog.get_logger(ALERTS_LOGGER)
     return AlertUseCases(
         create_alert=CreateAlert(
             stop_arrivals=stops.get_stop_arrivals,
@@ -191,9 +196,12 @@ def build_alert_use_cases(
             events=publisher,
             clock=clock,
             max_age=timedelta(minutes=settings.alert_max_age_min),
-            logger=structlog.get_logger(ALERTS_LOGGER),
+            logger=logger,
         ),
         list_my_alerts=ListMyAlerts(alerts),
+        cancel_alert=CancelAlert(
+            alerts=alerts, events=publisher, drivers=NoopDriverViewNotifier(), logger=logger
+        ),
     )
 
 

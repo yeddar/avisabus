@@ -10,6 +10,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from avisabus.domain.errors import (
+    AlertNotFoundError,
     BusNotRequestableError,
     InvalidDeviceIdError,
     LineNotAtStopError,
@@ -28,6 +29,7 @@ LINE_NOT_AT_STOP_TYPE = "https://avisabus/problems/line-not-at-stop"
 INVALID_DEVICE_ID_TYPE = "https://avisabus/problems/invalid-device-id"
 BUS_NOT_REQUESTABLE_TYPE = "https://avisabus/problems/bus-not-requestable"
 RATE_LIMITED_TYPE = "https://avisabus/problems/rate-limited"
+ALERT_NOT_FOUND_TYPE = "https://avisabus/problems/alert-not-found"
 
 _logger = structlog.get_logger(__name__)
 
@@ -44,9 +46,11 @@ def problem_response(
 
 
 async def handle_unexpected_error(request: Request, exc: Exception) -> JSONResponse:
+    """Generic `500`, never stored by a cache: Starlette builds it outside the application
+    middleware, so `NoStoreMiddleware` cannot add `no-store` to it (alert_cancel AC-05)."""
     # Only the exception type is logged: messages and paths may carry identifiers.
     _logger.error("unhandled_exception", error_type=type(exc).__name__, method=request.method)
-    return problem_response(HTTPStatus.INTERNAL_SERVER_ERROR)
+    return problem_response(HTTPStatus.INTERNAL_SERVER_ERROR, headers={"Cache-Control": NO_STORE})
 
 
 async def handle_stop_not_found(_request: Request, _exc: Exception) -> JSONResponse:
@@ -94,6 +98,11 @@ async def handle_rate_limited(_request: Request, exc: Exception) -> JSONResponse
     )
 
 
+async def handle_alert_not_found(_request: Request, _exc: Exception) -> JSONResponse:
+    """alert_cancel AC-02: same body for a missing, expired or foreign alert."""
+    return problem_response(HTTPStatus.NOT_FOUND, ALERT_NOT_FOUND_TYPE, {"Cache-Control": NO_STORE})
+
+
 def register_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(InvalidDeviceIdError, handle_invalid_device_id)
     app.add_exception_handler(StopNotFoundError, handle_stop_not_found)
@@ -102,4 +111,5 @@ def register_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(LineNotAtStopError, handle_line_not_at_stop)
     app.add_exception_handler(BusNotRequestableError, handle_bus_not_requestable)
     app.add_exception_handler(RateLimitedError, handle_rate_limited)
+    app.add_exception_handler(AlertNotFoundError, handle_alert_not_found)
     app.add_exception_handler(Exception, handle_unexpected_error)

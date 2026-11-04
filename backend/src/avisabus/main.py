@@ -76,7 +76,7 @@ position_use_cases = build_position_use_cases(stop_use_cases, engine, clock)
 # (realtime_events, alert_create).
 realtime = build_realtime(settings, clock, snapshots=build_alert_snapshots(engine))
 # The alerts validate the bus with the stops' `GetStopArrivals` (same SAE cache) and publish their
-# confirmation through the real-time publisher (alert_create).
+# confirmation (alert_create) and cancellation (alert_cancel) through the real-time publisher.
 alert_use_cases = build_alert_use_cases(settings, engine, clock, stop_use_cases, realtime.publisher)
 
 
