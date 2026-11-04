@@ -1,6 +1,6 @@
 # Eventos en tiempo real — design
 
-> Feature: `realtime_events` · Versión: 1.0 · Estado: APPROVED
+> Feature: `realtime_events` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-23, RF-28 (base), RNF-02, RNF-06, RNF-07, RNF-12, RNF-13 · Casos de uso: CU-03, CU-04, CU-07 (canal) · Depende de: project_scaffold
 
 ## 1. Resumen
@@ -102,7 +102,8 @@ Protocolo (`/ws/passenger`):
 | 4 | servidor → cliente | eventos del canal en orden; `{"type": "ping"}` cada 25 s |
 | — | cliente → servidor | `{"type": "pong"}` u otros: se ignoran |
 
-Códigos de cierre: `1000` normal, `1001` parada del servidor (AC-11), `1013` demasiadas
+Códigos de cierre: `1000` normal, `1001` parada del servidor por el `lifespan` (AC-11; con
+`uvicorn` y SIGTERM, el cliente recibe antes `1012`, v1.1), `1013` demasiadas
 conexiones (AC-10), `4400` `hello` inválido, `4408` sin `hello`, `4429` suscripción desbordada
 (AC-09).
 
