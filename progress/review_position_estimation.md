@@ -1,4 +1,125 @@
 # Revisión: position_estimation
+Ciclo: 1 (v1.3) · Fecha: 2026-11-04 · Agente: reviewer
+Spec revisada: `specs/position_estimation/` v1.3 (APPROVED, PR #33) · Rama:
+`feat/position_estimation-v1.3` (HEAD `088025e`; tests en `ad41c2c`) · Base: `origin/develop`
+(`8757a9f`). Alcance de esta revisión: T-10 y la re-verificación de T-08 de la v1.3. Las
+revisiones de la v1.2 y la v1.1 se conservan más abajo, sin cambios.
+
+## Veredicto: APPROVED
+
+No hay hallazgos bloqueantes. Los dos tests de T-10 verifican lo que dicen. El de la segunda parada
+mata el mutante `k <= 1` (H-02 de la v1.2), que sin él sigue sobreviviendo a la suite completa. El
+del log fija el `shape_id` del viaje frente al representativo. Mis 16 mutantes mueren todos.
+`CI=1 ./init.sh verify --e2e` está en verde, con 998 tests en el backend y AC-17 sin cambios. No hay
+cambios de código de producción, contrato, `specs/`, `docs/` ni `frontend/`. Los hallazgos H-01…H-03
+de la v1.2 quedan resueltos por la spec v1.3 y T-10. Hay 3 observaciones no bloqueantes.
+
+## Matriz AC → evidencia (v1.3)
+
+La v1.3 solo cambia el design y los tests. Solo tienen evidencia nueva AC-04 y AC-11. AC-01 se
+añade porque el test nuevo también lo cita. Los demás AC conservan la evidencia de las matrices de
+la v1.2 y la v1.1 (más abajo), y sus tests vuelven a pasar en esta ejecución.
+
+| AC | Test(s) | Resultado | Nota |
+|---|---|---|---|
+| AC-04 (regla `k = 0` limitada a la primera parada) | **Nuevo:** `backend/tests/unit/test_position_estimator.py:214-236` `test_with_the_target_as_the_second_stop_the_rule_of_the_first_stop_does_not_apply` (6 casos). Siguen `:169` (objetivo `E`, `NOT_STARTED`), `:193` y `:207` (objetivo `A`, `AT_STOP`) | OK | El objetivo es `B` (`k = 1`). Antes de la salida (`-600`, `-1`) y con 5 min de retraso que dejan `s = −200` (`100, 420`), el resultado es `NOT_STARTED` en `d_0 = 0`, con `distance_to_stop_m = 1000`, `stops_away = 0` y `next_stop = B`. Los valores esperados salen del viaje sintético (paradas cada 1000 m y 120 s), no del código. Fija que `AT_STOP` solo prevalece con `k = 0`, como dice el paso 5 del design. |
+| AC-01 | El mismo test, casos `(0,120)`, `(60,120)`, `(119,120)` | OK | `EN_ROUTE` entre `A` y `B`: `d = 0`, `500` y `1000·119/120` (`f = (t − s_0)/(s_1 − s_0)`), y `distance_to_stop_m = 1000 − d`. El caso `0` fija la frontera `s = departure_s[0]` → `EN_ROUTE` (mata E6). |
+| AC-11 (`shape_id` del viaje en `position.estimate_failed`, design §3 v1.3) | **Nuevo:** `backend/tests/unit/test_get_vehicle_position.py:363-392` `test_the_failure_is_logged_with_the_shape_of_the_trip` (4 casos: `missing_stop_times`, `empty_shape`, `missing_stop_coordinates`, `target_not_in_trip`). Siguen `:244` y `:278` (forma del viaje `null` → `shape_id: None` en el log), `:297`, `:330` y la integración `tests/integration/test_position_api.py:274` | OK | Con el viaje `93_122` (forma `shape_93_trip`, `:151`), cada motivo da `NO_VEHICLE`, `estimate = None` y la respuesta con `shape_93` (representativo). El test comprueba además que la forma del viaje es distinta de la representativa, para que la aserción no pueda pasar por casualidad. El log se compara como lista exacta: un solo evento `warning` con `{trip_id, shape_id: "shape_93_trip", reason}`. El caso `missing_stop_times` con forma no nula es nuevo: antes solo estaba con `93_123`, que no tiene forma. Que la respuesta conserve `arrival` y `vehicle` (design v1.3) no lo comprueba este test, pero sí `:249-250`, `:306-307` y la integración `:274`. |
+
+### Pruebas de mutación (copia en el scratchpad, suite completa del backend)
+
+Copia de `backend/` (más `frontend/src/shared/api/openapi.json` y `.env.example`, que leen dos
+tests por ruta relativa) en
+`/private/tmp/claude-501/-Users-diegob-Developer-avisabus/7c6d7bf6-af5b-4ade-b145-3b1f50f59c8b/scratchpad/repo/`.
+Se ejecuta con el `.venv` del repositorio y `PYTHONPATH` apuntando al `src/` de la copia (lo he
+comprobado con `avisabus.__file__`). Base de la copia: 998 passed. Script:
+`/private/tmp/claude-501/-Users-diegob-Developer-avisabus/7c6d7bf6-af5b-4ade-b145-3b1f50f59c8b/scratchpad/mutate_v13.py`.
+Cada mutante se aplica, se ejecuta `pytest --no-cov` completo y se revierte. Al final, `diff -r`
+confirma que la copia coincide con el repositorio. El repositorio no se toca (`git status` limpio).
+
+| Mutante | Fallan (tests de T-10 / otros) | Resultado |
+|---|---|---|
+| E1 `k == 0` → `k <= 1` (`position_estimator.py:57`) | 6 / 0 | **Detectado solo por el test nuevo.** Sin él (`--deselect` del test nuevo, en una segunda copia): 992 passed, el mutante sobrevive. Confirma H-02 de la v1.2 y su cierre. |
+| E2 `k == 0` → `k in (0, 1)` | 6 / 0 | Detectado solo por el test nuevo |
+| E3 quitar `k == 0 or` | 0 / 7 | Detectado (tests v1.2 de la primera parada y AC-07) |
+| E4 `NOT_STARTED` en `d_k` | 3 / 4 | Detectado |
+| E5 `NOT_STARTED` → `AT_STOP` | 3 / 3 | Detectado |
+| E6 frontera `s < departure_s[0]` → `<=` | 1 / 2 | Detectado |
+| E7 `stops_away` con `range(k + 1)` | 6 / 10 | Detectado |
+| E8 `AT_STOP` para `k = 1` desde 60 s después de la salida | 2 / 0 | Detectado solo por el test nuevo |
+| L1 log con `direction.shape_id` (el representativo) | 4 / 3 | Detectado |
+| L2 log con `shape_id=None` | 4 / 3 | Detectado |
+| L3 log con `shape_id or direction.shape_id` | 0 / 2 | Detectado por `:244` y `:278`. El test nuevo no lo detecta porque todos sus casos tienen forma de viaje, y esa cobertura ya existía. |
+| L4 respuesta con la forma del viaje | 4 / 3 | Detectado |
+| L5 `trip_id=None` en el log | 4 / 4 | Detectado |
+| L6 `reason` constante | 4 / 5 | Detectado |
+| L7 nivel `info` | 4 / 4 | Detectado |
+| L8 `status = NO_ARRIVAL` | 4 / 5 | Detectado |
+
+16/16 detectados. 3 (E1, E2, E8) los detecta solo el test nuevo de AC-04.
+
+## Verificación ejecutada
+
+1. Puerto 4173 libre (`lsof -iTCP:4173 -sTCP:LISTEN` sin resultados). `npm run build` en
+   `frontend/`: OK (PWA, 11 entradas precacheadas).
+2. `CI=1 ./init.sh verify --e2e`: salida "verify: todo en verde", código 0.
+   - backend: format OK · lint OK · types OK · architecture OK · tests OK (998 passed, 6
+     deselected; cobertura `domain` + `application` 99,46 %).
+   - AC-17: "139 pairs checked, 5 excluded because the SAE minutes increased". Son los mismos 5
+     pares que en la v1.1 y la v1.2, así que no hay regresión.
+   - frontend: format OK · lint OK · types OK · tests OK (44 ficheros, 409 tests) · build OK ·
+     e2e + a11y OK (87 passed; `test:bundle` 4 passed).
+   - harness: `feature_list.json` OK · trazabilidad AC→test OK.
+3. Alcance (`git diff --stat origin/develop..HEAD`): 6 ficheros. Hay 2 de tests
+   (`backend/tests/unit/test_position_estimator.py` +25 y `backend/tests/unit/test_get_vehicle_position.py`
+   +52), `progress/impl_position_estimation.md` y 3 del orquestador (`feature_list.json`,
+   `progress/current.md`, `progress/history.md`). `git diff --name-only origin/develop..HEAD --
+   backend/src frontend deploy docs specs` no devuelve nada. Así que no hay cambios de producción
+   ni de contrato: el snapshot OpenAPI (`tests/integration/test_openapi_snapshot.py`) pasa contra
+   `frontend/src/shared/api/openapi.json` sin cambios.
+4. Spec frente a código (cierre de los hallazgos de la v1.2):
+   - H-01: el design §3 v1.3 declara `logger: Logger`, igual que
+     `backend/src/avisabus/application/get_vehicle_position.py:49-55`.
+   - H-02: cerrado por el test nuevo de AC-04 (E1).
+   - H-03: el design §3 v1.3 fija que el log lleva el `shape_id` del viaje (puede ser `null`) y que
+     la respuesta lleva el representativo y conserva `arrival` y `vehicle`. El código lo cumple
+     (`get_vehicle_position.py:106,111-118`) y los tests lo fijan.
+5. Lista de `docs/verification.md` §4:
+   - Arquitectura: sin cambios de código.
+   - Tests: sin red ni reloj real (instantes sintéticos y `FakeClock` del `World`), y no son
+     tautológicos (mutaciones).
+   - Privacidad: el evento solo lleva `trip_id`, `shape_id` y `reason`, y la aserción de lista
+     exacta impide añadir campos.
+   - Frontend, a11y e i18n: no aplica, porque no hay cambios de frontend.
+   - Commits: `test(position_estimation): …` y `chore(progress): …`, en Conventional Commits.
+
+## Hallazgos
+
+### Bloqueantes
+
+Ninguno.
+
+### No bloqueantes
+
+- **N-01 (tests, redundancia menor).** En `backend/tests/unit/test_get_vehicle_position.py:363-392`,
+  los casos `_without_coordinates` y `_without_the_target` repiten el montaje y las aserciones de
+  `:297` `test_a_position_that_cannot_be_estimated_has_no_vehicle` y de `:330`
+  `test_a_paired_trip_without_the_stop_has_no_vehicle`. Los cuatro afirman lo mismo sobre el log y
+  la respuesta. No es incorrecto ni lo pide T-10. Se podrían eliminar los dos tests antiguos en una
+  limpieza futura. No hay que hacer nada ahora.
+- **N-02 (harness, ya anotado como H-04 en la v1.2, no pertenece a esta feature).** Sigue abierto:
+  `bundle-budget.test.ts` lee `frontend/dist/` antes de que `init.sh` construya. Esta vez se
+  ejecutó `npm run build` antes de `verify`, como se pidió, y todo está en verde.
+- **N-03 (para el orquestador, fuera del alcance del reviewer).** Hay dos desajustes en
+  `progress/current.md`:
+  - Dice "`implementing` (solo T-10)", pero `feature_list.json` ya está en `in_review` (commit
+    `088025e`).
+  - La sección "Pendiente para specs futuras" sigue listando H-01…H-03 de la v1.2, que esta v1.3
+    resuelve. Conviene limpiarla al pasar a `done`.
+
+---
+
+# Revisión: position_estimation
 Ciclo: 1 (v1.2) · Fecha: 2026-11-04 · Agente: reviewer
 Spec revisada: `specs/position_estimation/` v1.2 (APPROVED, PR #29) · Rama:
 `feat/position_estimation-v1.2` (HEAD `1685a69`; código en `adab10e`) · Base: `origin/develop`

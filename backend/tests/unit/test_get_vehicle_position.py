@@ -5,6 +5,7 @@ The 93 trip `93_122` reaches stop 508 at 19:50:35 UTC; its stops S1, S2, 508 and
 """
 
 import math
+from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from datetime import UTC, date, datetime, timedelta
 
@@ -338,6 +339,57 @@ async def test_a_paired_trip_without_the_stop_has_no_vehicle(world: World) -> No
         "shape_93",
     )
     assert [fields["reason"] for _, _, fields in world.logger.events] == ["target_not_in_trip"]
+
+
+def _without_stop_times(network: FakeNetwork) -> None:
+    network.trips["93_122"] = []
+
+
+def _with_an_empty_shape(network: FakeNetwork) -> None:
+    network.shapes["shape_93_trip"] = []
+
+
+def _without_coordinates(network: FakeNetwork) -> None:
+    network.trips["93_122"] = [
+        replace(stop_time, shape_dist_traveled=None) for stop_time in network.trips["93_122"]
+    ]
+    del network.stops["S1"]
+
+
+def _without_the_target(network: FakeNetwork) -> None:
+    network.trips["93_122"] = [st for st in network.trips["93_122"] if st.stop_id != "508"]
+
+
+@pytest.mark.spec("position_estimation.AC-11")
+@pytest.mark.parametrize(
+    ("break_feed", "reason"),
+    [
+        (_without_stop_times, "missing_stop_times"),
+        (_with_an_empty_shape, "empty_shape"),
+        (_without_coordinates, "missing_stop_coordinates"),
+        (_without_the_target, "target_not_in_trip"),
+    ],
+)
+async def test_the_failure_is_logged_with_the_shape_of_the_trip(
+    world: World, break_feed: Callable[[FakeNetwork], None], reason: str
+) -> None:
+    # v1.3 (T-10): the log carries the trip's shape; the response, the representative one.
+    world.source.arrivals = (_sae("93", "Pass. Marítim", 4),)  # paired with 93_122
+    break_feed(world.network)
+    position = await world.execute()
+    assert (position.status, position.estimate, position.shape_id) == (
+        PositionStatus.NO_VEHICLE,
+        None,
+        "shape_93",  # representative shape of the line and direction
+    )
+    assert world.network.trip_shape_id("93_122") == "shape_93_trip" != position.shape_id
+    assert world.logger.events == [
+        (
+            "warning",
+            "position.estimate_failed",
+            {"trip_id": "93_122", "shape_id": "shape_93_trip", "reason": reason},
+        )
+    ]
 
 
 @pytest.mark.spec("position_estimation.AC-11")
