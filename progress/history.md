@@ -265,3 +265,7 @@
 ## 2026-11-03 · passenger_stop_view v1.1 · in_review → done
 - Revisión ciclo 1 de la v1.1: APPROVED; N-7/N-8 (foco) para la spec v1.2. PR contra `develop` sin
   fusionar (después de la #24). Bloque 2: 3/4 en `done`.
+
+## 2026-11-04 · PR #24 y #28 fusionadas · passenger_map_view · spec_approved → exploring
+- Rama `feat/passenger_map_view`; E-01 (Leaflet y teselas OSM). PR #29 (specs v1.2 de
+  `passenger_stop_view` y `position_estimation`) pendiente de la persona.

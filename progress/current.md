@@ -4,19 +4,21 @@
 
 **Fecha:** 2026-11-03
 **Fase:** Implementación — Bloque 2
-**Feature en curso:** `passenger_stop_view` v1.1 — `done`, PR abierta (sin fusionar; va justo después de la #24).
-Siguiente: `passenger_map_view`.
+**Feature en curso:** `passenger_map_view` v1.0 — `exploring` (rama `feat/passenger_map_view`)
 
 ## Último paso
-`passenger_stop_view` v1.1 (T-11, AC-17 y AC-24) en `feat/passenger_stop_view-v1.1`. Revisión ciclo 1 de la
-v1.1: **APPROVED** sin bloqueantes (`CI=1 ./init.sh verify --e2e` en verde: 969 backend, 287 Vitest, 60 e2e).
-PR contra `develop` abierta; la persona fusionará la #24 y esta seguidas.
+PR #24 (CP-4, `passenger_stop_view` v1.1 spec, `frontend_i18n` v1.1) y PR #28 (T-11) fusionadas.
+`passenger_map_view` → `exploring`: explorer con E-01 (react-leaflet/Leaflet con React 19.3, Vite 8 y
+modo estricto; política de teselas de OSM) → `progress/explore_map.md`.
 
 ## Siguiente paso
-1. La persona fusiona la #24 y la PR de T-11.
-2. `passenger_map_view` (rama desde `develop` ya con ambas).
-3. CP-6 del bloque 2: textos (tablas es/ca en `progress/impl_passenger_stop_view.md`), anuncios de
-   "llegando" con lector de pantalla, foco tras acciones manuales y tras un refresco automático (N-8).
+1. `passenger_map_view`: exploración → implementer → reviewer nuevo → `done` → PR sin fusionar.
+   (Si la política de teselas impide usar OSM en la demo → CP-3.)
+2. **Cuando la #29 esté fusionada** (`passenger_stop_view` v1.2: N-7/N-8; `position_estimation` v1.2:
+   H-01/H-02): `passenger_stop_view` T-12 y `position_estimation` T-09, cada una con revisión nueva y
+   PR propia.
+3. CP-6 del bloque 2: textos (tablas es/ca en `progress/impl_passenger_stop_view.md`), anuncios con
+   lector de pantalla, foco tras acciones manuales.
 
 ## Pendiente para specs futuras
 - **position_estimation (H-01, H-02, H-04 → spec-writer en la próxima revisión; H-03 → `nfr_validation`) H-01 (spec):** AC-03 y AC-04 se solapan si la parada objetivo es la primera del
