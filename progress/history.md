@@ -384,3 +384,6 @@
 ## 2026-11-04 · realtime_events · in_review → done
 - Revisión ciclo 1 (v1.1): APPROVED (28/33 mutantes detectados; los 5 restantes tocan una sola capa
   redundante del filtro de logs). PR sin fusionar.
+
+## 2026-11-04 · realtime_events PR #40 abierta · alert_create · spec_approved → implementing
+- Rama `feat/alert_create` apilada sobre `feat/realtime_events` (PR #40 sin fusionar).
