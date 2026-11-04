@@ -1,5 +1,13 @@
 import type { UseQueryResult } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import {
+  type ReactNode,
+  type RefObject,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useParams, useSearchParams } from 'react-router-dom';
 
@@ -27,10 +35,21 @@ const H1 = 'text-[1.75rem] leading-[1.15] font-bold';
 
 /** Requests the person made with "Actualizar" or "Reintentar" (passenger_stop_view.AC-24). */
 type ManualAction = 'refresh' | 'retry';
-/** Control that gets the focus when a manual action ends; a new object per request. */
-type FocusRequest = { target: ManualAction };
+/**
+ * Control that gets the focus; a new object per request. `lost`: the focused "Reintentar"
+ * disappeared, so the focus moves only while nothing else has taken it (it is on body).
+ */
+type FocusRequest = { target: ManualAction; lost?: boolean };
 
 const isFailure = (result: { isError: boolean }) => result.isError;
+const isNotFoundResult = (result: { error: ApiError | null }) => isNotFound(result.error);
+
+/**
+ * A query without data that failed and is being asked again: TanStack Query v5 puts it back to
+ * "pending" (without error) while the request is in flight or paused without connection.
+ */
+const isRetryingAfterError = (result: UseQueryResult<unknown, ApiError>) =>
+  result.isPending && result.fetchStatus !== 'idle' && result.errorUpdateCount > 0;
 
 /** Route /p/:stopId?t={token}: the passenger's stop view (CU-01). */
 export function StopPage() {
@@ -45,9 +64,46 @@ export function StopPage() {
 function StopView({ stopId, token }: { stopId: string; token: string }) {
   const stop = useStop(stopId, token);
   const arrivals = useStopArrivals(stopId, token);
+  // A manual action answered with a 404 takes the focus to the h1 (passenger_stop_view.AC-24).
+  const [manualNotFound, setManualNotFound] = useState(false);
+  const onManualNotFound = useCallback(() => setManualNotFound(true), []);
 
-  if (isNotFound(stop.error) || isNotFound(arrivals.error)) return <StopNotFound />;
-  return <StopContent stop={stop} arrivals={arrivals} token={token} />;
+  if (isNotFound(stop.error) || isNotFound(arrivals.error)) {
+    return <StopNotFound focusHeading={manualNotFound} />;
+  }
+  return (
+    <StopContent
+      stop={stop}
+      arrivals={arrivals}
+      token={token}
+      onManualNotFound={onManualNotFound}
+    />
+  );
+}
+
+interface RetryActionProps {
+  control: RefObject<HTMLDivElement | null>;
+  /** Called when the button is removed while it has the focus. */
+  onRemovedWithFocus: () => void;
+  children: ReactNode;
+}
+
+/** Wrapper of "Reintentar" that notices when it disappears with the focus on it. */
+function RetryAction({ control, onRemovedWithFocus, children }: RetryActionProps) {
+  useLayoutEffect(() => {
+    const element = control.current;
+    // Layout cleanups of a removed subtree run before its nodes leave the DOM (like
+    // componentWillUnmount), so the focus can still be read here.
+    return () => {
+      if (element?.contains(document.activeElement)) onRemovedWithFocus();
+    };
+  }, [control, onRemovedWithFocus]);
+
+  return (
+    <div ref={control} className="flex">
+      {children}
+    </div>
+  );
 }
 
 /** Mounted only once there are data, so arrivals already "Llegando" on load are not announced. */
@@ -60,9 +116,11 @@ interface StopContentProps {
   stop: UseQueryResult<StopResponse, ApiError>;
   arrivals: UseQueryResult<StopArrivalsResponse, ApiError>;
   token: string;
+  /** A manual action ended with a 404: the view becomes "Parada no encontrada". */
+  onManualNotFound: () => void;
 }
 
-function StopContent({ stop, arrivals, token }: StopContentProps) {
+function StopContent({ stop, arrivals, token, onManualNotFound }: StopContentProps) {
   const { t } = useTranslation();
   const language = useUiLanguage();
   const announce = useAnnounce();
@@ -75,9 +133,14 @@ function StopContent({ stop, arrivals, token }: StopContentProps) {
   const focusDone = useRef<FocusRequest | null>(null);
   const refreshControl = useRef<HTMLDivElement>(null);
   const retryControl = useRef<HTMLDivElement>(null);
-  // While a retry is in flight the queries without data go back to "pending": keep the error
-  // notice so that "Reintentar" (and the focus on it) does not disappear meanwhile.
-  const showError = failed || manualAction === 'retry';
+  // While a retry (manual or automatic) is in flight the queries without data go back to
+  // "pending": keep the error notice so that "Reintentar" (and the focus on it) does not
+  // disappear meanwhile. It goes away when the data arrive (passenger_stop_view.AC-24).
+  const showError =
+    failed ||
+    manualAction === 'retry' ||
+    isRetryingAfterError(stop) ||
+    isRetryingAfterError(arrivals);
   const showRefresh = data !== undefined && !arrivals.isError;
 
   usePageTitle(stop.data?.name ?? t('stop.title'));
@@ -91,12 +154,25 @@ function StopContent({ stop, arrivals, token }: StopContentProps) {
   // The control that must receive the focus may only appear once the new state is painted.
   useEffect(() => {
     if (focusRequest === null || focusDone.current === focusRequest) return;
+    // Never take the focus from wherever the person has put it meanwhile.
+    const focusMoved = document.activeElement !== null && document.activeElement !== document.body;
+    if (focusRequest.lost === true && focusMoved) {
+      focusDone.current = focusRequest;
+      return;
+    }
     const control = focusRequest.target === 'retry' ? retryControl : refreshControl;
     const button = control.current?.querySelector('button');
     if (button == null) return;
     button.focus();
     focusDone.current = focusRequest;
   }, [focusRequest, showError, showRefresh]);
+
+  // "Reintentar" had the focus and an automatic refresh made it disappear: go to "Actualizar",
+  // without announcement (passenger_stop_view.AC-24, AC-15). Also harmless after a manual one.
+  const onRetryRemovedWithFocus = useCallback(
+    () => setFocusRequest({ target: 'refresh', lost: true }),
+    [],
+  );
 
   /**
    * End of a manual action (passenger_stop_view.AC-14, AC-24): polite announcement and focus on
@@ -116,6 +192,8 @@ function StopContent({ stop, arrivals, token }: StopContentProps) {
     if (manualAction !== null) return;
     setManualAction('refresh');
     const result = await arrivals.refetch();
+    // The view becomes "Parada no encontrada", whose h1 is read when it gets the focus.
+    if (isNotFoundResult(result)) return onManualNotFound();
     finish('refresh', result.isError);
   }
 
@@ -127,6 +205,7 @@ function StopContent({ stop, arrivals, token }: StopContentProps) {
       arrivals.refetch(),
       ...(stop.isError ? [stop.refetch()] : []),
     ]);
+    if (results.some(isNotFoundResult)) return onManualNotFound();
     finish('retry', results.some(isFailure));
   }
 
@@ -149,11 +228,11 @@ function StopContent({ stop, arrivals, token }: StopContentProps) {
         {showError && (
           <StatusNotice
             action={
-              <div ref={retryControl} className="flex">
+              <RetryAction control={retryControl} onRemovedWithFocus={onRetryRemovedWithFocus}>
                 <Button icon={<RefreshIcon className="size-[18px]" />} onClick={() => void retry()}>
                   {t('stop.error.retry')}
                 </Button>
-              </div>
+              </RetryAction>
             }
           >
             <Trans i18nKey="stop.error.body" components={{ strong: <strong /> }} />
