@@ -272,3 +272,7 @@
 
 ## 2026-11-04 · passenger_map_view · exploring → implementing
 - E-01: react-leaflet 5.0.0 + leaflet ^1.9.4; política de teselas de OSM cumplida en la demo (sin CP-3).
+
+## 2026-11-04 · passenger_map_view · implementing → spec_blocked (CP-3)
+- T-01 hecha (enlace "Ver en el mapa"). AC-04: B-01 (primera parada en `NOT_STARTED` no disponible) y
+  B-02 ("Llega en {tiempo}" con `CLOCK_TIME`). O-1…O-4 para la misma revisión de spec.
