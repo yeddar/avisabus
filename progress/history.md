@@ -285,3 +285,7 @@
 ## 2026-11-04 · passenger_map_view · implementing → in_review
 - T-02…T-07 (v1.1); `CI=1 ./init.sh verify --e2e` en verde (392 Vitest, 84 e2e, JS inicial 141,2 KB
   gzip; Leaflet en fragmento diferido de 50,2 KB). Sin red en tests (teselas locales).
+
+## 2026-11-04 · passenger_map_view · in_review → changes_requested → implementing (ciclo 2)
+- Revisión ciclo 1: CHANGES_REQUESTED por B-01 (AC-10: `panBy` con flechas anima 0,25 s con
+  movimiento reducido; el test solo comprueba opciones). Arreglo local, sin CP-3.

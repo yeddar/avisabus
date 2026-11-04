@@ -4,7 +4,7 @@
 
 **Fecha:** 2026-11-03
 **Fase:** Implementación — Bloque 2
-**Feature en curso:** `passenger_map_view` v1.1 — `implementing` (T-02…T-07); T-01 hecha
+**Feature en curso:** `passenger_map_view` v1.1 — `implementing` (ciclo de revisión 2: B-01 de AC-10)
 
 ## Último paso
 PR #24 (CP-4, `passenger_stop_view` v1.1 spec, `frontend_i18n` v1.1) y PR #28 (T-11) fusionadas.
@@ -15,13 +15,19 @@ Incidencia: el explorer envió por error el correo de contacto de la persona en 
 petición `HEAD` a `tile.openstreetmap.org` (anotado en el informe, sin el correo).
 
 ## Siguiente paso
-1. `passenger_map_view` v1.1: implementer T-02…T-07 → reviewer nuevo → `done` → PR sin fusionar.
+1. `passenger_map_view` v1.1: revisión ciclo 1 **CHANGES_REQUESTED** (B-01, AC-10: con movimiento reducido,
+   las flechas siguen animando el desplazamiento vía `panBy`; el test solo mira opciones). Implementer
+   (ciclo 2) → reviewer nuevo → `done` → PR sin fusionar.
 2. Después: `passenger_stop_view` T-12 (v1.2: N-7/N-8) y `position_estimation` T-09 (v1.2: H-01/H-02),
    cada una con revisión nueva y PR propia.
 3. CP-6 del bloque 2: textos (tablas es/ca en `progress/impl_passenger_stop_view.md`), anuncios con
    lector de pantalla, foco tras acciones manuales.
 
 ## Pendiente para specs futuras
+- **passenger_map_view (no bloqueantes ciclo 1):** N-01 `SUMMARY_TEXT_ID` sin uso; design §3
+  (`aria-describedby="summary-id"`) frente a §4 (`map.regionDescription`). N-02 elisión valenciana sin i/u
+  semiconsonántica ("de Iaia"). N-03 → CP-6: insignia "Posición estimada" junto a "Posición no
+  disponible…" en NO_ARRIVAL (cumple AC-05 "siempre"). N-04 costuras de teselas solo por el PNG simulado.
 - **passenger_map_view E-01 → `deployment_rpi` / docs:** no usar `Referrer-Policy: no-referrer` en nginx
   ni cachear teselas de OSM en el service worker; opcional `VITE_MAP_TILE_ATTRIBUTION` (la atribución
   es fija). Alternativas si OSM bloquea: IGN Base (WMTS, CC BY 4.0, plantilla sin verificar), CARTO (clave).
