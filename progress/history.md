@@ -375,3 +375,5 @@
 ## 2026-11-04 · realtime_events · implementing → spec_blocked (CP-3)
 - T-01…T-05 hechas, verify en verde. AC-11: con uvicorn el cliente recibe `1012` (no `1001`) al apagar.
   La persona elige la opción (c): AC-11 admite `1001` o `1012`. Spec-writer para la v1.1.
+
+- La v1.1 la aporta la persona en la PR #38; el borrador del spec-writer (PR #39) se cierra sin fusionar.

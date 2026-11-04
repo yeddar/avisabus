@@ -89,7 +89,8 @@ Las ramas se apilan sobre la anterior mientras sus PRs no estén fusionadas.
 ## Checkpoints pendientes
 **CP-3 `realtime_events` AC-11** (decidido por la persona: opción c): uvicorn 0.54 cierra los WebSockets
 con `1012` al recibir SIGTERM antes de ejecutar el shutdown del lifespan, que cierra con `1001`. AC-11
-debe admitir `1001` o `1012`. Spec v1.1 redactada por el spec-writer → **CP-1 de la persona**.
+debe admitir `1001` o `1012`. Spec v1.1 en la PR #38 de la persona (sin cambios de código). Al fusionarla:
+reviewer de `realtime_events` → PR → `alert_create`.
 
 ## Bloqueos
 Ninguno. 
