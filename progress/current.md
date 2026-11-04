@@ -4,21 +4,32 @@
 
 **Fecha:** 2026-11-03
 **Fase:** Implementación — Bloque 2
-**Feature en curso:** `passenger_stop_view` v1.1 — `done`, PR abierta (sin fusionar; va justo después de la #24).
-Siguiente: `passenger_map_view`.
+**Feature en curso:** `passenger_map_view` v1.1 — `done`, PR abierta (sin fusionar). Siguiente: `passenger_stop_view` T-12.
 
 ## Último paso
-`passenger_stop_view` v1.1 (T-11, AC-17 y AC-24) en `feat/passenger_stop_view-v1.1`. Revisión ciclo 1 de la
-v1.1: **APPROVED** sin bloqueantes (`CI=1 ./init.sh verify --e2e` en verde: 969 backend, 287 Vitest, 60 e2e).
-PR contra `develop` abierta; la persona fusionará la #24 y esta seguidas.
+PR #24 (CP-4, `passenger_stop_view` v1.1 spec, `frontend_i18n` v1.1) y PR #28 (T-11) fusionadas.
+`passenger_map_view`: E-01 completada (`progress/explore_map.md`): react-leaflet 5.0.0 + leaflet ^1.9.4
+compatibles (StrictMode sin errores; Leaflet en fragmento diferido de ~45 KB gzip); la demo cumple la
+política de teselas de OSM → sin CP-3. → `implementing`.
+Incidencia: el explorer envió por error el correo de contacto de la persona en el User-Agent de una
+petición `HEAD` a `tile.openstreetmap.org` (anotado en el informe, sin el correo).
 
 ## Siguiente paso
-1. La persona fusiona la #24 y la PR de T-11.
-2. `passenger_map_view` (rama desde `develop` ya con ambas).
-3. CP-6 del bloque 2: textos (tablas es/ca en `progress/impl_passenger_stop_view.md`), anuncios de
-   "llegando" con lector de pantalla, foco tras acciones manuales y tras un refresco automático (N-8).
+1. `passenger_map_view` v1.1: ciclo 1 CHANGES_REQUESTED (B-01, AC-10), ciclo 2 **APPROVED**. PR abierta.
+2. Después: `passenger_stop_view` T-12 (v1.2: N-7/N-8) y `position_estimation` T-09 (v1.2: H-01/H-02),
+   cada una con revisión nueva y PR propia.
+3. CP-6 del bloque 2: textos (tablas es/ca en `progress/impl_passenger_stop_view.md`), anuncios con
+   lector de pantalla, foco tras acciones manuales.
 
 ## Pendiente para specs futuras
+- **passenger_map_view:** N-01 resuelto en ciclo 2 (design §3 `aria-describedby="summary-id"` frente a §4
+  `map.regionDescription` sigue por alinear). N-05 `waitForTimeout(400)` en `e2e/map-view.spec.ts:422`
+  (sobra). N-06 preferencia de movimiento reducido leída al montar. N-07 restauración de `panBy` sin test. N-02 elisión valenciana sin i/u
+  semiconsonántica ("de Iaia"). N-03 → CP-6: insignia "Posición estimada" junto a "Posición no
+  disponible…" en NO_ARRIVAL (cumple AC-05 "siempre"). N-04 costuras de teselas solo por el PNG simulado.
+- **passenger_map_view E-01 → `deployment_rpi` / docs:** no usar `Referrer-Policy: no-referrer` en nginx
+  ni cachear teselas de OSM en el service worker; opcional `VITE_MAP_TILE_ATTRIBUTION` (la atribución
+  es fija). Alternativas si OSM bloquea: IGN Base (WMTS, CC BY 4.0, plantilla sin verificar), CARTO (clave).
 - **position_estimation (H-01, H-02, H-04 → spec-writer en la próxima revisión; H-03 → `nfr_validation`) H-01 (spec):** AC-03 y AC-04 se solapan si la parada objetivo es la primera del
   viaje (implementado: `AT_STOP`; no ocurre en EMT). H-02: viaje sin `shape_dist_traveled` y con una
   parada ausente del feed activo → 500 en vez de `NO_VEHICLE` (solo si el feed cambia entre consultas).
@@ -99,7 +110,8 @@ PR contra `develop` abierta; la persona fusionará la #24 y esta seguidas.
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Ninguno. CP-3 de `position_estimation` resuelto (PR #25). PR #24 (CP-4 y `passenger_stop_view` v1.1) pendiente de la persona.
+Ninguno. CP-3 de `passenger_map_view` resuelto en la PR #29 (v1.1: B-01 opción A, B-02 con la regla de
+`passenger_stop_view.AC-06`, O-1…O-4 como se proponían). Próximo: CP-6 del bloque 2.
 
 ## Bloqueos
 Ninguno. 

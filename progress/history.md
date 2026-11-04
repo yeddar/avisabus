@@ -265,3 +265,35 @@
 ## 2026-11-03 · passenger_stop_view v1.1 · in_review → done
 - Revisión ciclo 1 de la v1.1: APPROVED; N-7/N-8 (foco) para la spec v1.2. PR contra `develop` sin
   fusionar (después de la #24). Bloque 2: 3/4 en `done`.
+
+## 2026-11-04 · PR #24 y #28 fusionadas · passenger_map_view · spec_approved → exploring
+- Rama `feat/passenger_map_view`; E-01 (Leaflet y teselas OSM). PR #29 (specs v1.2 de
+  `passenger_stop_view` y `position_estimation`) pendiente de la persona.
+
+## 2026-11-04 · passenger_map_view · exploring → implementing
+- E-01: react-leaflet 5.0.0 + leaflet ^1.9.4; política de teselas de OSM cumplida en la demo (sin CP-3).
+
+## 2026-11-04 · passenger_map_view · implementing → spec_blocked (CP-3)
+- T-01 hecha (enlace "Ver en el mapa"). AC-04: B-01 (primera parada en `NOT_STARTED` no disponible) y
+  B-02 ("Llega en {tiempo}" con `CLOCK_TIME`). O-1…O-4 para la misma revisión de spec.
+
+## 2026-11-04 · passenger_map_view · spec_blocked → spec_approved (v1.1, PR #29) → implementing
+- B-01 opción A (primera parada del trazado), B-02 con la regla de `passenger_stop_view.AC-06`,
+  O-1…O-4 como se proponían. PR #29 trae también `passenger_stop_view` v1.2 (T-12) y
+  `position_estimation` v1.2 (T-09). Rama actualizada con `develop` (merge).
+
+## 2026-11-04 · passenger_map_view · implementing → in_review
+- T-02…T-07 (v1.1); `CI=1 ./init.sh verify --e2e` en verde (392 Vitest, 84 e2e, JS inicial 141,2 KB
+  gzip; Leaflet en fragmento diferido de 50,2 KB). Sin red en tests (teselas locales).
+
+## 2026-11-04 · passenger_map_view · in_review → changes_requested → implementing (ciclo 2)
+- Revisión ciclo 1: CHANGES_REQUESTED por B-01 (AC-10: `panBy` con flechas anima 0,25 s con
+  movimiento reducido; el test solo comprueba opciones). Arreglo local, sin CP-3.
+
+## 2026-11-04 · passenger_map_view · implementing → in_review (ciclo 2)
+- B-01 corregido (`panBy` sin animación con movimiento reducido, tests unitarios y e2e que fallaban
+  antes); N-01 resuelto. Verify --e2e en verde (395 Vitest, 87 e2e).
+
+## 2026-11-04 · passenger_map_view · in_review → done
+- Revisión ciclo 2: APPROVED (B-01 corregido; mutaciones detectadas). PR contra `develop` sin fusionar.
+  Bloque 2: 4/4 en `done`; quedan `passenger_stop_view` T-12 y `position_estimation` T-09 (v1.2) → CP-6.

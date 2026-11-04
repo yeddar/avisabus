@@ -1,5 +1,13 @@
 // @vitest-environment node
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+  mkdirSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -27,6 +35,22 @@ function initialJsGzipBytes(dist: string): { files: string[]; bytes: number } {
     0,
   );
   return { files, bytes };
+}
+
+/**
+ * A CSS class that only Leaflet's code writes: present in every build that bundles the library
+ * and in no other code of the app.
+ */
+const LEAFLET_MARKER = 'leaflet-pane';
+
+/** Leaflet in the build: the JS files that contain it, and which of them are initial. */
+function leafletChunks(dist: string): { all: string[]; initial: string[] } {
+  const assets = readdirSync(join(dist, 'assets')).filter((file) => file.endsWith('.js'));
+  const all = assets
+    .map((file) => `/assets/${file}`)
+    .filter((file) => readFileSync(join(dist, file), 'utf8').includes(LEAFLET_MARKER));
+  const initial = initialScripts(readFileSync(join(dist, 'index.html'), 'utf8'));
+  return { all, initial: all.filter((file) => initial.includes(file)) };
 }
 
 describe('initial JavaScript budget', () => {
@@ -59,8 +83,38 @@ describe('initial JavaScript budget', () => {
     expect(bytes).toBe(gzipSync(entry).length + gzipSync(vendor).length);
   });
 
+  it('[passenger_map_view.AC-02] finds Leaflet in a chunk and tells whether that chunk is initial', () => {
+    const dist = mkdtempSync(join(tmpdir(), 'avisabus-dist-'));
+    temporary.push(dist);
+    mkdirSync(join(dist, 'assets'));
+    writeFileSync(join(dist, 'assets/index.js'), 'import("./MapPage.js")');
+    writeFileSync(join(dist, 'assets/MapPage.js'), `L.DomUtil.create("div","${LEAFLET_MARKER}")`);
+    writeFileSync(join(dist, 'assets/eager.js'), `"${LEAFLET_MARKER}"`);
+    writeFileSync(
+      join(dist, 'index.html'),
+      '<script type="module" crossorigin src="/assets/index.js"></script>' +
+        '<link rel="modulepreload" crossorigin href="/assets/eager.js">',
+    );
+
+    expect(leafletChunks(dist)).toEqual({
+      all: ['/assets/MapPage.js', '/assets/eager.js'],
+      initial: ['/assets/eager.js'],
+    });
+  });
+
   it.skipIf(!existsSync(join(DIST, 'index.html')))(
-    '[passenger_stop_view.AC-21] the built app loads at most 200 KB of gzipped JavaScript at start',
+    '[passenger_map_view.AC-02] Leaflet and the map are in a chunk loaded on demand, not in the initial JavaScript',
+    () => {
+      const { all, initial } = leafletChunks(DIST);
+
+      expect(all).toHaveLength(1);
+      expect(all[0]).toMatch(/^\/assets\/MapPage-[\w-]+\.js$/);
+      expect(initial).toEqual([]);
+    },
+  );
+
+  it.skipIf(!existsSync(join(DIST, 'index.html')))(
+    '[passenger_stop_view.AC-21] [passenger_map_view.AC-02] the built app loads at most 200 KB of gzipped JavaScript at start',
     () => {
       const { files, bytes } = initialJsGzipBytes(DIST);
 
