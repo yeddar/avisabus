@@ -297,3 +297,7 @@
 ## 2026-11-04 · passenger_map_view · in_review → done
 - Revisión ciclo 2: APPROVED (B-01 corregido; mutaciones detectadas). PR contra `develop` sin fusionar.
   Bloque 2: 4/4 en `done`; quedan `passenger_stop_view` T-12 y `position_estimation` T-09 (v1.2) → CP-6.
+
+## 2026-11-04 · passenger_stop_view v1.2 PR #31 abierta · position_estimation · done → implementing (v1.2, T-09)
+- Spec v1.2 (PR #29): H-01 (`AT_STOP` si la parada objetivo es la primera) y H-02 (`NO_VEHICLE` con
+  `position.estimate_failed` en vez de 500). Rama `feat/position_estimation-v1.2` desde `develop`.

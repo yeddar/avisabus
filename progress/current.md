@@ -4,7 +4,7 @@
 
 **Fecha:** 2026-11-03
 **Fase:** Implementación — Bloque 2
-**Feature en curso:** `passenger_map_view` v1.1 — `done`, PR abierta (sin fusionar). Siguiente: `passenger_stop_view` T-12.
+**Feature en curso:** `position_estimation` v1.2 — `implementing` (solo T-09), rama `feat/position_estimation-v1.2`
 
 ## Último paso
 PR #24 (CP-4, `passenger_stop_view` v1.1 spec, `frontend_i18n` v1.1) y PR #28 (T-11) fusionadas.
