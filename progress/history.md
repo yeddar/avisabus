@@ -371,3 +371,7 @@
 
 ## 2026-11-04 · PR #35, #36 y #37 fusionadas · bloque 3 · realtime_events · spec_approved → implementing
 - Specs del bloque 3 aprobadas (CP-1, PR #37). Se implementa por orden con PR por feature.
+
+## 2026-11-04 · realtime_events · implementing → spec_blocked (CP-3)
+- T-01…T-05 hechas, verify en verde. AC-11: con uvicorn el cliente recibe `1012` (no `1001`) al apagar.
+  La persona elige la opción (c): AC-11 admite `1001` o `1012`. Spec-writer para la v1.1.

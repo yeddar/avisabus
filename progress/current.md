@@ -4,7 +4,7 @@
 
 **Fecha:** 2026-11-04
 **Fase:** Implementación — Bloque 3 (solicitud de parada)
-**Feature en curso:** `realtime_events` v1.0 — `implementing` (rama `feat/realtime_events`)
+**Feature en curso:** `realtime_events` v1.0 — `spec_blocked` (CP-3 en AC-11); T-01…T-05 hechas
 
 ## Último paso
 PR #35 y #36 fusionadas (ajustes previos al bloque 3). PR #37 fusionada: specs del bloque 3 aprobadas
@@ -87,7 +87,9 @@ Las ramas se apilan sobre la anterior mientras sus PRs no estén fusionadas.
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-**CP-6 — fin del bloque 2** (tras fusionar la #32).
+**CP-3 `realtime_events` AC-11** (decidido por la persona: opción c): uvicorn 0.54 cierra los WebSockets
+con `1012` al recibir SIGTERM antes de ejecutar el shutdown del lifespan, que cierra con `1001`. AC-11
+debe admitir `1001` o `1012`. Spec v1.1 redactada por el spec-writer → **CP-1 de la persona**.
 
 ## Bloqueos
 Ninguno. 
