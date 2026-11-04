@@ -1,12 +1,50 @@
 # Implementación: passenger_map_view
-Spec: specs/passenger_map_view/ (v1.1, APPROVED, PR #29) · Ciclo de revisión: 2 · Rama: `feat/passenger_map_view`
+Spec: specs/passenger_map_view/ (v1.2, APPROVED, PR #33) · Ciclo de revisión: 0 (v1.2) · Rama: `feat/passenger_map_view-v1.2`
+Versiones anteriores: v1.1 (PR #29), ciclo de revisión 2, rama `feat/passenger_map_view`.
 Exploración: `progress/explore_map.md` (E-01), que no se repite.
 
 ## Estado
-T-01 a T-07 terminadas. `CI=1 ./init.sh verify --e2e` en verde (ver "Verificación").
+v1.2: T-08 terminada (commit 4fef5c7). `CI=1 ./init.sh verify --e2e` en verde (ver "Verificación").
+v1.1: T-01 a T-07 terminadas.
 El CP-3 (B-01, B-02, O-1…O-4) quedó resuelto en la spec v1.1 (ver "Bloqueos").
 Ciclo 2: corregido el hallazgo bloqueante B-01 (AC-10) de `progress/review_passenger_map_view.md`
 (ciclo 1) y el no bloqueante N-01 (ver "Ciclo 2").
+
+## v1.2 (CP-6 del bloque 2): T-08
+- **AC-05: sin insignia si no hay posición** (N-03, decisión de la persona en el CP-6).
+  - `buildSummary` devuelve `badge: null` cuando `position` es `null` (`NO_ARRIVAL`, `NO_VEHICLE`
+    y la respuesta incoherente `EN_ROUTE`/`NOT_STARTED` sin posición). Con posición (también
+    `AT_STOP`), la insignia sigue según `source`. `PositionSummary` no pinta la insignia (ni la
+    caja vacía) si es `null`: en la sección quedan solo el `h2` y el texto.
+  - *Tests nuevos, escritos antes y vistos en rojo (5 unitarios y 3 e2e):*
+    - `summary.test.ts` `[passenger_map_view.AC-05] (v1.2) without a position there is no badge
+      (source REALTIME/SCHEDULED)`: `NO_ARRIVAL`, `NO_VEHICLE` y `EN_ROUTE` sin posición. El test
+      anterior de la insignia por `source` usaba `NO_ARRIVAL`; ahora recorre `EN_ROUTE`,
+      `NOT_STARTED` y `AT_STOP`, todos con posición.
+    - `PositionSummary.test.tsx` `[passenger_map_view.AC-05] (v1.2, es/ca) without a position
+      there is no badge`: ningún texto de insignia en es ni en ca, y solo `H2` y `P` en la sección.
+    - `MapPage.test.tsx` `[passenger_map_view.AC-05] (v1.2) NO_ARRIVAL: no badge next to
+      "Posición no disponible"`.
+    - `e2e/map-view.spec.ts`, el test `NO_ARRIVAL` (ahora cita AC-05) comprueba que no hay
+      "Posición estimada" ni "Posición según horario" en el resumen. Con el `PositionSummary`
+      anterior fallaba en los tres perfiles (`Expected: 0, Received: 1`).
+  - i18n: no hay claves nuevas ni cambiadas (se deja de usar `map.estimated`/`map.scheduled` en
+    ese caso); la paridad es/ca-valencia no cambia.
+- **Espera fija del e2e (N-05):** `page.waitForTimeout(400)` sustituida por esperas a eventos de
+  Leaflet en `[passenger_map_view.AC-10] the arrow keys and the zoom move the map without
+  animation`: `moveend` tras la flecha derecha y `zoomend` tras `+` y tras "Alejar".
+  - La espera es necesaria y no basta con "nada": `leaflet-pan-anim` se añade de forma síncrona,
+    pero un zoom animado añade `leaflet-zoom-anim` en el siguiente `requestAnimationFrame`
+    (`_tryAnimatedZoom` de Leaflet 1.9.4). Sin espera, una regresión del zoom podría pasar.
+  - Cómo: Leaflet 1.9.4 asigna siempre `window.L` al cargarse. Un `page.addInitScript`
+    (`exposeLeafletMap`) intercepta esa asignación y registra con `L.Map.addInitHook` (API pública)
+    un gancho que guarda el mapa en `window.leafletMap`. `nextMapEvent(page, 'moveend' |
+    'zoomend')` se suscribe con `map.once` **antes** de la acción y devuelve la función que espera
+    el evento. No cambia código de producción.
+  - Mutación temporal, ya revertida: el mismo test con `reducedMotion: 'no-preference'` falla en
+    los tres perfiles (`leaflet-pan-anim` y diez `leaflet-zoom-anim` registradas). Las esperas
+    llegan hasta el final de las animaciones.
+  - Ya no queda ningún `waitForTimeout` en `frontend/e2e/`.
 
 ## Ciclo 2 (respuesta a la revisión del ciclo 1)
 - **B-01, AC-10: el desplazamiento con flechas se animaba con movimiento reducido** (commit
@@ -46,6 +84,7 @@ Ciclo 2: corregido el hallazgo bloqueante B-01 (AC-10) de `progress/review_passe
 - [x] T-05 `MapPage`: ruta diferida, "Cargando mapa…", `h1`, volver y errores (v1.1: trazado, sin token, sentido no numérico) (commit 9c6e06d)
 - [x] T-06 Presupuesto de bundle ampliado y `e2e/map-view.spec.ts` con capturas (commit 9a9a9dd)
 - [x] T-07 Verificación completa: `CI=1 ./init.sh verify --e2e` en verde
+- [x] T-08 (v1.2) Sin insignia "Posición estimada" sin posición (AC-05) y sin la espera fija en `e2e/map-view.spec.ts` (commit 4fef5c7)
 
 En cada tarea escribí los tests primero y los vi en rojo: fallo de importación (módulo
 inexistente) o de aserción, como los 4 de T-01. Para comprobar que los tests fallan si se rompe
@@ -62,7 +101,7 @@ el comportamiento, hice dos mutaciones temporales, ya revertidas:
 | AC-02 | `src/__tests__/bundle-budget.test.ts` (Leaflet solo en el fragmento `MapPage-*.js`, nunca en el JS inicial; JS inicial ≤ 200 KB). `MapPage.test.tsx` (fallback `role="status"`). E2E: el fragmento se retiene y "Cargando mapa…" se ve |
 | AC-03 | `MapPage.test.tsx`: `h1` con `arrival.destination` (`lang`) o `headsign`, título, "Volver a la parada" con token, es/ca. E2E: título, enlace y foco en el `h1` tras navegar |
 | AC-04 | `summary.test.ts`: cada estado; `MINUTES`/`CLOCK_TIME`/0 min; cuenta atrás; n = 1 / 0; `NOT_STARTED` con y sin trazado; es/ca; negritas y nombres GTFS. `PositionSummary.test.tsx`. `MapPage.test.tsx`: primera parada al llegar el trazado; cuenta atrás con el reloj del servidor. E2E: `EN_ROUTE` es/ca, `NOT_STARTED`, `NO_ARRIVAL` |
-| AC-05 | `summary.test.ts` (insignia por `source`), `PositionSummary.test.tsx` (es/ca), `busIcon.test.ts` y `BusMap.test.tsx` ("Estimada"/"Según horario", "Tu parada"/"La teua parada", sin leyenda) |
+| AC-05 | `summary.test.ts` (insignia por `source` con posición; v1.2: `null` sin posición), `PositionSummary.test.tsx` (es/ca; v1.2: sin insignia), `MapPage.test.tsx` (v1.2: `NO_ARRIVAL` sin insignia), `busIcon.test.ts` y `BusMap.test.tsx` ("Estimada"/"Según horario", "Tu parada"/"La teua parada", sin leyenda). E2E: `NO_ARRIVAL` sin insignia (v1.2) |
 | AC-06 | `useProximityAnnouncements.test.tsx` (8 casos), `PositionSummary.test.tsx` (sin región viva), `MapPage.test.tsx` (un anuncio al pasar a `AT_STOP`; un refresco fallido no anuncia) |
 | AC-07 | `mapModel.test.ts` (coordenadas `[lat, lon]`, `#e50000` y contraste ≥ 4,5:1, neutro, paradas, parada añadida, autobús, sin trazado), `busIcon.test.ts`, `BusMap.test.tsx` (trazado bajo las paradas, flecha a 90,9°, sin posición, sin trazado, ningún marcador enfocable), `MapPage.test.tsx` (trazado 404, sin `shape_id`). E2E: trazado, 28 paradas y flecha en el DOM de Leaflet |
 | AC-08 | `useInitialFit.test.ts` (encuadra una vez, al estar listo; no reencuadra), `mapModel.test.ts` (límites), `MapPage.test.tsx` (sin posición espera al trazado) |
@@ -85,7 +124,7 @@ completa, con las animaciones desactivadas y tomadas tras `document.fonts.ready`
 |---|---|
 | `map-en-route-es.png` / `-ca.png` | Resumen con insignia "Posición estimada", trazado, paradas, "Tu parada", autobús "Estimada" con flecha, zoom y atribución |
 | `map-not-started-es.png` | "Posición según horario", "Llega a las 08:58", autobús "Según horario" con borde discontinuo en la cabecera |
-| `map-no-arrival-es.png` | "Posición no disponible…", solo trazado y paradas |
+| `map-no-arrival-es.png` | "Posición no disponible…" sin insignia (v1.2), solo trazado y paradas |
 | `map-line-not-found-es.png` | "No se encuentra esta línea en tu parada" |
 | `map-error-es.png` | Aviso de error con "Reintentar" |
 | `map-focused-es.png` | Mapa con el foco del teclado (contorno de 3 px en la caja del mapa) |
@@ -103,6 +142,15 @@ atribución de 12 px abajo a la derecha y las etiquetas sobre fondo `text` con l
 Dentro del design §6 (marcadores e iconos, `lazy` frente a `React.lazy`), de la redacción que la
 v1.1 deja al implementer y de detalles internos no contractuales.
 
+- **(v1.2) Insignia sin posición:** `Summary.badge` admite `null` (`'estimated' | 'scheduled' |
+  null`) y la decisión se toma en la función pura `buildSummary` (design §1: "la lógica de qué
+  dibujar y qué decir está en funciones puras"), como indican los ficheros de T-08 (`summary.ts`,
+  `PositionSummary.tsx`). La condición es `position === null`, la de AC-05 v1.2 ("MIENTRAS haya
+  posición (`position` no nula)"). **Observación para la spec:** el tipo `Summary` del design §3
+  sigue diciendo `badge: 'estimated' | 'scheduled'`; conviene añadir `| null` en la próxima
+  revisión (no bloquea: AC-05 v1.2 lo exige y T-08 apunta a `summary.ts`).
+- **(v1.2) Esperas del e2e:** a `moveend`/`zoomend` mediante el gancho de pruebas
+  `exposeLeafletMap` (ver "v1.2"), solo en `e2e/map-view.spec.ts`.
 - **Dependencias:** `leaflet@^1.9.4`, `react-leaflet@^5.0.0` y `@types/leaflet@^1.9.22` (E-01). Se
   instalaron con `npm install --offline` desde la caché de npm, sin red.
 - **Ruta diferida:** `React.lazy` + `Suspense` en `app/routes.tsx`, con el fallback `MapLoading`
@@ -206,6 +254,24 @@ Ninguno abierto.
 - Detalle del bloqueo original: commit cff0e84, versión anterior de este fichero.
 
 ## Verificación
+### v1.2 (T-08), ciclo 0
+`npm run build` en `frontend/` y después `CI=1 ./init.sh verify --e2e` con el puerto 4173 libre,
+tras el commit 4fef5c7: **"verify: todo en verde"**.
+
+| Paso | Resultado |
+|---|---|
+| backend: format, lint, types, architecture | OK |
+| backend: tests | OK: 988 passed, 6 deselected; cobertura 99,46 % |
+| frontend: format, lint, types | OK |
+| frontend: tests | OK: 44 ficheros, 414 tests (5 nuevos de AC-05 v1.2) |
+| frontend: build | OK |
+| frontend: e2e + a11y | OK: 87 passed (27 del mapa); `test:bundle` 4/4 |
+| harness: feature_list.json, trazabilidad AC→test | OK |
+
+Estabilidad sin la espera fija: `e2e/map-view.spec.ts` con `--retries=0 --repeat-each=2`, dos
+veces: 54/54 y 54/54 (más una ejecución suelta de 27/27 y la de la verificación completa).
+`cd frontend && npm run test -- PositionSummary summary`: 29/29.
+
 ### Ciclo 2
 `CI=1 ./init.sh verify --e2e` con el puerto 4173 libre, tras el commit 516197e: **"verify: todo
 en verde"**.
