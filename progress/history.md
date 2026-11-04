@@ -394,3 +394,5 @@
 
 ## 2026-11-04 · alert_create · in_review → done
 - Revisión ciclo 1: APPROVED (31/33 mutantes, 2 equivalentes); las tres lecturas caben en la spec.
+
+## 2026-11-04 · alert_create PR #41 abierta · alert_cancel · spec_approved → implementing

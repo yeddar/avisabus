@@ -4,7 +4,8 @@
 
 **Fecha:** 2026-11-04
 **Fase:** Implementación — Bloque 3 (solicitud de parada)
-**Feature en curso:** `alert_create` v1.0 — `done`, PR abierta. Siguiente: `alert_cancel`.
+**Feature en curso:** `alert_cancel` v1.0 — `implementing` (rama `feat/alert_cancel`, apilada sobre
+`feat/alert_create`, PR #41)
 
 ## Último paso
 `realtime_events` v1.1: APPROVED (ciclo 1); PR #40 abierta. `alert_create` → `implementing`.
@@ -12,7 +13,7 @@
 ## Siguiente paso
 Bloque 3 por orden, cada una con reviewer nuevo y PR contra `develop` sin fusionar:
 1. `realtime_events`: APPROVED; PR #40.
-2. `alert_create`: APPROVED; PR abierta (apilada sobre la #40).
+2. `alert_create`: APPROVED; PR #41 (apilada sobre la #40).
 3. `alert_cancel`.
 4. `alert_expiry` (exploración E-01 sobre `stop_508_peak`; T-02 añade `GetStopArrivals.for_stop`, autorizado).
 5. `passenger_alert_ui`.
