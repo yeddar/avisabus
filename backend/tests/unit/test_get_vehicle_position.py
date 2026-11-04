@@ -105,6 +105,7 @@ class World:
             aliases=DEFAULT_ALIASES,
             direction_overrides={},
             min_score=0.2,
+            alert_max_lead=timedelta(minutes=30),
             logger=SilentLogger(),
         )
         return GetVehiclePosition(stop_arrivals, self.network, self.clock, self.logger)

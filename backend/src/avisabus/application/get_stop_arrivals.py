@@ -6,6 +6,9 @@ arrivals of each (line, direction) are paired with scheduled trips (`match_trips
 AC-11, AC-22) and the paired trips get their occupancy (AC-12).
 
 Fallback (AC-13, AC-14): when the SAE is unavailable, the next scheduled passages.
+
+An arrival can be requested (`can_alert`, alert_create AC-01, v1.6) only when it is in the
+network, its direction is resolved, it has a paired trip and it arrives within the max lead.
 """
 
 from collections import defaultdict
@@ -72,6 +75,7 @@ class GetStopArrivals:
         aliases: Mapping[str, str],
         direction_overrides: Mapping[tuple[str, str], str],
         min_score: float,
+        alert_max_lead: timedelta,
         logger: Logger,
     ) -> None:
         self._network = network
@@ -86,6 +90,7 @@ class GetStopArrivals:
         self._aliases = aliases
         self._overrides = direction_overrides
         self._min_score = min_score
+        self._alert_max_lead = alert_max_lead
         self._log = logger
 
     async def execute(self, stop_id: str, token: str) -> StopArrivals:
@@ -158,7 +163,13 @@ class GetStopArrivals:
                     sae_destination=arrival.destination,
                     vehicle=vehicle,
                     occupancy=await self._occupancy_of(vehicle, now),
-                    can_alert=resolution is not None,
+                    can_alert=self._can_alert(
+                        in_network=line is not None,
+                        direction_id=None if resolution is None else resolution.direction_id,
+                        vehicle=vehicle,
+                        arrival_at=arrival.arrival_at,
+                        now=now,
+                    ),
                 )
             )
         return views
@@ -231,6 +242,7 @@ class GetStopArrivals:
                 lines[passage.line] = self._network.get_line(passage.line)
             line = lines[passage.line]
             vehicle = VehicleView(passage.trip_id, passage.service_date)
+            arrival_at = _scheduled_at(passage)
             views.append(
                 ArrivalView(
                     line=passage.line,
@@ -239,16 +251,40 @@ class GetStopArrivals:
                     in_network=True,
                     kind=ArrivalKind.CLOCK_TIME,
                     minutes=None,
-                    arrival_at=_scheduled_at(passage),
+                    arrival_at=arrival_at,
                     line_color=None if line is None else line.color,
                     line_text_color=None if line is None else line.text_color,
                     sae_destination=None,
                     vehicle=vehicle,
                     occupancy=await self._occupancy_of(vehicle, now),
-                    can_alert=True,
+                    can_alert=self._can_alert(
+                        in_network=True,
+                        direction_id=passage.direction_id,
+                        vehicle=vehicle,
+                        arrival_at=arrival_at,
+                        now=now,
+                    ),
                 )
             )
         return views
+
+    def _can_alert(
+        self,
+        *,
+        in_network: bool,
+        direction_id: int | None,
+        vehicle: VehicleView | None,
+        arrival_at: datetime,
+        now: datetime,
+    ) -> bool:
+        """alert_create AC-01: the bus is known (paired trip) and arrives within the max lead,
+        since an alert expires after that long (RF-21). Same rule for REALTIME and SCHEDULED."""
+        return (
+            in_network
+            and direction_id is not None
+            and vehicle is not None
+            and arrival_at - now <= self._alert_max_lead
+        )
 
     async def _occupancy_of(
         self, vehicle: VehicleView | None, now: datetime

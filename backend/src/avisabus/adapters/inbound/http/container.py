@@ -84,6 +84,7 @@ def build_stop_use_cases(
             aliases=DEFAULT_ALIASES,
             direction_overrides=overrides,
             min_score=settings.direction_min_score,
+            alert_max_lead=timedelta(minutes=settings.alert_max_lead_min),
             logger=logger,
         ),
         direction_overrides=overrides,
