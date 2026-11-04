@@ -211,6 +211,31 @@ def test_with_the_target_as_the_first_stop_a_dwelling_bus_is_at_the_stop(now_s: 
     _assert_at(estimate, 0)
 
 
+@pytest.mark.spec("position_estimation.AC-04")
+@pytest.mark.spec("position_estimation.AC-01")
+@pytest.mark.parametrize(
+    ("now_s", "arrival_s", "status", "expected_d"),
+    [
+        (-600, 120, PositionStatus.NOT_STARTED, 0),
+        (-1, 120, PositionStatus.NOT_STARTED, 0),
+        (100, 120 + 300, PositionStatus.NOT_STARTED, 0),  # 5 min late: shifted instant −200 s
+        (0, 120, PositionStatus.EN_ROUTE, 0),
+        (60, 120, PositionStatus.EN_ROUTE, 500),
+        (119, 120, PositionStatus.EN_ROUTE, 1000 * 119 / 120),
+    ],
+)
+def test_with_the_target_as_the_second_stop_the_rule_of_the_first_stop_does_not_apply(
+    now_s: float, arrival_s: float, status: PositionStatus, expected_d: float
+) -> None:
+    # v1.3 (T-10): AT_STOP prevails only for the first stop (k = 0), not for the second (k = 1).
+    estimate = _estimate(now_s, arrival_s, target="B")
+    assert estimate.status is status
+    _assert_at(estimate, expected_d)
+    assert estimate.distance_to_stop_m == pytest.approx(1000 - expected_d)
+    assert estimate.stops_away == 0
+    assert estimate.next_stop == StopRef("B", "Stop B")
+
+
 # --- AC-05: coordinates and bearing ---
 
 
