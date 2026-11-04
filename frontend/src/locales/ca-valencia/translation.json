@@ -76,7 +76,7 @@
     "spokenWithSeats": "{{level}}, {{seats}}"
   },
   "map": {
-    "title": "Línia {{line}} cap a {{destination}}",
+    "title": "Línia {{line}} cap a <destination>{{destination}}</destination>",
     "back": "Torna a la parada",
     "loading": "Carregant el mapa…",
     "region": "Mapa del recorregut",

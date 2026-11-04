@@ -76,7 +76,7 @@
     "spokenWithSeats": "{{level}}, {{seats}}"
   },
   "map": {
-    "title": "Línea {{line}} hacia {{destination}}",
+    "title": "Línea {{line}} hacia <destination>{{destination}}</destination>",
     "back": "Volver a la parada",
     "loading": "Cargando mapa…",
     "region": "Mapa del recorrido",
