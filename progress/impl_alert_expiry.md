@@ -5,13 +5,23 @@ Rama: `feat/alert_expiry` (apilada sobre `feat/alert_cancel`, `feat/alert_create
 
 ## Tareas
 - [x] T-01 `ExpiryReason`, `observe_passage` y `expiry_reason` (AC-01, AC-02, AC-05, AC-06, AC-07)
-- [ ] T-02 `GetStopArrivals.for_stop`, `ExpireAlert`, `WatchPassages` y `ExpireDueAlerts`
+- [x] T-02 `GetStopArrivals.for_stop`, `ExpireAlert`, `WatchPassages` y `ExpireDueAlerts` (AC-03, AC-04,
+      AC-05, AC-06, AC-08, AC-09)
 - [ ] T-03 `run_periodic`, `lifespan`, configuración y `.env.example`
 - [ ] T-04 Integración
 - [ ] T-05 Sesión real `stop_508_peak`
 - [ ] T-06 Verificación completa
 
 ## Cambios en código de otras features
+- T-02 (autorizado por `tasks.md` y por la persona; código de `stop_arrivals_api`):
+  `application/get_stop_arrivals.py` gana `for_stop(stop_id)`. `execute` no cambia de
+  comportamiento: tras `find_stop` delega en el nuevo `_arrivals_of(stop_id)`, que es el cuerpo
+  que ya tenía. `for_stop` comprueba el feed activo (`NoActiveFeedError`) y la parada
+  (`StopNotFoundError`) antes de preguntar al SAE, sin token. Los tests de `stop_arrivals_api`
+  siguen en verde sin cambios.
+- T-02 (apoyo de tests de alert_create): `tests/support/alerts.py`,
+  `FakeAlertRepository.update_tracking` lanzaba `NotImplementedError`; ahora sustituye el
+  seguimiento si el aviso existe (como el SQLite). Ningún test existente lo usaba.
 
 ## Decisiones locales
 - T-01: `AVISABUS_PASSAGE_WINDOW_MIN` se queda en **2 min** (valor por defecto del design; E-01:
@@ -26,6 +36,33 @@ Rama: `feat/alert_expiry` (apilada sobre `feat/alert_cancel`, `feat/alert_create
   `next_stop_scheduled_at(stop_times, stop_sequence, service_date)` en
   `domain/services/expiry_policy.py` (lo prueba `test_expiry_policy.py` con hora > 24 h, como pide
   el design §6). La siguiente parada es la entrada de menor `stop_sequence` mayor que la del aviso.
+
+- T-02 (`seen_in_last_observation`, estructura permitida por design §7): un `dict[str, bool]`
+  privado de `WatchPassages`, por `alert_id`, expuesto con `seen_in_last_observation(alert_id)`;
+  la composición pasa ese método como `seen` a `ExpireDueAlerts` (así coinciden las firmas del
+  design). Se fija a `True`/`False` con cada observación REALTIME de la parada y a `False` con una
+  SCHEDULED; una parada que no se puede leer (`passage.stop_skipped`) no lo cambia (no hubo
+  observación). Al principio de cada ciclo se olvidan las entradas de avisos que ya no existen y
+  se quita la de un aviso al caducarlo como `PASSED`: la memoria no crece.
+- T-02: `observed_at` = `StopArrivals.generated_at` (E-01, coherente con alert_create). El `Clock`
+  que recibe `WatchPassages` (design §3) no se lee directamente: `generated_at` lo lee el mismo
+  `Clock` en `GetStopArrivals` en ese ciclo.
+- T-02: el viaje se busca entre las llegadas con `vehicle` por `trip_id` y `service_date` (la
+  primera, por `arrival_at`). `delay_s` = `arrival_at` − hora programada en la aparición
+  `stop_sequence` del aviso (`trip_stop_times`, inicio del día de servicio + `arrival_s`),
+  redondeado a segundos como en `CreateAlert`; si esa aparición ya no está en el feed, `None`
+  (se conserva el retraso anterior, T-01). `trip_stop_times` se consulta una vez por viaje y
+  ciclo.
+- T-02 (logs): `alert.trip_lost` (debug) en **cada** observación REALTIME en la que el viaje no
+  aparece y no hay paso (no solo en la transición), con `alert_id` y `stop_id`.
+  `passage.stop_skipped` con nivel `warning`. `alert.expired` con nivel `info` (como
+  `alert.cancelled`). Solo `StopNotFoundError` y `NoActiveFeedError` se registran y se salta la
+  parada (design §3); cualquier otra excepción sale de `tick()` y la registra la tarea periódica
+  (AC-10).
+- T-02: el evento lleva `reason` como texto (`reason.value`). `alert_removed` se llama si el
+  aviso está `DELIVERED` y tiene `delivered_to`.
+- T-02: `ExpireDueAlerts` lee el `Clock` una vez por ciclo. Si el viaje ya no está en el feed
+  activo (`trip_stop_times` vacío), no hay parada siguiente: solo aplica `TIMEOUT`.
 
 ## Bloqueos
 Ninguno.

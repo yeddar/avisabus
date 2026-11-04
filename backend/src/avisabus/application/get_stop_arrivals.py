@@ -19,7 +19,7 @@ from typing import Any, Protocol
 
 from avisabus.application.get_stop import find_stop
 from avisabus.application.scheduled_arrivals import ScheduledArrivalsProvider
-from avisabus.domain.errors import ArrivalsUnavailableError
+from avisabus.domain.errors import ArrivalsUnavailableError, NoActiveFeedError, StopNotFoundError
 from avisabus.domain.models.arrivals import ArrivalKind, SaeArrival
 from avisabus.domain.models.network import Line, ScheduledStopTime
 from avisabus.domain.models.occupancy import OccupancyStatus, OccupancyThresholds, VehicleRef
@@ -97,6 +97,20 @@ class GetStopArrivals:
         """Raises `StopNotFoundError` (invalid token or unknown stop) and `NoActiveFeedError`,
         always before asking the SAE."""
         find_stop(self._network, self._signer, stop_id, token)
+        return await self._arrivals_of(stop_id)
+
+    async def for_stop(self, stop_id: str) -> StopArrivals:
+        """Same as `execute` without the stop token: internal use of the background tasks
+        (alert_expiry design §3), through the same SAE cache. Raises `NoActiveFeedError` and
+        `StopNotFoundError` (the stop is no longer in the active network) before asking the SAE.
+        """
+        if self._network.active_feed() is None:
+            raise NoActiveFeedError()
+        if self._network.get_stop(stop_id) is None:
+            raise StopNotFoundError(stop_id)
+        return await self._arrivals_of(stop_id)
+
+    async def _arrivals_of(self, stop_id: str) -> StopArrivals:
         now = self._clock.now()
         try:
             snapshot = await self._arrivals.get_arrivals(stop_id)
