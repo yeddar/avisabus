@@ -4,18 +4,17 @@
 
 **Fecha:** 2026-11-04
 **Fase:** Fin del Bloque 2 — CP-6 pendiente
-**Feature en curso:** ninguna. Ajustes previos al bloque 3 terminados; PRs abiertas: #34
-(`passenger_stop_view` v1.3), #35 (`passenger_map_view` v1.2) y la de `position_estimation` v1.3.
+**Feature en curso:** ninguna. Ajustes previos al bloque 3 terminados; #34 fusionada; abiertas #35
+(`passenger_map_view` v1.2) y #36 (`position_estimation` v1.3).
 
 ## Último paso
 Ajustes previos al bloque 3, cada uno APPROVED en su ciclo 1 y con PR propia sin fusionar:
-- `passenger_stop_view` v1.3 (T-13, H-04 del arnés): PR #34.
+- `passenger_stop_view` v1.3 (T-13, H-04 del arnés): PR #34 (fusionada).
 - `passenger_map_view` v1.2 (T-08, insignia sin posición y e2e sin espera fija): PR #35.
-- `position_estimation` v1.3 (T-10, tests de la segunda parada y del `shape_id` del log): PR abierta.
+- `position_estimation` v1.3 (T-10, tests de la segunda parada y del `shape_id` del log): PR #36.
 
 ## Siguiente paso
-1. La persona fusiona las tres PRs (tocan `progress/current.md` y `history.md`: la segunda y la tercera
-   pueden necesitar resolver conflictos en `progress/`).
+1. La persona fusiona la #35 y la #36 (con `progress/` idéntico en ambas, en cualquier orden).
 2. **Bloque 3:** el spec-writer redacta las specs (`realtime_events`, `alert_create`, `alert_cancel`,
    `alert_expiry`, `passenger_alert_ui`) → CP-1.
 

@@ -1,7 +1,8 @@
 # Implementación: passenger_stop_view
-Spec: specs/passenger_stop_view/ (v1.2, APPROVED) · Ciclo de revisión: 0 (v1.2) · Rama: `feat/passenger_stop_view-v1.2`
+Spec: specs/passenger_stop_view/ (v1.3, APPROVED) · Ciclo de revisión: 0 (v1.3) · Rama: `feat/passenger_stop_view-v1.3`
 (v1.0: T-01…T-10 en `feat/passenger_stop_view`, revisada y APPROVED en el ciclo 1; v1.1: T-11 en
-`feat/passenger_stop_view-v1.1`; v1.2: solo T-12 y T-10, sobre `develop`)
+`feat/passenger_stop_view-v1.1`; v1.2: T-12 en `feat/passenger_stop_view-v1.2`; v1.3: solo T-13 y
+T-10, sobre `develop`)
 
 ## Tareas
 - [x] T-01 Backend: `avisabus openapi export` y test de desfase (commit 75f6a97)
@@ -15,7 +16,8 @@ Spec: specs/passenger_stop_view/ (v1.2, APPROVED) · Ciclo de revisión: 0 (v1.2
 - [x] T-09 E2E, axe, capturas y presupuesto de bundle (commit 2114105)
 - [x] T-11 (v1.1) Anuncio y foco tras "Actualizar"/"Reintentar" (AC-24); mensaje de error sobre "los datos" y "Reintentar" que repite la petición de la parada (AC-17); `stop.refreshFailed` es/ca; comentario de `shared/device/storage.ts` (commit fd1825d)
 - [x] T-12 (v1.2) Foco tras una acción manual con 404 (al `h1` de "Parada no encontrada", sin anuncio) y tras un refresco automático que acierta con el foco en "Reintentar" (a "Actualizar", sin anuncio) (commit e665d86)
-- [x] T-10 Verificación completa: `CI=1 ./init.sh verify --e2e` en verde (v1.0 tras T-09, v1.1 tras T-11 y v1.2 tras T-12; ver "Verificación")
+- [x] T-13 (v1.3) Presupuesto de bundle solo sobre un `dist/` recién construido: `npm run test` omite los tests que leen `dist/`, `npm run test:bundle` construye y los ejecuta, `./init.sh verify` los ejecuta tras el build (paso "frontend: build + bundle") con y sin `--e2e`, y `npm run e2e` ya no encadena `test:bundle` (commit a417df7)
+- [x] T-10 Verificación completa: `CI=1 ./init.sh verify --e2e` en verde (v1.0 tras T-09, v1.1 tras T-11, v1.2 tras T-12 y v1.3 tras T-13; ver "Verificación")
 
 Cada test se escribió antes que el código y se vio en rojo (fallo de importación o de aserción).
 Además, se comprobó con mutaciones temporales (revertidas) que los tests de AC-12
@@ -47,7 +49,7 @@ Además, se comprobó con mutaciones temporales (revertidas) que los tests de AC
 | AC-18 | `src/shared/hooks/__tests__/useOnline.test.tsx`, `StopPage.errors.test.tsx` (aviso `role="status"`, sin peticiones mientras no hay conexión, petición al volver; abierta sin conexión no llama a la API) + e2e |
 | AC-19 | `lastStop.test.ts`, `StopPage.test.tsx` (se recuerda al cargar; no si 404), `src/app/routes/HomePage.test.tsx` (enlace es/ca, `lang`, URL codificada) + e2e |
 | AC-20 | `src/app/routes/NotFoundPage.test.tsx` (`/no-existe`, `/p`, `/p/508/otra`, enlace a la portada) + e2e |
-| AC-21 | `src/__tests__/bundle-budget.test.ts` (cálculo sobre un `dist` sintético + `dist/` real; encadenado a `npm run e2e` vía `test:bundle`). Medido: **138,7 KB** gzip |
+| AC-21 | `src/__tests__/bundle-budget.test.ts` (cálculo sobre un `dist` sintético + `dist/` real). (v1.3) Los tests sobre el `dist/` real (también los de `passenger_map_view.AC-02`) solo corren con `AVISABUS_BUNDLE_CHECK=1`, que pone `npm run test:bundle` tras `npm run build`; `./init.sh verify` los ejecuta en "frontend: build + bundle"; un test nuevo comprueba los scripts de `package.json` y el paso de `init.sh`. Medido (v1.3): **141,49 kB** gzip |
 | AC-22 | `e2e/stop-view.spec.ts`: tiempo real, programado, sin llegadas y parada no encontrada × `es`/`ca` × iPhone 14 / Pixel 7 / iPad landscape, axe WCAG 2.1 A/AA sin violaciones (también en error, sin conexión, portada con última parada y página no encontrada) |
 | AC-23 | Revisión con capturas (ver abajo) |
 
@@ -177,6 +179,30 @@ iconos y redacción de textos) y de detalles internos no contractuales:
   pero se descarta si la persona ha enfocado otra cosa mientras tanto.
 - **Textos:** ninguno nuevo (el `h1` "Parada no encontrada"/"Parada no trobada" ya existía).
 
+### Decisiones locales de T-13 (v1.3)
+El design §5 deja el mecanismo exacto como decisión local:
+- **Variable `AVISABUS_BUNDLE_CHECK=1`** puesta en el propio script:
+  `"test:bundle": "npm run build && AVISABUS_BUNDLE_CHECK=1 vitest run src/__tests__/bundle-budget.test.ts"`.
+  Los dos tests que leen `dist/` usan `it.runIf(BUNDLE_CHECK)`; sin la variable se omiten con el
+  aviso `[bundle-budget] dist/ checks skipped: run npm run test:bundle …`.
+- **Sin `exclude` en `vite.config.ts`** (no se ha tocado): los tests del cálculo sobre un `dist`
+  sintético en un directorio temporal (AC-21 y `passenger_map_view.AC-02`) no leen `dist/` y
+  siguen corriendo en `npm run test`, que así detecta pronto un fallo del cálculo.
+- **Con la variable y sin `dist/` el test falla** (antes se omitía con `skipIf`): bajo
+  `test:bundle` el `dist/` siempre acaba de construirse, así que su ausencia es un error y no un
+  motivo para omitir. Mensaje: "dist/index.html is missing: run `npm run test:bundle` (it builds first)".
+  `vite build` vacía `dist/` antes de escribir (`emptyOutDir`), así que no quedan restos de builds
+  anteriores.
+- **Test del arnés** `[passenger_stop_view.AC-21] the budget is only checked on a fresh build…`
+  (en `npm run test`): comprueba el script `test:bundle` exacto, que `test` no pone la variable, que
+  `e2e` no encadena `test:bundle` y que `init.sh` tiene el paso
+  `"frontend: build + bundle" … npm run --silent test:bundle` y ya no `npm run --silent build`.
+  Se vio en rojo antes de cambiar `package.json` e `init.sh`.
+- **`init.sh`:** el paso "frontend: build" pasa a ser "frontend: build + bundle"
+  (`npm run --silent test:bundle`), en el mismo sitio (antes de e2e). Con `--e2e`, el
+  `webServer` de Playwright sigue construyendo por su cuenta (`npm run build && npm run preview`);
+  no se ha cambiado.
+
 ## Desviaciones respecto al design (v1.0) y estado actual
 Las cuatro se detectaron en la v1.0. No cambian contratos ni comportamiento de los AC. La PR #24
 (spec v1.1 y CP-4 de `docs/`) las recoge todas. Esa PR ya está fusionada en
@@ -265,13 +291,47 @@ Los marcados con **(spec)** son literales de la spec en castellano; el resto los
 - Playwright vacía `test-results/` al inicio de cada ejecución: si se lanza solo un spec
   (`npx playwright test e2e/i18n.spec.ts`), desaparecen las capturas de esta feature hasta la
   siguiente ejecución completa.
-- `bundle-budget.test.ts` también corre en `npm run test`; si existe un `dist/` antiguo, mide
-  ese (lo prevé la nota del design §5); la medición fiable es la encadenada a `npm run e2e`.
+- ~~`bundle-budget.test.ts` mide un `dist/` antiguo en `npm run test`~~: **resuelto en la v1.3
+  (T-13)**. Solo `npm run test:bundle` (y por tanto `./init.sh verify`) mide `dist/`, y siempre tras
+  construirlo.
+- (v1.3) **Propuesta para `docs/` (no lo modifico):** `docs/verification.md` (fila "Build":
+  `npm run build`) y, si procede, `docs/conventions.md` §8 deberían decir que el paso de build de
+  `verify` es `npm run test:bundle` (build + presupuesto de bundle) y que `npm run e2e` ya no lo
+  encadena.
 
 ## Bloqueos
 Ninguno.
 
 ## Verificación
+**v1.3 (tras T-13), comportamiento con `dist/` borrado y manipulado (2026-11-04):**
+- `rm -rf frontend/dist && ./init.sh verify` → código 0, "verify: todo en verde"; "frontend: tests"
+  408 passed | 2 skipped (los dos tests de `dist/`); "frontend: build + bundle" construye
+  (`index-*.js` 448,27 kB, 141,49 kB gzip) y pasa 5/5 tests de `bundle-budget.test.ts`.
+- Sin `dist/` y con `AVISABUS_BUNDLE_CHECK=1` sin construir → los 2 tests de `dist/` fallan
+  ("dist/index.html is missing…"), no se omiten.
+- **`dist/` antiguo manipulado** (≈400 KB aleatorios y la marca `leaflet-pane` añadidos a
+  `index-*.js`: 544 956 B gzip): `npm run test` → código 0, 408 passed | 2 skipped (no lo lee);
+  leyéndolo sin construir (`AVISABUS_BUNDLE_CHECK=1 vitest run …bundle-budget…`) → 2 fallos
+  (544 938 > 204 800 y Leaflet en 2 trozos), es decir, la manipulación sería detectable;
+  `./init.sh verify` → código 0 sin falso rojo: reconstruye `dist/` (`index-*.js` vuelve a
+  448 275 B) y mide el build nuevo.
+- **Falso verde de antes** (`dist/` antiguo correcto + fuente que rompe el presupuesto, cambio
+  temporal ya revertido: `import 'leaflet'` y ~120 KB aleatorios en `src/main.tsx`):
+  `npm run test` → código 0 (no lee `dist/`); `./init.sh verify` → código 1, "frontend: build +
+  bundle" FAIL (274 191 > 204 800 y Leaflet en el trozo inicial `index-*.js`). También falló
+  "frontend: format" por la línea larga del cambio temporal.
+
+**v1.3 (tras T-13):** `CI=1 ./init.sh verify --e2e` (2026-11-04, puerto 4173 libre) → código 0,
+"verify: todo en verde":
+- backend: format, lint, types, architecture (2 contratos respetados, 0 rotos) OK; pytest
+  988 passed, 6 deselected, cobertura 99,46 %.
+- frontend: format, lint, types OK; Vitest 44 ficheros, **408 passed | 2 skipped** (los 2 de
+  `dist/`, que ya no corren en `npm run test`).
+- frontend: build + bundle OK (`index-*.js` 448,27 kB, **141,49 kB gzip**; `bundle-budget.test.ts`
+  5 passed, incluidos los de `passenger_map_view.AC-02`).
+- frontend e2e + a11y: 87 passed, axe sin violaciones; ya no ejecuta Vitest tras Playwright.
+- harness: `feature_list.json` OK; trazabilidad AC→test OK.
+
 **v1.2 (tras T-12):** `CI=1 ./init.sh verify --e2e` (2026-11-04, puerto 4173 libre) → código 0,
 "verify: todo en verde":
 - backend: format, lint, types, architecture (2 contratos respetados, 0 rotos) OK; pytest
