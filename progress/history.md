@@ -368,3 +368,6 @@
 - La persona aprueba la PR #37: `realtime_events`, `alert_create`, `alert_cancel`, `alert_expiry`
   y `passenger_alert_ui` v1.0, `stop_arrivals_api` 1.6, ADR-016 y los cambios de `docs/`.
   Decisiones: solicitud al autobús elegido, necesidad `VISUAL` y confirmación siempre.
+
+## 2026-11-04 · PR #35, #36 y #37 fusionadas · bloque 3 · realtime_events · spec_approved → implementing
+- Specs del bloque 3 aprobadas (CP-1, PR #37). Se implementa por orden con PR por feature.

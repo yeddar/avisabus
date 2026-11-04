@@ -3,20 +3,21 @@
 > Fichero vivo: lo reescribe el orquestador al final de cada sesión.
 
 **Fecha:** 2026-11-04
-**Fase:** Fin del Bloque 2 — CP-6 pendiente
-**Feature en curso:** ninguna. Ajustes previos al bloque 3 terminados; #34 fusionada; abiertas #35
-(`passenger_map_view` v1.2) y #36 (`position_estimation` v1.3).
+**Fase:** Implementación — Bloque 3 (solicitud de parada)
+**Feature en curso:** `realtime_events` v1.0 — `implementing` (rama `feat/realtime_events`)
 
 ## Último paso
-Ajustes previos al bloque 3, cada uno APPROVED en su ciclo 1 y con PR propia sin fusionar:
-- `passenger_stop_view` v1.3 (T-13, H-04 del arnés): PR #34 (fusionada).
-- `passenger_map_view` v1.2 (T-08, insignia sin posición y e2e sin espera fija): PR #35.
-- `position_estimation` v1.3 (T-10, tests de la segunda parada y del `shape_id` del log): PR #36.
+PR #35 y #36 fusionadas (ajustes previos al bloque 3). PR #37 fusionada: specs del bloque 3 aprobadas
+(CP-1). `realtime_events` (sin exploración) → `implementing`.
 
 ## Siguiente paso
-1. La persona fusiona la #35 y la #36 (con `progress/` idéntico en ambas, en cualquier orden).
-2. **Bloque 3:** el spec-writer redacta las specs (`realtime_events`, `alert_create`, `alert_cancel`,
-   `alert_expiry`, `passenger_alert_ui`) → CP-1.
+Bloque 3 por orden, cada una con reviewer nuevo y PR contra `develop` sin fusionar:
+1. `realtime_events`.
+2. `alert_create` (T-01 cambia `can_alert` en `GetStopArrivals`, `stop_arrivals_api` 1.6; autorizado).
+3. `alert_cancel`.
+4. `alert_expiry` (exploración E-01 sobre `stop_508_peak`; T-02 añade `GetStopArrivals.for_stop`, autorizado).
+5. `passenger_alert_ui`.
+Las ramas se apilan sobre la anterior mientras sus PRs no estén fusionadas.
 
 ## Pendiente para specs futuras
 - **passenger_map_view:** N-06 preferencia de movimiento reducido leída al montar. N-07 restauración de
