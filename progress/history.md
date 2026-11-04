@@ -336,3 +336,7 @@
 ## 2026-11-04 · passenger_stop_view v1.3 · implementing → in_review
 - T-13: el presupuesto de bundle solo se comprueba con `npm run test:bundle` (build + test,
   `AVISABUS_BUNDLE_CHECK=1`), que `init.sh` ejecuta con y sin `--e2e`. Verify --e2e en verde.
+
+## 2026-11-04 · passenger_stop_view v1.3 · in_review → done
+- Revisión ciclo 1 de la v1.3: APPROVED (escenarios de `dist/` borrado, manipulado y fuente rota
+  reproducidos). CP-4 propuesto para `docs/verification.md`. PR sin fusionar.
