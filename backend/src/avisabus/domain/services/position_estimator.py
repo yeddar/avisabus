@@ -8,6 +8,7 @@ by time between two consecutive stops (AC-01, AC-02).
 from collections.abc import Mapping, Sequence
 from datetime import datetime, timedelta
 
+from avisabus.domain.errors import PositionNotEstimableError
 from avisabus.domain.models.network import ShapePoint, TripStopTime
 from avisabus.domain.models.position import PositionEstimate, PositionStatus, StopRef
 from avisabus.domain.services.geometry import (
@@ -32,14 +33,15 @@ def estimate_position(
     `service_day_start` is the start of the trip's service day (local noon − 12 h); `arrival_at`
     and `now` are timezone-aware. `stop_coordinates` (`(lat, lon)` by stop) are only needed when
     the stop times lack `shape_dist_traveled` (AC-06). Returns `None` if the trip does not call
-    at the target stop.
+    at the target stop; raises `PositionNotEstimableError` if the shape is empty or a stop has
+    neither distance nor coordinates.
     """
     ordered = sorted(stop_times, key=lambda stop_time: stop_time.stop_sequence)
     occurrences = [n for n, st in enumerate(ordered) if st.stop_id == target_stop_id]
     if not occurrences:
         return None
     if not shape:
-        raise ValueError("an empty shape has no points")
+        raise PositionNotEstimableError("empty_shape")
     along_shape = shape_distances(shape)
     along_stops = _stop_distances(ordered, shape, along_shape, stop_coordinates)
 
@@ -51,7 +53,8 @@ def estimate_position(
     delay = arrival_at - scheduled(k)
     s = (now - delay - service_day_start).total_seconds()
 
-    if s >= ordered[k].arrival_s:  # AC-03
+    # AC-03; with the target as the first stop of the trip, AC-03 prevails over AC-04 (v1.2).
+    if k == 0 or s >= ordered[k].arrival_s:
         status, d = PositionStatus.AT_STOP, along_stops[k]
     elif s < ordered[0].departure_s:  # AC-04
         status, d = PositionStatus.NOT_STARTED, along_stops[0]
@@ -108,6 +111,7 @@ def _stop_distances(
     if all(d is not None for d in feed):
         return [float(d) for d in feed if d is not None]
     if stop_coordinates is None or any(st.stop_id not in stop_coordinates for st in ordered):
-        raise ValueError("stop times without shape_dist_traveled need the stop coordinates")
+        # Stop times without shape_dist_traveled need the coordinates of every stop.
+        raise PositionNotEstimableError("missing_stop_coordinates")
     points = [stop_coordinates[stop_time.stop_id] for stop_time in ordered]
     return project_onto_shape(points, shape, along_shape)

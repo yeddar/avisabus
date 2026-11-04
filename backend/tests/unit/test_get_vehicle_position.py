@@ -5,7 +5,7 @@ The 93 trip `93_122` reaches stop 508 at 19:50:35 UTC; its stops S1, S2, 508 and
 """
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, date, datetime, timedelta
 
 import pytest
@@ -70,10 +70,25 @@ class SilentLogger:
 
 
 @dataclass
+class RecordingLogger:
+    events: list[tuple[str, str, dict[str, object]]] = field(default_factory=list)
+
+    def debug(self, event: str, **fields: object) -> None:
+        self.events.append(("debug", event, fields))
+
+    def info(self, event: str, **fields: object) -> None:
+        self.events.append(("info", event, fields))
+
+    def warning(self, event: str, **fields: object) -> None:
+        self.events.append(("warning", event, fields))
+
+
+@dataclass
 class World:
     network: FakeNetwork
     source: FakeArrivalsSource
     clock: FakeClock
+    logger: RecordingLogger = field(default_factory=RecordingLogger)
 
     def use_case(self) -> GetVehiclePosition:
         stop_arrivals = GetStopArrivals(
@@ -91,7 +106,7 @@ class World:
             min_score=0.2,
             logger=SilentLogger(),
         )
-        return GetVehiclePosition(stop_arrivals, self.network, self.clock)
+        return GetVehiclePosition(stop_arrivals, self.network, self.clock, self.logger)
 
     async def execute(
         self, line: str = "93", direction_id: int = 0, stop_id: str = "508", token: str = TOKEN
@@ -245,6 +260,105 @@ async def test_a_paired_trip_without_timetable_or_shape_has_no_vehicle(world: Wo
         None,
         "shape_93",
     )
+    assert world.logger.events == [
+        (
+            "warning",
+            "position.estimate_failed",
+            {"trip_id": "93_123", "shape_id": None, "reason": "missing_stop_times"},
+        ),
+        (
+            "warning",
+            "position.estimate_failed",
+            {"trip_id": "93_123", "shape_id": "missing_shape", "reason": "empty_shape"},
+        ),
+    ]
+
+
+@pytest.mark.spec("position_estimation.AC-11")
+async def test_a_paired_trip_without_shape_has_no_vehicle(world: World) -> None:
+    world.source.arrivals = (_sae("93", "Pass. Marítim", 4),)  # paired with 93_122
+    del world.network.trip_shapes["93_122"]
+    position = await world.execute()
+    assert (position.status, position.estimate, position.shape_id) == (
+        PositionStatus.NO_VEHICLE,
+        None,
+        "shape_93",
+    )
+    assert world.logger.events == [
+        (
+            "warning",
+            "position.estimate_failed",
+            {"trip_id": "93_122", "shape_id": None, "reason": "missing_shape"},
+        )
+    ]
+
+
+@pytest.mark.spec("position_estimation.AC-11")
+async def test_a_position_that_cannot_be_estimated_has_no_vehicle(world: World) -> None:
+    # v1.2: stop times without shape_dist_traveled and a stop missing from the active feed.
+    world.source.arrivals = (_sae("93", "Pass. Marítim", 4),)  # paired with 93_122
+    world.network.trips["93_122"] = [
+        replace(stop_time, shape_dist_traveled=None) for stop_time in world.network.trips["93_122"]
+    ]
+    del world.network.stops["S1"]
+    position = await world.execute()
+    assert position.arrival is not None
+    assert position.arrival.vehicle == VehicleView("93_122", DAY)
+    assert position.arrival.minutes == 4
+    assert position.source is ArrivalSource.REALTIME
+    assert position.headsign == HEADSIGN_93
+    assert (position.status, position.estimate, position.shape_id) == (
+        PositionStatus.NO_VEHICLE,
+        None,
+        "shape_93",  # representative shape of the line and direction
+    )
+    assert world.logger.events == [
+        (
+            "warning",
+            "position.estimate_failed",
+            {
+                "trip_id": "93_122",
+                "shape_id": "shape_93_trip",
+                "reason": "missing_stop_coordinates",
+            },
+        )
+    ]
+
+
+@pytest.mark.spec("position_estimation.AC-11")
+async def test_a_paired_trip_without_the_stop_has_no_vehicle(world: World) -> None:
+    world.source.arrivals = (_sae("93", "Pass. Marítim", 4),)  # paired with 93_122
+    world.network.trips["93_122"] = [
+        st for st in world.network.trips["93_122"] if st.stop_id != "508"
+    ]
+    position = await world.execute()
+    assert (position.status, position.estimate, position.shape_id) == (
+        PositionStatus.NO_VEHICLE,
+        None,
+        "shape_93",
+    )
+    assert [fields["reason"] for _, _, fields in world.logger.events] == ["target_not_in_trip"]
+
+
+@pytest.mark.spec("position_estimation.AC-11")
+async def test_other_errors_of_the_estimation_are_not_hidden(
+    world: World, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def broken(*args: object, **kwargs: object) -> None:
+        raise ValueError("unexpected")
+
+    monkeypatch.setattr("avisabus.application.get_vehicle_position.estimate_position", broken)
+    world.source.arrivals = (_sae("93", "Pass. Marítim", 4),)
+    with pytest.raises(ValueError, match="unexpected"):
+        await world.execute()
+    assert world.logger.events == []
+
+
+async def test_an_estimated_position_logs_nothing(world: World) -> None:
+    world.source.arrivals = (_sae("93", "Pass. Marítim", 4),)
+    position = await world.execute()
+    assert position.status is PositionStatus.EN_ROUTE
+    assert world.logger.events == []
 
 
 @pytest.mark.spec("position_estimation.AC-12")

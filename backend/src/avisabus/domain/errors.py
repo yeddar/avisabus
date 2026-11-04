@@ -64,3 +64,16 @@ class ShapeNotFoundError(DomainError):
     def __init__(self, shape_id: str) -> None:
         self.shape_id = shape_id
         super().__init__("shape not found")
+
+
+class PositionNotEstimableError(DomainError, ValueError):
+    """The position of a paired trip cannot be estimated because the active network is
+    incoherent for it (position_estimation AC-11, v1.2).
+
+    `reason` is `missing_stop_times`, `missing_shape`, `empty_shape`, `missing_stop_coordinates`
+    or `target_not_in_trip`. It is a `ValueError` too: the data, not the code, is wrong.
+    """
+
+    def __init__(self, reason: str) -> None:
+        self.reason = reason
+        super().__init__(f"position not estimable ({reason})")
