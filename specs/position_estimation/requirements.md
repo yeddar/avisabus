@@ -1,6 +1,6 @@
 # Estimación de la posición del autobús — requirements
 
-> Feature: `position_estimation` · Versión: 1.1 · Estado: APPROVED
+> Feature: `position_estimation` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-12, RNF-01 · Casos de uso: CU-02 · Depende de: gtfs_import, stop_arrivals_api
 
 ## Contexto
@@ -55,7 +55,8 @@ las líneas.
   *Verificación:* unit
 - **position_estimation.AC-04** — SI el instante desplazado es anterior a la salida del viaje,
   ENTONCES EL SISTEMA DEBERÁ situar el autobús en la primera parada del viaje con estado
-  `NOT_STARTED`.
+  `NOT_STARTED`. (v1.2) SI la parada objetivo es la primera del viaje, ENTONCES prevalece AC-03
+  (`AT_STOP`): el autobús que aún no ha salido está en la parada del pasajero.
   *Verificación:* unit
 - **position_estimation.AC-05** — EL SISTEMA DEBERÁ convertir la distancia `d` en coordenadas
   interpolando linealmente entre los dos puntos de la forma cuyo `shape_dist_traveled` la
@@ -92,7 +93,11 @@ las líneas.
 - **position_estimation.AC-11** — SI no hay ninguna llegada de esa línea y sentido, ENTONCES LA API
   DEBERÁ responder `200` con `status = "NO_ARRIVAL"`, `position = null` y el `shape_id`
   representativo de la línea y sentido; SI hay llegada pero sin viaje emparejado, ENTONCES
-  `status = "NO_VEHICLE"`, con el mismo tratamiento.
+  `status = "NO_VEHICLE"`, con el mismo tratamiento. (v1.2) SI hay viaje emparejado pero su
+  posición no se puede estimar por datos incoherentes de la red activa (p. ej. horarios sin
+  `shape_dist_traveled` y alguna parada sin coordenadas), ENTONCES LA API DEBERÁ responder igual
+  que con `NO_VEHICLE` (nunca `500`) y EL SISTEMA DEBERÁ registrar `position.estimate_failed`
+  con `trip_id`, `shape_id` y el motivo.
   *Verificación:* integration
 - **position_estimation.AC-12** — SI el token es inválido o la parada no existe, ENTONCES LA API
   DEBERÁ responder igual que `stop_arrivals_api` (404 indistinguible); SI la línea y el sentido no
@@ -145,3 +150,4 @@ las líneas.
 |---|---|---|---|
 | 1.0 | 2026-11-03 | Versión inicial aprobada (PR #7), con la guía visual `docs/design.md`. | CP-1 del bloque 2. Aprobada por la persona. |
 | 1.1 | 2026-11-03 | AC-17: la propiedad de distancia no creciente se limita a pares sucesivos en que los minutos del SAE no aumentan (los retrocesos por retraso del SAE se aceptan); design §3: parámetro `stop_coordinates` de `estimate_position` (AC-06) y frontera de `NOT_STARTED` según AC-04. | CP-3 de `position_estimation` (T-07): en `stop_508_peak` la distancia aumenta 5 veces, todas cuando el SAE sube los minutos. D-03 y D-04 del implementer. Aprobada por la persona (PR #25). |
+| 1.2 | 2026-11-04 | AC-04: con la parada objetivo como primera del viaje prevalece `AT_STOP` (AC-03); AC-11: posición no estimable por datos incoherentes → `NO_VEHICLE` y `position.estimate_failed`, nunca `500`. T-09. | Hallazgos H-01 y H-02 de la revisión de `position_estimation` 1.1. Pendiente de aprobación. |

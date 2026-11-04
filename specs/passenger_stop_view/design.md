@@ -1,6 +1,6 @@
 # Vista de parada del pasajero — design
 
-> Feature: `passenger_stop_view` · Versión: 1.1 · Estado: APPROVED
+> Feature: `passenger_stop_view` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-06, RF-10, RF-15, RF-32, RNF-01, RNF-03, RNF-04, RNF-05, RNF-14 · Casos de uso: CU-01 · Depende de: stop_arrivals_api, frontend_i18n
 
 ## 1. Resumen
@@ -79,6 +79,13 @@ null`, estado local). Al terminar:
 | Actualizar | error | `stop.refreshFailed` | "Reintentar" del aviso de error (`ref` + `focus()` tras pintarse) |
 | Reintentar | éxito | `stop.refreshed` | "Actualizar" |
 | Reintentar | error | `stop.refreshFailed` | se queda en "Reintentar" |
+
+(v1.2) Casos adicionales:
+
+| Situación | Anuncio | Foco |
+|---|---|---|
+| Acción manual que acaba en `404` | ninguno | `h1` de `StopNotFound` (`tabIndex=-1`, `focus()` al montarse si venía de una acción manual) |
+| Foco en "Reintentar" y acierta un refresco automático | ninguno | "Actualizar" (se detecta con `document.activeElement` antes de desmontar el aviso) |
 
 "Reintentar" llama a `refetch()` de `useStopArrivals` y, si su error está activo, también de
 `useStop` (AC-17).

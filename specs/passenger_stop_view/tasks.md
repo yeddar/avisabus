@@ -1,6 +1,6 @@
 # Vista de parada del pasajero — tasks
 
-> Feature: `passenger_stop_view` · Versión: 1.1 · Estado: APPROVED
+> Feature: `passenger_stop_view` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-06, RF-10, RF-15, RF-32, RNF-01, RNF-03, RNF-04, RNF-05, RNF-14 · Casos de uso: CU-01 · Depende de: stop_arrivals_api, frontend_i18n
 
 ## Exploración
@@ -70,6 +70,12 @@ No necesaria.
   la lista de `docs/conventions.md` §4.
   - AC: passenger_stop_view.AC-17, AC-24
   - Ficheros: `src/features/passenger/stop/StopPage.tsx`, `src/shared/device/storage.ts`, `src/locales/**`, `StopPage.errors.test.tsx`
+  - Verificación: `cd frontend && npm run test -- StopPage`
+
+- [ ] **T-12** — (v1.2) Foco tras acción manual con `404` (al `h1` de "Parada no encontrada") y
+  tras un refresco automático que acierta con el foco en "Reintentar" (a "Actualizar").
+  - AC: passenger_stop_view.AC-24
+  - Ficheros: `src/features/passenger/stop/{StopPage,StopNotFound}.tsx`, `StopPage.errors.test.tsx`
   - Verificación: `cd frontend && npm run test -- StopPage`
 
 - [ ] **T-10** — Verificación completa.
