@@ -134,4 +134,4 @@ reutilizando el publicador.
 | Versión | Fecha | Cambio | Motivo |
 |---|---|---|---|
 | 1.0 | 2026-11-04 | Versión inicial aprobada (PR #37). | CP-1 del bloque 3. Aprobada por la persona. |
-| 1.1 | 2026-11-04 | AC-11 admite `1001` o `1012`: `uvicorn` cierra los WebSockets con `1012` al recibir SIGTERM, antes que el `lifespan`. Sin cambios de código. | CP-3 de `realtime_events` (T-04). Pendiente de aprobación. |
+| 1.1 | 2026-11-04 | AC-11 admite `1001` o `1012`: `uvicorn` cierra los WebSockets con `1012` al recibir SIGTERM, antes que el `lifespan`. Sin cambios de código. | CP-3 de `realtime_events` (T-04). Aprobada por la persona (PR #38). |
