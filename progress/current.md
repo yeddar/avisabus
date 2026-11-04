@@ -4,7 +4,7 @@
 
 **Fecha:** 2026-11-03
 **Fase:** Implementación — Bloque 2
-**Feature en curso:** `passenger_stop_view` v1.2 — `implementing` (solo T-12), rama `feat/passenger_stop_view-v1.2`
+**Feature en curso:** `passenger_stop_view` v1.2 — `done`, PR abierta. Siguiente: `position_estimation` T-09.
 
 ## Último paso
 `passenger_map_view` v1.1: ciclo 2 **APPROVED**; PR #30 abierta (sin fusionar). Bloque 2: 4/4 features
@@ -12,12 +12,15 @@ hechas. `passenger_stop_view` → `implementing` para T-12 (v1.2: foco tras 404 
 refresco automático; N-7/N-8).
 
 ## Siguiente paso
-1. `passenger_stop_view` T-12 → reviewer nuevo → `done` → PR.
+1. `passenger_stop_view` T-12: APPROVED (ciclo 1 de la v1.2); PR abierta.
 2. `position_estimation` T-09 (v1.2: H-01/H-02) → reviewer nuevo → `done` → PR.
 3. **CP-6 del bloque 2** (persona): textos (`progress/impl_passenger_stop_view.md`,
    `progress/impl_passenger_map_view.md`), lector de pantalla (anuncios y foco), N-03 del mapa.
 
 ## Pendiente para specs futuras
+- **passenger_stop_view v1.2:** N-9 documentar en el design que el aviso de error se mantiene durante los
+  reintentos automáticos sin datos (cambio visible: ya no aparece "Cargando…" cada 20 s). N-10: un 404 en
+  un refresco automático con el foco en "Reintentar" deja el foco en `body` (AC-24 no lo regula).
 - **position_estimation (H-01, H-02, H-04 → spec-writer en la próxima revisión; H-03 → `nfr_validation`) H-01 (spec):** AC-03 y AC-04 se solapan si la parada objetivo es la primera del
   viaje (implementado: `AT_STOP`; no ocurre en EMT). H-02: viaje sin `shape_dist_traveled` y con una
   parada ausente del feed activo → 500 en vez de `NO_VEHICLE` (solo si el feed cambia entre consultas).

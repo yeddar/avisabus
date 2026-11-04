@@ -272,3 +272,6 @@
 ## 2026-11-04 · passenger_stop_view v1.2 · implementing → in_review
 - T-12: foco al `h1` tras 404 en acción manual; foco a "Actualizar" tras refresco automático con
   éxito; el aviso de error se mantiene durante reintentos automáticos sin datos. Verify --e2e en verde.
+
+## 2026-11-04 · passenger_stop_view v1.2 · in_review → done
+- Revisión ciclo 1 de la v1.2: APPROVED (13 mutaciones detectadas); N-9/N-10 para la spec. PR sin fusionar.
