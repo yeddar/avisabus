@@ -347,7 +347,7 @@
       "order": 15,
       "block": 3,
       "title": "UI de aviso: crear, cancelar, estado y perfil de accesibilidad local",
-      "status": "spec_approved",
+      "status": "implementing",
       "depends_on": [
         "passenger_stop_view",
         "alert_create",

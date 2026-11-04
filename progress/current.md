@@ -4,7 +4,8 @@
 
 **Fecha:** 2026-11-04
 **Fase:** Implementación — Bloque 3 (solicitud de parada)
-**Feature en curso:** `alert_expiry` v1.0 — `done`, PR abierta. Siguiente: `passenger_alert_ui`.
+**Feature en curso:** `passenger_alert_ui` v1.0 — `implementing` (rama `feat/passenger_alert_ui`, apilada
+sobre `feat/alert_expiry`, PR #43)
 
 ## Último paso
 `realtime_events` v1.1: APPROVED (ciclo 1); PR #40 abierta. `alert_create` → `implementing`.
@@ -14,7 +15,7 @@ Bloque 3 por orden, cada una con reviewer nuevo y PR contra `develop` sin fusion
 1. `realtime_events`: APPROVED; PR #40.
 2. `alert_create`: APPROVED; PR #41 (apilada sobre la #40).
 3. `alert_cancel`: APPROVED; PR #42 (apilada sobre la #41).
-4. `alert_expiry`: APPROVED; PR abierta (apilada sobre la #42).
+4. `alert_expiry`: APPROVED; PR #43 (apilada sobre la #42).
 5. `passenger_alert_ui`.
 Las ramas se apilan sobre la anterior mientras sus PRs no estén fusionadas.
 

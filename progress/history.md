@@ -416,3 +416,5 @@
 
 ## 2026-11-04 · alert_expiry · in_review → done
 - Revisión ciclo 1: APPROVED (21/21 mutaciones de producción detectadas; T-05 reproduce E-01).
+
+## 2026-11-04 · alert_expiry PR #43 abierta · passenger_alert_ui · spec_approved → implementing
