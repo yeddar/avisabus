@@ -6,8 +6,8 @@ Spec: specs/alert_create/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Agente: i
       `AVISABUS_ALERT_MAX_LEAD_MIN`) y adaptación de los tests de `stop_arrivals_api` (AC-01)
       (commit 57b2285)
 - [x] T-02 Modelos, puertos, errores e `InMemoryRateLimiter` (AC-06, AC-08) (commit c75a001)
-- [x] T-03 `SqliteAlertRepository` y tabla `alert` (AC-07, AC-12)
-- [ ] T-04 `CreateAlert`, `ListMyAlerts`, `alert_payload`, `NoDriverDirectory`,
+- [x] T-03 `SqliteAlertRepository` y tabla `alert` (AC-07, AC-12) (commit a79d05f)
+- [x] T-04 `CreateAlert`, `ListMyAlerts`, `alert_payload`, `NoDriverDirectory`,
       `NoopDriverViewNotifier` (AC-03, AC-07, AC-08, AC-09, AC-13)
 - [ ] T-05 Endpoints `/alerts`, `AlertSnapshotProvider`, configuración y composición
       (AC-02…AC-14)
@@ -55,7 +55,6 @@ Spec: specs/alert_create/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Agente: i
   `ValueError` con repetidos; lo usan el esquema de la API (AC-06) y el caso de uso.
 - T-02: `BusNotRequestableError` y `RateLimitedError(retry_after_s)` sin identificadores en el
   mensaje (`"bus not requestable"`, `"rate limited"`).
-
 - T-03: la tabla `alert` tiene su propio `MetaData` (como `occupancy_override`) y `init_db` la
   crea. La unicidad es una restricción `UNIQUE (device_hash, stop_id, line)`
   (`uq_alert_device_stop_line`) más el índice `ix_alert_stop_id`. `add` hace
@@ -63,6 +62,34 @@ Spec: specs/alert_create/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Agente: i
   aviso existente leído en la misma transacción (carreras resueltas por el índice). Todas las
   columnas son `NOT NULL` salvo `delivered_to` y `last_seen_at`. Las listas se ordenan en Python
   por (`created_at`, `alert_id`) comparando `datetime`, no texto ISO.
+- T-04 (orden de `execute`, el del design §3): límites → aviso activo (`find_active`) → llegadas
+  → autobús → aparición y retraso → conductor → `add` → evento. Consecuencia del orden del
+  design: si el dispositivo ya tiene aviso activo en esa parada y línea, se responde `200` con él
+  **antes** de validar el token (no se llama a `GetStopArrivals`); AC-04 (`404`) se aplica a las
+  peticiones que llegan a consultar las llegadas. Lo señalo para la revisión; no lo considero
+  bloqueo porque el design fija el orden explícitamente ("se comprueba antes que el SAE").
+- T-04 (`AlertTracking` al crear): `last_arrival_at` y `last_delay_s` son los de la llegada
+  elegida (design). `last_seen_at` no tiene valor "al crear" en el design; se aplica su
+  definición ("última observación REALTIME en que aparecía el viaje"): si las llegadas son
+  `REALTIME`, el viaje aparece en esa observación y `last_seen_at = StopArrivals.generated_at`;
+  si son `SCHEDULED`, `None` (nunca visto en tiempo real; alert_expiry AC-02/AC-03).
+- T-04: `stop_sequence`/`last_delay_s` con `network.trip_stop_times(trip_id)`: entre las
+  apariciones de la parada, la de hora programada más próxima a `arrival_at` (a igualdad, la de
+  menor `stop_sequence`, como `estimate_position`); `last_delay_s = round(arrival_at −
+  programada)` en segundos. Si el viaje ya no pasa por la parada (el feed activo cambió entre la
+  consulta de llegadas y este paso), se trata como `BusNotRequestableError` (no hay autobús
+  pedible en la red activa); si la parada ya no existe, `StopNotFoundError` (como
+  `GetVehiclePosition`). Son carreras con una reimportación, no casos de la spec.
+- T-04: `alert_id = str(uuid.uuid4())` en el caso de uso. `needs` se normaliza con
+  `canonical_needs` también en el caso de uso (la API ya lo valida).
+- T-04 (logs): `alert.created` y `alert.rejected` con nivel `info`; `alert.duplicate` con
+  `debug` (design §6). El *logger* es un `Protocol` con `debug`/`info` (structlog en producción).
+- T-04: `alert_event(type, alert)` (en `application/alert_events.py`) construye el `Event` con
+  carga `{"alert": alert_payload(alert)}`; constantes `ALERT_REGISTERED` y `ALERT_DELIVERED`.
+  `alert_payload` serializa fechas como ISO UTC con `Z` (igual que Pydantic en la API REST) y
+  `needs` como lista de textos; nunca incluye `device_hash` ni `delivered_to`.
+- T-04: `ListMyAlerts.execute(device_hash)` es `async` (hace E/S) y devuelve
+  `list_by_device` sin filtrar por `expires_at` (todas las filas son activas, design §4).
 
 ## Bloqueos
 
