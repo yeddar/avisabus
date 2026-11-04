@@ -1,6 +1,6 @@
 # Eventos en tiempo real — tasks
 
-> Feature: `realtime_events` · Versión: 1.0 · Estado: APPROVED
+> Feature: `realtime_events` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-23, RF-28 (base), RNF-02, RNF-06, RNF-07, RNF-12, RNF-13 · Casos de uso: CU-03, CU-04, CU-07 (canal) · Depende de: project_scaffold
 
 ## Exploración

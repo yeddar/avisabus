@@ -1,6 +1,6 @@
 # Eventos en tiempo real — requirements
 
-> Feature: `realtime_events` · Versión: 1.0 · Estado: APPROVED
+> Feature: `realtime_events` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-23, RF-28 (base), RNF-02, RNF-06, RNF-07, RNF-12, RNF-13 · Casos de uso: CU-03, CU-04, CU-07 (canal) · Depende de: project_scaffold
 
 ## Contexto
@@ -97,8 +97,11 @@ reutilizando el publicador.
   `1013` sin procesar su `hello`.
   *Verificación:* integration (máximo bajo en el test)
 - **realtime_events.AC-11** — CUANDO la aplicación se detiene, EL SISTEMA DEBERÁ cerrar las
-  conexiones abiertas con el código `1001`.
-  *Verificación:* integration
+  conexiones abiertas con el código `1001` (Going Away) o `1012` (Service Restart). (v1.1) Al
+  apagarse por la vía del `lifespan` la aplicación cierra con `1001`; si el servidor ASGI
+  (`uvicorn` al recibir SIGTERM) cierra antes las conexiones, el cliente recibe `1012`, que es
+  igualmente válido. El cliente trata ambos como un cierre tras el que debe reconectar.
+  *Verificación:* integration (cierre por el `lifespan`: `1001`)
 
 ### Privacidad de los logs (H-01)
 
@@ -131,3 +134,4 @@ reutilizando el publicador.
 | Versión | Fecha | Cambio | Motivo |
 |---|---|---|---|
 | 1.0 | 2026-11-04 | Versión inicial aprobada (PR #37). | CP-1 del bloque 3. Aprobada por la persona. |
+| 1.1 | 2026-11-04 | AC-11 admite `1001` o `1012`: `uvicorn` cierra los WebSockets con `1012` al recibir SIGTERM, antes que el `lifespan`. Sin cambios de código. | CP-3 de `realtime_events` (T-04). Aprobada por la persona (PR #38). |
