@@ -1,10 +1,42 @@
 # Implementación: passenger_map_view
-Spec: specs/passenger_map_view/ (v1.1, APPROVED, PR #29) · Ciclo de revisión: 0 · Rama: `feat/passenger_map_view`
+Spec: specs/passenger_map_view/ (v1.1, APPROVED, PR #29) · Ciclo de revisión: 2 · Rama: `feat/passenger_map_view`
 Exploración: `progress/explore_map.md` (E-01), que no se repite.
 
 ## Estado
 T-01 a T-07 terminadas. `CI=1 ./init.sh verify --e2e` en verde (ver "Verificación").
 El CP-3 (B-01, B-02, O-1…O-4) quedó resuelto en la spec v1.1 (ver "Bloqueos").
+Ciclo 2: corregido el hallazgo bloqueante B-01 (AC-10) de `progress/review_passenger_map_view.md`
+(ciclo 1) y el no bloqueante N-01 (ver "Ciclo 2").
+
+## Ciclo 2 (respuesta a la revisión del ciclo 1)
+- **B-01, AC-10: el desplazamiento con flechas se animaba con movimiento reducido** (commit
+  516197e).
+  - *Causa:* el manejador de teclado de Leaflet desplaza con `map.panBy(offset)`, y `panBy`
+    (también detrás de `panTo` y `setView`) anima 0,25 s salvo con `animate: false`. Ninguna
+    opción del mapa lo desactiva.
+  - *Corrección (decisión local):* con `prefers-reduced-motion: reduce`, `BusMap` monta
+    `InstantPans`, que sustituye el `panBy` de **esa** instancia del mapa por uno que siempre pasa
+    `animate: false`, y lo restaura al desmontarse. Así las flechas, `panTo` y `setView` saltan
+    en el acto. Se mantienen las cuatro opciones del design (`zoomAnimation`, `fadeAnimation`,
+    `markerZoomAnimation`, `inertia`); `useInitialFit` ya encuadraba con `animate: false`. La
+    preferencia se lee una vez al crear el mapa, igual que las opciones.
+  - *Tests nuevos, escritos antes y vistos en rojo:*
+    - `BusMap.test.tsx` `[passenger_map_view.AC-10] … arrow keys pan the map at once, without
+      animation`: con `matchMedia` simulado, foco en el mapa, `keydown` de flecha derecha y un
+      tamaño de mapa real (en jsdom mide 0 × 0 y Leaflet salta sin animar). Antes de la
+      corrección fallaba con `.leaflet-map-pane` en `leaflet-pan-anim`.
+    - `BusMap.test.tsx` `… programmatic pans are not animated either` (`panBy` y `panTo`): antes
+      fallaba por el mismo motivo.
+    - `BusMap.test.tsx` `… without the preference the arrow keys keep Leaflet's pan animation`:
+      control, en verde antes y después. Demuestra que el test sí recorre el camino animado.
+    - `e2e/map-view.spec.ts` `[passenger_map_view.AC-10] the arrow keys and the zoom move the map
+      without animation`, con `reducedMotion: 'reduce'`. Un `MutationObserver` apunta las clases
+      `leaflet-pan-anim`/`leaflet-zoom-anim` del panel mientras se pulsan la flecha derecha, `+`
+      y "Alejar", y además comprueba que el panel se mueve en el acto. Antes de la corrección
+      fallaba en los tres perfiles (`["leaflet-pan-anim"]` y panel sin mover).
+- **N-01:** eliminado el id del texto del resumen que no se usaba (`textId` de
+  `PositionSummary` y `SUMMARY_TEXT_ID` de `MapPage`). La región del mapa sigue descrita por
+  `map.regionDescription`. N-02…N-04 quedan para la persona o la spec, sin cambios.
 
 ## Tareas
 - [x] T-01 Enlace "Ver en el mapa" en `ArrivalRow` (AC-01) (commit 9422a62)
@@ -35,7 +67,7 @@ el comportamiento, hice dos mutaciones temporales, ya revertidas:
 | AC-07 | `mapModel.test.ts` (coordenadas `[lat, lon]`, `#e50000` y contraste ≥ 4,5:1, neutro, paradas, parada añadida, autobús, sin trazado), `busIcon.test.ts`, `BusMap.test.tsx` (trazado bajo las paradas, flecha a 90,9°, sin posición, sin trazado, ningún marcador enfocable), `MapPage.test.tsx` (trazado 404, sin `shape_id`). E2E: trazado, 28 paradas y flecha en el DOM de Leaflet |
 | AC-08 | `useInitialFit.test.ts` (encuadra una vez, al estar listo; no reencuadra), `mapModel.test.ts` (límites), `MapPage.test.tsx` (sin posición espera al trazado) |
 | AC-09 | `BusMap.test.tsx`: atribución con enlace abajo a la derecha, OSM por defecto y `VITE_MAP_TILE_URL`, zoom arriba a la derecha traducido y cambio de idioma, `keyboard` y `tabIndex=0`. E2E: 44 × 44 px; flechas, `+`/`-` y botones con el teclado |
-| AC-10 | `BusMap.test.tsx`: `map.options` mediante `ref`, con y sin `prefers-reduced-motion` |
+| AC-10 | `BusMap.test.tsx`: `map.options` mediante `ref`, con y sin `prefers-reduced-motion`; (ciclo 2) flechas y `panBy`/`panTo` sin `leaflet-pan-anim` con movimiento reducido, y control sin la preferencia. E2E con `reducedMotion: 'reduce'`: ni desplazamiento ni zoom animados |
 | AC-11 | `BusMap.test.tsx`: región "Mapa del recorrido"/"Mapa del recorregut" con descripción. E2E con axe |
 | AC-12 | `usePositionQueries.test.tsx` (URL, `min(refresh_after_s, 30)`, pausa oculta, datos conservados, trazado una vez, sin `shape_id`, 404 sin reintentos), `MapPage.test.tsx` (4 refrescos y 1 trazado; pausa) |
 | AC-13 | `MapPage.test.tsx`: 404 `line-not-at-stop`/`stop-not-found` (es/ca, sin refrescos); sin token, token vacío y sentido `abc`/`-1`/`1.5` sin llamar a la API; 503 → 2 reintentos y "Reintentar" con anuncio; error de red en un refresco → datos marcados como antiguos; "Reintentar" fallido; trazado 503 → mismo tratamiento; trazado 404 no es error. E2E: 404 y 503 → "Reintentar" |
@@ -124,6 +156,8 @@ v1.1 deja al implementer y de detalles internos no contractuales.
   `text`/blanco de 13 px. El foco del teclado del mapa se dibuja en su caja
   (`.bus-map:has(.leaflet-container:focus-visible)`, 3 px `accent` separado 2 px), porque los
   paneles de Leaflet tapaban un contorno dibujado sobre el propio mapa.
+- **Movimiento reducido (AC-10, ciclo 2):** además de las opciones del design, el `panBy` de la
+  instancia del mapa fuerza `animate: false` (`InstantPans` en `BusMap.tsx`). Ver "Ciclo 2".
 - **Errores (AC-13):**
   - Reutilizan los textos y componentes de la vista de parada: aviso `stop.error.body` con
     "Reintentar", "Datos de las HH:MM, pueden no estar actualizados" y aviso "Sin conexión".
@@ -172,6 +206,23 @@ Ninguno abierto.
 - Detalle del bloqueo original: commit cff0e84, versión anterior de este fichero.
 
 ## Verificación
+### Ciclo 2
+`CI=1 ./init.sh verify --e2e` con el puerto 4173 libre, tras el commit 516197e: **"verify: todo
+en verde"**.
+
+| Paso | Resultado |
+|---|---|
+| backend: format, lint, types, architecture | OK |
+| backend: tests | OK: 969 passed, 6 deselected; cobertura 99,39 % |
+| frontend: format, lint, types | OK |
+| frontend: tests | OK: 44 ficheros, 395 tests (3 nuevos de AC-10) |
+| frontend: build | OK |
+| frontend: e2e + a11y | OK: 87 passed (27 del mapa, 3 de ellos de AC-10 con movimiento reducido); `test:bundle` 4/4 |
+| harness: feature_list.json, trazabilidad AC→test | OK |
+
+`e2e/map-view.spec.ts` repetido dos veces sin reintentos: 54/54.
+
+### Ciclo 0
 `CI=1 ./init.sh verify --e2e` con el puerto 4173 libre, tras T-06: **"verify: todo en verde"**.
 
 | Paso | Resultado |
