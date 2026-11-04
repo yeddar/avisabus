@@ -22,7 +22,6 @@ import { usePosition, useShape } from './usePositionQueries';
 import { useProximityAnnouncements } from './useProximityAnnouncements';
 
 const H1 = 'text-[1.375rem] leading-[1.2] font-bold';
-const SUMMARY_TEXT_ID = 'map-summary-text';
 const DIRECTION = /^\d+$/;
 
 function stopPath(stopId: string, token: string | null): string {
@@ -222,7 +221,6 @@ function MapContent({ stopId, line, token, position }: MapContentProps) {
           <ProximityAnnouncer position={data} />
           <PositionSummary
             summary={buildSummary(data, firstStopOf(shape.data), t, language, now)}
-            textId={SUMMARY_TEXT_ID}
           />
           <BusMap model={model} ready={ready} />
         </>

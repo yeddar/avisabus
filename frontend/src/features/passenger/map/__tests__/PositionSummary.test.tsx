@@ -12,7 +12,7 @@ const EN_ROUTE: Summary = {
 };
 
 function renderSummary(summary: Summary, language: Language = 'es') {
-  renderWithProviders(<PositionSummary summary={summary} textId="summary-text" />, { language });
+  renderWithProviders(<PositionSummary summary={summary} />, { language });
   return screen.getByRole('region');
 }
 
@@ -24,8 +24,7 @@ describe('PositionSummary', () => {
     expect(within(region).getByRole('heading', { level: 2 })).toHaveTextContent(
       'Dónde está el autobús',
     );
-    const text = document.getElementById('summary-text');
-    expect(text).toHaveTextContent(
+    expect(within(region).getByText(/^El autobús/)).toHaveTextContent(
       'El autobús está a 3,4 km de tu parada, a 3 paradas. Próxima parada: Cid - Hospital General. Llega en 5 minutos.',
     );
   });
@@ -33,7 +32,7 @@ describe('PositionSummary', () => {
   it('[passenger_map_view.AC-04] shows distance, stops and time in bold and the stop name in Valencian', () => {
     renderSummary(EN_ROUTE);
 
-    const bold = document.querySelectorAll('#summary-text strong');
+    const bold = screen.getByRole('region').querySelectorAll('p strong');
     expect([...bold].map((node) => node.textContent)).toEqual([
       '3,4 km',
       'a 3 paradas',

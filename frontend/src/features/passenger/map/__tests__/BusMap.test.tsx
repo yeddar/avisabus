@@ -1,5 +1,5 @@
-import { act, screen, within } from '@testing-library/react';
-import type { Map as LeafletMap, TileLayer } from 'leaflet';
+import { act, fireEvent, screen, within } from '@testing-library/react';
+import { type Map as LeafletMap, point, type TileLayer } from 'leaflet';
 import { createRef } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -53,6 +53,20 @@ function tileLayer(map: LeafletMap): TileLayer {
   });
   if (found === null) throw new Error('no tile layer');
   return found;
+}
+
+/**
+ * Presses an arrow key on the focused map, as a keyboard user. jsdom lays nothing out, so the map
+ * is given a real size: otherwise Leaflet never animates a pan (it jumps when the offset does not
+ * fit in a 0 × 0 map).
+ */
+function pressArrowRight(map: LeafletMap) {
+  map.getSize = () => point(400, 360);
+  act(() => map.getContainer().focus());
+  act(() => {
+    fireEvent.keyDown(document, { key: 'ArrowRight', keyCode: 39 });
+  });
+  return map.getPane('mapPane')!;
 }
 
 describe('BusMap', () => {
@@ -214,5 +228,36 @@ describe('BusMap', () => {
       markerZoomAnimation: true,
       inertia: true,
     });
+  });
+
+  it('[passenger_map_view.AC-10] with prefers-reduced-motion the arrow keys pan the map at once, without animation', () => {
+    setReducedMotion(true);
+    const { map } = renderMap();
+    const before = map().getCenter();
+
+    const pane = pressArrowRight(map());
+
+    expect(pane).not.toHaveClass('leaflet-pan-anim');
+    expect(map().getCenter().lng).toBeGreaterThan(before.lng); // already moved, no frames
+  });
+
+  it('[passenger_map_view.AC-10] with prefers-reduced-motion programmatic pans are not animated either', () => {
+    setReducedMotion(true);
+    const { map } = renderMap();
+    map().getSize = () => point(400, 360);
+
+    act(() => {
+      map().panBy([50, 0]);
+      map().panTo(map().containerPointToLatLng([260, 180]));
+    });
+
+    expect(map().getPane('mapPane')).not.toHaveClass('leaflet-pan-anim');
+  });
+
+  it("[passenger_map_view.AC-10] without the preference the arrow keys keep Leaflet's pan animation", () => {
+    setReducedMotion(false);
+    const { map } = renderMap();
+
+    expect(pressArrowRight(map())).toHaveClass('leaflet-pan-anim');
   });
 });

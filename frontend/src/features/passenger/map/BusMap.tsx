@@ -35,16 +35,40 @@ function tileUrl(): string {
   return typeof configured === 'string' && configured.trim() !== '' ? configured : OSM_TILE_URL;
 }
 
+function prefersReducedMotion(): boolean {
+  return typeof window.matchMedia === 'function' && window.matchMedia(REDUCED_MOTION).matches;
+}
+
 /**
  * Animations off with prefers-reduced-motion (passenger_map_view.AC-10). Leaflet only reads these
  * options when it creates the map, so the preference is taken once, on mount.
  */
-function motionOptions(): MapOptions {
-  const reduce =
-    typeof window.matchMedia === 'function' && window.matchMedia(REDUCED_MOTION).matches;
+function motionOptions(reduce: boolean): MapOptions {
   return reduce
     ? { zoomAnimation: false, fadeAnimation: false, markerZoomAnimation: false, inertia: false }
     : {};
+}
+
+/**
+ * No map option stops Leaflet's pan animation: the arrow keys call `panBy(offset)`, and `panTo`
+ * and `setView` end in `panBy`, which animates for 0.25 s unless told `animate: false`. With
+ * reduced motion this map's `panBy` always gets it, so every pan is an instant jump (AC-10).
+ */
+function InstantPans() {
+  const map = useMap();
+  useEffect(() => forceInstantPans(map), [map]);
+  return null;
+}
+
+/** Makes every `panBy` of `map` instant; returns how to undo it. */
+function forceInstantPans(map: LeafletMap): () => void {
+  const panBy = map.panBy;
+  map.panBy = function instantPanBy(offset, options) {
+    return panBy.call(this, offset, { ...options, animate: false });
+  };
+  return () => {
+    map.panBy = panBy;
+  };
 }
 
 /** "© colaboradores de OpenStreetMap" with a link, bottom right, in the active language. */
@@ -104,7 +128,8 @@ export interface BusMapProps {
 export function BusMap({ model, ready, ref }: BusMapProps) {
   const { t, i18n } = useTranslation();
   const descriptionId = useId();
-  const [options] = useState(motionOptions);
+  const [reduceMotion] = useState(prefersReducedMotion);
+  const [options] = useState(() => motionOptions(reduceMotion));
   const stopKeys = useMemo(() => stableKeys(model.stops.map((stop) => stop.id)), [model.stops]);
   // Leaflet needs a view from the start; useInitialFit then frames the final bounds once.
   const [initialBounds] = useState(model.fitBounds);
@@ -148,6 +173,7 @@ export function BusMap({ model, ready, ref }: BusMapProps) {
         {...options}
       >
         <TileLayer url={tileUrl()} />
+        {reduceMotion && <InstantPans />}
         <OsmAttribution />
         <ZoomControl
           key={i18n.language}

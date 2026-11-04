@@ -381,3 +381,49 @@ test.describe('map view states', () => {
     expectNoNetworkLeaks(network);
   });
 });
+
+test.describe('map view with reduced motion', () => {
+  test.use({ locale: 'es-ES', reducedMotion: 'reduce' });
+
+  test('[passenger_map_view.AC-10] the arrow keys and the zoom move the map without animation', async ({
+    page,
+  }) => {
+    const network = await mockNetwork(page, {
+      position: { status: 200, body: POSITION_EN_ROUTE },
+    });
+    await page.goto(MAP_URL);
+    await expectMapDrawn(page, 'es');
+    const map = mapRegion(page, 'es');
+    const pane = map.locator('.leaflet-map-pane');
+    // Records every animation class Leaflet puts on the map pane from now on.
+    await page.evaluate(() => {
+      const target = document.querySelector('.leaflet-map-pane')!;
+      const seen: string[] = [];
+      (window as unknown as { animations: string[] }).animations = seen;
+      new MutationObserver(() => {
+        for (const name of ['leaflet-pan-anim', 'leaflet-zoom-anim']) {
+          if (target.classList.contains(name) || target.parentElement?.classList.contains(name))
+            seen.push(name);
+        }
+      }).observe(target.parentElement!, {
+        attributes: true,
+        subtree: true,
+        attributeFilter: ['class'],
+      });
+    });
+
+    await map.locator('.leaflet-container').focus();
+    const before = await pane.getAttribute('style');
+    await page.keyboard.press('ArrowRight');
+    // The pane jumps to its new position in the same task as the key press.
+    expect(await pane.getAttribute('style')).not.toBe(before);
+    await page.keyboard.press('+');
+    await map.getByRole('button', { name: 'Alejar' }).click();
+    await page.waitForTimeout(400); // longer than Leaflet's 0.25 s animations
+
+    expect(
+      await page.evaluate(() => (window as unknown as { animations: string[] }).animations),
+    ).toEqual([]);
+    expectNoNetworkLeaks(network);
+  });
+});
