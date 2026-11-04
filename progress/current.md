@@ -4,8 +4,8 @@
 
 **Fecha:** 2026-11-04
 **Fase:** Fin del Bloque 2 — CP-6 pendiente
-**Feature en curso:** `passenger_map_view` v1.2 — `implementing` (solo T-08), rama `feat/passenger_map_view-v1.2`.
-`passenger_stop_view` v1.3: `done`, PR #34 abierta.
+**Feature en curso:** `position_estimation` v1.3 (T-10) — siguiente. PRs abiertas: #34 (`passenger_stop_view`
+v1.3) y la de `passenger_map_view` v1.2.
 
 ## Último paso
 - `passenger_map_view` v1.1: APPROVED (ciclo 2), PR #30 fusionada.
@@ -21,6 +21,8 @@
 3. Bloque 3 (`realtime_events` y siguientes) tras el CP-6.
 
 ## Pendiente para specs futuras
+- **passenger_map_view v1.2:** N-08 añadir `badge: … | null` al tipo `Summary` del design §3. N-09
+  (persona): `docs/design.md` §5.7 punto 3, aclarar que la insignia solo aparece si hay posición.
 - **Harness (H-04 de la revisión de `position_estimation` v1.2):** `frontend/src/__tests__/bundle-budget.test.ts`
   lee `frontend/dist/`, pero `init.sh` ejecuta los tests antes del build: con un `dist/` antiguo,
   `./init.sh verify` (sin `--e2e`) puede dar falso rojo o falso verde. Origen: `passenger_map_view` T-06
