@@ -31,12 +31,15 @@ from avisabus.adapters.outbound.security.hmac_stop_token import HmacStopTokenSig
 from avisabus.application.cancel_alert import CancelAlert
 from avisabus.application.create_alert import CreateAlert
 from avisabus.application.direction_overrides import validate_direction_overrides
+from avisabus.application.expire_alert import ExpireAlert
+from avisabus.application.expire_alerts import ExpireDueAlerts
 from avisabus.application.get_shape import GetShape
 from avisabus.application.get_stop import GetStop
 from avisabus.application.get_stop_arrivals import GetStopArrivals
 from avisabus.application.get_vehicle_position import GetVehiclePosition
 from avisabus.application.list_my_alerts import ListMyAlerts
 from avisabus.application.scheduled_arrivals import ScheduledArrivalsProvider
+from avisabus.application.watch_passages import WatchPassages
 from avisabus.config import Settings
 from avisabus.domain.ports.arrivals import ArrivalsSource
 from avisabus.domain.ports.clock import Clock
@@ -49,6 +52,7 @@ ARRIVALS_LOGGER = "avisabus.arrivals"
 POSITION_LOGGER = "avisabus.position"
 WS_LOGGER = "avisabus.ws"
 ALERTS_LOGGER = "avisabus.alerts"
+BACKGROUND_LOGGER = "avisabus.background"
 
 
 @dataclass(frozen=True, slots=True)
@@ -209,3 +213,55 @@ def build_alert_snapshots(engine: Engine) -> AlertSnapshotProvider:
     """`alerts.snapshot` of `/ws/passenger` with the active alerts of the device (AC-11). Built
     before `build_realtime`, which needs it, while `build_alert_use_cases` needs its publisher."""
     return AlertSnapshotProvider(ListMyAlerts(SqliteAlertRepository(engine)))
+
+
+@dataclass(frozen=True, slots=True)
+class AlertExpiry:
+    """Cycles of the alert expiry tasks (alert_expiry design §2); `avisabus.main` runs them
+    periodically in its lifespan (`background.alert_tasks`)."""
+
+    watch_passages: WatchPassages
+    expire_due_alerts: ExpireDueAlerts
+    watch_interval: timedelta
+    expiry_interval: timedelta
+
+
+def build_alert_expiry(
+    settings: Settings,
+    engine: Engine,
+    clock: Clock,
+    stops: StopUseCases,
+    publisher: EventPublisher,
+) -> AlertExpiry:
+    """The watcher reads the stops through the stops' `GetStopArrivals`, so it shares its SAE
+    cache (AC-04); the ticker reads what the watcher remembers of the last observation of each
+    alert (`seen_in_last_observation`). `alert.expired` goes through the real-time publisher.
+    Block 3 has no driver views to refresh."""
+    alerts = SqliteAlertRepository(engine)
+    network = SqliteNetworkRepository(engine)
+    logger = structlog.get_logger(ALERTS_LOGGER)
+    expire = ExpireAlert(
+        alerts=alerts, events=publisher, drivers=NoopDriverViewNotifier(), logger=logger
+    )
+    watch = WatchPassages(
+        alerts=alerts,
+        stop_arrivals=stops.get_stop_arrivals,
+        network=network,
+        expire=expire,
+        clock=clock,
+        logger=logger,
+        passage_window=timedelta(minutes=settings.passage_window_min),
+    )
+    return AlertExpiry(
+        watch_passages=watch,
+        expire_due_alerts=ExpireDueAlerts(
+            alerts=alerts,
+            network=network,
+            expire=expire,
+            seen=watch.seen_in_last_observation,
+            clock=clock,
+            next_stop_margin=timedelta(minutes=settings.next_stop_margin_min),
+        ),
+        watch_interval=timedelta(seconds=settings.passage_watch_interval_s),
+        expiry_interval=timedelta(seconds=settings.alert_expiry_interval_s),
+    )

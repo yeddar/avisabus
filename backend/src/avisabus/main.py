@@ -9,11 +9,14 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
 
 import httpx
+import structlog
 from fastapi import FastAPI
 from sqlalchemy import Engine
 
 from avisabus.adapters.inbound.http.app import create_app
 from avisabus.adapters.inbound.http.container import (
+    BACKGROUND_LOGGER,
+    build_alert_expiry,
     build_alert_snapshots,
     build_alert_use_cases,
     build_position_use_cases,
@@ -28,6 +31,7 @@ from avisabus.adapters.outbound.persistence.sqlite_occupancy_override import (
     SqliteOccupancyOverrideRepository,
 )
 from avisabus.adapters.outbound.sae.compose import build_arrivals_source
+from avisabus.background.alert_tasks import start_alert_tasks, stop_tasks
 from avisabus.background.sae_stats import run_sae_stats
 from avisabus.config import (
     Settings,
@@ -78,15 +82,27 @@ realtime = build_realtime(settings, clock, snapshots=build_alert_snapshots(engin
 # The alerts validate the bus with the stops' `GetStopArrivals` (same SAE cache) and publish their
 # confirmation (alert_create) and cancellation (alert_cancel) through the real-time publisher.
 alert_use_cases = build_alert_use_cases(settings, engine, clock, stop_use_cases, realtime.publisher)
+# Expiry of the alerts (alert_expiry): the passage watcher reads the stops through the same
+# `GetStopArrivals` (and SAE cache); `alert.expired` goes through the real-time publisher.
+alert_expiry = build_alert_expiry(settings, engine, clock, stop_use_cases, realtime.publisher)
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    """Runs the `sae.stats` task (sae_arrivals_source AC-13) and closes the SAE HTTP client."""
+    """Runs the `sae.stats` task (sae_arrivals_source AC-13) and the alert expiry tasks
+    (alert_expiry AC-10), and closes the SAE HTTP client."""
     stats_task = asyncio.create_task(run_sae_stats(arrivals_source), name="sae.stats")
+    expiry_tasks = start_alert_tasks(
+        watch_tick=alert_expiry.watch_passages.tick,
+        expiry_tick=alert_expiry.expire_due_alerts.tick,
+        watch_interval=alert_expiry.watch_interval,
+        expiry_interval=alert_expiry.expiry_interval,
+        logger=structlog.get_logger(BACKGROUND_LOGGER),
+    )
     try:
         yield
     finally:
+        await stop_tasks(expiry_tasks)
         stats_task.cancel()
         with suppress(asyncio.CancelledError):
             await stats_task

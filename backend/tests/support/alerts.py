@@ -115,5 +115,8 @@ class RecordingLogger:
     def warning(self, event: str, **fields: Any) -> None:
         self.events.append(("warning", event, fields))
 
+    def error(self, event: str, **fields: Any) -> None:
+        self.events.append(("error", event, fields))
+
     def named(self, event: str) -> list[dict[str, Any]]:
         return [fields for _, name, fields in self.events if name == event]

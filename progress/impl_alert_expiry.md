@@ -7,7 +7,7 @@ Rama: `feat/alert_expiry` (apilada sobre `feat/alert_cancel`, `feat/alert_create
 - [x] T-01 `ExpiryReason`, `observe_passage` y `expiry_reason` (AC-01, AC-02, AC-05, AC-06, AC-07)
 - [x] T-02 `GetStopArrivals.for_stop`, `ExpireAlert`, `WatchPassages` y `ExpireDueAlerts` (AC-03, AC-04,
       AC-05, AC-06, AC-08, AC-09)
-- [ ] T-03 `run_periodic`, `lifespan`, configuración y `.env.example`
+- [x] T-03 `run_periodic`, `lifespan`, configuración y `.env.example` (AC-10)
 - [ ] T-04 Integración
 - [ ] T-05 Sesión real `stop_508_peak`
 - [ ] T-06 Verificación completa
@@ -22,6 +22,13 @@ Rama: `feat/alert_expiry` (apilada sobre `feat/alert_cancel`, `feat/alert_create
 - T-02 (apoyo de tests de alert_create): `tests/support/alerts.py`,
   `FakeAlertRepository.update_tracking` lanzaba `NotImplementedError`; ahora sustituye el
   seguimiento si el aviso existe (como el SQLite). Ningún test existente lo usaba.
+- T-03 (apoyo de tests): `RecordingLogger` (`tests/support/alerts.py`) gana `error()`.
+- T-03 (composición): `adapters/inbound/http/container.py` gana `AlertExpiry` y
+  `build_alert_expiry` (y la constante `BACKGROUND_LOGGER`); `main.py` compone `alert_expiry` y el
+  `lifespan` arranca y para las dos tareas además de `sae.stats` (sin cambios en lo existente).
+  `container.py` no está en la lista de ficheros de T-03, pero `background/` no puede importar
+  adaptadores (contrato de capas: `adapters | background` son independientes) y así los tests de
+  integración componen igual que `main.py`, como ya hacen `build_alert_use_cases` y los demás.
 
 ## Decisiones locales
 - T-01: `AVISABUS_PASSAGE_WINDOW_MIN` se queda en **2 min** (valor por defecto del design; E-01:
@@ -63,6 +70,20 @@ Rama: `feat/alert_expiry` (apilada sobre `feat/alert_cancel`, `feat/alert_create
   aviso está `DELIVERED` y tiene `delivered_to`.
 - T-02: `ExpireDueAlerts` lee el `Clock` una vez por ciclo. Si el viaje ya no está en el feed
   activo (`trip_stop_times` vacío), no hay parada siguiente: solo aplica `TIMEOUT`.
+
+- T-03: el campo `task` de `unhandled_exception` (design §5) es el nombre de la tarea asyncio que
+  ejecuta el bucle (`asyncio.current_task().get_name()`), para no cambiar la firma de
+  `run_periodic` del design: `alerts.passage_watcher` y `alerts.expiry_ticker`. Nivel `error`, como
+  los otros `unhandled_exception`; nunca el mensaje de la excepción.
+- T-03: `background/alert_tasks.py` añade `start_alert_tasks` (crea las dos tareas con su nombre y
+  su intervalo) y `stop_tasks` (las cancela y espera; idempotente), que usa el `lifespan`.
+- T-03 (configuración, `.env.example` documentado): `AVISABUS_PASSAGE_WATCH_INTERVAL_S` (15, > 0),
+  `AVISABUS_ALERT_EXPIRY_INTERVAL_S` (10, > 0), `AVISABUS_PASSAGE_WINDOW_MIN` (2, > 0),
+  `AVISABUS_NEXT_STOP_MARGIN_MIN` (2, ≥ 0: un margen 0 tiene sentido). No se acota la ventana a
+  1–3 min en la validación: el rango del design §7 se refiere al valor por defecto que puede
+  elegir el implementer.
+- T-03: logger de las tareas `avisabus.background`; el de `ExpireAlert` y `WatchPassages`,
+  `avisabus.alerts` (el de `CreateAlert`/`CancelAlert`).
 
 ## Bloqueos
 Ninguno.
