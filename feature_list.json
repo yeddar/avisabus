@@ -326,7 +326,7 @@
       "order": 14,
       "block": 3,
       "title": "Caducidad de avisos: vigilante de paso (SAE) y tiempo máximo",
-      "status": "in_review",
+      "status": "done",
       "depends_on": [
         "alert_create"
       ],
@@ -340,7 +340,7 @@
       "spec": "specs/alert_expiry/",
       "needs_exploration": false,
       "review_cycles": 0,
-      "passes": false
+      "passes": true
     },
     {
       "id": "passenger_alert_ui",
