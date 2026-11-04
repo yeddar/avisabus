@@ -4,7 +4,7 @@
 
 **Fecha:** 2026-11-04
 **Fase:** Implementación — Bloque 3 (solicitud de parada)
-**Feature en curso:** `alert_expiry` v1.0 — `exploring` (E-01 → `progress/explore_passage.md`); rama
+**Feature en curso:** `alert_expiry` v1.0 — `implementing` (E-01 hecha, sin CP-3); rama
 `feat/alert_expiry`, apilada sobre `feat/alert_cancel` (PR #42)
 
 ## Último paso
@@ -20,6 +20,11 @@ Bloque 3 por orden, cada una con reviewer nuevo y PR contra `develop` sin fusion
 Las ramas se apilan sobre la anterior mientras sus PRs no estén fusionadas.
 
 ## Pendiente para specs futuras
+- **alert_expiry E-01:** ventana de 2 min confirmada (0 prematuros con 1–3 min; 4/6 pasos seguros).
+  AC-02 debe ser inclusivo (paso de la 70 con exactamente 120 s). AC-11 (a) no comprueba nada tal como
+  está escrita → propuesta de reformulación (o aserción extra en T-05). LIM-02 (docs): el emparejamiento
+  puede trasladar un viaje al autobús siguiente sin que desaparezca (93 a ~290 s) y el aviso caduca
+  ~490 s tarde; en el bloque 4 llegaría al conductor equivocado.
 - **alert_cancel:** H-1 `no-store` en todos los 500 (`errors.py`), aceptado; anotar en docs como
   comportamiento transversal (persona). H-2 (arnés) `test_alerts_cancel_api.py:159-160` `receive_json()`
   sin límite: con el evento roto se cuelga (sin `pytest-timeout`; ver N-03 de `realtime_events`).

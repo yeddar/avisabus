@@ -326,7 +326,7 @@
       "order": 14,
       "block": 3,
       "title": "Caducidad de avisos: vigilante de paso (SAE) y tiempo máximo",
-      "status": "exploring",
+      "status": "implementing",
       "depends_on": [
         "alert_create"
       ],

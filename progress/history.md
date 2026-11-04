@@ -406,3 +406,6 @@
 
 ## 2026-11-04 · alert_cancel PR #42 abierta · alert_expiry · spec_approved → exploring
 - E-01: detección de paso con `stop_508_peak` y `gtfs_mini` → `progress/explore_passage.md`.
+
+## 2026-11-04 · alert_expiry · exploring → implementing
+- E-01 (`progress/explore_passage.md`): ventana de 2 min sin pasos prematuros; sin CP-3.
