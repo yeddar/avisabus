@@ -289,3 +289,7 @@
 ## 2026-11-04 · passenger_map_view · in_review → changes_requested → implementing (ciclo 2)
 - Revisión ciclo 1: CHANGES_REQUESTED por B-01 (AC-10: `panBy` con flechas anima 0,25 s con
   movimiento reducido; el test solo comprueba opciones). Arreglo local, sin CP-3.
+
+## 2026-11-04 · passenger_map_view · implementing → in_review (ciclo 2)
+- B-01 corregido (`panBy` sin animación con movimiento reducido, tests unitarios y e2e que fallaban
+  antes); N-01 resuelto. Verify --e2e en verde (395 Vitest, 87 e2e).
