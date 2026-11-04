@@ -10,7 +10,8 @@ Spec: specs/realtime_events/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Agente
       (commit 9b125e4)
 - [x] T-04 `/ws/passenger`, `ConnectionRegistry`, `EmptySnapshotProvider`,
       `device_hash_from_header`, configuración y composición (AC-03, AC-05…AC-13)
-- [ ] T-05 Verificación completa
+      (commit 72970e0)
+- [x] T-05 Verificación completa: `CI=1 ./init.sh verify --e2e` en verde (commit de este fichero)
 
 ## Decisiones locales
 - T-01: `Event.message()` implementa la serialización del design (`{"type": type, **payload}`).
@@ -89,3 +90,24 @@ Spec: specs/realtime_events/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Agente
   `1012` en AC-11.
 
 ## Verificación
+`CI=1 ./init.sh verify --e2e` (2026-11-04, puerto 4173 libre, tras T-04): **todo en verde**.
+
+| Paso | Resultado |
+|---|---|
+| backend: format / lint / types | OK (`ruff format --check`, `ruff check`, `mypy`: 102 ficheros sin errores) |
+| backend: architecture | OK (`lint-imports`: 2 contratos respetados) |
+| backend: tests | OK: 1098 passed, 6 deselected; cobertura `domain`+`application` 99,48 % |
+| frontend: format / lint / types | OK |
+| frontend: tests | OK: 44 ficheros, 413 passed, 2 skipped |
+| frontend: build + bundle | OK (5 tests de presupuesto) |
+| frontend: e2e + a11y | OK: 87 passed |
+| harness: `feature_list.json` / trazabilidad AC→test | OK |
+
+Tests nuevos: `tests/unit/test_device.py` (32), `tests/unit/test_in_memory_publisher.py` (14),
+`tests/unit/test_ws_connections.py` (13), `tests/integration/test_log_privacy.py` (6),
+`tests/integration/test_ws_passenger.py` (28), `tests/integration/test_device_header.py` (6),
+`tests/integration/test_main_realtime.py` (1). Los tests de WebSocket muestran el aviso
+`StarletteDeprecationWarning` de `starlette.testclient` (usa `httpx`), que el design exige.
+Mutaciones comprobadas a mano: sin `subscription.close()` fallan 3 tests (AC-03); cerrando con
+`1001` en lugar de `4429` al desbordar falla el de AC-09.
+
