@@ -1,6 +1,6 @@
 # Eventos en tiempo real — design
 
-> Feature: `realtime_events` · Versión: 1.0 · Estado: APPROVED
+> Feature: `realtime_events` · Versión: 1.1 · Estado: DRAFT
 > Requisitos: RF-23, RF-28 (base), RNF-02, RNF-06, RNF-07, RNF-12, RNF-13 · Casos de uso: CU-03, CU-04, CU-07 (canal) · Depende de: project_scaffold
 
 ## 1. Resumen
@@ -102,9 +102,24 @@ Protocolo (`/ws/passenger`):
 | 4 | servidor → cliente | eventos del canal en orden; `{"type": "ping"}` cada 25 s |
 | — | cliente → servidor | `{"type": "pong"}` u otros: se ignoran |
 
-Códigos de cierre: `1000` normal, `1001` parada del servidor (AC-11), `1013` demasiadas
+Códigos de cierre: `1000` normal, `1001` o `1012` parada del servidor (AC-11), `1013` demasiadas
 conexiones (AC-10), `4400` `hello` inválido, `4408` sin `hello`, `4429` suscripción desbordada
-(AC-09).
+(AC-09). El cliente no debe distinguir entre `1001` y `1012`: ambos significan "el servidor se
+detiene; reconecta".
+
+Secuencia de parada (AC-11):
+
+1. **Servidor ASGI.** uvicorn, al recibir `SIGTERM`, cierra cada WebSocket abierto con `1012`
+   (`connection.shutdown()`) **antes** de ejecutar la parada del `lifespan`. La aplicación no lo
+   controla: el endpoint lo recibe como una desconexión, la tarea de lectura termina, se cancela
+   la de escritura y la suscripción se cierra en `finally` (AC-03), como en cualquier otro cierre.
+2. **`lifespan`.** En su parada, `ConnectionRegistry` cierra con `1001` las conexiones que sigan
+   abiertas. Es el camino que se ejecuta con `TestClient` y con cualquier servidor que no cierre
+   los WebSockets antes; con uvicorn normalmente ya no queda ninguna.
+
+No se intenta forzar `1001` en producción (por ejemplo, adelantándose a uvicorn con un manejador
+de señales propio): `1012` es un código estándar adecuado y el resultado para el cliente es el
+mismo.
 
 Tareas concurrentes por conexión: una que lee del socket (ignora mensajes; detecta el cierre) y
 otra que escribe (eventos y `ping`); la primera que termina cancela la otra y se cierra la
@@ -157,7 +172,7 @@ y avisos existentes (se pierden de vista hasta que caducan); se documenta en `.e
 |---|---|
 | AC-01–AC-03 | `tests/unit/test_in_memory_publisher.py` (`asyncio`, sin red) |
 | AC-04, AC-05 | `tests/unit/test_device.py` (tabla de UUID; *hash* estable y dependiente del secreto; `repr` sin el valor) |
-| AC-06–AC-11 | `tests/integration/test_ws_passenger.py` con `starlette.testclient.TestClient.websocket_connect` (no abre sockets de red); intervalos y máximos bajos por configuración |
+| AC-06–AC-11 | `tests/integration/test_ws_passenger.py` con `starlette.testclient.TestClient.websocket_connect` (no abre sockets de red); intervalos y máximos bajos por configuración. Para AC-11, el test detiene el `lifespan` con una conexión abierta y comprueba `1001` (el cierre con `1012` de uvicorn se verifica por revisión, ver §3 "Secuencia de parada") |
 | AC-05 (logs), AC-12 | `tests/integration/test_log_privacy.py`: logs capturados en JSON; ruta HTTP de prueba y proveedor de instantánea que lanzan `RuntimeError("MARKER-…")`; ninguna línea contiene el marcador ni el `device_id` |
 | AC-13 | `tests/unit/test_ws_connections.py` con logger falso |
 

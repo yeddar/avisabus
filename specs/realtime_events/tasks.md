@@ -1,7 +1,13 @@
 # Eventos en tiempo real — tasks
 
-> Feature: `realtime_events` · Versión: 1.0 · Estado: APPROVED
+> Feature: `realtime_events` · Versión: 1.1 · Estado: DRAFT
 > Requisitos: RF-23, RF-28 (base), RNF-02, RNF-06, RNF-07, RNF-12, RNF-13 · Casos de uso: CU-03, CU-04, CU-07 (canal) · Depende de: project_scaffold
+
+> **Nota v1.1 (AC-11):** el cambio de AC-11 (admitir `1001` o `1012` al detener la aplicación)
+> no añade tareas ni cambia código. La implementación de T-04 (el `lifespan` cierra con `1001` las
+> conexiones abiertas) y su test de integración ya cumplen el AC nuevo. Lo único nuevo es la parte
+> de revisión: el reviewer comprueba que el `lifespan` sigue cerrando con `1001` y que no se ha
+> añadido ningún manejo de señales propio (design §3, "Secuencia de parada").
 
 ## Exploración
 

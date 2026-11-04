@@ -1,6 +1,6 @@
 # Eventos en tiempo real — requirements
 
-> Feature: `realtime_events` · Versión: 1.0 · Estado: APPROVED
+> Feature: `realtime_events` · Versión: 1.1 · Estado: DRAFT
 > Requisitos: RF-23, RF-28 (base), RNF-02, RNF-06, RNF-07, RNF-12, RNF-13 · Casos de uso: CU-03, CU-04, CU-07 (canal) · Depende de: project_scaffold
 
 ## Contexto
@@ -96,9 +96,14 @@ reutilizando el publicador.
   configurado (500 por defecto), ENTONCES EL SISTEMA DEBERÁ cerrar las nuevas con el código
   `1013` sin procesar su `hello`.
   *Verificación:* integration (máximo bajo en el test)
-- **realtime_events.AC-11** — CUANDO la aplicación se detiene, EL SISTEMA DEBERÁ cerrar las
-  conexiones abiertas con el código `1001`.
-  *Verificación:* integration
+- **realtime_events.AC-11** — CUANDO la aplicación se detiene, EL SISTEMA DEBERÁ cerrar todas las
+  conexiones abiertas con el código `1001` (*Going Away*) o `1012` (*Service Restart*). El
+  `lifespan` de la aplicación DEBERÁ cerrar con `1001` las conexiones que sigan abiertas al
+  ejecutar su parada; el servidor ASGI (uvicorn, al recibir `SIGTERM`) puede haberlas cerrado
+  antes con `1012`, y ambos códigos son válidos para el cliente.
+  *Verificación:* integration (parada del `lifespan` con `TestClient`: el cliente recibe `1001`)
+  + revisión (el cierre con `1012` lo hace uvicorn antes del `lifespan`; no se prueba porque
+  exigiría arrancar el servidor real y abrir sockets de red, prohibido en los tests)
 
 ### Privacidad de los logs (H-01)
 
@@ -131,3 +136,4 @@ reutilizando el publicador.
 | Versión | Fecha | Cambio | Motivo |
 |---|---|---|---|
 | 1.0 | 2026-11-04 | Versión inicial aprobada (PR #37). | CP-1 del bloque 3. Aprobada por la persona. |
+| 1.1 | 2026-11-04 | AC-11 admite el cierre con `1001` o con `1012` al detener la aplicación; el `lifespan` sigue cerrando con `1001` las conexiones que queden abiertas. design §3 (códigos de cierre y secuencia de parada) y §6; nota en tasks. Sin cambios de código. | CP-3 de AC-11 (`progress/impl_realtime_events.md`, Bloqueos): uvicorn, al recibir `SIGTERM`, cierra cada WebSocket con `1012` antes de ejecutar la parada del `lifespan`, así que en producción el cliente recibe `1012`. Decisión de la persona: opción (c), admitir ambos códigos. |
