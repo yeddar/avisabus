@@ -1,5 +1,5 @@
 # Implementación: position_estimation
-Spec: specs/position_estimation/ (v1.1, APPROVED; T-01…T-06 hechas con la v1.0) · Ciclo de revisión: 0 · Agente: implementer · Fecha: 2026-11-03
+Spec: specs/position_estimation/ (v1.2, APPROVED; T-01…T-06 hechas con la v1.0, T-07 con la v1.1, T-09 con la v1.2) · Ciclo de revisión: 0 (de la v1.2) · Agente: implementer · Fecha: 2026-11-04 (v1.2; antes 2026-11-03)
 
 ## Tareas
 - [x] T-01 Geometría: `haversine_m`, `cumulative_distances`, `shape_distances`, `point_at_distance`,
@@ -19,8 +19,13 @@ Spec: specs/position_estimation/ (v1.1, APPROVED; T-01…T-06 hechas con la v1.0
       minutos del SAE no crecientes sin aumento > 50 m; 5 pares excluidos (minutos que suben) y
       listados en la salida. Antes, la v1.1 alinea la firma de `estimate_position` (commit
       0b32f39). (commit f031c21)
-- [x] T-08 Contrato del frontend (`npm run gen:api`: sin cambios respecto a T-06) y verificación
-      completa `CI=1 ./init.sh verify --e2e` en verde (commit de este fichero)
+- [x] T-09 (v1.2) `AT_STOP` cuando la parada objetivo es la primera del viaje (AC-04, prevalece
+      AC-03) y posición no estimable → `NO_VEHICLE` con el `shape_id` representativo y
+      `position.estimate_failed` (`trip_id`, `shape_id`, `reason`), nunca `500` (AC-11)
+      (commit adab10e)
+- [x] T-08 Contrato del frontend (`npm run gen:api`: sin cambios respecto a T-06; en la v1.2
+      tampoco cambia) y verificación completa `CI=1 ./init.sh verify --e2e` en verde (commit de
+      este fichero)
 
 ## Decisiones locales
 
@@ -57,6 +62,9 @@ Spec: specs/position_estimation/ (v1.1, APPROVED; T-01…T-06 hechas con la v1.0
   su salida (`arrival_s[0] ≤ s < departure_s[0]`). En ese caso el código da `AT_STOP` (AC-03:
   el instante desplazado ya alcanzó la hora de la parada objetivo). En el feed de EMT no ocurre
   (`arrival = departure`). Se mantiene sin cambios; se anota para el reviewer.
+  **v1.2 (H-01):** la spec fija que, si la parada objetivo es la primera del viaje (`k = 0`),
+  prevalece `AT_STOP` siempre (también con `s < arrival_s[0]`, el autobús aún no ha salido).
+  El código comprueba `k == 0 or s >= arrival_s[k]` antes que `NOT_STARTED` (T-09).
 - **D-05 (T-02) Autobús detenido en una parada intermedia** (entre `arrival_s` y `departure_s` de
   la parada `i`, hueco del paso 5 del design): `EN_ROUTE` en `d_i`. En el feed de EMT no ocurre
   (`arrival = departure`). `f = 0` también si `s_{i+1} ≤ s_i` (datos incoherentes).
@@ -81,7 +89,8 @@ Spec: specs/position_estimation/ (v1.1, APPROVED; T-01…T-06 hechas con la v1.0
   llegadas).
 - **D-10 (T-04) Viaje emparejado sin datos en el feed activo** (sin horarios, sin `shape_id` o con
   forma vacía; solo si el feed cambia entre consultas): se trata como `NO_VEHICLE` (posición
-  `null`, forma representativa), igual que una llegada sin viaje (AC-11).
+  `null`, forma representativa), igual que una llegada sin viaje (AC-11). **v1.2:** además se
+  registra `position.estimate_failed` (ver D-21).
 - **D-11 (T-04) Nombres y coordenadas de las paradas del viaje:** con `get_stop` por cada parada
   distinta del viaje (no hay consulta en bloque en el puerto); las coordenadas se pasan como
   `stop_coordinates` (D-03). `now` de la estimación: `clock.now()`; `generated_at` y
@@ -114,8 +123,41 @@ Spec: specs/position_estimation/ (v1.1, APPROVED; T-01…T-06 hechas con la v1.0
   `/api/v1/stops/{stop_id}/lines/{line}/position` entra en ese filtro, así que se añade a la
   lista esperada (sin cambiar nada más del test). Nuevo `test_main_position.py` para la
   composición de esta feature.
+- **D-19 (T-09) Logger de `GetVehiclePosition`:** el design v1.2 pide que el caso de uso
+  registre `position.estimate_failed`, pero el constructor del design §3 solo recibe
+  `(stop_arrivals, network, clock)`. Como en `GetStopArrivals`, la capa de aplicación no importa
+  `structlog`: se inyecta el protocolo `Logger` (`application/get_stop_arrivals.py`) como **cuarto
+  parámetro obligatorio** `logger`. `build_position_use_cases` le pasa
+  `structlog.get_logger("avisabus.position")` (`POSITION_LOGGER`). Obligatorio y sin valor por
+  defecto para que la composición no pueda olvidarlo en silencio. **Propuesta para la spec:**
+  añadir `logger: Logger` a la firma del design §3.
+- **D-20 (T-09) Tipo del error "posición no estimable"** (design §3, "tipo: decisión local"):
+  `PositionNotEstimableError(DomainError, ValueError)` en `domain/errors.py`, con atributo
+  `reason` y mensaje `position not estimable (<reason>)` sin identificadores (conventions §3).
+  `estimate_position` lo lanza con `reason = "missing_stop_coordinates"` (horarios sin
+  `shape_dist_traveled` y alguna parada sin coordenadas) y `"empty_shape"` (forma vacía). Sigue
+  siendo un `ValueError`, así que el contrato anterior (error explícito) no cambia. El caso de
+  uso captura **solo** este tipo; cualquier otro error (incluido un `ValueError` genérico) se
+  propaga, como pide el design ("otros errores inesperados no se capturan"; test con
+  `monkeypatch`).
+- **D-21 (T-09) Qué se registra como `position.estimate_failed`:** AC-11 v1.2 da la falta de
+  coordenadas solo como ejemplo ("p. ej.") de datos incoherentes. Se registra, con nivel
+  `warning`, en todos los casos en que hay viaje emparejado y no hay posición: `missing_stop_times`,
+  `missing_shape`, `empty_shape` (los de D-10), `missing_stop_coordinates` (el del design) y
+  `target_not_in_trip` (el viaje no pasa por la parada; solo si el feed cambia). En el log,
+  `shape_id` es el del **viaje** (`None` si no tiene). En la respuesta, el representativo de la
+  línea y sentido. `trip_id` y `shape_id` son datos de la red, no personales. La respuesta
+  (`NO_VEHICLE`, `position = null`, `vehicle` y `arrival` tal como vienen de `GetStopArrivals`)
+  es la misma que la de D-10.
+- **D-22 (T-09) Test de AC-07 ajustado a la v1.2:**
+  `test_a_repeated_target_uses_the_occurrence_closest_to_the_arrival` comprobaba `NOT_STARTED`
+  para la **primera** aparición de la parada repetida (la primera parada del viaje). Con AC-04
+  v1.2 es `AT_STOP`. Se cambia solo esa aserción; la distancia (0) y la próxima parada (`A`) no
+  cambian.
 
 ## Bloqueos
+
+v1.2: ninguno.
 
 ### B-01 (CP-3) — RESUELTO (spec v1.1, PR #25, opción 1 elegida por la persona)
 
@@ -183,7 +225,25 @@ pares.)
 
 ## Verificación
 
-`CI=1 ./init.sh verify --e2e` (2026-11-03, spec v1.1, tras T-07; salida "verify: todo en verde"):
+`CI=1 ./init.sh verify --e2e` (2026-11-04, spec v1.2, tras T-09; puerto 4173 libre; salida "verify:
+todo en verde", código 0):
+
+- backend: format OK · lint OK · types OK (mypy, 92 ficheros) · architecture OK (2 contratos) ·
+  tests OK (988 passed, 6 deselected; cobertura `domain`+`application` 99,46 %). AC-17 sin
+  cambios: "139 pairs checked, 5 excluded because the SAE minutes increased".
+- frontend: format OK · lint OK · types OK · tests OK (44 ficheros, 395 tests) · build OK ·
+  e2e + a11y OK (87 passed)
+- harness: `feature_list.json` OK · trazabilidad AC→test OK
+- T-09 por separado: `cd backend && uv run pytest -k position` → 92 passed. `npm run gen:api`:
+  `openapi.json` y `schema.d.ts` sin cambios (git limpio).
+- Observación (fuera del alcance de la feature, para el orquestador): la primera ejecución falló
+  en `frontend: tests` por
+  `src/__tests__/bundle-budget.test.ts` (`passenger_map_view.AC-02`): el test lee
+  `frontend/dist/` y `init.sh` ejecuta los tests **antes** del build, así que se evaluó un
+  `dist/` antiguo (sin el chunk `MapPage`). Tras el build de esa misma ejecución, el test pasa y
+  la segunda ejecución sale en verde. El frontend no se ha tocado en la v1.2.
+
+Ejecución anterior (v1.1, 2026-11-03, tras T-07; salida "verify: todo en verde"):
 
 - backend: format OK · lint OK · types OK (mypy) · architecture OK (2 contratos) · tests OK
   (969 passed, 6 deselected; cobertura `domain`+`application` 99,39 %). Salida de AC-17:

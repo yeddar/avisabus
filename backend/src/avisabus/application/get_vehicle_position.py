@@ -4,13 +4,21 @@
 The arrival is the first one of the line and direction computed by `GetStopArrivals`, so the
 position shares its SAE cache and never asks the SAE again (AC-09). Scheduled arrivals give the
 position on the timetable (δ = 0, AC-10).
+
+A paired trip whose position cannot be estimated because the active network is incoherent for
+it is answered like an arrival without a trip (`NO_VEHICLE`, the representative shape) and
+logged as `position.estimate_failed` (AC-11, v1.2).
 """
 
 from dataclasses import dataclass
 from datetime import datetime
 
-from avisabus.application.get_stop_arrivals import GetStopArrivals
-from avisabus.domain.errors import LineNotAtStopError, StopNotFoundError
+from avisabus.application.get_stop_arrivals import GetStopArrivals, Logger
+from avisabus.domain.errors import (
+    LineNotAtStopError,
+    PositionNotEstimableError,
+    StopNotFoundError,
+)
 from avisabus.domain.models.network import Stop
 from avisabus.domain.models.position import PositionEstimate, PositionStatus
 from avisabus.domain.models.stop_arrivals import ArrivalSource, ArrivalView, VehicleView
@@ -39,11 +47,16 @@ class VehiclePosition:
 
 class GetVehiclePosition:
     def __init__(
-        self, stop_arrivals: GetStopArrivals, network: NetworkRepository, clock: Clock
+        self,
+        stop_arrivals: GetStopArrivals,
+        network: NetworkRepository,
+        clock: Clock,
+        logger: Logger,
     ) -> None:
         self._stop_arrivals = stop_arrivals
         self._network = network
         self._clock = clock
+        self._logger = logger
 
     async def execute(
         self, stop_id: str, token: str, line: str, direction_id: int
@@ -90,23 +103,35 @@ class GetVehiclePosition:
             return result(PositionStatus.NO_ARRIVAL, direction.shape_id)
         if arrival.vehicle is None:
             return result(PositionStatus.NO_VEHICLE, direction.shape_id)
-        found = self._estimate(stop_id, arrival.vehicle, arrival.arrival_at)
-        if found is None:
+        shape_id = self._network.trip_shape_id(arrival.vehicle.trip_id)
+        try:
+            trip_shape_id, estimate = self._estimate(
+                stop_id, arrival.vehicle, shape_id, arrival.arrival_at
+            )
+        except PositionNotEstimableError as error:
+            self._logger.warning(
+                "position.estimate_failed",
+                trip_id=arrival.vehicle.trip_id,
+                shape_id=shape_id,
+                reason=error.reason,
+            )
             return result(PositionStatus.NO_VEHICLE, direction.shape_id)
-        shape_id, estimate = found
-        return result(estimate.status, shape_id, estimate)
+        return result(estimate.status, trip_shape_id, estimate)
 
     def _estimate(
-        self, stop_id: str, vehicle: VehicleView, arrival_at: datetime
-    ) -> tuple[str, PositionEstimate] | None:
-        """`None` when the paired trip lacks its timetable or shape in the active feed."""
+        self, stop_id: str, vehicle: VehicleView, shape_id: str | None, arrival_at: datetime
+    ) -> tuple[str, PositionEstimate]:
+        """The trip's shape and the estimate.
+
+        Raises `PositionNotEstimableError` when the active feed is incoherent for the paired
+        trip: no timetable, no shape, an empty shape, a stop without distance nor coordinates or
+        a trip that does not call at the stop (it can only happen if the feed changes)."""
         stop_times = self._network.trip_stop_times(vehicle.trip_id)
-        shape_id = self._network.trip_shape_id(vehicle.trip_id)
-        if not stop_times or shape_id is None:
-            return None
+        if not stop_times:
+            raise PositionNotEstimableError("missing_stop_times")
+        if shape_id is None:
+            raise PositionNotEstimableError("missing_shape")
         shape = self._network.shape_points(shape_id)
-        if not shape:
-            return None
         stops = {
             stop.stop_id: stop
             for stop in (self._network.get_stop(s) for s in {st.stop_id for st in stop_times})
@@ -122,4 +147,6 @@ class GetVehiclePosition:
             self._clock.now(),
             stop_coordinates={stop_id: (stop.lat, stop.lon) for stop_id, stop in stops.items()},
         )
-        return None if estimate is None else (shape_id, estimate)
+        if estimate is None:
+            raise PositionNotEstimableError("target_not_in_trip")
+        return shape_id, estimate

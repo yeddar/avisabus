@@ -10,6 +10,7 @@ from datetime import date, datetime, timedelta
 
 import pytest
 
+from avisabus.domain.errors import PositionNotEstimableError
 from avisabus.domain.models.network import ShapePoint, TripStopTime
 from avisabus.domain.models.position import PositionEstimate, PositionStatus, StopRef
 from avisabus.domain.services.geometry import EARTH_RADIUS_M, haversine_m
@@ -183,6 +184,33 @@ def test_at_the_departure_the_bus_is_en_route() -> None:
     _assert_at(estimate, 0)
 
 
+@pytest.mark.spec("position_estimation.AC-04")
+@pytest.mark.spec("position_estimation.AC-03")
+@pytest.mark.parametrize(
+    ("now_s", "arrival_s"),
+    [(-600, 0), (-1, 0), (-30, 120), (-300, -60), (0, 0), (60, 0)],
+)
+def test_with_the_target_as_the_first_stop_the_bus_is_at_the_stop(
+    now_s: float, arrival_s: float
+) -> None:
+    # v1.2: the bus that has not left yet is at the passenger's stop (AC-03 prevails).
+    estimate = _estimate(now_s, arrival_s, target="A")
+    assert estimate.status is PositionStatus.AT_STOP
+    _assert_at(estimate, 0)
+    assert estimate.distance_to_stop_m == 0
+    assert estimate.stops_away == 0
+    assert estimate.next_stop == StopRef("A", "Stop A")
+
+
+@pytest.mark.spec("position_estimation.AC-04")
+@pytest.mark.parametrize("now_s", [-120, -1, 0, 10, 29])
+def test_with_the_target_as_the_first_stop_a_dwelling_bus_is_at_the_stop(now_s: float) -> None:
+    trip = _trip(dwell_s=30)  # A: arrival at 0 s, departure at 30 s
+    estimate = _estimate(now_s, arrival_s=0, target="A", trip=trip)
+    assert estimate.status is PositionStatus.AT_STOP
+    _assert_at(estimate, 0)
+
+
 # --- AC-05: coordinates and bearing ---
 
 
@@ -219,9 +247,28 @@ def test_without_distances_the_shape_and_the_stops_are_measured() -> None:
 
 
 @pytest.mark.spec("position_estimation.AC-06")
+@pytest.mark.spec("position_estimation.AC-11")
 def test_without_stop_distances_nor_coordinates_it_cannot_estimate() -> None:
-    with pytest.raises(ValueError, match="coordinates"):
+    with pytest.raises(PositionNotEstimableError, match="coordinates") as raised:
         _estimate(300, arrival_s=480, trip=_trip(with_dist=False))
+    assert raised.value.reason == "missing_stop_coordinates"
+    assert isinstance(raised.value, ValueError)
+
+
+@pytest.mark.spec("position_estimation.AC-11")
+def test_a_stop_without_coordinates_makes_the_position_not_estimable() -> None:
+    coords = {stop: _north(1000 * n) for n, stop in enumerate(STOPS) if stop != "B"}
+    with pytest.raises(PositionNotEstimableError) as raised:
+        _estimate(300, arrival_s=480, trip=_trip(with_dist=False), stop_coordinates=coords)
+    assert raised.value.reason == "missing_stop_coordinates"
+    assert "B" not in str(raised.value)
+
+
+@pytest.mark.spec("position_estimation.AC-11")
+def test_an_empty_shape_makes_the_position_not_estimable() -> None:
+    with pytest.raises(PositionNotEstimableError) as raised:
+        _estimate(300, arrival_s=480, shape=[])
+    assert raised.value.reason == "empty_shape"
 
 
 # --- AC-07: circular lines ---
@@ -239,7 +286,7 @@ def test_a_repeated_target_uses_the_occurrence_closest_to_the_arrival() -> None:
     assert second.distance_to_stop_m == pytest.approx(4000 - second.shape_distance_m)
     assert second.stops_away == 1  # D
     first = _estimate(-60, arrival_s=10, target="A", trip=trip)
-    assert first.status is PositionStatus.NOT_STARTED
+    assert first.status is PositionStatus.AT_STOP  # v1.2: the first stop of the trip (AC-04)
     assert first.distance_to_stop_m == 0
     assert first.next_stop == StopRef("A", "Stop A")
 

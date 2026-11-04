@@ -12,7 +12,8 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from sqlalchemy import Engine
+from sqlalchemy import Engine, text
+from structlog.testing import capture_logs
 
 from avisabus.adapters.outbound.persistence.sqlite_network import SqliteNetworkRepository
 from avisabus.domain.errors import ArrivalsUnavailableError
@@ -258,6 +259,63 @@ async def test_an_arrival_without_a_paired_trip_is_no_vehicle(
     assert body["arrival"]["sae_destination"] == "Pass. Marítim"
     assert (body["vehicle"], body["position"]) == (None, None)
     assert body["shape_id"] == direction.shape_id
+
+
+@pytest.fixture
+def own_engine(tmp_path: Path) -> Iterator[Engine]:
+    """A `gtfs_mini` database of its own, for tests that alter the active network."""
+    engine = new_engine(tmp_path / "avisabus.sqlite")
+    import_feed(engine, GTFS_MINI)
+    yield engine
+    engine.dispose()
+
+
+@pytest.mark.spec("position_estimation.AC-11")
+async def test_a_position_that_cannot_be_estimated_is_no_vehicle_not_500(
+    own_engine: Engine,
+) -> None:
+    # v1.2: the active network turns incoherent for the paired trip (stop times without
+    # shape_dist_traveled and its first stop gone), as if the feed changed between requests.
+    engine = own_engine
+    repo = SqliteNetworkRepository(engine)
+    clock = FakeClock(PEAK_START)
+    source = CountingSource(StaticSource(error="timeout"))  # scheduled: always the same trip
+    async with position_client(engine, clock, source) as (client, _):
+        before = (await client.get(POSITION_93, params=_params())).json()
+        assert before["position"] is not None
+        trip_id = before["vehicle"]["trip_id"]
+        first_stop = repo.trip_stop_times(trip_id)[0].stop_id
+        assert first_stop != "508"
+        with engine.begin() as conn:
+            conn.execute(
+                text("UPDATE gtfs_stop_time SET shape_dist = NULL WHERE trip_id = :trip_id"),
+                {"trip_id": trip_id},
+            )
+            conn.execute(
+                text("DELETE FROM gtfs_stop WHERE stop_id = :stop_id"), {"stop_id": first_stop}
+            )
+        with capture_logs() as logs:
+            response = await client.get(POSITION_93, params=_params())
+    assert response.status_code == 200
+    body = response.json()
+    assert set(body) == RESPONSE_FIELDS
+    assert body["status"] == "NO_VEHICLE"
+    assert body["position"] is None
+    direction = repo.line_direction("93", 0)
+    assert direction is not None
+    assert body["shape_id"] == direction.shape_id  # the representative one, as with NO_VEHICLE
+    assert body["vehicle"] == before["vehicle"]
+    assert body["arrival"] == before["arrival"]
+    failures = [log for log in logs if log["event"] == "position.estimate_failed"]
+    assert failures == [
+        {
+            "event": "position.estimate_failed",
+            "log_level": "warning",
+            "trip_id": trip_id,
+            "shape_id": repo.trip_shape_id(trip_id),
+            "reason": "missing_stop_coordinates",
+        }
+    ]
 
 
 # --- AC-12: errors ---

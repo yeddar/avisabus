@@ -27,6 +27,7 @@ from avisabus.domain.ports.occupancy import OccupancySensor
 from avisabus.domain.services.direction_resolver import DEFAULT_ALIASES
 
 ARRIVALS_LOGGER = "avisabus.arrivals"
+POSITION_LOGGER = "avisabus.position"
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,6 +90,8 @@ def build_position_use_cases(stops: StopUseCases, engine: Engine, clock: Clock) 
     """The position reuses the stops' `GetStopArrivals`, so it shares its SAE cache (AC-09)."""
     network = SqliteNetworkRepository(engine)
     return PositionUseCases(
-        get_vehicle_position=GetVehiclePosition(stops.get_stop_arrivals, network, clock),
+        get_vehicle_position=GetVehiclePosition(
+            stops.get_stop_arrivals, network, clock, structlog.get_logger(POSITION_LOGGER)
+        ),
         get_shape=GetShape(network),
     )
