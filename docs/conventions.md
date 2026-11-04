@@ -1,6 +1,6 @@
 # Convenciones — AvisaBus
 
-> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-03: guía visual y terminología "Solicitar", aprobada en la PR #7). Obligatorio para personas y agentes.
+> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-03: guía visual y terminología "Solicitar", aprobada en la PR #7; v1.2 · 2026-11-03: última parada en el estado local, aprobada en la PR #24). Obligatorio para personas y agentes.
 > Si una convención entra en conflicto con una spec, manda la spec y se anota en `progress/`.
 
 ## 1. Idiomas
@@ -76,7 +76,7 @@
   - Objetivos táctiles ≥ 44×44 px; contraste AA; foco visible.
   - Animaciones desactivadas con `prefers-reduced-motion`.
 - **Aspecto visual:** según la guía `docs/design.md` (tipografía autoalojada, tokens de color, componentes); las specs de frontend la citan.
-- **Estado local del dispositivo:** solo `device_id`, idioma y perfil de accesibilidad, en `localStorage`, encapsulado en `shared/device`.
+- **Estado local del dispositivo:** solo `device_id`, idioma, perfil de accesibilidad y última parada consultada (`stop_id`, nombre y token del QR público de la parada; `passenger_stop_view.AC-19`), en `localStorage`, encapsulado en `shared/device`.
 
 ## 5. API
 

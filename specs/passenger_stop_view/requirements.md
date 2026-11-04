@@ -1,6 +1,6 @@
 # Vista de parada del pasajero — requirements
 
-> Feature: `passenger_stop_view` · Versión: 1.0 · Estado: APPROVED
+> Feature: `passenger_stop_view` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-06, RF-10, RF-15, RF-32, RNF-01, RNF-03, RNF-04, RNF-05, RNF-14 · Casos de uso: CU-01 · Depende de: stop_arrivals_api, frontend_i18n
 
 ## Contexto
@@ -123,11 +123,25 @@ TypeScript generados desde el OpenAPI del backend, con un test que detecta desfa
   *Verificación:* unit + e2e
 - **passenger_stop_view.AC-17** — SI la API responde `503` o hay un error de red, ENTONCES LA
   VISTA DEBERÁ mostrar un mensaje con botón "Reintentar"; SI ya había datos, ENTONCES DEBERÁ
-  conservarlos marcados como "Datos de las HH:MM, pueden no estar actualizados".
-  *Verificación:* unit
+  conservarlos marcados como "Datos de las HH:MM, pueden no estar actualizados". El mensaje
+  DEBERÁ hablar de "los datos" (no solo de las llegadas), y "Reintentar" DEBERÁ volver a pedir
+  tanto la parada como las llegadas que hayan fallado.
+  *Verificación:* unit (incluido el caso en que solo falla la petición de la parada)
 - **passenger_stop_view.AC-18** — MIENTRAS el navegador indique que no hay conexión, LA VISTA
   DEBERÁ mostrar un aviso "Sin conexión" con `role="status"` y no reintentar hasta recuperarla.
   *Verificación:* unit (eventos `online`/`offline`)
+- **passenger_stop_view.AC-24** — (v1.1) CUANDO una acción **manual** ("Actualizar" o
+  "Reintentar") termina, LA VISTA DEBERÁ anunciarlo de forma educada y dejar el foco en un control
+  visible, nunca en `body`:
+  - "Actualizar" con error → anuncia "No se han podido actualizar los datos" y mueve el foco al
+    botón "Reintentar" del aviso de error;
+  - "Reintentar" con éxito → anuncia "Datos actualizados" (AC-14) y mueve el foco al botón
+    "Actualizar";
+  - "Reintentar" con error → anuncia "No se han podido actualizar los datos" y el foco sigue en
+    "Reintentar".
+  Los refrescos automáticos fallidos siguen sin anunciarse (AC-15).
+  *Verificación:* unit (foco con `document.activeElement` y anuncios con el `Announcer`) + manual
+  (lector de pantalla en CP-6)
 
 ### Navegación y rendimiento
 
@@ -160,7 +174,7 @@ TypeScript generados desde el OpenAPI del backend, con un test que detecta desfa
 | RF-15 Ocupación sin depender del color | AC-07 |
 | RF-32 Nombres del GTFS | AC-04, AC-05 |
 | RNF-01 Rendimiento | AC-21 |
-| RNF-03 Accesibilidad | AC-05, AC-07, AC-09, AC-11, AC-15, AC-18, AC-22, AC-23 |
+| RNF-03 Accesibilidad | AC-05, AC-07, AC-09, AC-11, AC-15, AC-18, AC-22, AC-23, AC-24 |
 | RNF-04 Sin registro ni instalación | AC-04 (acceso directo por URL) |
 | RNF-05 Compatibilidad móvil/tablet | AC-22 |
 | RNF-14 Atribución | (pie de `frontend_i18n`, presente en la vista; AC-22) |
@@ -172,3 +186,4 @@ TypeScript generados desde el OpenAPI del backend, con un test que detecta desfa
 | Versión | Fecha | Cambio | Motivo |
 |---|---|---|---|
 | 1.0 | 2026-11-03 | Versión inicial aprobada (PR #7), con la guía visual `docs/design.md`. | CP-1 del bloque 2. Aprobada por la persona. |
+| 1.1 | 2026-11-03 | AC-17: mensaje de error sobre "los datos" y "Reintentar" repite también la petición de la parada; AC-24: anuncio y foco tras una acción manual. T-11. Design: `overrides` de `openapi-typescript` para TypeScript 6 (deuda técnica). | Hallazgos N-1, N-2 y desviación 1 de la revisión de `passenger_stop_view`. Aprobada por la persona (PR #24). |

@@ -1,6 +1,6 @@
 # Idiomas y base de accesibilidad del frontend — design
 
-> Feature: `frontend_i18n` · Versión: 1.0 · Estado: APPROVED
+> Feature: `frontend_i18n` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-31, RF-32, RNF-03, RNF-14, RNF-15 · Casos de uso: CU-06 · Depende de: project_scaffold
 
 ## 1. Resumen
@@ -67,9 +67,13 @@ export function detectInitialLanguage(
 
 // shared/i18n/i18n.ts
 export function initI18n(options?: { language?: Language }): i18n;
-// i18next.use(initReactI18next).init({ lng, fallbackLng: 'es', resources, initImmediate: false,
+// i18next.use(initReactI18next).init({ lng, fallbackLng: 'es', resources, initAsync: false,
 //   interpolation: { escapeValue: false }, returnNull: false,
 //   saveMissing: import.meta.env.DEV, missingKeyHandler: console.warn en DEV })
+// v1.1: `initAsync` es el nombre actual (i18next ≥ 24) de `initImmediate`. `missingKeyHandler`
+// no se dispara si la clave existe en el idioma de respaldo, así que AC-05 se cubre además con un
+// post-procesador registrado solo en DEV que avisa una vez por clave cuando el texto sale de 'es'
+// estando la interfaz en 'ca'.
 // Suscripción a 'languageChanged': guarda en safeStorage y actualiza document.documentElement.lang
 
 // shared/i18n/GtfsText.tsx
@@ -116,6 +120,13 @@ export const SUPPORTED_LANGUAGE_NAMES: Record<Language, string> = { es: 'Castell
     'jsx-attributes': { include: ['aria-label', 'alt', 'title', 'placeholder', 'aria-description'] },
   }] } }
 ```
+
+(v1.1) Con `eslint-plugin-i18next` 6.x, `no-literal-string` no revisa los atributos de las
+etiquetas que el plugin trata como SVG (entre ellas `a` y `title`) ni `aria-description` en
+etiquetas nativas. Se completa con `no-restricted-syntax` y selectores sobre esos huecos, de modo
+que cada literal se informa una sola vez (`frontend/eslint.config.js`). La configuración importa
+la lista `SVG_TAGS` de un módulo interno del plugin: si una versión la mueve, lo detectan
+`npm run lint` y `eslint-i18n.test.ts`.
 
 Fixture de prueba inválida en `frontend/tests/lint/literal-string.tsx` (ya excluida del lint
 normal por `tests/lint`).
