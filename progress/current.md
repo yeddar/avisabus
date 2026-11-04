@@ -4,17 +4,16 @@
 
 **Fecha:** 2026-11-04
 **Fase:** Fin del Bloque 2 — CP-6 pendiente
-**Feature en curso:** ninguna. Bloque 2 completo; PR #31 (`passenger_stop_view` v1.2) y PR de
-`position_estimation` v1.2 abiertas (sin fusionar).
+**Feature en curso:** ninguna. Bloque 2 completo; PR #31 fusionada; PR #32 (`position_estimation` v1.2)
+abierta (sin fusionar).
 
 ## Último paso
 - `passenger_map_view` v1.1: APPROVED (ciclo 2), PR #30 fusionada.
-- `passenger_stop_view` v1.2 (T-12): APPROVED, PR #31 abierta. Sale de `develop` antes de la #30: puede
-  necesitar rebase (ambas tocan la vista de parada).
-- `position_estimation` v1.2 (T-09): APPROVED (15/16 mutantes detectados), PR abierta.
+- `passenger_stop_view` v1.2 (T-12): APPROVED, PR #31 fusionada (conflicto con la #30 resuelto por merge).
+- `position_estimation` v1.2 (T-09): APPROVED (15/16 mutantes detectados), PR #32 abierta.
 
 ## Siguiente paso
-1. La persona fusiona la #31 y la PR de `position_estimation` v1.2.
+1. La persona fusiona la #32.
 2. **CP-6 del bloque 2** (persona): textos es/ca (`progress/impl_passenger_stop_view.md`,
    `progress/impl_passenger_map_view.md`); lector de pantalla (anuncios de "llegando", foco tras
    acciones manuales, 404 tras "Actualizar", refresco automático con foco en "Reintentar"); N-03 del
@@ -117,7 +116,7 @@
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-**CP-6 — fin del bloque 2** (tras fusionar la #31 y la PR de `position_estimation` v1.2).
+**CP-6 — fin del bloque 2** (tras fusionar la #32).
 
 ## Bloqueos
 Ninguno. 

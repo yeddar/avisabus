@@ -319,3 +319,6 @@
 ## 2026-11-04 · position_estimation v1.2 · in_review → done · bloque 2 completo
 - Revisión ciclo 1 de la v1.2: APPROVED; H-01…H-03 para la spec, H-04 del harness (tests de bundle
   leen `dist/` antes del build). PR sin fusionar. Bloque 2: 4/4 en `done` → CP-6.
+
+## 2026-11-04 · passenger_stop_view v1.2 PR #31 fusionada
+- `feat/position_estimation-v1.2` actualizada con `develop` (merge sin conflictos) para la PR #32.
