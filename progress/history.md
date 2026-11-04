@@ -334,3 +334,7 @@
 ## 2026-11-04 · position_estimation v1.3 · implementing → in_review
 - T-10: tests de la segunda parada (mata el mutante `k <= 1`) y del `shape_id` del viaje en el log.
   Verify --e2e en verde (998 backend).
+
+## 2026-11-04 · position_estimation v1.3 · in_review → done · ajustes previos al bloque 3 terminados
+- Revisión ciclo 1 de la v1.3: APPROVED (16/16 mutantes). PRs #34, #35 y la de `position_estimation`
+  v1.3 abiertas. Siguiente: specs del bloque 3 (spec-writer).

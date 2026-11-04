@@ -4,56 +4,28 @@
 
 **Fecha:** 2026-11-04
 **Fase:** Fin del Bloque 2 — CP-6 pendiente
-**Feature en curso:** `position_estimation` v1.3 — `implementing` (solo T-10), rama `feat/position_estimation-v1.3`.
-PRs abiertas: #34 (`passenger_stop_view` v1.3) y #35 (`passenger_map_view` v1.2).
+**Feature en curso:** ninguna. Ajustes previos al bloque 3 terminados; PRs abiertas: #34
+(`passenger_stop_view` v1.3), #35 (`passenger_map_view` v1.2) y la de `position_estimation` v1.3.
 
 ## Último paso
-- `passenger_map_view` v1.1: APPROVED (ciclo 2), PR #30 fusionada.
-- `passenger_stop_view` v1.2 (T-12): APPROVED, PR #31 fusionada (conflicto con la #30 resuelto por merge).
-- `position_estimation` v1.2 (T-09): APPROVED (15/16 mutantes detectados), PR #32 abierta.
+Ajustes previos al bloque 3, cada uno APPROVED en su ciclo 1 y con PR propia sin fusionar:
+- `passenger_stop_view` v1.3 (T-13, H-04 del arnés): PR #34.
+- `passenger_map_view` v1.2 (T-08, insignia sin posición y e2e sin espera fija): PR #35.
+- `position_estimation` v1.3 (T-10, tests de la segunda parada y del `shape_id` del log): PR abierta.
 
 ## Siguiente paso
-1. La persona fusiona la #32.
-2. **CP-6 del bloque 2** (persona): textos es/ca (`progress/impl_passenger_stop_view.md`,
-   `progress/impl_passenger_map_view.md`); lector de pantalla (anuncios de "llegando", foco tras
-   acciones manuales, 404 tras "Actualizar", refresco automático con foco en "Reintentar"); N-03 del
-   mapa (insignia junto a "Posición no disponible").
-3. Bloque 3 (`realtime_events` y siguientes) tras el CP-6.
+1. La persona fusiona las tres PRs (tocan `progress/current.md` y `history.md`: la segunda y la tercera
+   pueden necesitar resolver conflictos en `progress/`).
+2. **Bloque 3:** el spec-writer redacta las specs (`realtime_events`, `alert_create`, `alert_cancel`,
+   `alert_expiry`, `passenger_alert_ui`) → CP-1.
 
 ## Pendiente para specs futuras
-- **Harness (H-04 de la revisión de `position_estimation` v1.2):** `frontend/src/__tests__/bundle-budget.test.ts`
-  lee `frontend/dist/`, pero `init.sh` ejecuta los tests antes del build: con un `dist/` antiguo,
-  `./init.sh verify` (sin `--e2e`) puede dar falso rojo o falso verde. Origen: `passenger_map_view` T-06
-  (patrón de `passenger_stop_view` T-09).
-- **position_estimation v1.2:** H-01 añadir `logger: Logger` a la firma de `GetVehiclePosition` en el
-  design §3 (D-19). H-02 falta un test con la segunda parada como objetivo (el mutante `k <= 1`
-  sobrevive). H-03 AC-11 no dice qué `shape_id` registrar; la respuesta conserva `vehicle` con `NO_VEHICLE`.
-- **passenger_map_view:** N-01 resuelto en ciclo 2 (design §3 `aria-describedby="summary-id"` frente a §4
-  `map.regionDescription` sigue por alinear). N-05 `waitForTimeout(400)` en `e2e/map-view.spec.ts:422`
-  (sobra). N-06 preferencia de movimiento reducido leída al montar. N-07 restauración de `panBy` sin test. N-02 elisión valenciana sin i/u
-  semiconsonántica ("de Iaia"). N-03 → CP-6: insignia "Posición estimada" junto a "Posición no
-  disponible…" en NO_ARRIVAL (cumple AC-05 "siempre"). N-04 costuras de teselas solo por el PNG simulado.
+- **passenger_map_view:** N-06 preferencia de movimiento reducido leída al montar. N-07 restauración de
+  `panBy` sin test. N-02 elisión valenciana sin i/u semiconsonántica ("de Iaia"). N-04 costuras de
+  teselas solo por el PNG simulado. (N-01, N-03 y N-05 resueltos en v1.1/v1.2.)
 - **passenger_map_view E-01 → `deployment_rpi` / docs:** no usar `Referrer-Policy: no-referrer` en nginx
   ni cachear teselas de OSM en el service worker; opcional `VITE_MAP_TILE_ATTRIBUTION` (la atribución
   es fija). Alternativas si OSM bloquea: IGN Base (WMTS, CC BY 4.0, plantilla sin verificar), CARTO (clave).
-- **position_estimation (H-01, H-02, H-04 → spec-writer en la próxima revisión; H-03 → `nfr_validation`) H-01 (spec):** AC-03 y AC-04 se solapan si la parada objetivo es la primera del
-  viaje (implementado: `AT_STOP`; no ocurre en EMT). H-02: viaje sin `shape_dist_traveled` y con una
-  parada ausente del feed activo → 500 en vez de `NO_VEHICLE` (solo si el feed cambia entre consultas).
-  H-03 → `nfr_validation`: `shape_stops` 17–24 ms en el peor caso (design: 20 ms; el coste está en leer
-  horarios, el índice apenas ayuda). H-04: el test de AC-17 exige que los pares excluidos retrocedan
-  (más estricto que la spec). H-05: integración de AC-09/AC-10 usa `estimate_position` como oráculo.
-- **passenger_stop_view v1.1 → spec v1.2:** N-7: tras un 404 en una acción manual no hay "Reintentar"
-  que enfocar (propuesta: foco al `h1` "Parada no encontrada"). N-8: si "Actualizar" falla y luego un
-  refresco automático acierta, desaparece "Reintentar" y el foco cae en `body`. N-10: `Button` sin `ref`
-  (dos envoltorios `div`). Siguen abiertos N-5 (repeticiones de estilo) y N-6 (OpenAPI desde
-  `create_app(schema_only=True)`). Deuda: `overrides` de `openapi-typescript` con TS 6.
-- **passenger_stop_view v1.0 (resueltos N-1…N-4 en v1.1) N-1 (accesibilidad):** si "Actualizar" falla no se anuncia nada y el foco se
-  pierde (el botón desaparece); igual al acertar con "Reintentar". N-2: si solo falla la petición de
-  la parada, el aviso habla de "las llegadas" y no se recupera solo. N-3: comentario desfasado en
-  `shared/device/storage.ts`. N-6: el OpenAPI exportado sale de `create_app(schema_only=True)`, no de
-  la app de `main.py`. Deuda: `overrides` de npm para `openapi-typescript` con TS 6 (quitar cuando haya
-  versión compatible). Docs (CP-4, persona): conventions §4 (`avisabus.lastStop`); opcional, color EMT
-  `#e50000` y ejemplo §5.6 en `docs/design.md`.
 - **frontend_i18n N-01 (lo recoge el spec-writer, solo docs):** design §3 desfasado para i18next 26 (AC-05: post-procesador solo en
   desarrollo, `initAsync`) y sin los huecos de `eslint-plugin-i18next` 6.1 (AC-07: `no-restricted-syntax`).
   N-02: `eslint.config.js` importa un módulo interno del plugin. N-03: falso aviso del post-procesador
@@ -76,8 +48,6 @@ PRs abiertas: #34 (`passenger_stop_view` v1.3) y #35 (`passenger_map_view` v1.2)
 - **occupancy_sensor v1.2:** ~~resuelto en la PR #7 (solo docs)~~ · SP-1 (O-02) AC-15 cita "el contenedor de la CLI", que no compone sensor
   ni clasificador → "(si compone alguno)" o quitarlo. NB-1: subproceso sin `pytest-socket` y con
   `SystemClock` (mismo patrón que `test_main_composition.py`).
-- **→ `stop_arrivals_api`:** al rebasar, adaptar usos de `derived_clock_time`/`STOP_508_CLOCK_TIME`
-  (sustituida por `samples/night_2026-11-02/`).
 - **stop_tokens_qr O-01:** `sae fetch|record` ya no emiten `security.dev_stop_token_secret` (no usan
   `build_cli_container`); AC-05 dice "al ejecutar la CLI" sin matizar → precisar en la spec.
 - **stop_tokens_qr O-02:** `test_main_stop_token.py` importa `avisabus.main` en un subproceso sin
@@ -107,8 +77,9 @@ PRs abiertas: #34 (`passenger_stop_view` v1.3) y #35 (`passenger_map_view` v1.2)
 - **H-11:** en `deployment_rpi`, pasar la configuración con `env_file`/variables de Compose, no `../.env`.
 - H-10 (aislamiento de los tests de AC-09 frente a `tmp_path/../.env`): no bloqueante, sin acción.
 - **gtfs_import N-07 → `deployment_rpi`:** la BD crece al reimportar (68 → 139 MB) sin `VACUUM`.
-- Resueltos en PR #17 + esta rama: occupancy SP-01; stop_tokens_qr S-01 y H-01;
-  sae_arrivals_source NB-1, NB-4, NB-6, NB-7.
+- Resueltos: PR #17/#18 (occupancy SP-01; stop_tokens_qr S-01, H-01; sae NB-1, NB-4, NB-6, NB-7);
+  PR #29/#33 y ajustes (position_estimation H-01…H-04 de v1.1 y v1.2; passenger_stop_view N-1…N-4,
+  N-7, N-8; passenger_map_view N-01, N-03, N-05; harness H-04 en la PR #34).
 
 ## Notas
 - Cabeceras reales confirmadas (2026-10-31): `trips.txt` **sin `direction_id`** → sentidos
