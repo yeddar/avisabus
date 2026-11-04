@@ -155,6 +155,20 @@ describe('MapPage', () => {
     expect(within(summary).getByText('Posición estimada')).toBeVisible();
   });
 
+  it('[passenger_map_view.AC-05] (v1.2) NO_ARRIVAL: no badge next to "Posición no disponible"', async () => {
+    positionReply = () => ok(POSITION_NO_ARRIVAL());
+    api();
+    renderMap();
+    await flush();
+
+    const summary = screen.getByRole('region', { name: 'Dónde está el autobús' });
+    expect(summaryText()).toBe(
+      'Posición no disponible en este momento. No hay llegadas previstas de esta línea en tu parada.',
+    );
+    expect(within(summary).queryByText('Posición estimada')).toBeNull();
+    expect(within(summary).queryByText('Posición según horario')).toBeNull();
+  });
+
   it('[passenger_map_view.AC-04] NOT_STARTED names the first stop once the shape has arrived', async () => {
     positionReply = () => ok(POSITION_NOT_STARTED());
     const shape = deferred<FakeReply>();

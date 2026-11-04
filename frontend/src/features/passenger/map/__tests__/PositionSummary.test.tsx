@@ -58,4 +58,32 @@ describe('PositionSummary', () => {
 
     expect(within(region).getByText(text)).toBeVisible();
   });
+
+  it.each([
+    [
+      'es',
+      'Posición no disponible en este momento. No hay llegadas previstas de esta línea en tu parada.',
+    ],
+    [
+      'ca',
+      "Posició no disponible en este moment. No hi ha arribades previstes d'esta línia en la teua parada.",
+    ],
+  ] as const)(
+    '[passenger_map_view.AC-05] (v1.2, %s) without a position there is no badge',
+    (language, text) => {
+      const region = renderSummary({ text, badge: null }, language);
+
+      expect(within(region).getByText(text)).toBeVisible();
+      for (const badge of [
+        'Posición estimada',
+        'Posición según horario',
+        'Posició estimada',
+        "Posició segons l'horari",
+      ]) {
+        expect(within(region).queryByText(badge)).toBeNull();
+      }
+      // Only the heading and the text are left: no empty badge box either.
+      expect([...region.children].map((child) => child.tagName)).toEqual(['H2', 'P']);
+    },
+  );
 });
