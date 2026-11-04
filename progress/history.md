@@ -265,3 +265,6 @@
 ## 2026-11-03 · passenger_stop_view v1.1 · in_review → done
 - Revisión ciclo 1 de la v1.1: APPROVED; N-7/N-8 (foco) para la spec v1.2. PR contra `develop` sin
   fusionar (después de la #24). Bloque 2: 3/4 en `done`.
+
+## 2026-11-04 · passenger_stop_view · done → implementing (v1.2, solo T-12)
+- Spec v1.2 (PR #29): N-7/N-8 de foco. Rama `feat/passenger_stop_view-v1.2` desde `develop`.

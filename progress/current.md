@@ -4,19 +4,18 @@
 
 **Fecha:** 2026-11-03
 **Fase:** Implementación — Bloque 2
-**Feature en curso:** `passenger_stop_view` v1.1 — `done`, PR abierta (sin fusionar; va justo después de la #24).
-Siguiente: `passenger_map_view`.
+**Feature en curso:** `passenger_stop_view` v1.2 — `implementing` (solo T-12), rama `feat/passenger_stop_view-v1.2`
 
 ## Último paso
-`passenger_stop_view` v1.1 (T-11, AC-17 y AC-24) en `feat/passenger_stop_view-v1.1`. Revisión ciclo 1 de la
-v1.1: **APPROVED** sin bloqueantes (`CI=1 ./init.sh verify --e2e` en verde: 969 backend, 287 Vitest, 60 e2e).
-PR contra `develop` abierta; la persona fusionará la #24 y esta seguidas.
+`passenger_map_view` v1.1: ciclo 2 **APPROVED**; PR #30 abierta (sin fusionar). Bloque 2: 4/4 features
+hechas. `passenger_stop_view` → `implementing` para T-12 (v1.2: foco tras 404 en acción manual y tras
+refresco automático; N-7/N-8).
 
 ## Siguiente paso
-1. La persona fusiona la #24 y la PR de T-11.
-2. `passenger_map_view` (rama desde `develop` ya con ambas).
-3. CP-6 del bloque 2: textos (tablas es/ca en `progress/impl_passenger_stop_view.md`), anuncios de
-   "llegando" con lector de pantalla, foco tras acciones manuales y tras un refresco automático (N-8).
+1. `passenger_stop_view` T-12 → reviewer nuevo → `done` → PR.
+2. `position_estimation` T-09 (v1.2: H-01/H-02) → reviewer nuevo → `done` → PR.
+3. **CP-6 del bloque 2** (persona): textos (`progress/impl_passenger_stop_view.md`,
+   `progress/impl_passenger_map_view.md`), lector de pantalla (anuncios y foco), N-03 del mapa.
 
 ## Pendiente para specs futuras
 - **position_estimation (H-01, H-02, H-04 → spec-writer en la próxima revisión; H-03 → `nfr_validation`) H-01 (spec):** AC-03 y AC-04 se solapan si la parada objetivo es la primera del
