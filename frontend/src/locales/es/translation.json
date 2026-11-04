@@ -6,7 +6,8 @@
   "home": {
     "title": "Inicio",
     "scanQr": "Escanea el código QR de tu parada para ver cuándo llega tu autobús y solicitar parada al conductor.",
-    "lastStop": "Tu última parada: <name>{{name}}</name>"
+    "lastStop": "Tu última parada: <name>{{name}}</name>",
+    "needsLink": "Mis necesidades"
   },
   "language": {
     "label": "Idioma"
@@ -115,5 +116,28 @@
     "title": "Página no encontrada",
     "body": "La dirección que has abierto no existe.",
     "home": "Ir a la portada"
+  },
+  "alert": {
+    "needsLegend": "¿Necesitas algo al subir?"
+  },
+  "needs": {
+    "RAMP": "Necesito la rampa",
+    "EXTRA_TIME": "Necesito más tiempo para subir",
+    "SEAT": "Necesito un asiento",
+    "VISUAL": "Tengo discapacidad visual",
+    "short": {
+      "RAMP": "rampa",
+      "EXTRA_TIME": "más tiempo",
+      "SEAT": "asiento",
+      "VISUAL": "discapacidad visual"
+    }
+  },
+  "needsPage": {
+    "title": "Mis necesidades",
+    "intro": "Marca lo que necesitas al subir al autobús. Se guarda solo en este dispositivo y aparecerá marcado cuando solicites parada.",
+    "save": "Guardar",
+    "clear": "Borrar mis necesidades",
+    "saved": "Necesidades guardadas",
+    "cleared": "Necesidades borradas"
   }
 }

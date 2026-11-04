@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import type { RouteObject } from 'react-router-dom';
 
+import { NeedsPage } from '../features/passenger/alerts/NeedsPage';
 import { MapLoading } from '../features/passenger/map/MapLoading';
 import { StopPage } from '../features/passenger/stop/StopPage';
 import { Layout } from './Layout';
@@ -18,6 +19,7 @@ export const routes: RouteObject[] = [
     children: [
       { path: '/', element: <HomePage /> },
       { path: '/p/:stopId', element: <StopPage /> },
+      { path: '/necesidades', element: <NeedsPage /> },
       {
         path: '/p/:stopId/map/:line/:directionId',
         element: (
