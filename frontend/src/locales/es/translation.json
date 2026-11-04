@@ -118,7 +118,41 @@
     "home": "Ir a la portada"
   },
   "alert": {
-    "needsLegend": "¿Necesitas algo al subir?"
+    "needsLegend": "¿Necesitas algo al subir?",
+    "request": "Solicitar",
+    "requestLabel": "Solicitar parada a la línea {{line}} hacia {{destination}}",
+    "dialogTitle": "Solicitar parada a la línea {{line}} hacia <destination>{{destination}}</destination>",
+    "arrivalInfo": "El autobús {{time}}.",
+    "remember": "Recordar mis necesidades en este dispositivo",
+    "confirm": "Solicitar parada",
+    "back": "Volver",
+    "sending": "Enviando…",
+    "requested": "Parada solicitada para la línea {{line}}",
+    "pending": "<strong>Parada solicitada.</strong> Aún no hay conductor conectado en esta línea.",
+    "delivered": "<strong>El conductor ha recibido tu solicitud.</strong>",
+    "youIndicated": "Has indicado: {{needs}}",
+    "cancel": "Cancelar solicitud",
+    "cancelled": "Solicitud cancelada",
+    "alreadyGone": "La solicitud ya no estaba activa",
+    "cancelFailed": "No se ha podido cancelar la solicitud",
+    "otherBus": "Ya has solicitado otro autobús de esta línea",
+    "orphanTitle": "Línea {{line}} hacia <destination>{{destination}}</destination>",
+    "error": {
+      "gone": "Este autobús ya no se puede solicitar.",
+      "rate_one": "Has hecho demasiadas solicitudes. Inténtalo dentro de {{count}} minuto.",
+      "rate_other": "Has hecho demasiadas solicitudes. Inténtalo dentro de {{count}} minutos.",
+      "notFound": "La parada ya no está disponible. Vuelve a escanear el código QR.",
+      "network": "No se ha podido enviar la solicitud. Comprueba la conexión."
+    },
+    "event": {
+      "delivered": "El conductor de la línea {{line}} ha recibido tu solicitud",
+      "expired": "Tu solicitud de la línea {{line}} ha terminado: {{reason}}",
+      "reason": {
+        "PASSED": "el autobús ha pasado por la parada",
+        "NEXT_STOP": "el autobús ya ha llegado a la parada siguiente",
+        "TIMEOUT": "han pasado 30 minutos"
+      }
+    }
   },
   "needs": {
     "RAMP": "Necesito la rampa",

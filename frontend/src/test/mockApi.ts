@@ -4,6 +4,8 @@ import { vi } from 'vitest';
 export interface FakeReply {
   status: number;
   body: unknown;
+  /** Extra response headers (e.g. Retry-After). */
+  headers?: Record<string, string>;
 }
 
 export const ok = (body: unknown): FakeReply => ({ status: 200, body });
@@ -19,15 +21,16 @@ export const NETWORK_UNAVAILABLE = 'https://avisabus/problems/network-unavailabl
 /** Thrown by a handler to simulate a network error (fetch rejects). */
 export class NetworkFailure extends Error {}
 
-type Handler = (url: URL) => FakeReply | Promise<FakeReply>;
+type Handler = (url: URL, init?: RequestInit) => FakeReply | Promise<FakeReply>;
 
-function toResponse({ status, body }: FakeReply): Response {
+function toResponse({ status, body, headers = {} }: FakeReply): Response {
   const contentType = status < 400 ? 'application/json' : 'application/problem+json';
   return {
     ok: status >= 200 && status < 300,
     status,
-    headers: new Headers({ 'Content-Type': contentType }),
+    headers: new Headers({ 'Content-Type': contentType, ...headers }),
     json: () => Promise.resolve(structuredClone(body)),
+    text: () => Promise.resolve(body === null ? '' : JSON.stringify(body)),
   } as Response;
 }
 
@@ -39,7 +42,7 @@ export function mockApi(handler: Handler) {
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input), 'http://localhost');
     const signal = init?.signal;
-    const reply = Promise.resolve().then(() => handler(url));
+    const reply = Promise.resolve().then(() => handler(url, init));
     const aborted = new Promise<never>((_resolve, reject) => {
       signal?.addEventListener('abort', () =>
         reject(new DOMException('The operation was aborted.', 'AbortError')),
