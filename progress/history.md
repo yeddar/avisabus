@@ -269,3 +269,6 @@
 ## 2026-11-04 · PR #24 y #28 fusionadas · passenger_map_view · spec_approved → exploring
 - Rama `feat/passenger_map_view`; E-01 (Leaflet y teselas OSM). PR #29 (specs v1.2 de
   `passenger_stop_view` y `position_estimation`) pendiente de la persona.
+
+## 2026-11-04 · passenger_map_view · exploring → implementing
+- E-01: react-leaflet 5.0.0 + leaflet ^1.9.4; política de teselas de OSM cumplida en la demo (sin CP-3).

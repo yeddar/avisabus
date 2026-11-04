@@ -4,12 +4,15 @@
 
 **Fecha:** 2026-11-03
 **Fase:** Implementación — Bloque 2
-**Feature en curso:** `passenger_map_view` v1.0 — `exploring` (rama `feat/passenger_map_view`)
+**Feature en curso:** `passenger_map_view` v1.0 — `implementing` (rama `feat/passenger_map_view`)
 
 ## Último paso
 PR #24 (CP-4, `passenger_stop_view` v1.1 spec, `frontend_i18n` v1.1) y PR #28 (T-11) fusionadas.
-`passenger_map_view` → `exploring`: explorer con E-01 (react-leaflet/Leaflet con React 19.3, Vite 8 y
-modo estricto; política de teselas de OSM) → `progress/explore_map.md`.
+`passenger_map_view`: E-01 completada (`progress/explore_map.md`): react-leaflet 5.0.0 + leaflet ^1.9.4
+compatibles (StrictMode sin errores; Leaflet en fragmento diferido de ~45 KB gzip); la demo cumple la
+política de teselas de OSM → sin CP-3. → `implementing`.
+Incidencia: el explorer envió por error el correo de contacto de la persona en el User-Agent de una
+petición `HEAD` a `tile.openstreetmap.org` (anotado en el informe, sin el correo).
 
 ## Siguiente paso
 1. `passenger_map_view`: exploración → implementer → reviewer nuevo → `done` → PR sin fusionar.
@@ -21,6 +24,9 @@ modo estricto; política de teselas de OSM) → `progress/explore_map.md`.
    lector de pantalla, foco tras acciones manuales.
 
 ## Pendiente para specs futuras
+- **passenger_map_view E-01 → `deployment_rpi` / docs:** no usar `Referrer-Policy: no-referrer` en nginx
+  ni cachear teselas de OSM en el service worker; opcional `VITE_MAP_TILE_ATTRIBUTION` (la atribución
+  es fija). Alternativas si OSM bloquea: IGN Base (WMTS, CC BY 4.0, plantilla sin verificar), CARTO (clave).
 - **position_estimation (H-01, H-02, H-04 → spec-writer en la próxima revisión; H-03 → `nfr_validation`) H-01 (spec):** AC-03 y AC-04 se solapan si la parada objetivo es la primera del
   viaje (implementado: `AT_STOP`; no ocurre en EMT). H-02: viaje sin `shape_dist_traveled` y con una
   parada ausente del feed activo → 500 en vez de `NO_VEHICLE` (solo si el feed cambia entre consultas).

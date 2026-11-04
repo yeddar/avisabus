@@ -234,7 +234,7 @@
       "order": 10,
       "block": 2,
       "title": "Mapa con trazado y posición estimada",
-      "status": "exploring",
+      "status": "implementing",
       "depends_on": [
         "passenger_stop_view",
         "position_estimation"
