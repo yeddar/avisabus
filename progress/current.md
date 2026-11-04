@@ -4,8 +4,8 @@
 
 **Fecha:** 2026-11-04
 **Fase:** Fin del Bloque 2 — CP-6 pendiente
-**Feature en curso:** ninguna. Bloque 2 completo; PR #31 fusionada; PR #32 (`position_estimation` v1.2)
-abierta (sin fusionar).
+**Feature en curso:** `passenger_map_view` v1.2 — `implementing` (solo T-08), rama `feat/passenger_map_view-v1.2`.
+`passenger_stop_view` v1.3: `done`, PR #34 abierta.
 
 ## Último paso
 - `passenger_map_view` v1.1: APPROVED (ciclo 2), PR #30 fusionada.

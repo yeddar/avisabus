@@ -328,3 +328,5 @@
 - Ajustes de cierre en specs: `passenger_map_view` 1.2 (N-03: sin insignia si no hay posición;
   N-01; N-05), `position_estimation` 1.3 (H-01…H-03), `passenger_stop_view` 1.3 (H-04 del arnés:
   presupuesto de bundle solo sobre un `dist/` recién construido). Aprobados en la PR #33.
+
+## 2026-11-04 · passenger_stop_view v1.3 PR #34 abierta · passenger_map_view · done → implementing (v1.2, T-08)
