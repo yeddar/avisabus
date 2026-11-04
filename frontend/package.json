@@ -15,8 +15,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "e2e": "playwright test && npm run test:bundle",
-    "test:bundle": "npm run build && vitest run src/__tests__/bundle-budget.test.ts",
+    "e2e": "playwright test",
+    "test:bundle": "npm run build && AVISABUS_BUNDLE_CHECK=1 vitest run src/__tests__/bundle-budget.test.ts",
     "gen:api": "cd ../backend && uv run avisabus openapi export --out ../frontend/src/shared/api/openapi.json && cd ../frontend && openapi-typescript src/shared/api/openapi.json -o src/shared/api/schema.d.ts && prettier --write src/shared/api"
   },
   "dependencies": {
