@@ -1,0 +1,119 @@
+/*
+ * Map look of docs/design.md §5.7 on top of leaflet.css (only loaded with the map chunk).
+ * Colours are the tokens of §4: text #14171f, accent #0b3d91, control-border #8a93a3.
+ */
+
+.bus-map .leaflet-container {
+  font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  background: #e8ebef;
+}
+
+/* The map fills a rounded box with overflow hidden: draw its focus ring inside. */
+.bus-map .leaflet-container:focus-visible {
+  outline: 3px solid #0b3d91;
+  outline-offset: -3px;
+}
+
+/* Zoom buttons: 44 × 44 px, top right, control-border (RNF-03, §5.7). */
+.bus-map .leaflet-bar {
+  border: 1px solid #8a93a3;
+  border-radius: 8px;
+  box-shadow: none;
+}
+.bus-map .leaflet-bar a,
+.bus-map.bus-map .leaflet-touch .leaflet-bar a {
+  width: 44px;
+  height: 44px;
+  line-height: 44px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #14171f;
+}
+.bus-map .leaflet-bar a:first-child {
+  border-top-left-radius: 7px;
+  border-top-right-radius: 7px;
+}
+.bus-map .leaflet-bar a:last-child {
+  border-bottom-left-radius: 7px;
+  border-bottom-right-radius: 7px;
+}
+.bus-map .leaflet-bar a:focus-visible {
+  outline: 3px solid #0b3d91;
+  outline-offset: 2px;
+}
+
+/* Attribution: 12 px on white at 92 % (§5.7), link in accent. */
+.bus-map .leaflet-container .leaflet-control-attribution {
+  background: rgb(255 255 255 / 0.92);
+  color: #14171f;
+  font-size: 12px;
+  padding: 2px 6px;
+}
+.bus-map .leaflet-control-attribution a {
+  color: #0b3d91;
+  text-decoration: underline;
+}
+
+/* Labels on the map: text background, white 13 px letters (§5.7). */
+.bus-map .leaflet-tooltip.map-label {
+  background: #14171f;
+  border: 0;
+  border-radius: 6px;
+  box-shadow: none;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+  padding: 2px 8px;
+}
+.bus-map .leaflet-tooltip-top.map-label::before {
+  border-top-color: #14171f;
+}
+
+.bus-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 120px;
+}
+.bus-marker__icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+}
+.bus-marker__arrow {
+  position: absolute;
+  inset: 0;
+}
+.bus-marker__disc {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px #14171f;
+}
+.bus-marker--scheduled .bus-marker__disc {
+  border-style: dashed;
+  border-color: #14171f;
+}
+.bus-marker__label {
+  background: #14171f;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+.bus-marker--scheduled .bus-marker__label {
+  outline: 2px dashed #ffffff;
+  outline-offset: -4px;
+}
