@@ -10,7 +10,7 @@ Rama: `feat/alert_expiry` (apilada sobre `feat/alert_cancel`, `feat/alert_create
 - [x] T-03 `run_periodic`, `lifespan`, configuración y `.env.example` (AC-10)
 - [x] T-04 Integración: caché compartida, fuente que falla, evento por WebSocket, reinicio (AC-03,
       AC-04, AC-08, AC-09, AC-10; además AC-05 con la red real)
-- [ ] T-05 Sesión real `stop_508_peak`
+- [x] T-05 Sesión real `stop_508_peak` (AC-11)
 - [ ] T-06 Verificación completa
 
 ## Cambios en código de otras features
@@ -102,6 +102,24 @@ Rama: `feat/alert_expiry` (apilada sobre `feat/alert_cancel`, `feat/alert_create
   `NEXT_STOP` en el ciclo de 820 s (primer ciclo de 20 s ≥ 803 s, el instante que calcula E-01).
 - T-04: los tests de integración pasan a la primera porque prueban, juntas, piezas ya hechas con
   TDD en T-01–T-03 (no hubo código nuevo de producción en T-04).
+
+- T-05 (AC-11): 75 ciclos de 20 s (0–1480 s) con la caché de producción (TTL 20 s) delante de la
+  reproducción. En cada ciclo: vigilante, *ticker* y después `GET /arrivals` de la 508 (misma
+  caché: es la observación que ha visto el vigilante) y un `POST /alerts` por cada autobús de la
+  93 con `can_alert` que aparece por primera vez (un dispositivo por autobús; un viaje que ya tuvo
+  aviso no se vuelve a pedir). Los motivos se leen de los eventos `alert.expired` del canal de
+  cada dispositivo.
+  - Resultado: **PASSED = 2 (`…_122` en c39 y `…_123` en c52), NEXT_STOP = 0, TIMEOUT = 0, vivos
+    = 3 (`…_124` c39, `…_125` c52, `…_126` c61)**, idéntico a E-01; el test lo exige, y también
+    75 peticiones al SAE (una por ciclo: el vigilante comparte la caché).
+  - (a) como está escrita (la observación del ciclo del `PASSED` no tiene su viaje a más de 2 min)
+    y, además, la aserción que propone E-01 (autorizada por el orquestador, sin cambiar la spec):
+    ningún `PASSED` en un ciclo en el que el número de llegadas de su línea y sentido con
+    antelación ≤ (última antelación del viaje + 2 min) no baja respecto al ciclo anterior.
+  - (b): al menos un `PASSED` llega como mucho dos ciclos después de la última observación con su
+    viaje a ≤ 2 min (los dos lo cumplen: un ciclo después).
+  - "Informar": el test imprime `[alert_expiry.AC-11] 93 at 508, 5 alerts: {...}` en la salida de
+    pytest (con `capsys.disabled()`) y lo guarda como propiedad `alert_expiry_reasons` (JUnit).
 
 ## Bloqueos
 Ninguno.
