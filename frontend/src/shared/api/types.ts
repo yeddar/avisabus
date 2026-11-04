@@ -16,3 +16,7 @@ export type Vehicle = Schemas['VehicleSchema'];
 export type ArrivalKind = Arrival['kind'];
 export type ArrivalSource = StopArrivalsResponse['source'];
 export type Problem = Schemas['ProblemSchema'];
+export type PositionResponse = Schemas['VehiclePositionResponse'];
+export type PositionArrival = Schemas['PositionArrivalSchema'];
+export type PositionStatus = PositionResponse['status'];
+export type ShapeResponse = Schemas['ShapeResponse'];
