@@ -1,6 +1,7 @@
 # Implementación: passenger_stop_view
-Spec: specs/passenger_stop_view/ (v1.1, APPROVED) · Ciclo de revisión: 0 (v1.1) · Rama: `feat/passenger_stop_view-v1.1`
-(v1.0: T-01…T-10 en `feat/passenger_stop_view`, revisada y APPROVED en el ciclo 1)
+Spec: specs/passenger_stop_view/ (v1.2, APPROVED) · Ciclo de revisión: 0 (v1.2) · Rama: `feat/passenger_stop_view-v1.2`
+(v1.0: T-01…T-10 en `feat/passenger_stop_view`, revisada y APPROVED en el ciclo 1; v1.1: T-11 en
+`feat/passenger_stop_view-v1.1`; v1.2: solo T-12 y T-10, sobre `develop`)
 
 ## Tareas
 - [x] T-01 Backend: `avisabus openapi export` y test de desfase (commit 75f6a97)
@@ -13,7 +14,8 @@ Spec: specs/passenger_stop_view/ (v1.1, APPROVED) · Ciclo de revisión: 0 (v1.1
 - [x] T-08 Última parada y `NotFoundPage` (commit 544cb50)
 - [x] T-09 E2E, axe, capturas y presupuesto de bundle (commit 2114105)
 - [x] T-11 (v1.1) Anuncio y foco tras "Actualizar"/"Reintentar" (AC-24); mensaje de error sobre "los datos" y "Reintentar" que repite la petición de la parada (AC-17); `stop.refreshFailed` es/ca; comentario de `shared/device/storage.ts` (commit fd1825d)
-- [x] T-10 Verificación completa: `CI=1 ./init.sh verify --e2e` en verde (v1.0 tras T-09 y v1.1 tras T-11; ver "Verificación")
+- [x] T-12 (v1.2) Foco tras una acción manual con 404 (al `h1` de "Parada no encontrada", sin anuncio) y tras un refresco automático que acierta con el foco en "Reintentar" (a "Actualizar", sin anuncio) (commit e665d86)
+- [x] T-10 Verificación completa: `CI=1 ./init.sh verify --e2e` en verde (v1.0 tras T-09, v1.1 tras T-11 y v1.2 tras T-12; ver "Verificación")
 
 Cada test se escribió antes que el código y se vio en rojo (fallo de importación o de aserción).
 Además, se comprobó con mutaciones temporales (revertidas) que los tests de AC-12
@@ -41,6 +43,7 @@ Además, se comprobó con mutaciones temporales (revertidas) que los tests de AC
 | AC-16 | `StopPage.errors.test.tsx` (404 de parada o de llegadas, es/ca, sin `stop_id` ni token; sin token no llama a la API; un 404 ni se reintenta ni se refresca) + e2e |
 | AC-17 | `StopPage.errors.test.tsx` (503 y error de red con "Reintentar"; parada con 503 reintenta ambas; (v1.1) **solo falla la parada**: mensaje "No se han podido cargar los datos." con las llegadas visibles y "Reintentar" vuelve a pedir la parada; mensaje en `ca` "No s'han pogut carregar les dades."; datos conservados con "Datos de las 08:40, pueden no estar actualizados" es/ca) + e2e |
 | AC-24 | (v1.1) `StopPage.errors.test.tsx`: "Actualizar" con error → anuncio "No se han podido actualizar los datos" / "No s'han pogut actualitzar les dades" y `document.activeElement` = "Reintentar"/"Reintenta" (es/ca); "Reintentar" con éxito tras fallo de las llegadas, de la parada o de un refresco → "Datos actualizados" y foco en "Actualizar"; "Reintentar" con error (llegadas o parada) → anuncio y el foco sigue en "Reintentar", también mientras la petición está en curso; refresco automático fallido sin anuncios (AC-15). Mutaciones temporales (revertidas): sin conservar el aviso durante el reintento fallan 2 tests; sin `stop.refetch()` fallan 3 |
+| AC-24 (v1.2) | `StopPage.errors.test.tsx`: "Actualizar"/"Actualitza" y "Reintentar"/"Reintenta" (tras fallo de las llegadas o de la parada) con 404 → `h1` "Parada no encontrada"/"Parada no trobada" = `document.activeElement` y regiones vivas vacías; 404 al cargar no toma el foco; foco en "Reintentar" y refresco automático que acierta → foco en "Actualizar"/"Actualitza" sin anuncio (es/ca), también tras un "Actualizar" fallido (sin "Datos actualizados"); sin datos, el aviso y el foco se mantienen durante el refresco automático en curso y en pausa sin conexión; si "Reintentar" desaparece antes de que exista "Actualizar", el foco va a "Actualizar" solo si sigue en `body` (no se le quita a la persona); sin foco en "Reintentar", un refresco que acierta no mueve el foco. Mutaciones temporales (revertidas), todas detectadas: sin la salvaguarda de foco movido (1 test), sin el aviso de foco perdido (6), sin mantener el aviso al reintentar sin datos (2; solo en curso, sin pausa: 1), sin `onManualNotFound` en "Actualizar" (2) o en "Reintentar" (3), sin `tabIndex=-1` (5), enfocando el `h1` siempre (1) |
 | AC-18 | `src/shared/hooks/__tests__/useOnline.test.tsx`, `StopPage.errors.test.tsx` (aviso `role="status"`, sin peticiones mientras no hay conexión, petición al volver; abierta sin conexión no llama a la API) + e2e |
 | AC-19 | `lastStop.test.ts`, `StopPage.test.tsx` (se recuerda al cargar; no si 404), `src/app/routes/HomePage.test.tsx` (enlace es/ca, `lang`, URL codificada) + e2e |
 | AC-20 | `src/app/routes/NotFoundPage.test.tsx` (`/no-existe`, `/p`, `/p/508/otra`, enlace a la portada) + e2e |
@@ -145,10 +148,39 @@ iconos y redacción de textos) y de detalles internos no contractuales:
   la connexió i torna-ho a intentar."; `stop.refreshFailed` "No se han podido actualizar los
   datos" (literal de AC-24) / "No s'han pogut actualitzar les dades".
 
+### Decisiones locales de T-12 (v1.2)
+- **404 tras una acción manual:** `StopView` guarda `manualNotFound` (estado) y se lo pasa a
+  `StopNotFound` como `focusHeading`; `refresh()`/`retry()` lo activan si alguna respuesta del
+  `refetch()` es 404 y salen sin anuncio ni `finish()`. `StopNotFound` tiene `h1` con
+  `tabIndex={-1}` (el CSS global ya quita el contorno a `h1[tabindex='-1']:focus`) y lo enfoca en
+  un `useEffect` sobre `focusHeading`: así funciona tanto si `StopNotFound` se monta antes como
+  después de que termine la promesa del `refetch()`. Con 404 al cargar (o sin token) no se toca el
+  foco (`frontend_i18n.AC-11`: carga inicial).
+- **Detección del foco antes de desmontar el aviso (design v1.2):** el botón "Reintentar" va en un
+  componente `RetryAction` cuyo `useLayoutEffect` lee `document.activeElement` en la limpieza: React
+  ejecuta las limpiezas de *layout* de un subárbol eliminado antes de quitar sus nodos del DOM
+  (como `componentWillUnmount`). Si el botón tenía el foco, pide el foco para "Actualizar" (sin
+  anuncio). Tras un "Reintentar" con éxito también se dispara, con el mismo resultado que T-11.
+- **Aviso de error durante un reintento automático sin datos:** TanStack Query v5 pasa a `pending`
+  (sin `error`) una consulta sin datos al volver a pedirla, también en los refrescos automáticos
+  (`refetchInterval` de 20 s, reconexión, foco de ventana). El aviso desaparecía al **empezar** la
+  petición y no al acertar, y el foco caía en `body` antes de saber el resultado. Como en T-11
+  para "Reintentar", el aviso se mantiene mientras la consulta sin datos que falló se vuelve a
+  pedir, en curso o en pausa sin conexión (`isPending && fetchStatus !== 'idle' &&
+  errorUpdateCount > 0`). Efecto visible: sin datos y con error ya no aparece "Cargando las
+  próximas llegadas…" cada 20 s durante el reintento automático; el aviso de error sigue hasta que
+  llegan los datos (con datos antiguos ya era así, porque la consulta sigue en `error`). Con esto,
+  "el aviso de error desaparece" equivale a "el refresco acierta" o al 404, como presupone AC-24.
+- **No quitar el foco a la persona:** la petición de foco por "Reintentar" desaparecido (`lost`)
+  solo se cumple si el foco sigue en `body`; si "Actualizar" aún no existe (p. ej. solo falló la
+  parada, se recupera al reconectar y las primeras llegadas no han llegado), espera a que aparezca,
+  pero se descarta si la persona ha enfocado otra cosa mientras tanto.
+- **Textos:** ninguno nuevo (el `h1` "Parada no encontrada"/"Parada no trobada" ya existía).
+
 ## Desviaciones respecto al design (v1.0) y estado actual
 Las cuatro se detectaron en la v1.0. No cambian contratos ni comportamiento de los AC. La PR #24
-(spec v1.1 y CP-4 de `docs/`) las recoge todas. Esta rama sale de esa PR, que aún no está
-fusionada en `develop`.
+(spec v1.1 y CP-4 de `docs/`) las recoge todas. Esa PR ya está fusionada en
+`develop`, de donde sale la rama de la v1.2.
 
 1. **`openapi-typescript` 7.13 con TypeScript 6 mediante `overrides`.** *Resuelta en la spec
    (v1.1, PR #24):* el design §2 documenta el `overrides` como deuda técnica. **Sigue abierta la
@@ -223,12 +255,13 @@ Los marcados con **(spec)** son literales de la spec en castellano; el resto los
 | `home.lastStop` | "Tu última parada: {nombre}" **(spec)** | "La teua última parada: {nombre}" |
 
 ## Observaciones (no bloqueantes)
-- (v1.1) **Hueco menor de AC-24 con un 404:** si "Actualizar" o "Reintentar" terminan con un 404
-  (la parada desaparece del GTFS con la vista abierta), AC-16 sustituye la vista por "Parada no
-  encontrada" y no existe "Reintentar" al que llevar el foco. No se ha inventado comportamiento:
-  se anuncia "No se han podido actualizar los datos" (parte de AC-24 aplicable) y el foco queda
-  donde lo deje el cambio de página. Propuesta para una revisión futura de la spec: mover el foco
-  al `h1` de "Parada no encontrada". Caso muy raro (requiere reimportar el GTFS en caliente).
+- (v1.1) ~~Hueco menor de AC-24 con un 404~~: **resuelto en la v1.2 (T-12)**. Ya no se anuncia
+  "No se han podido actualizar los datos" tras un 404 manual; el foco va al `h1`.
+- (v1.2) Para CP-6 con lector de pantalla: (a) 404 tras "Actualizar" → debe leerse "Parada no
+  encontrada, encabezado nivel 1"; (b) foco en "Reintentar", esperar a que un refresco automático
+  acierte (≤ 30 s) → el lector debe situarse en "Actualizar" sin anuncio.
+- (v1.2) Si se pierde el foco en "Reintentar" por una causa no regulada (p. ej. un 404 de un
+  refresco **automático**), no se mueve: AC-24 solo regula el 404 de las acciones manuales.
 - Playwright vacía `test-results/` al inicio de cada ejecución: si se lanza solo un spec
   (`npx playwright test e2e/i18n.spec.ts`), desaparecen las capturas de esta feature hasta la
   siguiente ejecución completa.
@@ -239,6 +272,18 @@ Los marcados con **(spec)** son literales de la spec en castellano; el resto los
 Ninguno.
 
 ## Verificación
+**v1.2 (tras T-12):** `CI=1 ./init.sh verify --e2e` (2026-11-04, puerto 4173 libre) → código 0,
+"verify: todo en verde":
+- backend: format, lint, types, architecture (2 contratos respetados, 0 rotos) OK; pytest
+  969 passed, 6 deselected, cobertura 99,39 %.
+- frontend: format, lint, types OK; Vitest 35 ficheros, **301 tests** passed (+14 de T-12); build
+  OK (`index-*.js` 441,37 kB, **139,25 kB gzip**).
+- frontend e2e + a11y: 60 passed, axe sin violaciones; `test:bundle` 2 passed (presupuesto 200 KB).
+- harness: `feature_list.json` OK; trazabilidad AC→test OK.
+- T-12 no cambia la maquetación (el `h1` con `tabIndex=-1` no muestra contorno; `RetryAction`
+  pinta el mismo `<div className="flex">`); las capturas se han regenerado en
+  `frontend/test-results/passenger_stop_view/<perfil>/`.
+
 **v1.1 (tras T-11):** `CI=1 ./init.sh verify --e2e` (2026-11-03, puerto 4173 libre) → código 0,
 "verify: todo en verde":
 - backend: format, lint, types, architecture (2 contratos respetados) OK; pytest 969 passed,
