@@ -377,3 +377,6 @@
   La persona elige la opción (c): AC-11 admite `1001` o `1012`. Spec-writer para la v1.1.
 
 - La v1.1 la aporta la persona en la PR #38; el borrador del spec-writer (PR #39) se cierra sin fusionar.
+
+## 2026-11-04 · realtime_events · spec_blocked → spec_approved (v1.1, PR #38) → in_review
+- Sin cambios de código: la implementación ya cumple AC-11 v1.1. Rama actualizada con `develop`.
