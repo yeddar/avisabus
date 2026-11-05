@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 import type { Arrival } from '../../../shared/api/types';
-import { formatClockTime, formatMinutes } from '../../../shared/i18n/format';
 import { GtfsText } from '../../../shared/i18n/GtfsText';
 import { MapIcon } from '../../../shared/ui/icons/MapIcon';
 import { LinkButton } from '../../../shared/ui/LinkButton';
@@ -10,10 +9,10 @@ import { AlertAction } from '../alerts/AlertAction';
 import { arrivalTripKey, tripKey, useOptionalAlerts } from '../alerts/AlertsProvider';
 import { AlertStatus } from '../alerts/AlertStatus';
 import { ArrivalTime } from './ArrivalTime';
-import { currentMinutes } from './countdown';
 import { spokenDestination, visibleDestination } from './destination';
 import { LineBadge } from './LineBadge';
 import { OccupancyInfo } from './OccupancyInfo';
+import { spokenArrivalTime } from './spokenTime';
 import { gtfsLang, useUiLanguage } from './useUiLanguage';
 
 export interface ArrivalRowProps {
@@ -43,22 +42,13 @@ export function ArrivalRow({ arrival, now, scheduled, stopId, token }: ArrivalRo
   const { t } = useTranslation();
   const language = useUiLanguage();
   const alerts = useOptionalAlerts();
-  const minutes = currentMinutes(arrival, now);
   // The request of this device for this line at this stop (RF-19) and whether it is this bus.
   const lineAlert = alerts?.alertFor(stopId, arrival.line) ?? null;
   const ownTrip = arrivalTripKey(arrival);
   const ownAlert =
     lineAlert !== null && ownTrip !== null && tripKey(lineAlert) === ownTrip ? lineAlert : null;
 
-  let time: string;
-  if (minutes === null) {
-    time = t('stop.arrivesAt', { time: formatClockTime(arrival.arrival_at, language) });
-  } else if (minutes === 0) {
-    time = t('stop.arrivingNow');
-  } else {
-    time = t('stop.arrivesIn', { duration: formatMinutes(minutes, language).long });
-  }
-  if (scheduled) time = t('stop.scheduledTime', { time });
+  const time = spokenArrivalTime(arrival, now, scheduled, t, language);
 
   let occupancy: string | null = null;
   if (arrival.in_network) {
@@ -121,7 +111,14 @@ export function ArrivalRow({ arrival, now, scheduled, stopId, token }: ArrivalRo
           }
           request={
             alerts !== null && arrival.can_alert && ownAlert === null ? (
-              <AlertAction arrival={arrival} otherBus={lineAlert !== null} />
+              <AlertAction
+                arrival={arrival}
+                now={now}
+                scheduled={scheduled}
+                stopId={stopId}
+                token={token}
+                otherBus={lineAlert !== null}
+              />
             ) : null
           }
           status={ownAlert === null ? null : <AlertStatus alert={ownAlert} />}
