@@ -418,3 +418,7 @@
 - Revisión ciclo 1: APPROVED (21/21 mutaciones de producción detectadas; T-05 reproduce E-01).
 
 ## 2026-11-04 · alert_expiry PR #43 abierta · passenger_alert_ui · spec_approved → implementing
+
+## 2026-11-05 · passenger_alert_ui · implementing → in_review
+- T-01…T-08 (interrumpido una vez por el límite de uso y reanudado); verify --e2e en verde (555 Vitest,
+  126 e2e, JS inicial 146,92 KB gzip). Decisiones D-1…D-12 a confirmar por el reviewer.
