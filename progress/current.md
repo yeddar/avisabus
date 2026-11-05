@@ -4,7 +4,7 @@
 
 **Fecha:** 2026-11-04
 **Fase:** Implementación — Bloque 3 (solicitud de parada)
-**Feature en curso:** `alert_cancel` v1.0 — `done`, PR abierta. Siguiente: `alert_expiry` (con E-01).
+**Feature en curso:** `alert_expiry` v1.0 — `done`, PR abierta. Siguiente: `passenger_alert_ui`.
 
 ## Último paso
 `realtime_events` v1.1: APPROVED (ciclo 1); PR #40 abierta. `alert_create` → `implementing`.
@@ -13,12 +13,22 @@
 Bloque 3 por orden, cada una con reviewer nuevo y PR contra `develop` sin fusionar:
 1. `realtime_events`: APPROVED; PR #40.
 2. `alert_create`: APPROVED; PR #41 (apilada sobre la #40).
-3. `alert_cancel`: APPROVED; PR abierta (apilada sobre la #41).
-4. `alert_expiry` (exploración E-01 sobre `stop_508_peak`; T-02 añade `GetStopArrivals.for_stop`, autorizado).
+3. `alert_cancel`: APPROVED; PR #42 (apilada sobre la #41).
+4. `alert_expiry`: APPROVED; PR abierta (apilada sobre la #42).
 5. `passenger_alert_ui`.
 Las ramas se apilan sobre la anterior mientras sus PRs no estén fusionadas.
 
 ## Pendiente para specs futuras
+- **alert_expiry E-01:** ventana de 2 min confirmada (0 prematuros con 1–3 min; 4/6 pasos seguros).
+  AC-02 debe ser inclusivo (paso de la 70 con exactamente 120 s). AC-11 (a) no comprueba nada tal como
+  está escrita → propuesta de reformulación (o aserción extra en T-05). LIM-02 (docs): el emparejamiento
+  puede trasladar un viaje al autobús siguiente sin que desaparezca (93 a ~290 s) y el aviso caduca
+  ~490 s tarde; en el bloque 4 llegaría al conductor equivocado.
+- **alert_expiry (revisión):** con ventana de 4 min el test de T-05 (línea 93) sigue en verde: el paso
+  prematuro de E-01 es de la línea 70 (`…_071`, c70) y solo con aviso recreado; proteger la ventana con
+  la sesión real exigiría ampliar AC-11 con la línea 70 (decisión de la persona). NB-3 `WatchPassages`
+  recibe `Clock` sin leerlo; NB-4 la ventana no se acota a 1–3 min (indicarlo en `.env.example`); NB-5
+  `receive_json_soon` usa API privada de Starlette; NB-6 `alert.trip_lost` en cada ciclo (debug).
 - **alert_cancel:** H-1 `no-store` en todos los 500 (`errors.py`), aceptado; anotar en docs como
   comportamiento transversal (persona). H-2 (arnés) `test_alerts_cancel_api.py:159-160` `receive_json()`
   sin límite: con el evento roto se cuelga (sin `pytest-timeout`; ver N-03 de `realtime_events`).

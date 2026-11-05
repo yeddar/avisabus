@@ -1,9 +1,12 @@
 """Helpers for the WebSocket tests: time never passes for real and the network is not used."""
 
 import asyncio
+import json
 from collections.abc import Mapping
+from typing import Any
 
-from starlette.testclient import TestClient
+import anyio
+from starlette.testclient import TestClient, WebSocketTestSession
 
 from avisabus.adapters.inbound.ws.connections import ConnectionRegistry
 
@@ -35,3 +38,20 @@ def wait_until_closed(client: TestClient, registry: ConnectionRegistry) -> None:
 
     assert client.portal is not None
     client.portal.call(wait)
+
+
+def receive_json_soon(ws: WebSocketTestSession, turns: int = 1000) -> Any:
+    """`ws.receive_json()` that fails instead of hanging when no message comes: it lets the
+    application's event loop run at most `turns` times (no real time) waiting for one."""
+
+    async def receive() -> Any:
+        for _ in range(turns):
+            try:
+                return ws._send_rx.receive_nowait()  # noqa: SLF001 - no public bounded receive
+            except anyio.WouldBlock:
+                await asyncio.sleep(0)
+        raise AssertionError("the socket sent nothing")
+
+    message = ws.portal.call(receive)
+    ws._raise_on_close(message)  # noqa: SLF001
+    return json.loads(message["text"])

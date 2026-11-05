@@ -403,3 +403,16 @@
 
 ## 2026-11-04 · alert_cancel · in_review → done
 - Revisión ciclo 1: APPROVED (15/17 mutantes, 2 equivalentes). PR sin fusionar.
+
+## 2026-11-04 · alert_cancel PR #42 abierta · alert_expiry · spec_approved → exploring
+- E-01: detección de paso con `stop_508_peak` y `gtfs_mini` → `progress/explore_passage.md`.
+
+## 2026-11-04 · alert_expiry · exploring → implementing
+- E-01 (`progress/explore_passage.md`): ventana de 2 min sin pasos prematuros; sin CP-3.
+
+## 2026-11-04 · alert_expiry · implementing → in_review
+- T-01…T-06; AC-11 con `stop_508_peak` coincide con E-01 (2 PASSED, 0 NEXT_STOP, 0 TIMEOUT).
+  `GetStopArrivals.for_stop` añadido (autorizado). Verify --e2e en verde (1325 backend).
+
+## 2026-11-04 · alert_expiry · in_review → done
+- Revisión ciclo 1: APPROVED (21/21 mutaciones de producción detectadas; T-05 reproduce E-01).

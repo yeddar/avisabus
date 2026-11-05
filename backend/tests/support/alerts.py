@@ -1,6 +1,6 @@
 """Fakes of the alert ports for the unit tests (never in production)."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime
 from typing import Any
 
@@ -50,7 +50,9 @@ class FakeAlertRepository:
         return sorted(self.alerts.values(), key=lambda a: (a.created_at, a.alert_id))
 
     def update_tracking(self, alert_id: str, tracking: AlertTracking) -> None:
-        raise NotImplementedError
+        """Like the SQLite one: nothing happens if the alert no longer exists."""
+        if alert_id in self.alerts:
+            self.alerts[alert_id] = replace(self.alerts[alert_id], tracking=tracking)
 
     def delete(self, alert_id: str) -> bool:
         return self.alerts.pop(alert_id, None) is not None
@@ -112,6 +114,9 @@ class RecordingLogger:
 
     def warning(self, event: str, **fields: Any) -> None:
         self.events.append(("warning", event, fields))
+
+    def error(self, event: str, **fields: Any) -> None:
+        self.events.append(("error", event, fields))
 
     def named(self, event: str) -> list[dict[str, Any]]:
         return [fields for _, name, fields in self.events if name == event]

@@ -1,5 +1,7 @@
 """App with the stop, alert and real-time endpoints over `gtfs_mini` and a replayed SAE session
-(alert_create). Built like `avisabus.main`, with a `FakeClock` and a fake `sleep`."""
+(alert_create), and the cycles of the alert expiry tasks (alert_expiry). Built like
+`avisabus.main`, with a `FakeClock` and a fake `sleep`; the tests run the expiry cycles with
+`tick()`."""
 
 import asyncio
 from collections.abc import AsyncIterator
@@ -13,9 +15,11 @@ from sqlalchemy import Engine
 
 from avisabus.adapters.inbound.http.app import create_app
 from avisabus.adapters.inbound.http.container import (
+    AlertExpiry,
     AlertUseCases,
     Realtime,
     StopUseCases,
+    build_alert_expiry,
     build_alert_snapshots,
     build_alert_use_cases,
     build_realtime,
@@ -42,6 +46,7 @@ class AlertsApp:
     stops: StopUseCases
     alerts: AlertUseCases
     realtime: Realtime
+    expiry: AlertExpiry
 
     def device_hash(self, device: str = DEVICE) -> str:
         hasher = HmacDeviceHasher(self.settings.stop_token_secret_bytes())
@@ -64,8 +69,9 @@ def build_alerts_app(
         settings, clock, snapshots=build_alert_snapshots(engine), sleep=sleep or FakeSleep()
     )
     alerts = build_alert_use_cases(settings, engine, clock, stops, realtime.publisher)
+    expiry = build_alert_expiry(settings, engine, clock, stops, realtime.publisher)
     app = create_app(settings, stops=stops, realtime=realtime, alerts=alerts)
-    return AlertsApp(app, settings, stops, alerts, realtime)
+    return AlertsApp(app, settings, stops, alerts, realtime, expiry)
 
 
 @asynccontextmanager

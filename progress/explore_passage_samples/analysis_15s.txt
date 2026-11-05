@@ -1,0 +1,75 @@
+trips tracked: 13 | disappearances: 18 | cycles: 99
+  2070  98 059 c24 t= 360s last=4m(225s) GONE  reappears=-  [4m:059, 24m:061] -> [23m:060, 29m:061]
+  2070  98 061 c 2 t=  30s last=29m(1725s) STILL reappears=c4 (1680s)  [6m:059, 29m:061] -> [5m:059, 28m:060]
+  2070  98 061 c 6 t=  90s last=28m(1665s) STILL reappears=c8 (1620s)  [4m:059, 28m:061] -> [4m:059, 27m:060]
+  2070  98 061 c10 t= 150s last=27m(1605s) STILL reappears=c12 (1560s)  [3m:059, 27m:061] -> [3m:059, 26m:060]
+  2070  98 061 c18 t= 270s last=25m(1485s) STILL reappears=c20 (1440s)  [0m:059, 25m:061] -> [4m:059, 24m:060]
+  2070  98 061 c30 t= 450s last=27m(1605s) GONE  reappears=c38 (1560s)  [20m:060, 27m:061] -> [20m:060]
+  2070  98 060 c 4 t=  60s last=28m(1665s) STILL reappears=c6 (1620s)  [5m:059, 28m:060] -> [4m:059, 28m:061]
+  2070  98 060 c 8 t= 120s last=27m(1605s) STILL reappears=c10 (1560s)  [4m:059, 27m:060] -> [3m:059, 27m:061]
+  2070  98 060 c12 t= 180s last=26m(1545s) STILL reappears=c18 (1440s)  [3m:059, 26m:060] -> [2m:059, 26m:061]
+  2070  98 060 c20 t= 300s last=24m(1425s) STILL reappears=c24 (1380s)  [4m:059, 24m:060] -> [4m:059, 24m:061]
+  2070  98 060 c60 t= 900s last=16m(945s) STILL reappears=-  [16m:060, 24m:061] -> [16m:061, 26m:062]
+   508  70 070 c36 t= 540s last=2m(105s) GONE  reappears=-  [2m:070, 12m:071] -> [11m:071]
+   508  70 071 c80 t=1200s last=0m(-15s) GONE  reappears=c92 (240s)  [0m:071, 12m:072] -> [11m:072, 23m:073]
+   508  70 071 c94 t=1410s last=4m(225s) STILL reappears=-  [4m:071, 19m:073] -> [4m:072, 19m:073]
+   508  70 072 c92 t=1380s last=8m(465s) STILL reappears=c94 (240s)  [8m:072, 20m:073] -> [4m:071, 19m:073]
+   508  93 122 c52 t= 780s last=0m(-15s) GONE  reappears=-  [0m:122, 2m:123] -> [0m:123, 12m:124]
+   508  93 123 c70 t=1050s last=0m(-15s) GONE  reappears=-  [0m:123, 9m:124] -> [8m:124, 17m:125]
+   508  93 125 c82 t=1230s last=15m(885s) GONE  reappears=-  [7m:124, 15m:125] -> [7m:124, 23m:126]
+
+Disappearances by last lead (all / bus GONE / bus STILL present):
+  <= 60 s: 3 / 3 / 0
+  <= 120 s: 4 / 4 / 0
+  <= 180 s: 4 / 4 / 0
+  <= 240 s: 6 / 5 / 1
+  <= inf s: 18 / 7 / 11
+  > 180 s (far): 14; of them bus STILL present (pairing switch): 11; bus GONE from the list: 3
+  disappear and reappear: 11 events over 4 trips; with last lead <= 180 s: 1
+
+Real passages (count of arrivals with lead <= first lead + 120 s decreases, first lead <= 300 s):
+  2070 98 c18 t=270s [0m:059, 25m:061] -> [4m:059, 24m:060]
+  2070 98 c24 t=360s [4m:059, 24m:061] -> [23m:060, 29m:061]
+  508 70 c32 t=480s [0m:070, 12m:071] -> [2m:070, 12m:071]
+  508 70 c36 t=540s [2m:070, 12m:071] -> [11m:071]
+  508 70 c74 t=1110s [0m:071, 13m:072] -> [2m:071, 12m:072]
+  508 70 c80 t=1200s [0m:071, 12m:072] -> [11m:072, 23m:073]
+  508 70 c96 t=1440s [4m:072, 19m:073] -> [7m:072, 19m:073]
+  508 93 c20 t=300s [0m:122, 12m:123] -> [7m:122, 11m:123]
+  508 93 c34 t=510s [4m:122, 6m:123] -> [4m:122, 6m:123]
+  508 93 c36 t=540s [4m:122, 6m:123] -> [4m:122, 6m:123]
+  508 93 c40 t=600s [3m:122, 5m:123] -> [3m:122, 5m:123]
+  508 93 c44 t=660s [2m:122, 4m:123] -> [2m:122, 4m:123]
+  508 93 c52 t=780s [0m:122, 2m:123] -> [0m:123, 12m:124]
+  508 93 c70 t=1050s [0m:123, 9m:124] -> [8m:124, 17m:125]
+
+Window sweep (one alert per trip from its first appearance; PASSED at first disappearance with lead <= W):
+  W(s)  PASSED  correct  premature  real passages caught / total
+     0       3        3          0  3 / 14
+    30       3        3          0  3 / 14
+    60       3        3          0  3 / 14
+    90       3        3          0  3 / 14
+   120       4        4          0  4 / 14
+   150       4        4          0  4 / 14
+   180       4        4          0  4 / 14
+   210       4        4          0  4 / 14
+   240       5        5          0  5 / 14
+   300       5        5          0  5 / 14
+   420       5        5          0  5 / 14
+   600       6        5          1  5 / 14   premature: 508 70 072 c92 (465s)
+
+Variant B (alert re-created on reappearance): W  PASSED  premature
+    60       3  0  
+   120       4  0  
+   180       4  0  
+   240       6  1  508 70 071 c94 (225s)
+   300       6  1  508 70 071 c94 (225s)
+
+NEXT_STOP after each disappearance without reappearance (margin 120 s):
+  2070 98 059 gone at t=360s (last 225s, delay 6s) -> NEXT_STOP at t=813s (+453s after the disappearance)
+  2070 98 060 gone at t=900s (last 945s, delay 485s) -> NEXT_STOP at t=2070s (+1170s after the disappearance)
+  508 70 070 gone at t=540s (last 105s, delay 37s) -> NEXT_STOP at t=836s (+296s after the disappearance)
+  508 70 071 gone at t=1410s (last 225s, delay 349s) -> NEXT_STOP at t=1820s (+410s after the disappearance)
+  508 93 122 gone at t=780s (last -15s, delay 259s) -> NEXT_STOP at t=951s (+171s after the disappearance)
+  508 93 123 gone at t=1050s (last -15s, delay 16s) -> NEXT_STOP at t=1217s (+167s after the disappearance)
+  508 93 125 gone at t=1230s (last 885s, delay 91s) -> NEXT_STOP at t=2295s (+1065s after the disappearance)
