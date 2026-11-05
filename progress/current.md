@@ -4,22 +4,26 @@
 
 **Fecha:** 2026-11-04
 **Fase:** Implementación — Bloque 3 (solicitud de parada)
-**Feature en curso:** `realtime_events` v1.1 — `done`, PR abierta. Siguiente: `alert_create`.
+**Feature en curso:** `alert_create` v1.0 — `done`, PR abierta. Siguiente: `alert_cancel`.
 
 ## Último paso
-PR #35 y #36 fusionadas (ajustes previos al bloque 3). PR #37 fusionada: specs del bloque 3 aprobadas
-(CP-1). `realtime_events` (sin exploración) → `implementing`.
+`realtime_events` v1.1: APPROVED (ciclo 1); PR #40 abierta. `alert_create` → `implementing`.
 
 ## Siguiente paso
 Bloque 3 por orden, cada una con reviewer nuevo y PR contra `develop` sin fusionar:
-1. `realtime_events`.
-2. `alert_create` (T-01 cambia `can_alert` en `GetStopArrivals`, `stop_arrivals_api` 1.6; autorizado).
+1. `realtime_events`: APPROVED; PR #40.
+2. `alert_create`: APPROVED; PR abierta (apilada sobre la #40).
 3. `alert_cancel`.
 4. `alert_expiry` (exploración E-01 sobre `stop_508_peak`; T-02 añade `GetStopArrivals.for_stop`, autorizado).
 5. `passenger_alert_ui`.
 Las ramas se apilan sobre la anterior mientras sus PRs no estén fusionadas.
 
 ## Pendiente para specs futuras
+- **alert_create:** H-1 un 500 inesperado bajo `/api/v1/alerts` sale sin `Cache-Control: no-store`
+  (corregible en `alert_cancel`). H-2 AC-08 dice "contando todas" y el design pone el limitador en el
+  caso de uso (no cuentan 400/422). H-3 (CP-4, persona) `docs/architecture.md:81` y `:223` no coinciden
+  con el design en la ubicación del limitador y el orden de validaciones. H-4 aserción adaptada de las C2
+  recalcula la regla. **→ `alert_expiry`:** `last_seen_at` usa `generated_at` (no `fetched_at` del SAE).
 - **realtime_events:** N-01 `progress/impl_realtime_events.md` sigue diciendo v1.0/ciclo 0 con el CP-3
   abierto. N-02 la composición está en `http/app.py` + `container.py`, no en `main.py` (design §2).
   N-03 (arnés) sin timeout por test: 5 regresiones cuelgan la suite (`pytest-timeout`). N-04 las dos

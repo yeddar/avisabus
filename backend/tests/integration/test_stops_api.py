@@ -421,6 +421,7 @@ async def test_two_93_buses_close_together_get_consecutive_trips(mini_engine: En
 
 @pytest.mark.spec("stop_arrivals_api.AC-08")
 @pytest.mark.spec("stop_arrivals_api.AC-04")
+@pytest.mark.spec("alert_create.AC-01")
 @pytest.mark.parametrize("offset_s", [0, 700, 1480])
 async def test_lines_outside_gtfs_mini_at_stop_2070(mini_engine: Engine, offset_s: int) -> None:
     # 2070 is served by 73, 95, 98 and 99, but gtfs_mini only has the 98 (design §7, v1.3).
@@ -498,7 +499,9 @@ async def test_real_c2_terminals_resolve_their_direction(
     for arrival in c2:
         assert arrival["sae_destination"] == sae_text
         assert (arrival["direction_id"], arrival["destination"]) == (direction_id, headsign)
-        assert arrival["can_alert"] is True
+        # alert_create.AC-01 (v1.6): a known bus can be requested only up to 30 min ahead.
+        lead = datetime.fromisoformat(arrival["arrival_at"]) - clock.now()
+        assert arrival["can_alert"] is (lead <= timedelta(minutes=30))
         # At a terminal the SAE shows the bus that departs (E-03): it has its departing trip.
         assert arrival["vehicle"] is not None
         trip = repo.trip_stop_times(arrival["vehicle"]["trip_id"])
@@ -521,6 +524,7 @@ async def test_duplicate_entries_are_kept(mini_engine: Engine) -> None:
 
 
 @pytest.mark.spec("stop_arrivals_api.AC-07")
+@pytest.mark.spec("alert_create.AC-01")
 async def test_unresolved_direction_is_logged(mini_engine: Engine) -> None:
     class Fixed:
         async def get_arrivals(self, stop_id: str) -> ArrivalsSnapshot:
@@ -546,6 +550,90 @@ async def test_unresolved_direction_is_logged(mini_engine: Engine) -> None:
     assert [(log["stop_id"], log["line"], log["destination"]) for log in unresolved] == [
         ("508", "98", "Av. Cid")
     ]
+
+
+# --- Which arrivals can be requested (alert_create.AC-01) ---
+
+# 23:00 in Madrid: the 93 passes by 508 at 23:22:08 and then at 00:07:40; the 70 at 23:33:38.
+LATE = datetime(2026, 11, 2, 22, 0, tzinfo=UTC)
+LATE_93 = datetime(2026, 11, 2, 22, 22, 8, tzinfo=UTC)
+
+
+class FixedArrivals:
+    """The SAE always answers these arrivals."""
+
+    def __init__(self, *arrivals: SaeArrival) -> None:
+        self.arrivals = arrivals
+
+    async def get_arrivals(self, stop_id: str) -> ArrivalsSnapshot:
+        return ArrivalsSnapshot(stop_id, LATE, self.arrivals)
+
+
+def _late_93_trip(engine: Engine) -> str:
+    repo = SqliteNetworkRepository(engine)
+    (passage,) = [
+        p for p in repo.scheduled_stop_times("508", LATE, timedelta(minutes=30)) if p.line == "93"
+    ]
+    assert service_day_start(passage.service_date) + timedelta(seconds=passage.arrival_s) == (
+        LATE_93
+    )
+    return passage.trip_id
+
+
+@pytest.mark.spec("alert_create.AC-01")
+@pytest.mark.parametrize(("lead_min", "can_alert"), [(30, True), (31, False)])
+async def test_realtime_bus_can_be_requested_up_to_30_min_ahead(
+    mini_engine: Engine, lead_min: int, can_alert: bool
+) -> None:
+    clock = FakeClock(LATE_93 - timedelta(minutes=lead_min))
+    source = FixedArrivals(
+        SaeArrival("93", "Pass. Marítim", ArrivalKind.MINUTES, lead_min, LATE_93)
+    )
+    async with stops_client(mini_engine, clock, source) as (client, _):
+        response = await client.get(f"{API}/stops/508/arrivals", params={"t": token("508")})
+    (arrival,) = response.json()["arrivals"]
+    assert (arrival["in_network"], arrival["direction_id"]) == (True, 0)
+    assert arrival["vehicle"]["trip_id"] == _late_93_trip(mini_engine)
+    assert arrival["can_alert"] is can_alert
+
+
+@pytest.mark.spec("alert_create.AC-01")
+async def test_realtime_bus_without_trip_cannot_be_requested(mini_engine: Engine) -> None:
+    # No 93 is scheduled between 22:55 and 23:15 in Madrid: the SAE's bus at 23:05 has no trip.
+    clock = FakeClock(LATE)
+    when = LATE + timedelta(minutes=5)
+    source = FixedArrivals(SaeArrival("93", "Pass. Marítim", ArrivalKind.MINUTES, 5, when))
+    async with stops_client(mini_engine, clock, source) as (client, _):
+        response = await client.get(f"{API}/stops/508/arrivals", params={"t": token("508")})
+    (arrival,) = response.json()["arrivals"]
+    assert (arrival["in_network"], arrival["direction_id"]) == (True, 0)
+    assert arrival["vehicle"] is None
+    assert arrival["can_alert"] is False
+
+
+@pytest.mark.spec("alert_create.AC-01")
+@pytest.mark.spec("stop_arrivals_api.AC-13")
+@pytest.mark.parametrize(("lead_min", "can_alert"), [(30, True), (31, False)])
+async def test_scheduled_bus_can_be_requested_up_to_30_min_ahead(
+    mini_engine: Engine, lead_min: int, can_alert: bool
+) -> None:
+    # The night session has no recording of 508: the timetable is used.
+    clock = FakeClock(LATE_93 - timedelta(minutes=lead_min))
+    source, _ = replay(NIGHT, clock)
+    async with stops_client(mini_engine, clock, source) as (client, _):
+        response = await client.get(f"{API}/stops/508/arrivals", params={"t": token("508")})
+    body = response.json()
+    assert body["source"] == "SCHEDULED"
+    (late_93,) = [
+        a for a in body["arrivals"] if a["vehicle"]["trip_id"] == _late_93_trip(mini_engine)
+    ]
+    assert late_93["can_alert"] is can_alert
+    # The others follow the same rule: the 70 at 22:52:53 in Madrid can be requested, the one
+    # at 23:33:38 cannot.
+    for arrival in body["arrivals"]:
+        lead = datetime.fromisoformat(arrival["arrival_at"]) - clock.now()
+        assert arrival["can_alert"] is (lead <= timedelta(minutes=30))
+    assert [a["can_alert"] for a in body["arrivals"] if a["line"] == "70"] == [True, False]
 
 
 @pytest.mark.spec("stop_arrivals_api.AC-13")

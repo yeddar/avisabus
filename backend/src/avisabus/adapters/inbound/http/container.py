@@ -15,19 +15,25 @@ from sqlalchemy import Engine
 
 from avisabus.adapters.inbound.ws.connections import ConnectionRegistry
 from avisabus.adapters.inbound.ws.passenger import (
+    AlertSnapshotProvider,
     EmptySnapshotProvider,
     PassengerSnapshotProvider,
     PassengerSocket,
 )
+from avisabus.adapters.outbound.drivers.no_driver_directory import NoDriverDirectory
 from avisabus.adapters.outbound.events.in_memory import InMemoryEventPublisher
+from avisabus.adapters.outbound.persistence.sqlite_alerts import SqliteAlertRepository
 from avisabus.adapters.outbound.persistence.sqlite_network import SqliteNetworkRepository
+from avisabus.adapters.outbound.rate_limit.in_memory import InMemoryRateLimiter
 from avisabus.adapters.outbound.security.hmac_device_hasher import HmacDeviceHasher
 from avisabus.adapters.outbound.security.hmac_stop_token import HmacStopTokenSigner
+from avisabus.application.create_alert import CreateAlert
 from avisabus.application.direction_overrides import validate_direction_overrides
 from avisabus.application.get_shape import GetShape
 from avisabus.application.get_stop import GetStop
 from avisabus.application.get_stop_arrivals import GetStopArrivals
 from avisabus.application.get_vehicle_position import GetVehiclePosition
+from avisabus.application.list_my_alerts import ListMyAlerts
 from avisabus.application.scheduled_arrivals import ScheduledArrivalsProvider
 from avisabus.config import Settings
 from avisabus.domain.ports.arrivals import ArrivalsSource
@@ -40,6 +46,7 @@ from avisabus.domain.services.direction_resolver import DEFAULT_ALIASES
 ARRIVALS_LOGGER = "avisabus.arrivals"
 POSITION_LOGGER = "avisabus.position"
 WS_LOGGER = "avisabus.ws"
+ALERTS_LOGGER = "avisabus.alerts"
 
 
 @dataclass(frozen=True, slots=True)
@@ -84,6 +91,7 @@ def build_stop_use_cases(
             aliases=DEFAULT_ALIASES,
             direction_overrides=overrides,
             min_score=settings.direction_min_score,
+            alert_max_lead=timedelta(minutes=settings.alert_max_lead_min),
             logger=logger,
         ),
         direction_overrides=overrides,
@@ -127,8 +135,9 @@ def build_realtime(
     snapshots: PassengerSnapshotProvider | None = None,
     sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
 ) -> Realtime:
-    """`snapshots` defaults to `EmptySnapshotProvider` until `alert_create` provides the active
-    alerts. The device hash key derives from the stop token secret (no new variable)."""
+    """`snapshots` defaults to `EmptySnapshotProvider`; the application passes the active alerts
+    (`build_alert_snapshots`). The device hash key derives from the stop token secret (no new
+    variable)."""
     logger = structlog.get_logger(WS_LOGGER)
     publisher = InMemoryEventPublisher(queue_size=settings.event_queue_size)
     hasher = HmacDeviceHasher(settings.stop_token_secret_bytes())
@@ -150,3 +159,45 @@ def build_realtime(
         sleep=sleep,
     )
     return Realtime(publisher=publisher, hasher=hasher, registry=registry, passenger=passenger)
+
+
+@dataclass(frozen=True, slots=True)
+class AlertUseCases:
+    """Use cases of the alert endpoints (alert_create design §2)."""
+
+    create_alert: CreateAlert
+    list_my_alerts: ListMyAlerts
+
+
+def build_alert_use_cases(
+    settings: Settings,
+    engine: Engine,
+    clock: Clock,
+    stops: StopUseCases,
+    publisher: EventPublisher,
+) -> AlertUseCases:
+    """The bus is validated with the stops' `GetStopArrivals`, so it shares its SAE cache
+    (AC-03); the events go through the real-time publisher. Block 3 has no drivers."""
+    window = timedelta(minutes=settings.alert_rate_window_min)
+    alerts = SqliteAlertRepository(engine)
+    return AlertUseCases(
+        create_alert=CreateAlert(
+            stop_arrivals=stops.get_stop_arrivals,
+            network=SqliteNetworkRepository(engine),
+            alerts=alerts,
+            drivers=NoDriverDirectory(),
+            device_limiter=InMemoryRateLimiter(limit=settings.alert_rate_device, window=window),
+            ip_limiter=InMemoryRateLimiter(limit=settings.alert_rate_ip, window=window),
+            events=publisher,
+            clock=clock,
+            max_age=timedelta(minutes=settings.alert_max_age_min),
+            logger=structlog.get_logger(ALERTS_LOGGER),
+        ),
+        list_my_alerts=ListMyAlerts(alerts),
+    )
+
+
+def build_alert_snapshots(engine: Engine) -> AlertSnapshotProvider:
+    """`alerts.snapshot` of `/ws/passenger` with the active alerts of the device (AC-11). Built
+    before `build_realtime`, which needs it, while `build_alert_use_cases` needs its publisher."""
+    return AlertSnapshotProvider(ListMyAlerts(SqliteAlertRepository(engine)))

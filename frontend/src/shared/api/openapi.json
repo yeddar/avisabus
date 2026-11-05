@@ -1,6 +1,104 @@
 {
   "components": {
     "schemas": {
+      "AlertSchema": {
+        "examples": [
+          {
+            "alert_id": "6f1c0d6e-3b9a-4c2e-9f4d-2a7b8c9d0e1f",
+            "created_at": "2026-11-04T07:40:00Z",
+            "destination": "Passeig Marítim - Hospital Malva-rosa",
+            "direction_id": 0,
+            "expires_at": "2026-11-04T08:10:00Z",
+            "line": "93",
+            "needs": ["RAMP", "VISUAL"],
+            "service_date": "2026-11-04",
+            "status": "PENDING_DRIVER",
+            "stop_id": "508",
+            "stop_name": "Parc de l'Oest - Enguera",
+            "trip_id": "38_1054_561_2229_487_4_001"
+          }
+        ],
+        "properties": {
+          "alert_id": {
+            "description": "Random UUID v4.",
+            "title": "Alert Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "destination": {
+            "description": "Destination of the chosen arrival.",
+            "title": "Destination",
+            "type": "string"
+          },
+          "direction_id": {
+            "title": "Direction Id",
+            "type": "integer"
+          },
+          "expires_at": {
+            "description": "created_at + 30 min.",
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "line": {
+            "title": "Line",
+            "type": "string"
+          },
+          "needs": {
+            "description": "In canonical order: RAMP, EXTRA_TIME, SEAT, VISUAL.",
+            "items": {
+              "$ref": "#/components/schemas/Need"
+            },
+            "title": "Needs",
+            "type": "array"
+          },
+          "service_date": {
+            "format": "date",
+            "title": "Service Date",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AlertStatus"
+          },
+          "stop_id": {
+            "title": "Stop Id",
+            "type": "string"
+          },
+          "stop_name": {
+            "title": "Stop Name",
+            "type": "string"
+          },
+          "trip_id": {
+            "title": "Trip Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "alert_id",
+          "stop_id",
+          "stop_name",
+          "line",
+          "direction_id",
+          "destination",
+          "trip_id",
+          "service_date",
+          "needs",
+          "status",
+          "created_at",
+          "expires_at"
+        ],
+        "title": "AlertSchema",
+        "type": "object"
+      },
+      "AlertStatus": {
+        "enum": ["PENDING_DRIVER", "DELIVERED"],
+        "title": "AlertStatus",
+        "type": "string"
+      },
       "ArrivalSchema": {
         "properties": {
           "arrival_at": {
@@ -125,6 +223,68 @@
         "title": "ArrivalSchema",
         "type": "object"
       },
+      "CreateAlertRequest": {
+        "examples": [
+          {
+            "direction_id": 0,
+            "line": "93",
+            "needs": ["RAMP", "VISUAL"],
+            "service_date": "2026-11-04",
+            "stop_id": "508",
+            "token": "q8Zt3kLm0PaX1vB7cD2eFg",
+            "trip_id": "38_1054_561_2229_487_4_001"
+          }
+        ],
+        "properties": {
+          "direction_id": {
+            "title": "Direction Id",
+            "type": "integer"
+          },
+          "line": {
+            "title": "Line",
+            "type": "string"
+          },
+          "needs": {
+            "description": "Distinct needs, possibly none (AC-06).",
+            "items": {
+              "$ref": "#/components/schemas/Need"
+            },
+            "title": "Needs",
+            "type": "array"
+          },
+          "service_date": {
+            "description": "`vehicle.service_date` of the chosen arrival.",
+            "format": "date",
+            "title": "Service Date",
+            "type": "string"
+          },
+          "stop_id": {
+            "title": "Stop Id",
+            "type": "string"
+          },
+          "token": {
+            "description": "Signed stop token of the QR (22 characters).",
+            "title": "Token",
+            "type": "string"
+          },
+          "trip_id": {
+            "description": "`vehicle.trip_id` of the chosen arrival.",
+            "title": "Trip Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "stop_id",
+          "token",
+          "line",
+          "direction_id",
+          "trip_id",
+          "service_date",
+          "needs"
+        ],
+        "title": "CreateAlertRequest",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -153,6 +313,47 @@
         "required": ["status", "version"],
         "title": "HealthResponse",
         "type": "object"
+      },
+      "MyAlertsResponse": {
+        "examples": [
+          {
+            "alerts": [
+              {
+                "alert_id": "6f1c0d6e-3b9a-4c2e-9f4d-2a7b8c9d0e1f",
+                "created_at": "2026-11-04T07:40:00Z",
+                "destination": "Passeig Marítim - Hospital Malva-rosa",
+                "direction_id": 0,
+                "expires_at": "2026-11-04T08:10:00Z",
+                "line": "93",
+                "needs": ["RAMP", "VISUAL"],
+                "service_date": "2026-11-04",
+                "status": "PENDING_DRIVER",
+                "stop_id": "508",
+                "stop_name": "Parc de l'Oest - Enguera",
+                "trip_id": "38_1054_561_2229_487_4_001"
+              }
+            ]
+          }
+        ],
+        "properties": {
+          "alerts": {
+            "description": "Active alerts of the device, by created_at.",
+            "items": {
+              "$ref": "#/components/schemas/AlertSchema"
+            },
+            "title": "Alerts",
+            "type": "array"
+          }
+        },
+        "required": ["alerts"],
+        "title": "MyAlertsResponse",
+        "type": "object"
+      },
+      "Need": {
+        "description": "Accessibility need of the passenger (RF-17 v1.1). Only stored inside its alert (RNF-06).",
+        "enum": ["RAMP", "EXTRA_TIME", "SEAT", "VISUAL"],
+        "title": "Need",
+        "type": "string"
       },
       "NextStopSchema": {
         "properties": {
@@ -770,6 +971,223 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/alerts": {
+      "post": {
+        "operationId": "create_alert_api_v1_alerts_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-device-id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Device-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAlertRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertSchema"
+                }
+              }
+            },
+            "description": "The device already had an active alert at that stop and line: that one, unchanged."
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertSchema"
+                }
+              }
+            },
+            "description": "Alert created."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 400,
+                  "title": "Bad Request",
+                  "type": "https://avisabus/problems/invalid-device-id"
+                }
+              }
+            },
+            "description": "Missing or invalid X-Device-Id header."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 404,
+                  "title": "Not Found",
+                  "type": "https://avisabus/problems/stop-not-found"
+                }
+              }
+            },
+            "description": "Missing or invalid token, or unknown stop (same body in every case)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 422,
+                  "title": "Unprocessable Entity",
+                  "type": "https://avisabus/problems/bus-not-requestable"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              }
+            },
+            "description": "The bus is not among the stop's arrivals that admit a request (problem+json), or the body is invalid (FastAPI validation error, application/json)."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 429,
+                  "title": "Too Many Requests",
+                  "type": "https://avisabus/problems/rate-limited"
+                }
+              }
+            },
+            "description": "Too many requests from the device or the IP address.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before trying again.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 503,
+                  "title": "Service Unavailable",
+                  "type": "https://avisabus/problems/network-unavailable"
+                }
+              }
+            },
+            "description": "No active GTFS feed."
+          }
+        },
+        "summary": "Create Alert",
+        "tags": ["alerts"]
+      }
+    },
+    "/api/v1/alerts/mine": {
+      "get": {
+        "operationId": "my_alerts_api_v1_alerts_mine_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-device-id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Device-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyAlertsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 400,
+                  "title": "Bad Request",
+                  "type": "https://avisabus/problems/invalid-device-id"
+                }
+              }
+            },
+            "description": "Missing or invalid X-Device-Id header."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "My Alerts",
+        "tags": ["alerts"]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "health_api_v1_health_get",

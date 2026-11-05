@@ -95,6 +95,7 @@ class World:
             "aliases": DEFAULT_ALIASES,
             "direction_overrides": {},
             "min_score": 0.2,
+            "alert_max_lead": timedelta(minutes=30),
             "logger": self.logger,
         }
         params.update(overrides)
@@ -249,13 +250,15 @@ async def test_duplicate_sae_entries_are_kept_and_get_different_trips(world: Wor
 
 
 @pytest.mark.spec("stop_arrivals_api.AC-11")
+@pytest.mark.spec("alert_create.AC-01")
 async def test_arrival_without_trip_within_tolerance(world: World) -> None:
     world.source.arrivals = (sae("70", "Alboraia", 20),)  # trips at +3 and +40 min
     result = await world.execute()
     (arrival,) = result.arrivals
     assert arrival.vehicle is None
     assert arrival.occupancy is None
-    assert arrival.can_alert is True
+    # v1.6: without a paired trip there is no bus to send the alert to (alert_create.AC-01).
+    assert arrival.can_alert is False
     assert arrival.direction_id == 1
     assert world.logger.named("arrivals.trip_unmatched") == [
         {"stop_id": "508", "line": "70", "direction_id": 1}
@@ -386,6 +389,7 @@ async def test_sae_without_arrivals_is_an_empty_realtime_answer(world: World) ->
 
 @pytest.mark.spec("stop_arrivals_api.AC-13")
 @pytest.mark.spec("stop_arrivals_api.AC-21")
+@pytest.mark.spec("alert_create.AC-01")
 async def test_fallback_to_scheduled_arrivals_when_the_sae_is_unavailable(world: World) -> None:
     world.source.error = "timeout"
     result = await world.execute()
@@ -417,7 +421,9 @@ async def test_fallback_to_scheduled_arrivals_when_the_sae_is_unavailable(world:
     )
     assert result.arrivals[0].arrival_at == datetime(2026, 11, 2, 19, 50, 35, tzinfo=UTC)
     assert result.arrivals[0].destination == "Passeig Marítim - Hospital Malva-rosa"
-    assert all(a.can_alert and a.sae_destination is None for a in result.arrivals)
+    assert all(a.sae_destination is None for a in result.arrivals)
+    # v1.6 (alert_create.AC-01): the 70 at +40 min is too far ahead to be requested.
+    assert [a.can_alert for a in result.arrivals] == [True, True, True, False]
     assert world.logger.named("arrivals.fallback") == [{"stop_id": "508", "reason": "timeout"}]
     assert world.network.scheduled_queries == [("508", NOW, timedelta(minutes=90))]
 
@@ -438,6 +444,69 @@ async def test_fallback_without_scheduled_passages_is_empty(world: World) -> Non
     assert result.source is ArrivalSource.SCHEDULED
     assert result.arrivals == ()
     assert world.logger.named("arrivals.fallback") == [{"stop_id": "508", "reason": "network"}]
+
+
+# --- Which arrivals can be requested (alert_create.AC-01) ---
+
+
+@pytest.mark.spec("alert_create.AC-01")
+async def test_realtime_arrival_can_be_requested_up_to_the_max_lead(world: World) -> None:
+    world.network.add_passage("508", "70_c", "70", 1, "Alboraia", at(30), DAY)
+    world.source.arrivals = (sae("70", "Alboraia", 30), sae("70", "Alboraia", 31))
+    result = await world.execute()
+    assert [(a.minutes, a.vehicle, a.can_alert) for a in result.arrivals] == [
+        (30, VehicleView("70_c", DAY), True),
+        (31, VehicleView("70_b", DAY), False),
+    ]
+
+
+@pytest.mark.spec("alert_create.AC-01")
+async def test_max_lead_is_configurable(world: World) -> None:
+    world.source.arrivals = (sae("70", "Alboraia", 2), sae("93", "Pass. Marítim", 7))
+    result = await world.execute(alert_max_lead=timedelta(minutes=5))
+    assert [(a.line, a.vehicle is not None, a.can_alert) for a in result.arrivals] == [
+        ("70", True, True),
+        ("93", True, False),
+    ]
+
+
+@pytest.mark.spec("alert_create.AC-01")
+async def test_arrivals_without_direction_trip_or_network_cannot_be_requested(
+    world: World,
+) -> None:
+    world.network.add_headsign("508", "C1", 0, "Xàtiva - Institut Lluís Vives")
+    world.network.add_headsign("508", "C1", 1, "Blanqueria - Pare d'Òrfens")
+    world.source.arrivals = (
+        sae("C1", "Cntr.Històric", 4),  # in the network, direction unresolved
+        sae("70", "Alboraia", 20),  # direction resolved, no trip within the tolerance
+        sae("N4", "Est.del Nord", 6),  # outside the network
+        sae("93", "Pass. Marítim", 7),  # everything known, 7 min ahead
+    )
+    result = await world.execute()
+    assert [
+        (a.line, a.in_network, a.direction_id, a.vehicle is not None, a.can_alert)
+        for a in result.arrivals
+    ] == [
+        ("C1", True, None, False, False),
+        ("N4", False, None, False, False),
+        ("93", True, 0, True, True),
+        ("70", True, 1, False, False),
+    ]
+
+
+@pytest.mark.spec("alert_create.AC-01")
+@pytest.mark.parametrize(("offset_min", "can_alert"), [(10, True), (9, False)])
+async def test_scheduled_arrival_follows_the_same_rule(
+    world: World, offset_min: int, can_alert: bool
+) -> None:
+    # The 70_b passes at +40 min: 30 min after +10, 31 min after +9.
+    world.source.error = "timeout"
+    world.clock.set(at(offset_min))
+    result = await world.execute()
+    (seventy,) = [a for a in result.arrivals if a.vehicle == VehicleView("70_b", DAY)]
+    assert seventy.arrival_at - world.clock.now() == timedelta(minutes=40 - offset_min)
+    assert seventy.can_alert is can_alert
+    assert all(a.can_alert for a in result.arrivals if a is not seventy)
 
 
 # --- Errors ---

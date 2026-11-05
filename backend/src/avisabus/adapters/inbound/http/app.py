@@ -8,8 +8,15 @@ from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
 
 import avisabus
-from avisabus.adapters.inbound.http.container import PositionUseCases, Realtime, StopUseCases
+from avisabus.adapters.inbound.http.container import (
+    AlertUseCases,
+    PositionUseCases,
+    Realtime,
+    StopUseCases,
+)
 from avisabus.adapters.inbound.http.errors import register_error_handlers
+from avisabus.adapters.inbound.http.no_store import NoStoreMiddleware
+from avisabus.adapters.inbound.http.routes import alerts as alerts_routes
 from avisabus.adapters.inbound.http.routes import health
 from avisabus.adapters.inbound.http.routes import position as position_routes
 from avisabus.adapters.inbound.http.routes import shapes as shapes_routes
@@ -33,6 +40,7 @@ def create_app(
     stops: StopUseCases | None = None,
     positions: PositionUseCases | None = None,
     realtime: Realtime | None = None,
+    alerts: AlertUseCases | None = None,
     *,
     schema_only: bool = False,
 ) -> FastAPI:
@@ -41,7 +49,8 @@ def create_app(
     `positions` adds the position and shape endpoints (position_estimation); `realtime` adds
     `/ws/passenger` (without the API prefix) and runs its connection registry inside the
     lifespan, so open sockets are closed with `1001` when the application stops
-    (realtime_events).
+    (realtime_events); `alerts` adds the alert endpoints (alert_create), which need `realtime`
+    for the device header and the events, and answers them with `Cache-Control: no-store`.
 
     With `schema_only`, every router is registered without its dependencies, so the app can only
     describe itself (`openapi_document`); its endpoints must not be called."""
@@ -50,6 +59,8 @@ def create_app(
     app = FastAPI(title="AvisaBus", version=avisabus.__version__, lifespan=lifespan)
     app.state.settings = settings
     app.add_middleware(GZipMiddleware, minimum_size=GZIP_MINIMUM_SIZE)
+    if alerts is not None:
+        app.add_middleware(NoStoreMiddleware, path=f"{API_PREFIX}/alerts")
     register_error_handlers(app)
     app.include_router(health.router, prefix=API_PREFIX)
     if stops is not None:
@@ -65,6 +76,10 @@ def create_app(
         app.state.device_hasher = realtime.hasher
         app.state.passenger_socket = realtime.passenger
         app.include_router(passenger_socket.router)  # no /api/v1 (docs/architecture.md §7)
+    if alerts is not None:
+        app.state.alert_use_cases = alerts
+    if alerts is not None or schema_only:
+        app.include_router(alerts_routes.router, prefix=API_PREFIX)
     return app
 
 

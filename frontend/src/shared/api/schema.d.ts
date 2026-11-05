@@ -4,6 +4,40 @@
  */
 
 export interface paths {
+  '/api/v1/alerts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create Alert */
+    post: operations['create_alert_api_v1_alerts_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/alerts/mine': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** My Alerts */
+    get: operations['my_alerts_api_v1_alerts_mine_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/health': {
     parameters: {
       query?: never;
@@ -93,6 +127,75 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    /**
+     * AlertSchema
+     * @example {
+     *       "alert_id": "6f1c0d6e-3b9a-4c2e-9f4d-2a7b8c9d0e1f",
+     *       "created_at": "2026-11-04T07:40:00Z",
+     *       "destination": "Passeig Marítim - Hospital Malva-rosa",
+     *       "direction_id": 0,
+     *       "expires_at": "2026-11-04T08:10:00Z",
+     *       "line": "93",
+     *       "needs": [
+     *         "RAMP",
+     *         "VISUAL"
+     *       ],
+     *       "service_date": "2026-11-04",
+     *       "status": "PENDING_DRIVER",
+     *       "stop_id": "508",
+     *       "stop_name": "Parc de l'Oest - Enguera",
+     *       "trip_id": "38_1054_561_2229_487_4_001"
+     *     }
+     */
+    AlertSchema: {
+      /**
+       * Alert Id
+       * @description Random UUID v4.
+       */
+      alert_id: string;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /**
+       * Destination
+       * @description Destination of the chosen arrival.
+       */
+      destination: string;
+      /** Direction Id */
+      direction_id: number;
+      /**
+       * Expires At
+       * Format: date-time
+       * @description created_at + 30 min.
+       */
+      expires_at: string;
+      /** Line */
+      line: string;
+      /**
+       * Needs
+       * @description In canonical order: RAMP, EXTRA_TIME, SEAT, VISUAL.
+       */
+      needs: components['schemas']['Need'][];
+      /**
+       * Service Date
+       * Format: date
+       */
+      service_date: string;
+      status: components['schemas']['AlertStatus'];
+      /** Stop Id */
+      stop_id: string;
+      /** Stop Name */
+      stop_name: string;
+      /** Trip Id */
+      trip_id: string;
+    };
+    /**
+     * AlertStatus
+     * @enum {string}
+     */
+    AlertStatus: 'PENDING_DRIVER' | 'DELIVERED';
     /** ArrivalSchema */
     ArrivalSchema: {
       /**
@@ -132,6 +235,50 @@ export interface components {
       sae_destination: string | null;
       vehicle: components['schemas']['VehicleSchema'] | null;
     };
+    /**
+     * CreateAlertRequest
+     * @example {
+     *       "direction_id": 0,
+     *       "line": "93",
+     *       "needs": [
+     *         "RAMP",
+     *         "VISUAL"
+     *       ],
+     *       "service_date": "2026-11-04",
+     *       "stop_id": "508",
+     *       "token": "q8Zt3kLm0PaX1vB7cD2eFg",
+     *       "trip_id": "38_1054_561_2229_487_4_001"
+     *     }
+     */
+    CreateAlertRequest: {
+      /** Direction Id */
+      direction_id: number;
+      /** Line */
+      line: string;
+      /**
+       * Needs
+       * @description Distinct needs, possibly none (AC-06).
+       */
+      needs: components['schemas']['Need'][];
+      /**
+       * Service Date
+       * Format: date
+       * @description `vehicle.service_date` of the chosen arrival.
+       */
+      service_date: string;
+      /** Stop Id */
+      stop_id: string;
+      /**
+       * Token
+       * @description Signed stop token of the QR (22 characters).
+       */
+      token: string;
+      /**
+       * Trip Id
+       * @description `vehicle.trip_id` of the chosen arrival.
+       */
+      trip_id: string;
+    };
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
@@ -147,6 +294,43 @@ export interface components {
       /** Version */
       version: string;
     };
+    /**
+     * MyAlertsResponse
+     * @example {
+     *       "alerts": [
+     *         {
+     *           "alert_id": "6f1c0d6e-3b9a-4c2e-9f4d-2a7b8c9d0e1f",
+     *           "created_at": "2026-11-04T07:40:00Z",
+     *           "destination": "Passeig Marítim - Hospital Malva-rosa",
+     *           "direction_id": 0,
+     *           "expires_at": "2026-11-04T08:10:00Z",
+     *           "line": "93",
+     *           "needs": [
+     *             "RAMP",
+     *             "VISUAL"
+     *           ],
+     *           "service_date": "2026-11-04",
+     *           "status": "PENDING_DRIVER",
+     *           "stop_id": "508",
+     *           "stop_name": "Parc de l'Oest - Enguera",
+     *           "trip_id": "38_1054_561_2229_487_4_001"
+     *         }
+     *       ]
+     *     }
+     */
+    MyAlertsResponse: {
+      /**
+       * Alerts
+       * @description Active alerts of the device, by created_at.
+       */
+      alerts: components['schemas']['AlertSchema'][];
+    };
+    /**
+     * Need
+     * @description Accessibility need of the passenger (RF-17 v1.1). Only stored inside its alert (RNF-06).
+     * @enum {string}
+     */
+    Need: 'RAMP' | 'EXTRA_TIME' | 'SEAT' | 'VISUAL';
     /** NextStopSchema */
     NextStopSchema: {
       /** Name */
@@ -542,6 +726,176 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  create_alert_api_v1_alerts_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        'x-device-id'?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateAlertRequest'];
+      };
+    };
+    responses: {
+      /** @description The device already had an active alert at that stop and line: that one, unchanged. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AlertSchema'];
+        };
+      };
+      /** @description Alert created. */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AlertSchema'];
+        };
+      };
+      /** @description Missing or invalid X-Device-Id header. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProblemSchema'];
+          /**
+           * @example {
+           *       "status": 400,
+           *       "title": "Bad Request",
+           *       "type": "https://avisabus/problems/invalid-device-id"
+           *     }
+           */
+          'application/problem+json': unknown;
+        };
+      };
+      /** @description Missing or invalid token, or unknown stop (same body in every case). */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProblemSchema'];
+          /**
+           * @example {
+           *       "status": 404,
+           *       "title": "Not Found",
+           *       "type": "https://avisabus/problems/stop-not-found"
+           *     }
+           */
+          'application/problem+json': unknown;
+        };
+      };
+      /** @description The bus is not among the stop's arrivals that admit a request (problem+json), or the body is invalid (FastAPI validation error, application/json). */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+          /**
+           * @example {
+           *       "status": 422,
+           *       "title": "Unprocessable Entity",
+           *       "type": "https://avisabus/problems/bus-not-requestable"
+           *     }
+           */
+          'application/problem+json': components['schemas']['ProblemSchema'];
+        };
+      };
+      /** @description Too many requests from the device or the IP address. */
+      429: {
+        headers: {
+          /** @description Seconds to wait before trying again. */
+          'Retry-After'?: number;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProblemSchema'];
+          /**
+           * @example {
+           *       "status": 429,
+           *       "title": "Too Many Requests",
+           *       "type": "https://avisabus/problems/rate-limited"
+           *     }
+           */
+          'application/problem+json': unknown;
+        };
+      };
+      /** @description No active GTFS feed. */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProblemSchema'];
+          /**
+           * @example {
+           *       "status": 503,
+           *       "title": "Service Unavailable",
+           *       "type": "https://avisabus/problems/network-unavailable"
+           *     }
+           */
+          'application/problem+json': unknown;
+        };
+      };
+    };
+  };
+  my_alerts_api_v1_alerts_mine_get: {
+    parameters: {
+      query?: never;
+      header?: {
+        'x-device-id'?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MyAlertsResponse'];
+        };
+      };
+      /** @description Missing or invalid X-Device-Id header. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProblemSchema'];
+          /**
+           * @example {
+           *       "status": 400,
+           *       "title": "Bad Request",
+           *       "type": "https://avisabus/problems/invalid-device-id"
+           *     }
+           */
+          'application/problem+json': unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
   health_api_v1_health_get: {
     parameters: {
       query?: never;

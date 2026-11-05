@@ -95,3 +95,22 @@ class SubscriptionOverflowError(DomainError):
 
     def __init__(self) -> None:
         super().__init__("subscription overflowed")
+
+
+class BusNotRequestableError(DomainError):
+    """No arrival of the stop matches the requested bus (line, direction, trip and service day)
+    with `can_alert` (alert_create AC-03)."""
+
+    def __init__(self) -> None:
+        super().__init__("bus not requestable")
+
+
+class RateLimitedError(DomainError):
+    """Too many alert requests from the device or the IP address (alert_create AC-08).
+
+    `retry_after_s` is the value of `Retry-After`. Neither the key nor the address is kept.
+    """
+
+    def __init__(self, retry_after_s: int) -> None:
+        self.retry_after_s = retry_after_s
+        super().__init__("rate limited")
