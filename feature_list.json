@@ -347,7 +347,7 @@
       "order": 15,
       "block": 3,
       "title": "UI de aviso: crear, cancelar, estado y perfil de accesibilidad local",
-      "status": "in_review",
+      "status": "done",
       "depends_on": [
         "passenger_stop_view",
         "alert_create",
@@ -372,7 +372,7 @@
       "spec": "specs/passenger_alert_ui/",
       "needs_exploration": false,
       "review_cycles": 0,
-      "passes": false
+      "passes": true
     },
     {
       "id": "driver_codes_cli",

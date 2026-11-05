@@ -422,3 +422,7 @@
 ## 2026-11-05 · passenger_alert_ui · implementing → in_review
 - T-01…T-08 (interrumpido una vez por el límite de uso y reanudado); verify --e2e en verde (555 Vitest,
   126 e2e, JS inicial 146,92 KB gzip). Decisiones D-1…D-12 a confirmar por el reviewer.
+
+## 2026-11-05 · passenger_alert_ui · in_review → done · bloque 3 completo
+- Revisión ciclo 1: APPROVED (25/28 mutantes; los 3 restantes son huecos de test con código correcto).
+  PR sin fusionar, apilada sobre la #43. Bloque 3: 5/5 en `done` → CP-6.
