@@ -1,19 +1,21 @@
 """FastAPI application factory."""
 
-from collections.abc import Callable
-from contextlib import AbstractAsyncContextManager
+from collections.abc import AsyncIterator, Callable
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
 
 import avisabus
-from avisabus.adapters.inbound.http.container import PositionUseCases, StopUseCases
+from avisabus.adapters.inbound.http.container import PositionUseCases, Realtime, StopUseCases
 from avisabus.adapters.inbound.http.errors import register_error_handlers
 from avisabus.adapters.inbound.http.routes import health
 from avisabus.adapters.inbound.http.routes import position as position_routes
 from avisabus.adapters.inbound.http.routes import shapes as shapes_routes
 from avisabus.adapters.inbound.http.routes import stops as stops_routes
+from avisabus.adapters.inbound.ws import passenger as passenger_socket
+from avisabus.adapters.inbound.ws.connections import ConnectionRegistry
 from avisabus.config import Settings
 
 API_PREFIX = "/api/v1"
@@ -30,15 +32,21 @@ def create_app(
     lifespan: Lifespan | None = None,
     stops: StopUseCases | None = None,
     positions: PositionUseCases | None = None,
+    realtime: Realtime | None = None,
     *,
     schema_only: bool = False,
 ) -> FastAPI:
     """`lifespan` starts and stops the background work wired in `avisabus.main`; `stops` adds
     the stop endpoints (stop_arrivals_api), which need the network and the arrivals source;
-    `positions` adds the position and shape endpoints (position_estimation).
+    `positions` adds the position and shape endpoints (position_estimation); `realtime` adds
+    `/ws/passenger` (without the API prefix) and runs its connection registry inside the
+    lifespan, so open sockets are closed with `1001` when the application stops
+    (realtime_events).
 
     With `schema_only`, every router is registered without its dependencies, so the app can only
     describe itself (`openapi_document`); its endpoints must not be called."""
+    if realtime is not None:
+        lifespan = _with_connections(lifespan, realtime.registry)
     app = FastAPI(title="AvisaBus", version=avisabus.__version__, lifespan=lifespan)
     app.state.settings = settings
     app.add_middleware(GZipMiddleware, minimum_size=GZIP_MINIMUM_SIZE)
@@ -53,7 +61,26 @@ def create_app(
     if positions is not None or schema_only:
         app.include_router(position_routes.router, prefix=API_PREFIX)
         app.include_router(shapes_routes.router, prefix=API_PREFIX)
+    if realtime is not None:
+        app.state.device_hasher = realtime.hasher
+        app.state.passenger_socket = realtime.passenger
+        app.include_router(passenger_socket.router)  # no /api/v1 (docs/architecture.md §7)
     return app
+
+
+def _with_connections(lifespan: Lifespan | None, registry: ConnectionRegistry) -> Lifespan:
+    """The registry runs inside the given lifespan: its sockets close first on stop."""
+
+    @asynccontextmanager
+    async def combined(app: FastAPI) -> AsyncIterator[None]:
+        if lifespan is None:
+            async with registry.running():
+                yield
+            return
+        async with lifespan(app), registry.running():
+            yield
+
+    return combined
 
 
 def openapi_document() -> dict[str, Any]:

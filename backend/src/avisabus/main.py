@@ -15,6 +15,7 @@ from sqlalchemy import Engine
 from avisabus.adapters.inbound.http.app import create_app
 from avisabus.adapters.inbound.http.container import (
     build_position_use_cases,
+    build_realtime,
     build_stop_use_cases,
 )
 from avisabus.adapters.outbound.clock import SystemClock
@@ -68,6 +69,9 @@ stop_use_cases = build_stop_use_cases(
 )
 # The position shares `GetStopArrivals` (and its SAE cache) with the stop endpoints.
 position_use_cases = build_position_use_cases(stop_use_cases, engine, clock)
+# Event publisher, device hasher and `/ws/passenger`; the connection registry runs in the
+# lifespan that `create_app` composes with this one (realtime_events).
+realtime = build_realtime(settings, clock)
 
 
 @asynccontextmanager
@@ -83,4 +87,10 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         await http_client.aclose()
 
 
-app = create_app(settings, lifespan=lifespan, stops=stop_use_cases, positions=position_use_cases)
+app = create_app(
+    settings,
+    lifespan=lifespan,
+    stops=stop_use_cases,
+    positions=position_use_cases,
+    realtime=realtime,
+)

@@ -58,6 +58,10 @@ class Settings(BaseSettings):
     scheduled_per_direction: int = Field(default=2, ge=1)
     direction_overrides_file: str = ""
     direction_min_score: float = Field(default=0.2, ge=0, le=1)
+    ws_max_connections: int = Field(default=500, ge=1)
+    ws_ping_interval_s: float = Field(default=25, gt=0)
+    ws_hello_timeout_s: float = Field(default=5, gt=0)
+    event_queue_size: int = Field(default=100, ge=1)
 
     @model_validator(mode="after")
     def _check_occupancy(self) -> Self:

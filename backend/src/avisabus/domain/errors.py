@@ -77,3 +77,21 @@ class PositionNotEstimableError(DomainError, ValueError):
     def __init__(self, reason: str) -> None:
         self.reason = reason
         super().__init__(f"position not estimable ({reason})")
+
+
+class InvalidDeviceIdError(DomainError):
+    """The device identifier is not a canonical UUID v4 (realtime_events AC-04).
+
+    The rejected value is deliberately not kept: it could be a real identifier (RNF-06).
+    """
+
+    def __init__(self) -> None:
+        super().__init__("invalid device id")
+
+
+class SubscriptionOverflowError(DomainError):
+    """The queue of an event subscription filled up and it stopped receiving events
+    (realtime_events AC-02): the reader must drop it and start over with a fresh snapshot."""
+
+    def __init__(self) -> None:
+        super().__init__("subscription overflowed")

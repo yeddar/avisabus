@@ -10,6 +10,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from avisabus.domain.errors import (
+    InvalidDeviceIdError,
     LineNotAtStopError,
     NoActiveFeedError,
     ShapeNotFoundError,
@@ -22,6 +23,7 @@ STOP_NOT_FOUND_TYPE = "https://avisabus/problems/stop-not-found"
 NETWORK_UNAVAILABLE_TYPE = "https://avisabus/problems/network-unavailable"
 SHAPE_NOT_FOUND_TYPE = "https://avisabus/problems/shape-not-found"
 LINE_NOT_AT_STOP_TYPE = "https://avisabus/problems/line-not-at-stop"
+INVALID_DEVICE_ID_TYPE = "https://avisabus/problems/invalid-device-id"
 
 _logger = structlog.get_logger(__name__)
 
@@ -66,7 +68,13 @@ async def handle_line_not_at_stop(_request: Request, _exc: Exception) -> JSONRes
     )
 
 
+async def handle_invalid_device_id(_request: Request, _exc: Exception) -> JSONResponse:
+    """realtime_events AC-04: missing or invalid `X-Device-Id`. The value is never echoed."""
+    return problem_response(HTTPStatus.BAD_REQUEST, INVALID_DEVICE_ID_TYPE)
+
+
 def register_error_handlers(app: FastAPI) -> None:
+    app.add_exception_handler(InvalidDeviceIdError, handle_invalid_device_id)
     app.add_exception_handler(StopNotFoundError, handle_stop_not_found)
     app.add_exception_handler(NoActiveFeedError, handle_no_active_feed)
     app.add_exception_handler(ShapeNotFoundError, handle_shape_not_found)

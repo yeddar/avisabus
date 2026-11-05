@@ -368,3 +368,19 @@
 - La persona aprueba la PR #37: `realtime_events`, `alert_create`, `alert_cancel`, `alert_expiry`
   y `passenger_alert_ui` v1.0, `stop_arrivals_api` 1.6, ADR-016 y los cambios de `docs/`.
   Decisiones: solicitud al autobús elegido, necesidad `VISUAL` y confirmación siempre.
+
+## 2026-11-04 · PR #35, #36 y #37 fusionadas · bloque 3 · realtime_events · spec_approved → implementing
+- Specs del bloque 3 aprobadas (CP-1, PR #37). Se implementa por orden con PR por feature.
+
+## 2026-11-04 · realtime_events · implementing → spec_blocked (CP-3)
+- T-01…T-05 hechas, verify en verde. AC-11: con uvicorn el cliente recibe `1012` (no `1001`) al apagar.
+  La persona elige la opción (c): AC-11 admite `1001` o `1012`. Spec-writer para la v1.1.
+
+- La v1.1 la aporta la persona en la PR #38; el borrador del spec-writer (PR #39) se cierra sin fusionar.
+
+## 2026-11-04 · realtime_events · spec_blocked → spec_approved (v1.1, PR #38) → in_review
+- Sin cambios de código: la implementación ya cumple AC-11 v1.1. Rama actualizada con `develop`.
+
+## 2026-11-04 · realtime_events · in_review → done
+- Revisión ciclo 1 (v1.1): APPROVED (28/33 mutantes detectados; los 5 restantes tocan una sola capa
+  redundante del filtro de logs). PR sin fusionar.
