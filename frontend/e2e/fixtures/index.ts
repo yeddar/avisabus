@@ -7,14 +7,19 @@
  * the real backend over `gtfs_mini` and the `stop_508_peak` replay (line 93, direction 0, shape
  * 994_488_2271) with the dates moved to 2026-11-04 08:40 in València; `position-not-started` and
  * `position-no-arrival` are derived from `position-en-route`.
+ *
+ * Alert (passenger_alert_ui): the example of specs/alert_create/design.md §3 for the 93 bus of
+ * `arrivals-realtime` that arrives in 4 min (trip 12345).
  */
 import type {
+  Alert,
   PositionResponse,
   Problem,
   ShapeResponse,
   StopArrivalsResponse,
   StopResponse,
 } from '../../src/shared/api/types';
+import alert93 from './alert-93.json' with { type: 'json' };
 import arrivalsEmpty from './arrivals-empty.json' with { type: 'json' };
 import arrivalsRealtime from './arrivals-realtime.json' with { type: 'json' };
 import arrivalsScheduled from './arrivals-scheduled.json' with { type: 'json' };
@@ -49,3 +54,4 @@ export const POSITION_EN_ROUTE = typed<PositionResponse>(positionEnRoute);
 export const POSITION_NOT_STARTED = typed<PositionResponse>(positionNotStarted);
 export const POSITION_NO_ARRIVAL = typed<PositionResponse>(positionNoArrival);
 export const SHAPE_93 = typed<ShapeResponse>(shape93);
+export const ALERT_93 = typed<Alert>(alert93);

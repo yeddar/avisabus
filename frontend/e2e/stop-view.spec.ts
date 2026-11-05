@@ -72,6 +72,8 @@ type Reply = { status: number; body: unknown };
  */
 async function mockApi(page: Page, arrivals: { reply: Reply }) {
   const unexpected: string[] = [];
+  // The stop view opens /ws/passenger (passenger_alert_ui): a silent simulated socket, no network.
+  await page.routeWebSocket('**/ws/passenger', () => {});
   await page.route('**/api/v1/**', async (route) => {
     const url = new URL(route.request().url());
     let reply: Reply;

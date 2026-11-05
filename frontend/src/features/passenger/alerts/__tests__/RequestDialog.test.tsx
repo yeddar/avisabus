@@ -178,6 +178,27 @@ describe('RequestDialog', () => {
     expect(posts()).toHaveLength(0);
   });
 
+  it('[passenger_alert_ui.AC-04] reopening before the browser fires the close event of the previous dialog keeps the new one open', () => {
+    // Browsers fire `close` in a later task: "Solicitar" can be pressed again before it.
+    const pending: HTMLDialogElement[] = [];
+    vi.spyOn(HTMLDialogElement.prototype, 'close').mockImplementation(function (
+      this: HTMLDialogElement,
+    ) {
+      this.removeAttribute('open');
+      pending.push(this);
+    });
+    renderStop();
+    const { button, dialog } = openDialog();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Volver' }));
+    expect(dialog).not.toHaveAttribute('open');
+
+    fireEvent.click(button);
+    act(() => pending.forEach((stale) => stale.dispatchEvent(new Event('close'))));
+
+    expect(screen.getByRole('dialog')).toHaveAttribute('open');
+    expect(screen.getByRole('heading', { level: 2, name: LABEL_93 })).toBeInTheDocument();
+  });
+
   it('[passenger_alert_ui.AC-05] sends POST /alerts with the bus of the card and the needs checked, showing "Enviando…" meanwhile', async () => {
     setNeedsProfile(['RAMP']);
     const reply = deferred<FakeReply>();

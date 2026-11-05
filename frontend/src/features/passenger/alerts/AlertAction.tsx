@@ -34,8 +34,23 @@ export function AlertAction({
 }: AlertActionProps) {
   const { t } = useTranslation();
   const { requestButtonRef } = useAlerts();
-  const [open, setOpen] = useState(false);
+  // Each opening is a new dialog: browsers fire `close` in a later task, so "Solicitar" can be
+  // pressed again before the close of the previous dialog arrives; that late close must not
+  // close the new one.
+  const [session, setSession] = useState<number | null>(null);
+  const lastSession = useRef(0);
   const button = useRef<HTMLButtonElement | null>(null);
+
+  function open() {
+    lastSession.current += 1;
+    setSession(lastSession.current);
+  }
+
+  function dismiss(closed: number) {
+    if (closed !== lastSession.current) return;
+    setSession(null);
+    button.current?.focus();
+  }
   const key = arrivalTripKey(arrival);
   const { vehicle, direction_id: directionId } = arrival;
 
@@ -58,7 +73,7 @@ export function AlertAction({
           button.current = element;
           register(element);
         }}
-        onClick={() => setOpen(true)}
+        onClick={open}
         variant="primary"
         icon={<HandIcon className="size-[18px]" />}
         aria-label={t('alert.requestLabel', {
@@ -69,8 +84,9 @@ export function AlertAction({
       >
         {t('alert.request')}
       </Button>
-      {open && (
+      {session !== null && (
         <RequestDialog
+          key={session}
           arrival={arrival}
           request={{
             stop_id: stopId,
@@ -82,10 +98,7 @@ export function AlertAction({
           }}
           now={now}
           scheduled={scheduled}
-          onDismiss={() => {
-            setOpen(false);
-            button.current?.focus();
-          }}
+          onDismiss={() => dismiss(session)}
         />
       )}
     </>
