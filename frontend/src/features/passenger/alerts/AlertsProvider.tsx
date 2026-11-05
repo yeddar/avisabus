@@ -18,6 +18,7 @@ import type {
   CreateAlertRequest,
   MyAlertsResponse,
 } from '../../../shared/api/types';
+import { useOnline } from '../../../shared/hooks/useOnline';
 import { usePassengerSocket } from '../../../shared/ws/usePassengerSocket';
 import { useAnnounce } from '../../../shared/ui/Announcer';
 import { eventAnnouncement } from './alertMessages';
@@ -150,9 +151,12 @@ export function AlertsProvider({ children, fallbackFocus }: AlertsProviderProps)
     connectedNow.current = connected;
   }, [connected]);
 
-  // Fallback while the WebSocket is down: GET /alerts/mine every 30 s, as a snapshot.
+  // Fallback while the WebSocket is down: GET /alerts/mine every 30 s, as a snapshot. Not
+  // while the browser is offline: the view waits for the connection before calling the API
+  // (passenger_stop_view.AC-18), and the socket reconnects as soon as it is back.
+  const online = useOnline();
   useEffect(() => {
-    if (connected) return;
+    if (connected || !online) return;
     let active = true;
     const poll = async () => {
       const started = generation.current;
@@ -170,7 +174,7 @@ export function AlertsProvider({ children, fallbackFocus }: AlertsProviderProps)
       active = false;
       clearInterval(interval);
     };
-  }, [connected, handleMessage]);
+  }, [connected, online, handleMessage]);
 
   const create = useCallback(
     async (input: CreateAlertInput): Promise<CreateOutcome> => {

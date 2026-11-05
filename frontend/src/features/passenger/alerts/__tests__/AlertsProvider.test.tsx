@@ -145,6 +145,16 @@ describe('AlertsProvider', () => {
     expect(calls('/alerts/mine')).toBe(1);
   });
 
+  it('[passenger_alert_ui.AC-10] does not poll while the browser is offline', async () => {
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    const { calls } = api();
+    renderWithProviders(<Harness />);
+
+    await flush(3 * FALLBACK_POLL_MS);
+
+    expect(calls('/alerts/mine')).toBe(0);
+  });
+
   it('[passenger_alert_ui.AC-10] keeps the alerts when a poll fails', async () => {
     api();
     renderWithProviders(<Harness />);
