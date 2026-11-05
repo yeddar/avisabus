@@ -2,23 +2,33 @@
 
 > Fichero vivo: lo reescribe el orquestador al final de cada sesión.
 
-**Fecha:** 2026-11-04
-**Fase:** Implementación — Bloque 3 (solicitud de parada)
-**Feature en curso:** `alert_expiry` v1.0 — `done`, PR abierta. Siguiente: `passenger_alert_ui`.
+**Fecha:** 2026-11-05
+**Fase:** Fin del Bloque 3 — pendiente de fusión de PRs y CP-6
+**Feature en curso:** ninguna. Bloque 3 completo (5/5 `done`); PRs apiladas abiertas: #40 → #41 → #42 → #43
+→ `passenger_alert_ui`.
 
 ## Último paso
-`realtime_events` v1.1: APPROVED (ciclo 1); PR #40 abierta. `alert_create` → `implementing`.
+Bloque 3 implementado y revisado (cada feature APPROVED en su ciclo 1):
+- `realtime_events` v1.1: PR #40.
+- `alert_create`: PR #41 (sobre #40).
+- `alert_cancel`: PR #42 (sobre #41).
+- `alert_expiry` (con E-01): PR #43 (sobre #42).
+- `passenger_alert_ui`: PR abierta (sobre #43).
 
 ## Siguiente paso
-Bloque 3 por orden, cada una con reviewer nuevo y PR contra `develop` sin fusionar:
-1. `realtime_events`: APPROVED; PR #40.
-2. `alert_create`: APPROVED; PR #41 (apilada sobre la #40).
-3. `alert_cancel`: APPROVED; PR #42 (apilada sobre la #41).
-4. `alert_expiry`: APPROVED; PR abierta (apilada sobre la #42).
-5. `passenger_alert_ui`.
-Las ramas se apilan sobre la anterior mientras sus PRs no estén fusionadas.
+1. La persona fusiona las PRs **en orden** (#40, #41, #42, #43 y la de `passenger_alert_ui`).
+2. **CP-6 del bloque 3** (persona): textos es/ca (`progress/impl_passenger_alert_ui.md`), prueba con
+   lector de pantalla del diálogo de solicitud, anuncios y cancelación; decisiones de spec pendientes
+   (AC-11 (a) y LIM-02 de `alert_expiry`; H-06, H-07 de `passenger_alert_ui`); CP-4 pendientes de `docs/`.
 
 ## Pendiente para specs futuras
+- **passenger_alert_ui:** huecos de test (código correcto): H-01 ninguna llegada con `can_alert=false` y
+  vehículo y sentido (`ArrivalRow.tsx:113`); H-02 el test de AC-08 no comprueba el filtro por parada
+  (`StopPage.alerts.test.tsx:111`); H-03 solicitud cuyo viaje solo aparece fuera de red. H-04 `shared/`
+  importa el validador de la feature. Para la persona/spec: H-05 foco si llega `alert.registered` con el
+  diálogo abierto (cae en `body`); H-06 429 sin `Retry-After` (implementado: 10 min); H-07 título del
+  diálogo con headsign GTFS frente a design §7 (texto del SAE); H-08 "Ver en el mapa" en dos líneas en
+  móvil; H-09 pista de scroll en el diálogo en Pixel. D-1 recoger `GET` en `apiSend` (design §3).
 - **alert_expiry E-01:** ventana de 2 min confirmada (0 prematuros con 1–3 min; 4/6 pasos seguros).
   AC-02 debe ser inclusivo (paso de la 70 con exactamente 120 s). AC-11 (a) no comprueba nada tal como
   está escrita → propuesta de reformulación (o aserción extra en T-05). LIM-02 (docs): el emparejamiento
@@ -108,7 +118,7 @@ Las ramas se apilan sobre la anterior mientras sus PRs no estén fusionadas.
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Ninguno. CP-3 de `realtime_events` resuelto (PR #38, v1.1: AC-11 admite `1001` o `1012`).
+**CP-6 — fin del bloque 3** (tras fusionar las cinco PRs).
 
 ## Bloqueos
 Ninguno. 

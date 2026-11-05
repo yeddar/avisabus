@@ -100,3 +100,17 @@ describe('HomePage last stop', () => {
     );
   });
 });
+
+describe('HomePage needs link', () => {
+  it.each([
+    ['es', 'Mis necesidades'],
+    ['ca', 'Les meues necessitats'],
+  ] as const)(
+    '[passenger_alert_ui.AC-02] links to the "Mis necesidades" page (%s)',
+    (language, name) => {
+      renderHome(language);
+
+      expect(screen.getByRole('link', { name })).toHaveAttribute('href', '/necesidades');
+    },
+  );
+});

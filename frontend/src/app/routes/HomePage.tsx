@@ -34,6 +34,10 @@ export function HomePage() {
           </span>
         </LinkButton>
       )}
+      {/* Accessibility profile kept on the device (passenger_alert_ui.AC-02, CU-05). */}
+      <LinkButton to="/necesidades" className="self-start">
+        {t('home.needsLink')}
+      </LinkButton>
     </div>
   );
 }

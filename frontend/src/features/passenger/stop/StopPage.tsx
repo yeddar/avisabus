@@ -20,6 +20,8 @@ import { useAnnounce } from '../../../shared/ui/Announcer';
 import { Button } from '../../../shared/ui/Button';
 import { RefreshIcon } from '../../../shared/ui/icons/RefreshIcon';
 import { StatusNotice } from '../../../shared/ui/StatusNotice';
+import { AlertsProvider } from '../alerts/AlertsProvider';
+import { OrphanAlerts } from '../alerts/OrphanAlerts';
 import { usePageTitle } from '../../../shared/ui/usePageTitle';
 import { ArrivalsList } from './ArrivalsList';
 import { SourceNotice } from './SourceNotice';
@@ -135,6 +137,9 @@ function StopContent({ stop, arrivals, stopId, token, onManualNotFound }: StopCo
   const focusDone = useRef<FocusRequest | null>(null);
   const refreshControl = useRef<HTMLDivElement>(null);
   const retryControl = useRef<HTMLDivElement>(null);
+  // Focus target when a control of a request disappears without a "Solicitar" to go to
+  // (passenger_alert_ui.AC-09, AC-11).
+  const arrivalsHeading = useRef<HTMLHeadingElement>(null);
   // While a retry (manual or automatic) is in flight the queries without data go back to
   // "pending": keep the error notice so that "Reintentar" (and the focus on it) does not
   // disappear meanwhile. It goes away when the data arrive (passenger_stop_view.AC-24).
@@ -212,71 +217,82 @@ function StopContent({ stop, arrivals, stopId, token, onManualNotFound }: StopCo
   }
 
   return (
-    <div className="flex flex-col gap-5">
-      {stop.data === undefined ? (
-        <h1 className={H1}>{t('stop.title')}</h1>
-      ) : (
-        <StopHeader stop={stop.data} />
-      )}
-      <section aria-labelledby="arrivals-h" className="flex flex-col gap-3">
-        <h2 id="arrivals-h" className="text-[1.375rem] font-bold">
-          {t('stop.arrivals')}
-        </h2>
-        {!online && (
-          <StatusNotice role="status">
-            <Trans i18nKey="network.offline" components={{ strong: <strong /> }} />
-          </StatusNotice>
-        )}
-        {showError && (
-          <StatusNotice
-            action={
-              <RetryAction control={retryControl} onRemovedWithFocus={onRetryRemovedWithFocus}>
-                <Button icon={<RefreshIcon className="size-[18px]" />} onClick={() => void retry()}>
-                  {t('stop.error.retry')}
-                </Button>
-              </RetryAction>
-            }
-          >
-            <Trans i18nKey="stop.error.body" components={{ strong: <strong /> }} />
-          </StatusNotice>
-        )}
-        {data === undefined ? (
-          !showError && online && <p className="text-text-muted">{t('stop.loading')}</p>
+    <AlertsProvider fallbackFocus={arrivalsHeading}>
+      <div className="flex flex-col gap-5">
+        {stop.data === undefined ? (
+          <h1 className={H1}>{t('stop.title')}</h1>
         ) : (
-          <>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              {arrivals.isError ? (
-                <p className="font-bold text-text">
-                  {t('stop.stale', { time: formatClockTime(data.generated_at, language) })}
-                </p>
-              ) : (
-                <>
-                  <p className="text-text-muted">
-                    {t('stop.updatedAt', { time: formatUpdateTime(data.generated_at, language) })}
-                  </p>
-                  <div ref={refreshControl} className="flex">
-                    <Button
-                      icon={<RefreshIcon className="size-[18px]" />}
-                      onClick={() => void refresh()}
-                    >
-                      {t('stop.refresh')}
-                    </Button>
-                  </div>
-                </>
-              )}
-            </div>
-            <ArrivingAnnouncer arrivals={data.arrivals} now={now} />
-            <SourceNotice source={data.source} />
-            <ArrivalsList
-              arrivals={data.arrivals}
-              source={data.source}
-              now={now}
-              stopId={stopId}
-              token={token}
-            />
-          </>
+          <StopHeader stop={stop.data} />
         )}
-      </section>
-    </div>
+        <section aria-labelledby="arrivals-h" className="flex flex-col gap-3">
+          <h2
+            id="arrivals-h"
+            ref={arrivalsHeading}
+            tabIndex={-1}
+            className="text-[1.375rem] font-bold"
+          >
+            {t('stop.arrivals')}
+          </h2>
+          {!online && (
+            <StatusNotice role="status">
+              <Trans i18nKey="network.offline" components={{ strong: <strong /> }} />
+            </StatusNotice>
+          )}
+          {showError && (
+            <StatusNotice
+              action={
+                <RetryAction control={retryControl} onRemovedWithFocus={onRetryRemovedWithFocus}>
+                  <Button
+                    icon={<RefreshIcon className="size-[18px]" />}
+                    onClick={() => void retry()}
+                  >
+                    {t('stop.error.retry')}
+                  </Button>
+                </RetryAction>
+              }
+            >
+              <Trans i18nKey="stop.error.body" components={{ strong: <strong /> }} />
+            </StatusNotice>
+          )}
+          {data === undefined ? (
+            !showError && online && <p className="text-text-muted">{t('stop.loading')}</p>
+          ) : (
+            <>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                {arrivals.isError ? (
+                  <p className="font-bold text-text">
+                    {t('stop.stale', { time: formatClockTime(data.generated_at, language) })}
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-text-muted">
+                      {t('stop.updatedAt', { time: formatUpdateTime(data.generated_at, language) })}
+                    </p>
+                    <div ref={refreshControl} className="flex">
+                      <Button
+                        icon={<RefreshIcon className="size-[18px]" />}
+                        onClick={() => void refresh()}
+                      >
+                        {t('stop.refresh')}
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
+              <OrphanAlerts stopId={stopId} arrivals={data.arrivals} />
+              <ArrivingAnnouncer arrivals={data.arrivals} now={now} />
+              <SourceNotice source={data.source} />
+              <ArrivalsList
+                arrivals={data.arrivals}
+                source={data.source}
+                now={now}
+                stopId={stopId}
+                token={token}
+              />
+            </>
+          )}
+        </section>
+      </div>
+    </AlertsProvider>
   );
 }

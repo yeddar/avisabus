@@ -46,9 +46,11 @@
     outline-color: #fff;
   }
 
-  /* Programmatic focus targets (skip link destination, h1 after navigation) are not controls. */
+  /* Programmatic focus targets (skip link destination, h1 after navigation, the title of the
+     request dialog and "Próximas llegadas" when a request control disappears) are not controls. */
   main[tabindex='-1']:focus,
-  h1[tabindex='-1']:focus {
+  h1[tabindex='-1']:focus,
+  h2[tabindex='-1']:focus {
     outline: none;
   }
 }

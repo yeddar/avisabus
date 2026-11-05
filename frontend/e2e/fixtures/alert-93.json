@@ -1,0 +1,14 @@
+{
+  "alert_id": "6f1c0d6e-3b9a-4c2e-9f4d-2a7b8c9d0e1f",
+  "stop_id": "508",
+  "stop_name": "Parc de l'Oest - Enguera",
+  "line": "93",
+  "direction_id": 0,
+  "destination": "Passeig Marítim - Hospital Malva-rosa",
+  "trip_id": "12345",
+  "service_date": "2026-11-04",
+  "needs": ["RAMP", "SEAT"],
+  "status": "PENDING_DRIVER",
+  "created_at": "2026-11-04T07:40:00Z",
+  "expires_at": "2026-11-04T08:10:00Z"
+}

@@ -6,7 +6,8 @@
   "home": {
     "title": "Inici",
     "scanQr": "Escaneja el codi QR de la teua parada per a vore quan arriba el teu autobús i sol·licitar parada al conductor.",
-    "lastStop": "La teua última parada: <name>{{name}}</name>"
+    "lastStop": "La teua última parada: <name>{{name}}</name>",
+    "needsLink": "Les meues necessitats"
   },
   "language": {
     "label": "Llengua"
@@ -115,5 +116,62 @@
     "title": "Pàgina no trobada",
     "body": "L'adreça que has obert no existix.",
     "home": "Ves a la portada"
+  },
+  "alert": {
+    "needsLegend": "Necessites alguna cosa en pujar?",
+    "request": "Sol·licita",
+    "requestLabel": "Sol·licita parada a la línia {{line}} cap a {{destination}}",
+    "dialogTitle": "Sol·licita parada a la línia {{line}} cap a <destination>{{destination}}</destination>",
+    "arrivalInfo": "L'autobús {{time}}.",
+    "remember": "Recorda les meues necessitats en este dispositiu",
+    "confirm": "Sol·licita la parada",
+    "back": "Torna",
+    "sending": "Enviant…",
+    "requested": "Parada sol·licitada per a la línia {{line}}",
+    "pending": "<strong>Parada sol·licitada.</strong> Encara no hi ha cap conductor connectat en esta línia.",
+    "delivered": "<strong>El conductor ha rebut la teua sol·licitud.</strong>",
+    "youIndicated": "Has indicat: {{needs}}",
+    "cancel": "Cancel·la la sol·licitud",
+    "cancelled": "Sol·licitud cancel·lada",
+    "alreadyGone": "La sol·licitud ja no estava activa",
+    "cancelFailed": "No s'ha pogut cancel·lar la sol·licitud",
+    "otherBus": "Ja has sol·licitat un altre autobús d'esta línia",
+    "orphanTitle": "Línia {{line}} cap a <destination>{{destination}}</destination>",
+    "error": {
+      "gone": "Este autobús ja no es pot sol·licitar.",
+      "rate_one": "Has fet massa sol·licituds. Torna-ho a intentar d'ací a {{count}} minut.",
+      "rate_other": "Has fet massa sol·licituds. Torna-ho a intentar d'ací a {{count}} minuts.",
+      "notFound": "La parada ja no està disponible. Torna a escanejar el codi QR.",
+      "network": "No s'ha pogut enviar la sol·licitud. Comprova la connexió."
+    },
+    "event": {
+      "delivered": "El conductor de la línia {{line}} ha rebut la teua sol·licitud",
+      "expired": "La teua sol·licitud de la línia {{line}} ha acabat: {{reason}}",
+      "reason": {
+        "PASSED": "l'autobús ha passat per la parada",
+        "NEXT_STOP": "l'autobús ja ha arribat a la parada següent",
+        "TIMEOUT": "han passat 30 minuts"
+      }
+    }
+  },
+  "needs": {
+    "RAMP": "Necessite la rampa",
+    "EXTRA_TIME": "Necessite més temps per a pujar",
+    "SEAT": "Necessite un seient",
+    "VISUAL": "Tinc discapacitat visual",
+    "short": {
+      "RAMP": "rampa",
+      "EXTRA_TIME": "més temps",
+      "SEAT": "seient",
+      "VISUAL": "discapacitat visual"
+    }
+  },
+  "needsPage": {
+    "title": "Les meues necessitats",
+    "intro": "Marca el que necessites en pujar a l'autobús. Només es guarda en este dispositiu i apareixerà marcat quan sol·licites parada.",
+    "save": "Guarda",
+    "clear": "Esborra les meues necessitats",
+    "saved": "Necessitats guardades",
+    "cleared": "Necessitats esborrades"
   }
 }

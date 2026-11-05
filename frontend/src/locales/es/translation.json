@@ -6,7 +6,8 @@
   "home": {
     "title": "Inicio",
     "scanQr": "Escanea el código QR de tu parada para ver cuándo llega tu autobús y solicitar parada al conductor.",
-    "lastStop": "Tu última parada: <name>{{name}}</name>"
+    "lastStop": "Tu última parada: <name>{{name}}</name>",
+    "needsLink": "Mis necesidades"
   },
   "language": {
     "label": "Idioma"
@@ -115,5 +116,62 @@
     "title": "Página no encontrada",
     "body": "La dirección que has abierto no existe.",
     "home": "Ir a la portada"
+  },
+  "alert": {
+    "needsLegend": "¿Necesitas algo al subir?",
+    "request": "Solicitar",
+    "requestLabel": "Solicitar parada a la línea {{line}} hacia {{destination}}",
+    "dialogTitle": "Solicitar parada a la línea {{line}} hacia <destination>{{destination}}</destination>",
+    "arrivalInfo": "El autobús {{time}}.",
+    "remember": "Recordar mis necesidades en este dispositivo",
+    "confirm": "Solicitar parada",
+    "back": "Volver",
+    "sending": "Enviando…",
+    "requested": "Parada solicitada para la línea {{line}}",
+    "pending": "<strong>Parada solicitada.</strong> Aún no hay conductor conectado en esta línea.",
+    "delivered": "<strong>El conductor ha recibido tu solicitud.</strong>",
+    "youIndicated": "Has indicado: {{needs}}",
+    "cancel": "Cancelar solicitud",
+    "cancelled": "Solicitud cancelada",
+    "alreadyGone": "La solicitud ya no estaba activa",
+    "cancelFailed": "No se ha podido cancelar la solicitud",
+    "otherBus": "Ya has solicitado otro autobús de esta línea",
+    "orphanTitle": "Línea {{line}} hacia <destination>{{destination}}</destination>",
+    "error": {
+      "gone": "Este autobús ya no se puede solicitar.",
+      "rate_one": "Has hecho demasiadas solicitudes. Inténtalo dentro de {{count}} minuto.",
+      "rate_other": "Has hecho demasiadas solicitudes. Inténtalo dentro de {{count}} minutos.",
+      "notFound": "La parada ya no está disponible. Vuelve a escanear el código QR.",
+      "network": "No se ha podido enviar la solicitud. Comprueba la conexión."
+    },
+    "event": {
+      "delivered": "El conductor de la línea {{line}} ha recibido tu solicitud",
+      "expired": "Tu solicitud de la línea {{line}} ha terminado: {{reason}}",
+      "reason": {
+        "PASSED": "el autobús ha pasado por la parada",
+        "NEXT_STOP": "el autobús ya ha llegado a la parada siguiente",
+        "TIMEOUT": "han pasado 30 minutos"
+      }
+    }
+  },
+  "needs": {
+    "RAMP": "Necesito la rampa",
+    "EXTRA_TIME": "Necesito más tiempo para subir",
+    "SEAT": "Necesito un asiento",
+    "VISUAL": "Tengo discapacidad visual",
+    "short": {
+      "RAMP": "rampa",
+      "EXTRA_TIME": "más tiempo",
+      "SEAT": "asiento",
+      "VISUAL": "discapacidad visual"
+    }
+  },
+  "needsPage": {
+    "title": "Mis necesidades",
+    "intro": "Marca lo que necesitas al subir al autobús. Se guarda solo en este dispositivo y aparecerá marcado cuando solicites parada.",
+    "save": "Guardar",
+    "clear": "Borrar mis necesidades",
+    "saved": "Necesidades guardadas",
+    "cleared": "Necesidades borradas"
   }
 }

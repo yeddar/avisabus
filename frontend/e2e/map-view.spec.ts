@@ -86,6 +86,8 @@ interface Network {
  */
 async function mockNetwork(page: Page, replies: { position: Reply; shape?: Reply }) {
   const network: Network = { tileZooms: [], external: [], unexpected: [] };
+  // The stop view opens /ws/passenger (passenger_alert_ui): a silent simulated socket, no network.
+  await page.routeWebSocket('**/ws/passenger', () => {});
   await page.route('**/*', async (route: Route) => {
     const url = new URL(route.request().url());
     if (url.hostname === OSM_TILES) {
