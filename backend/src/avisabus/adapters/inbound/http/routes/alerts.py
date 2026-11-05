@@ -1,4 +1,5 @@
-"""Stop request endpoints: `POST /alerts` and `GET /alerts/mine` (alert_create design §3, "API").
+"""Stop request endpoints: `POST /alerts` and `GET /alerts/mine` (alert_create design §3, "API")
+and `DELETE /alerts/{alert_id}` (alert_cancel design §3).
 
 The device is the `X-Device-Id` header, hashed by `device_hash_from_header` (never stored nor
 logged in clear). Every response of `/alerts` carries `Cache-Control: no-store` (AC-14): the
@@ -8,12 +9,13 @@ application adds it with `NoStoreMiddleware`, so validation errors get it too.
 from datetime import date, datetime
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Path, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from avisabus.adapters.inbound.http.container import AlertUseCases
 from avisabus.adapters.inbound.http.device import device_hash_from_header
 from avisabus.adapters.inbound.http.errors import (
+    ALERT_NOT_FOUND_TYPE,
     BUS_NOT_REQUESTABLE_TYPE,
     INVALID_DEVICE_ID_TYPE,
     NETWORK_UNAVAILABLE_TYPE,
@@ -162,6 +164,18 @@ _POST_RESPONSES: dict[int | str, dict[str, Any]] = {
 }
 
 
+_DELETE_RESPONSES: dict[int | str, dict[str, Any]] = {
+    400: _INVALID_DEVICE,
+    404: _problem(
+        404,
+        "Not Found",
+        ALERT_NOT_FOUND_TYPE,
+        "The alert does not exist, already expired or belongs to another device (same body in "
+        "every case).",
+    ),
+}
+
+
 def _use_cases(request: Request) -> AlertUseCases:
     use_cases: AlertUseCases = request.app.state.alert_use_cases
     return use_cases
@@ -207,6 +221,24 @@ async def create_alert(
 async def my_alerts(use_cases: UseCases, device_hash: DeviceHash) -> MyAlertsResponse:
     alerts = await use_cases.list_my_alerts.execute(device_hash)
     return MyAlertsResponse(alerts=[_alert_schema(alert) for alert in alerts])
+
+
+@router.delete(
+    "/alerts/{alert_id}",
+    status_code=204,
+    response_class=Response,
+    responses=_DELETE_RESPONSES,
+    response_description="Alert cancelled and deleted with its needs.",
+)
+async def cancel_alert(
+    alert_id: Annotated[
+        str, Path(description="`alert_id` of the alert; any other text is just not found.")
+    ],
+    use_cases: UseCases,
+    device_hash: DeviceHash,
+) -> Response:
+    await use_cases.cancel_alert.execute(device_hash, alert_id)
+    return Response(status_code=204)
 
 
 def _alert_schema(alert: Alert) -> AlertSchema:

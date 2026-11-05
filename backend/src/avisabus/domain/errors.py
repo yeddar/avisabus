@@ -114,3 +114,11 @@ class RateLimitedError(DomainError):
     def __init__(self, retry_after_s: int) -> None:
         self.retry_after_s = retry_after_s
         super().__init__("rate limited")
+
+
+class AlertNotFoundError(DomainError):
+    """The alert does not exist, already expired or belongs to another device (alert_cancel
+    AC-02). The three cases are deliberately the same error, without the identifier."""
+
+    def __init__(self) -> None:
+        super().__init__("alert not found")

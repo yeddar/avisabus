@@ -1188,6 +1188,91 @@
         "tags": ["alerts"]
       }
     },
+    "/api/v1/alerts/{alert_id}": {
+      "delete": {
+        "operationId": "cancel_alert_api_v1_alerts__alert_id__delete",
+        "parameters": [
+          {
+            "description": "`alert_id` of the alert; any other text is just not found.",
+            "in": "path",
+            "name": "alert_id",
+            "required": true,
+            "schema": {
+              "description": "`alert_id` of the alert; any other text is just not found.",
+              "title": "Alert Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-device-id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Device-Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Alert cancelled and deleted with its needs."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 400,
+                  "title": "Bad Request",
+                  "type": "https://avisabus/problems/invalid-device-id"
+                }
+              }
+            },
+            "description": "Missing or invalid X-Device-Id header."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 404,
+                  "title": "Not Found",
+                  "type": "https://avisabus/problems/alert-not-found"
+                }
+              }
+            },
+            "description": "The alert does not exist, already expired or belongs to another device (same body in every case)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cancel Alert",
+        "tags": ["alerts"]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "health_api_v1_health_get",
