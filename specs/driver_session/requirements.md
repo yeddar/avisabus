@@ -1,6 +1,6 @@
 # Turno del conductor — requirements
 
-> Feature: `driver_session` · Versión: 1.0 · Estado: DRAFT
+> Feature: `driver_session` · Versión: 1.0 · Estado: APPROVED
 > Requisitos: RF-24, RF-25, RF-26, RF-30, RNF-06, RNF-07, RNF-13 · Casos de uso: CU-08, CU-09 (posición), CU-10, CU-13 (revocación) · Depende de: gtfs_import, driver_codes_cli
 
 ## Contexto
@@ -139,3 +139,9 @@ capacidad) y el WebSocket del conductor son de `driver_demand`.
 | RNF-07 Seguridad | AC-02, AC-04, AC-08 |
 | RNF-13 Observabilidad | AC-15 |
 | CU-08 2a, 4b · CU-09 1a · CU-10 1a · CU-13 | AC-02, AC-09, AC-11, AC-13, AC-14 |
+
+## Historial
+
+| Versión | Fecha | Cambio | Motivo |
+|---|---|---|---|
+| 1.0 | 2026-11-09 | Versión inicial aprobada (PR #46). | CP-1 del bloque 4. Aprobada por la persona. |

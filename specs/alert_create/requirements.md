@@ -141,4 +141,4 @@ el aviso caduca a los 30 min (RF-21).
 | Versión | Fecha | Cambio | Motivo |
 |---|---|---|---|
 | 1.0 | 2026-11-04 | Versión inicial aprobada (PR #37). | CP-1 del bloque 3. Aprobada por la persona. |
-| 1.1 | 2026-11-09 | AC-08: las peticiones rechazadas por validación (`400`, `422` de FastAPI) no cuentan para el límite, como fija el design (el limitador está en el caso de uso). | H-2 de la revisión de `alert_create`. Pendiente de aprobación. |
+| 1.1 | 2026-11-09 | AC-08: las peticiones rechazadas por validación (`400`, `422` de FastAPI) no cuentan para el límite, como fija el design (el limitador está en el caso de uso). | H-2 de la revisión de `alert_create`. Aprobada por la persona (PR #45). |

@@ -1,6 +1,6 @@
 # Códigos de conductor — tasks
 
-> Feature: `driver_codes_cli` · Versión: 1.0 · Estado: DRAFT
+> Feature: `driver_codes_cli` · Versión: 1.0 · Estado: APPROVED
 > Requisitos: RF-24, RF-33, RNF-06, RNF-07 · Casos de uso: CU-13 · Depende de: project_scaffold
 
 ## Exploración

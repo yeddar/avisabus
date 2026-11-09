@@ -1,6 +1,6 @@
 # Simulador de recorrido del conductor — requirements
 
-> Feature: `driver_gps_simulator` · Versión: 1.0 · Estado: DRAFT
+> Feature: `driver_gps_simulator` · Versión: 1.0 · Estado: APPROVED
 > Requisitos: RF-34, RNF-07 · Casos de uso: CU-14 · Depende de: driver_session
 
 ## Contexto
@@ -55,3 +55,9 @@ se comporta exactamente igual que con un conductor real.
 | RF-34 Simulador de GPS | AC-01, AC-02, AC-03 |
 | RNF-07 Seguridad | AC-04, AC-05 |
 | CU-14 | AC-01 … AC-04 |
+
+## Historial
+
+| Versión | Fecha | Cambio | Motivo |
+|---|---|---|---|
+| 1.0 | 2026-11-09 | Versión inicial aprobada (PR #46). | CP-1 del bloque 4. Aprobada por la persona. |

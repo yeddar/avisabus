@@ -1,6 +1,6 @@
 # Simulador de recorrido del conductor — design
 
-> Feature: `driver_gps_simulator` · Versión: 1.0 · Estado: DRAFT
+> Feature: `driver_gps_simulator` · Versión: 1.0 · Estado: APPROVED
 > Requisitos: RF-34, RNF-07 · Casos de uso: CU-14 · Depende de: driver_session
 
 ## 1. Componentes

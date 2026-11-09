@@ -135,4 +135,4 @@ reutilizando el publicador.
 |---|---|---|---|
 | 1.0 | 2026-11-04 | Versión inicial aprobada (PR #37). | CP-1 del bloque 3. Aprobada por la persona. |
 | 1.1 | 2026-11-04 | AC-11 admite `1001` o `1012`: `uvicorn` cierra los WebSockets con `1012` al recibir SIGTERM, antes que el `lifespan`. Sin cambios de código. | CP-3 de `realtime_events` (T-04). Aprobada por la persona (PR #38). |
-| 1.2 | 2026-11-09 | Solo design y arnés: la composición está en `http/app.py` y `http/container.py` (no en `main.py`); T-06 añade `pytest-timeout` (30 s por test) para que una espera sin límite falle en vez de colgar la suite. | N-02 y N-03 de la revisión de `realtime_events` (CP-6 del bloque 3). Pendiente de aprobación. |
+| 1.2 | 2026-11-09 | Solo design y arnés: la composición está en `http/app.py` y `http/container.py` (no en `main.py`); T-06 añade `pytest-timeout` (30 s por test) para que una espera sin límite falle en vez de colgar la suite. | N-02 y N-03 de la revisión de `realtime_events` (CP-6 del bloque 3). Aprobada por la persona (PR #45). |

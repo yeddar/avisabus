@@ -433,4 +433,10 @@
   (H-07) y LIM-02 documentada (traslado del viaje al autobús siguiente).
 - Ajustes de cierre: `alert_expiry` 1.1, `alert_create` 1.1, `passenger_alert_ui` 1.1 (T-09),
   `realtime_events` 1.2 (T-06, `pytest-timeout`), `docs/` (LIM-02, limitador, guía §7).
-  Pendiente de aprobación.
+  Aprobados en la PR #45.
+
+## 2026-11-09 · bloque 4 · spec_draft → spec_approved (CP-1)
+- La persona aprueba la PR #46: `driver_codes_cli`, `driver_session`, `driver_demand`, `driver_ui`
+  y `driver_gps_simulator` v1.0, ADR-017 y ADR-018 y los cambios de `docs/`. Decisiones: el
+  conductor elige su salida, la demanda cuenta solo su autobús, tono breve silenciable y resalte,
+  y se mantiene la alerta de asientos.

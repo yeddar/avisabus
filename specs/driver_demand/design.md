@@ -1,6 +1,6 @@
 # Demanda del conductor — design
 
-> Feature: `driver_demand` · Versión: 1.0 · Estado: DRAFT
+> Feature: `driver_demand` · Versión: 1.0 · Estado: APPROVED
 > Requisitos: RF-23, RF-27, RF-28, RF-29, RNF-02, RNF-06 · Casos de uso: CU-03 (5a), CU-09, CU-10 (3) · Depende de: realtime_events, alert_create, driver_session
 
 ## 1. Resumen

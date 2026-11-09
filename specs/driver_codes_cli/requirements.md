@@ -1,6 +1,6 @@
 # Códigos de conductor — requirements
 
-> Feature: `driver_codes_cli` · Versión: 1.0 · Estado: DRAFT
+> Feature: `driver_codes_cli` · Versión: 1.0 · Estado: APPROVED
 > Requisitos: RF-24, RF-33, RNF-06, RNF-07 · Casos de uso: CU-13 · Depende de: project_scaffold
 
 ## Contexto
@@ -65,3 +65,9 @@ Los códigos no se asocian a personas: llevan una etiqueta libre (p. ej. "Tablet
 | RNF-06 Privacidad | AC-03, AC-06 |
 | RNF-07 Seguridad | AC-01, AC-03 |
 | CU-13 | AC-01 … AC-05 |
+
+## Historial
+
+| Versión | Fecha | Cambio | Motivo |
+|---|---|---|---|
+| 1.0 | 2026-11-09 | Versión inicial aprobada (PR #46). | CP-1 del bloque 4. Aprobada por la persona. |

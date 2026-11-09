@@ -1,6 +1,6 @@
 # Demanda del conductor — requirements
 
-> Feature: `driver_demand` · Versión: 1.0 · Estado: DRAFT
+> Feature: `driver_demand` · Versión: 1.0 · Estado: APPROVED
 > Requisitos: RF-23, RF-27, RF-28, RF-29, RNF-02, RNF-06 · Casos de uso: CU-03 (5a), CU-09, CU-10 (3) · Depende de: realtime_events, alert_create, driver_session
 
 ## Contexto
@@ -108,3 +108,9 @@ Es el corazón del bloque 4: lo que el conductor ve y cómo le llegan las solici
 | RNF-02 ≤ 5 s | AC-11 |
 | RNF-06 Privacidad | AC-05, AC-12 |
 | CU-03 5a · CU-09 · CU-10 3 | AC-02, AC-05, AC-06, AC-03 |
+
+## Historial
+
+| Versión | Fecha | Cambio | Motivo |
+|---|---|---|---|
+| 1.0 | 2026-11-09 | Versión inicial aprobada (PR #46). | CP-1 del bloque 4. Aprobada por la persona. |
