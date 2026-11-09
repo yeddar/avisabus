@@ -379,7 +379,7 @@
       "order": 16,
       "block": 4,
       "title": "CLI de códigos de conductor: crear, listar, revocar",
-      "status": "in_review",
+      "status": "implementing",
       "depends_on": [
         "project_scaffold"
       ],
@@ -392,7 +392,7 @@
       ],
       "spec": "specs/driver_codes_cli/",
       "needs_exploration": false,
-      "review_cycles": 0,
+      "review_cycles": 1,
       "passes": false
     },
     {

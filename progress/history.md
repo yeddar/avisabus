@@ -463,3 +463,7 @@
 
 ## 2026-11-09 · driver_codes_cli · implementing → in_review
 - T-01…T-04: `driver-codes create/list/revoke`, código solo como hash en la BD. Verify --e2e en verde (1409 backend).
+
+## 2026-11-09 · driver_codes_cli · in_review → changes_requested → implementing (ciclo 2)
+- Revisión ciclo 1: CHANGES_REQUESTED por F-01: un fallo de escritura distinto de `IntegrityError` imprime
+  hash y etiqueta (parámetros de SQLAlchemy en la traza). Corrección: `hide_parameters=True` y test.

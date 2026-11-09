@@ -4,7 +4,7 @@
 
 **Fecha:** 2026-11-09
 **Fase:** Implementación — Bloque 4 (conductor)
-**Feature en curso:** `driver_codes_cli` v1.0 — `implementing` (rama `feat/driver_codes_cli`, apilada sobre
+**Feature en curso:** `driver_codes_cli` v1.0 — `implementing`, ciclo 2 (F-01) (rama `feat/driver_codes_cli`, apilada sobre
 `feat/passenger_alert_ui-v1.1`)
 
 ## Último paso
