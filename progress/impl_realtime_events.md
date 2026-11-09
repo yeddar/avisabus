@@ -1,5 +1,5 @@
 # Implementación: realtime_events
-Spec: specs/realtime_events/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Agente: implementer · Fecha: 2026-11-04
+Spec: specs/realtime_events/ (v1.2, APPROVED) · Ciclo de revisión: 0 (de la v1.2) · Agente: implementer · Fecha: 2026-11-09
 
 ## Tareas
 - [x] T-01 `Event`, `DeviceId`/`parse_device_id`, `InvalidDeviceIdError`, puertos
@@ -11,7 +11,10 @@ Spec: specs/realtime_events/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Agente
 - [x] T-04 `/ws/passenger`, `ConnectionRegistry`, `EmptySnapshotProvider`,
       `device_hash_from_header`, configuración y composición (AC-03, AC-05…AC-13)
       (commit 72970e0)
-- [x] T-05 Verificación completa: `CI=1 ./init.sh verify --e2e` en verde (commit de este fichero)
+- [x] T-06 (v1.2, arnés) `pytest-timeout` con `timeout = 30` y límite explícito en las esperas de
+      WebSocket de los tests (commit f2cfe78)
+- [x] T-05 Verificación completa: `CI=1 ./init.sh verify --e2e` en verde, repetida tras T-06
+      (commit de este fichero)
 
 ## Decisiones locales
 - T-01: `Event.message()` implementa la serialización del design (`{"type": type, **payload}`).
@@ -73,9 +76,29 @@ Spec: specs/realtime_events/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Agente
   (`tests/integration/test_device_header.py`).
 - T-04: test de composición de `main.py` en subproceso (`tests/integration/test_main_realtime.py`):
   configuración leída del entorno, instantánea vacía y cierre `1001` al parar.
+- T-06 (espera acotada): `tests/support/ws.py` gana `receive_soon(ws)`, y `receive_json_soon` se
+  apoya en ella; sustituyen a `ws.receive()` y `ws.receive_json()` en todos los tests con
+  WebSocket. Las dos limitan la espera a 1000 vueltas del bucle de eventos, no a segundos: el
+  endpoint hace todo su trabajo en el bucle (ningún `to_thread` en `src/`), así que el límite no
+  depende de la carga de la máquina y sigue sin haber reloj real (`docs/conventions.md` §6). Si un
+  endpoint llegara a trabajar en un hilo, habría que subir `turns` o pasar a un límite en segundos.
+  El límite en segundos es el de `pytest-timeout`, que además cubre lo que el ayudante no alcanza
+  (la aceptación dentro de `websocket_connect`, `next_event()` en tests unitarios).
+- T-06 (API privada, NB-5 de `alert_expiry`): no hay recepción acotada pública en Starlette, así
+  que `_send_rx` y `_raise_on_close` se siguen usando, ahora solo en `tests/support/ws.py`. Si
+  Starlette los cambia, los tests fallan con `AttributeError`; no se cuelgan.
+- T-06: `test_main_realtime.py` espera dentro de un subproceso, que no puede importar
+  `tests.support`; su límite es el `timeout` de `subprocess.run`, que baja de 60 a 25 s para
+  quedar por debajo de los 30 s por test. Los otros subprocesos con `timeout=60` no usan WebSocket
+  y no se tocan.
+- T-06: ningún test `slow` necesita `@pytest.mark.timeout`: los 6 pasan con el límite de 30 s
+  (el más largo, 4,6 s en una fase).
 
 ## Bloqueos
-- **AC-11 con uvicorn (requiere decisión de la persona, CP-3; no bloquea el resto).** El design
+Ninguno abierto.
+
+Resuelto (histórico):
+- **AC-11 con uvicorn (CP-3, resuelto por la spec v1.1, PR #38: AC-11 admite `1001` o `1012`, opción (c)).** El design
   cierra los WebSockets con `1001` desde el `lifespan` (`ConnectionRegistry` en el `lifespan`).
   Así se implementa y se verifica (TestClient y `main.py`). Pero uvicorn 0.54, al recibir
   SIGTERM/SIGINT, primero cierra él mismo cada WebSocket abierto con el código **`1012`**
@@ -90,24 +113,31 @@ Spec: specs/realtime_events/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Agente
   `1012` en AC-11.
 
 ## Verificación
-`CI=1 ./init.sh verify --e2e` (2026-11-04, puerto 4173 libre, tras T-04): **todo en verde**.
+`CI=1 ./init.sh verify --e2e` (2026-11-09, puerto 4173 libre, tras T-06): **todo en verde**.
 
 | Paso | Resultado |
 |---|---|
-| backend: format / lint / types | OK (`ruff format --check`, `ruff check`, `mypy`: 102 ficheros sin errores) |
-| backend: architecture | OK (`lint-imports`: 2 contratos respetados) |
-| backend: tests | OK: 1098 passed, 6 deselected; cobertura `domain`+`application` 99,48 % |
+| backend: format / lint / types / architecture | OK |
+| backend: tests | OK: 1325 passed, 6 deselected; cobertura `domain`+`application` 99,59 % |
 | frontend: format / lint / types | OK |
-| frontend: tests | OK: 44 ficheros, 413 passed, 2 skipped |
+| frontend: tests | OK: 55 ficheros, 555 passed, 2 skipped |
 | frontend: build + bundle | OK (5 tests de presupuesto) |
-| frontend: e2e + a11y | OK: 87 passed |
+| frontend: e2e + a11y | OK: 126 passed |
 | harness: `feature_list.json` / trazabilidad AC→test | OK |
 
-Tests nuevos: `tests/unit/test_device.py` (32), `tests/unit/test_in_memory_publisher.py` (14),
-`tests/unit/test_ws_connections.py` (13), `tests/integration/test_log_privacy.py` (6),
-`tests/integration/test_ws_passenger.py` (28), `tests/integration/test_device_header.py` (6),
-`tests/integration/test_main_realtime.py` (1). Los tests de WebSocket muestran el aviso
-`StarletteDeprecationWarning` de `starlette.testclient` (usa `httpx`), que el design exige.
-Mutaciones comprobadas a mano: sin `subscription.close()` fallan 3 tests (AC-03); cerrando con
-`1001` en lugar de `4429` al desbordar falla el de AC-09.
+Prueba de T-06 (test temporal, no versionado; espera un evento que nunca llega):
+- Antes de T-06, con `ws.receive_json()`: colgado hasta que lo mató un vigía externo a los 45 s.
+- Con `timeout = 30` y la misma espera: `Failed: Timeout (>30.0s) from pytest-timeout`, en 30,16 s.
+- Con `receive_json_soon`: `AssertionError: the socket sent nothing`, de inmediato.
 
+Los 5 mutantes de N-03 que colgaban la suite (ignorar el desbordamiento, sin `close_all`, registro
+fuera del `lifespan`, no contar hasta el `hello`, entregar solo a la primera suscripción), aplicados
+en copias temporales, ahora fallan sin colgarse: 6, 2, 1, 12 y 4 tests en rojo, y todos terminan
+en menos de 35 s. El único que agota los 30 s es un test unitario sobre `next_event()`.
+
+Cambios de T-06 en los tests: 47 esperas sustituidas en `test_ws_passenger.py` (31),
+`test_alerts_ws.py` (8), `test_alerts_cancel_api.py` (4) y `test_log_privacy.py` (4);
+`test_alert_expiry.py` ya estaba acotado.
+Verificación de la v1.0 (2026-11-04, tras T-04): 1098 tests de backend, 413 de frontend y 87 e2e
+en verde. Mutaciones de entonces: sin `subscription.close()` fallan 3 tests (AC-03); cerrando con
+`1001` en lugar de `4429` al desbordar falla el de AC-09.
