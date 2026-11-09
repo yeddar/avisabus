@@ -475,3 +475,7 @@
 - Revisión ciclo 2: APPROVED (F-01 corregido y reproducido con el binario real; 21/22 mutantes).
 
 ## 2026-11-09 · driver_codes_cli PR abierta · driver_session · spec_approved → implementing
+
+## 2026-11-09 · driver_session · implementing → in_review
+- T-01…T-07; `list_lines`/`departures` añadidos a la red (autorizado). Verify --e2e en verde (1667 backend).
+  Avisos: destinos de C2/C3 según la spec, IP en el log de acceso fuera de `/driver`, riesgo de AC-09 con GPS real.
