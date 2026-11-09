@@ -1,6 +1,6 @@
 # Interfaz de la solicitud de parada — design
 
-> Feature: `passenger_alert_ui` · Versión: 1.0 · Estado: APPROVED
+> Feature: `passenger_alert_ui` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-16, RF-17, RF-18, RF-19, RF-22, RF-23, RNF-02, RNF-03, RNF-04, RNF-05, RNF-06 · Casos de uso: CU-03, CU-04, CU-05, CU-07 · Depende de: passenger_stop_view, alert_create, alert_cancel, alert_expiry
 
 ## 1. Resumen

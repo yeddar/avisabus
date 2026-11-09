@@ -1,6 +1,6 @@
 # Caducidad de las solicitudes de parada — design
 
-> Feature: `alert_expiry` · Versión: 1.0 · Estado: APPROVED
+> Feature: `alert_expiry` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-21, RF-28 (pasajero), RNF-06, RNF-08 · Casos de uso: CU-07 · Depende de: alert_create
 
 ## 1. Resumen
@@ -54,6 +54,10 @@ def expiry_reason(alert: Alert, now: datetime, next_stop_scheduled_at: datetime 
     # (PASSED lo decide observe_passage; AC-07 se respeta porque el vigilante corre antes en el
     #  mismo ciclo y ExpireAlert ignora avisos ya borrados)
 ```
+
+(v1.1) El instante de cada observación (`observed_at`) es `StopArrivals.generated_at`, como en
+`alert_create`; con la caché del SAE, la antelación observada puede incluir hasta 20 s de edad
+de la respuesta. `.env.example` indica que la ventana se ha validado entre 1 y 3 min (E-01).
 
 `seen_in_last_observation`: el vigilante guarda en memoria, por `alert_id`, si el viaje estaba en
 la última observación `REALTIME` de su parada; tras un reinicio se considera `False` hasta la

@@ -1,6 +1,6 @@
 # Crear solicitud de parada — requirements
 
-> Feature: `alert_create` · Versión: 1.0 · Estado: APPROVED
+> Feature: `alert_create` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-16, RF-17, RF-19, RF-20, RF-23, RNF-02, RNF-06, RNF-07 · Casos de uso: CU-03 · Depende de: stop_arrivals_api, realtime_events
 
 ## Contexto
@@ -82,7 +82,8 @@ el aviso caduca a los 30 min (RF-21).
   *Verificación:* integration (incluida la concurrencia: dos `POST` en paralelo)
 - **alert_create.AC-08** — EL SISTEMA DEBERÁ limitar las peticiones a `POST /alerts` a 10 por
   dispositivo y 30 por dirección IP en 10 minutos (ventana deslizante, configurable), contando
-  todas salvo las que se responden con `200` por AC-07; SI se supera, ENTONCES LA API DEBERÁ
+  las que superan la validación de la petición (cabecera y cuerpo: las respondidas con `400` o con
+  el `422` de validación no cuentan) salvo las que se responden con `200` por AC-07; SI se supera, ENTONCES LA API DEBERÁ
   responder `429` (`…/rate-limited`) con la cabecera `Retry-After` en segundos. Los contadores
   DEBERÁN vivir solo en memoria y no registrarse en logs.
   *Verificación:* unit (`FakeClock`) + integration
@@ -140,3 +141,4 @@ el aviso caduca a los 30 min (RF-21).
 | Versión | Fecha | Cambio | Motivo |
 |---|---|---|---|
 | 1.0 | 2026-11-04 | Versión inicial aprobada (PR #37). | CP-1 del bloque 3. Aprobada por la persona. |
+| 1.1 | 2026-11-09 | AC-08: las peticiones rechazadas por validación (`400`, `422` de FastAPI) no cuentan para el límite, como fija el design (el limitador está en el caso de uso). | H-2 de la revisión de `alert_create`. Aprobada por la persona (PR #45). |

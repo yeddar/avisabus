@@ -1,6 +1,6 @@
 # Interfaz de la solicitud de parada — requirements
 
-> Feature: `passenger_alert_ui` · Versión: 1.0 · Estado: APPROVED
+> Feature: `passenger_alert_ui` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-16, RF-17, RF-18, RF-19, RF-22, RF-23, RNF-02, RNF-03, RNF-04, RNF-05, RNF-06 · Casos de uso: CU-03, CU-04, CU-05, CU-07 · Depende de: passenger_stop_view, alert_create, alert_cancel, alert_expiry
 
 ## Contexto
@@ -62,7 +62,8 @@ cancelada desde otra pestaña. En el bloque 3 no hay conductores, así que la so
   *Verificación:* unit
 - **passenger_alert_ui.AC-04** — CUANDO se pulsa "Solicitar", LA VISTA DEBERÁ abrir un diálogo
   modal (`<dialog>` con `showModal`) titulado "Solicitar parada a la línea {línea} hacia
-  {destino}" con: la hora de llegada, las cuatro casillas precargadas con el perfil, la casilla
+  {destino}" (v1.1: con el destino hablado de `passenger_stop_view.AC-05`, el headsign del GTFS,
+  porque el título es también el nombre accesible del diálogo; igual en el aviso de AC-08) con: la hora de llegada, las cuatro casillas precargadas con el perfil, la casilla
   "Recordar mis necesidades en este dispositivo", el botón principal "Solicitar parada" y el
   secundario "Volver". El foco DEBERÁ ir al título al abrir, quedar dentro del diálogo, cerrarse
   con Escape o "Volver" y volver al botón "Solicitar" al cerrar sin solicitar.
@@ -76,7 +77,8 @@ cancelada desde otra pestaña. En el bloque 3 no hay conductores, así que la so
 - **passenger_alert_ui.AC-06** — SI la petición falla, ENTONCES el diálogo DEBERÁ seguir abierto
   y mostrar un mensaje con `role="alert"`, con el foco en él: `422` → "Este autobús ya no se puede
   solicitar." (y se refrescan las llegadas); `429` → "Has hecho demasiadas solicitudes. Inténtalo
-  dentro de {N} minutos." (N a partir de `Retry-After`, redondeando hacia arriba); `404` → "La
+  dentro de {N} minutos." (N a partir de `Retry-After`, redondeando hacia arriba; v1.1: sin
+  `Retry-After`, N = 10); `404` → "La
   parada ya no está disponible. Vuelve a escanear el código QR."; red o `503` → "No se ha podido
   enviar la solicitud. Comprueba la conexión." con "Solicitar parada" disponible para reintentar.
   *Verificación:* unit
@@ -116,7 +118,10 @@ cancelada desde otra pestaña. En el bloque 3 no hay conductores, así que la so
   pasado 30 minutos" (`TIMEOUT`); y DEBERÁ actualizar el estado sin anunciar nada con
   `alert.registered`, `alert.cancelled` y `alerts.snapshot`. SI el foco estaba en un control de
   la solicitud que desaparece, ENTONCES DEBERÁ pasar al botón "Solicitar" de esa tarjeta o al
-  `h2` "Próximas llegadas".
+  `h2` "Próximas llegadas". (v1.1) SI el diálogo está abierto y llega `alert.registered` o
+  `alert.delivered` de la misma parada y línea (creada desde otra pestaña), ENTONCES el diálogo
+  DEBERÁ cerrarse y el foco DEBERÁ pasar al botón "Cancelar solicitud" de la tarjeta de esa
+  solicitud o, si su autobús no está en la lista, al del aviso de AC-08, sin anuncio adicional.
   *Verificación:* unit
 
 ### Calidad
@@ -154,3 +159,4 @@ cancelada desde otra pestaña. En el bloque 3 no hay conductores, así que la so
 | Versión | Fecha | Cambio | Motivo |
 |---|---|---|---|
 | 1.0 | 2026-11-04 | Versión inicial aprobada (PR #37). | CP-1 del bloque 3. Aprobada por la persona. |
+| 1.1 | 2026-11-09 | AC-04: el título del diálogo usa el destino hablado (headsign GTFS); AC-06: 429 sin `Retry-After` → 10 min (lo implementado); AC-11: foco si otra pestaña crea la solicitud con el diálogo abierto. T-09. | CP-6 del bloque 3: H-05, H-06 y H-07 de la revisión de `passenger_alert_ui` (decisión de la persona sobre H-07). Aprobada por la persona (PR #45). |
