@@ -27,9 +27,13 @@ from avisabus.adapters.inbound.cli.container import CliContainer, build_cli_cont
 from avisabus.adapters.inbound.cli.main import app
 from avisabus.adapters.outbound.persistence.db import create_engine
 from avisabus.adapters.outbound.persistence.sqlite_driver_codes import SqliteDriverCodeRepository
+from avisabus.adapters.outbound.persistence.sqlite_driver_sessions import (
+    SqliteDriverSessionRepository,
+)
 from avisabus.adapters.outbound.security.hmac_driver_code_hasher import HmacDriverCodeHasher
 from avisabus.application.driver_codes import CreateDriverCode, ListDriverCodes, RevokeDriverCode
 from avisabus.config import Settings
+from avisabus.domain.models.driver import DriverSession
 from avisabus.domain.ports.clock import Clock
 from avisabus.logging import configure_logging
 from tests.support.fake_clock import FakeClock
@@ -517,3 +521,55 @@ def test_revoke_of_a_revoked_code_logs_nothing_new() -> None:
     assert _run("revoke", code_id).exit_code == 0
     again = _run("revoke", code_id)
     assert [e for e in _json_lines(again.stdout) if e["event"] == "driver_code.revoked"] == []
+
+
+def _open_shift(db_path: Path, code_id: str) -> None:
+    """A real row of `driver_session`: the commands below use the real composition."""
+    engine = create_engine(_settings(db_path))
+    try:
+        SqliteDriverSessionRepository(engine).add(
+            DriverSession(
+                session_id="session-1",
+                token_hash="f" * 64,
+                code_id=code_id,
+                started_at=NOW,
+                service=None,
+                position=None,
+                progress_m=None,
+                off_route=False,
+                last_position_at=None,
+            )
+        )
+    finally:
+        engine.dispose()
+
+
+@pytest.mark.spec("driver_session.AC-14")
+def test_list_consults_the_real_open_sessions(db_path: Path) -> None:
+    with_shift = _code_id(_create())
+    without_shift = _code_id(_create("Tablet 4"))
+    _open_shift(db_path, with_shift)
+
+    by_id = {item["code_id"]: item for item in json.loads(_run("list", "--json").stdout)}
+
+    assert by_id[with_shift]["has_open_session"] is True
+    assert by_id[without_shift]["has_open_session"] is False
+
+
+@pytest.mark.spec("driver_session.AC-14")
+def test_revoke_consults_the_real_open_sessions(db_path: Path) -> None:
+    code_id = _code_id(_create())
+    _open_shift(db_path, code_id)
+    result = _run("revoke", code_id)
+    assert result.exit_code == 0
+    assert result.stdout.splitlines()[-1] == (
+        f"Código {code_id} revocado. Tenía un turno abierto: se cerrará en menos de 1 minuto."
+    )
+
+
+@pytest.mark.spec("driver_session.AC-14")
+def test_revoke_without_an_open_session_does_not_announce_one() -> None:
+    code_id = _code_id(_create())
+    result = _run("revoke", code_id)
+    assert result.exit_code == 0
+    assert "No tenía ningún turno abierto." in result.stdout.splitlines()[-1]
