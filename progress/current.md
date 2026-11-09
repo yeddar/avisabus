@@ -4,7 +4,8 @@
 
 **Fecha:** 2026-11-09
 **Fase:** Implementación — Bloque 4 (conductor)
-**Feature en curso:** `driver_session` v1.1 — `implementing`, ciclo 2 (F-01 y T-08)
+**Feature en curso:** `driver_session` v1.1 — `spec_blocked` (CP-3: P-02 y P-03); F-01 y N-02 con commit; T-08 sin
+commit, en el árbol de trabajo de `feat/driver_session`
 
 ## Último paso
 Bloque 3 fusionado (PR #40…#44). PR #45 (cierre del bloque 3, CP-6) y PR #46 (specs del bloque 4, CP-1)
@@ -133,8 +134,13 @@ Cada una con reviewer nuevo y PR contra `develop` sin fusionar:
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Ninguno. CP-3 de `driver_session` resuelto (PR #50, v1.1: AC-09 con ventana `20 m/s × Δt + 50 m` y primera posición
-en el tramo más temprano). PRs apiladas abiertas o pendientes de fusión: #47, #48, #49.
+**CP-3 `driver_session` T-08** (detalle en Bloqueos de `progress/impl_driver_session.md`):
+- **P-02:** `shape_dist_traveled` no son metros: longitud del feed / longitud real entre 1,64 y 4,25
+  (mediana 2,97; comprobado también por el orquestador con los 103 trazados de `data/avisabus.sqlite`). La
+  ventana y los márgenes de AC-09/AC-10 están en metros. Afecta también a `position_estimation`
+  (`distance_to_stop_m` inflada ~3×, visible en el resumen del mapa), feature cerrada.
+- **P-03:** incluso en metros reales, a σ 10 m hay hasta 139 m por detrás y 105–108 m por delante, por encima
+  del umbral de 100 m (5 y 2 posiciones de 18 714). Propuesta: umbral 150 m, ajustar la regla o cambiar el ruido exigido.
 
 ## Bloqueos
 Ninguno. 

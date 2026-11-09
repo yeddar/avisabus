@@ -486,3 +486,7 @@
 
 ## 2026-11-09 · driver_session · spec_blocked → spec_approved (v1.1, PR #50) → implementing (ciclo 2)
 - AC-09 con ventana limitada por `20 m/s × Δt + 50 m`. Pendiente: F-01 (AC-08) y T-08. Rama actualizada con `develop`.
+
+## 2026-11-09 · driver_session · implementing → spec_blocked (CP-3, T-08)
+- F-01 corregido y N-02 cubierto. T-08 sin commit: `shape_dist_traveled` no son metros (factor 1,64–4,25,
+  mediana 2,97) y, en metros reales, σ 10 m supera el umbral de AC-09. Afecta también a `position_estimation`.
