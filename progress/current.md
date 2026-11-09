@@ -4,8 +4,7 @@
 
 **Fecha:** 2026-11-09
 **Fase:** Implementación — Bloque 4 (conductor)
-**Feature en curso:** `driver_session` v1.2 — `implementing`, ciclo 2 (rematar T-08). Rama apilada sobre
-`feat/position_estimation-v1.4` (PR #52).
+**Feature en curso:** `driver_session` v1.2 — `done`, PR abierta. Siguiente: `driver_demand`.
 
 ## Último paso
 Bloque 3 fusionado (PR #40…#44). PR #45 (cierre del bloque 3, CP-6) y PR #46 (specs del bloque 4, CP-1)
@@ -20,6 +19,10 @@ Cada una con reviewer nuevo y PR contra `develop` sin fusionar:
    `driver_ui`, `driver_gps_simulator`.
 
 ## Pendiente para specs futuras
+- **driver_session v1.2 (decisión de la persona):** N-05 el umbral de 150 m solo se cumple con la semilla del test:
+  con semillas 1–20 a σ 10 m, 5/20 correlado (hasta 422 m por detrás, giros en U, se recupera solo) y 1/20
+  independiente; con paradas simuladas, 12/20 y 19/20. Limitación aceptada por el reviewer; volver a medir con
+  `driver_gps_simulator`. N-06 retirar "(la que fijó el progreso)" del design. Abiertos N-01, N-03, N-04, N-07…N-09.
 - **position_estimation v1.4:** N-01 fixtures del frontend con distancias infladas (3403 m frente a ~1242 m
   reales; las capturas `map-*` muestran "3,4 km") → regenerar antes del CP-6 del bloque 4. N-02 texto residual
   en requirements (`:13-14`, AC-05). N-03 aclarar AC-06 (la 1282 difiere 339 m de la proyección). N-04/N-05

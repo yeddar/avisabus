@@ -1,4 +1,163 @@
 # Revisión: driver_session
+Ciclo: 2 · Fecha: 2026-11-09 · Agente: reviewer · Spec: specs/driver_session/ v1.2 (APPROVED)
+Base: `origin/feat/position_estimation-v1.4...HEAD` (74bfef9)
+
+## Veredicto: APPROVED
+
+F-01 corregido. AC-09 y AC-10 cumplen v1.2 en metros reales, y el test `slow` mide lo que pide AC-09. No
+hay hallazgos bloqueantes.
+
+**Aviso para la persona:** el umbral de 150 m solo se cumple con la semilla del test. Con otras
+semillas hay retrasos de hasta 422 m, que no son un defecto de implementación (ver N-05). Conviene
+decidir si se acepta antes de `driver_demand`.
+
+## Matriz AC → evidencia
+
+Rutas relativas a `backend/tests/`. Las líneas son las de HEAD. Los AC sin cambios de código en este
+ciclo se han comprobado con la suite completa.
+
+| AC | Test(s) | Resultado | Nota |
+|---|---|---|---|
+| AC-01 | `integration/test_driver_api.py:169–195`; `unit/test_driver_login.py:86–120` | OK | Sin cambios desde el ciclo 1. |
+| AC-02 | `integration/test_driver_api.py:207–245`; `unit/test_driver_login.py:127–247` | OK | N-02 cerrado: `test_driver_api.py:226`, dígitos no ASCII con el *hasher* real. Mut. `code-ascii` detectado. |
+| AC-03 | `integration/test_driver_api.py:258`; `unit/test_driver_login.py:256` | OK | |
+| AC-04 | `integration/test_driver_api.py:290–321`; `unit/test_driver_sessions.py:728` | OK | |
+| AC-05 | `integration/test_driver_api.py:332,714`; `integration/test_network_departures.py:119–137`; `unit/test_departures.py:71–77` | OK | |
+| AC-06 | `integration/test_driver_api.py:354–429`; `integration/test_network_departures.py:142–232`; `unit/test_departures.py:83–214` | OK | |
+| AC-07 | `integration/test_driver_api.py:441–520`; `unit/test_driver_sessions.py:163–247` | OK | |
+| AC-08 | `integration/test_driver_api.py:532–612`, en especial `:601`; `unit/test_driver_sessions.py:266–340`, en especial `:325` | OK | **F-01 cerrado.** Ambos extremos dan `422` `problem+json` por HTTP, y no se guarda nada ni se avisa al *listener*. Mut. `f01-no-guard` detectado. |
+| AC-09 | `integration/test_upcoming_stops_real_shapes.py:216–229`; `unit/test_driver_sessions.py:351–643`; `unit/test_upcoming_stops.py:68–246` | OK | Ventana, regla de la primera posición, marca, persistencia y metros reales. Bucle, ida y vuelta, dos pasadas a 400 m y hueco de 5 min, cubiertos. Ver N-05. |
+| AC-10 | `unit/test_driver_sessions.py:534–675`; `unit/test_upcoming_stops.py:261–326` | OK | Con un feed inflado ×3: paradas y distancias en metros reales. Mut. `feed-stops`, `upcoming-ge`, `finished-gt` detectados. |
+| AC-11 | `integration/test_driver_api.py:623–678`; `unit/test_driver_sessions.py:683–719` | OK | |
+| AC-12 | `integration/test_driver_api.py:696`; `unit/test_driver_sessions.py:744–761` | OK | |
+| AC-13 | `integration/test_main_driver.py:82–92`; `unit/test_reap_driver_sessions.py:68–234` | OK | |
+| AC-14 | `integration/test_cli_driver_codes.py:547–570` | OK | |
+| AC-15 | `integration/test_driver_api.py:734–825`; `unit/test_driver_login.py:270–284`; `unit/test_driver_sessions.py:254–777` | OK | T-08 no añade logs. |
+
+## Verificación ejecutada
+
+| Comando | Resultado |
+|---|---|
+| `CI=1 ./init.sh verify --e2e` (puerto 4173 libre) | **Salida 0, "verify: todo en verde"**: pytest 1711 passed, 12 deselected, cobertura 99,61 %; Vitest 563 passed y 2 skipped; Playwright + axe 126 passed; ruff, mypy, lint-imports (2 contratos), build y trazabilidad, OK |
+| `cd backend && uv run pytest -m slow` | **12 passed.** La salida es distinta de 0 solo porque `--cov-fail-under=80` se aplica a este subconjunto (72,82 %); no hay ningún test fallido |
+| `uv run pytest -k upcoming_stops -m "slow or not slow" --no-cov` (comando de T-08, sin cobertura) | 47 passed |
+
+**Mutaciones** (copia en el scratchpad; línea base verde: 236 rápidos y 6 `slow`): 26 mutantes, 25
+detectados. El superviviente es `off-ge` (frontera exacta de 150,0 m), igual que en el ciclo 1:
+irrelevante, "más de 150 m" se cumple.
+
+El test `slow` detecta por sí solo `feed-shape` (volver a unidades del feed), `window-3km`,
+`window-no-elapsed`, `first-fix-nearest`, `first-fix-always` y `no-max`. No detecta
+`mark-only-if-advances`, que sí detecta `test_driver_sessions.py:400`.
+
+**Comprobación adicional:** `recorded_at` en `0001-01-01T00:00:00Z` da `204` y las peticiones siguientes
+funcionan. AC-08 solo rechaza el futuro, y no queda ningún `500` de la clase de F-01.
+
+## Hallazgos
+
+### Bloqueantes
+
+Ninguno.
+
+### No bloqueantes
+
+**N-05 · AC-09 · limitación de la regla, no defecto · `backend/src/avisabus/application/driver_sessions.py:495-500`, `backend/src/avisabus/domain/services/upcoming_stops.py:84-86`**
+
+Reproducido el aviso del implementer con el código real y los 94 trazados:
+
+| Ruido σ 10 m | Semillas con posiciones > 150 m | Posiciones | Máx. delante / detrás |
+|---|---|---|---|
+| Correlado ρ 0,95, semillas 1–20 | 5 de 20 | 28 de 374 280 | 130,8 / 422,2 m |
+| Independiente, semillas 1–20 | 1 de 20 | 1 de 374 280 | 157,1 / 121,9 m |
+| Semilla del test (control) | 0 | 0 | 97,5 / 66,9 m y 104,7 / 56,7 m |
+
+*Diagnóstico* (traza paso a paso de la semilla 17, `1040_2172_2253`; el mismo patrón en las semillas 2, 4, 6 y 18):
+
+1. El trazado hace un giro en U, con la ida y la vuelta separadas entre 4 y 35 m (`1027_*`: 4 m;
+   `1040_*`: 20–37 m).
+2. Ya en la vuelta, el error correlado deja la posición más cerca de la **ida**. El candidato queda
+   detrás del progreso y `max` lo descarta.
+3. La posición sigue a menos de 150 m, así que es "aceptada" y **mueve la marca**: Δt vale 5 s y la
+   ventana no pasa de `[progreso − 100, progreso + 150]`.
+4. El autobús sale de la ventana. Solo se recupera cuando la distancia a la ventana supera 150 m: se
+   marca `off_route`, deja de moverse la marca y la ventana crece. Se recupera en 1–2 muestras.
+
+En la semilla 17, el progreso se queda en 119,5 m mientras el autobús llega a 541,7 m (unos 50 s), con
+2 muestras de `off_route` falso con el autobús en su recorrido (6 de 374 280 en total).
+
+*Clasificación: limitación aceptable para esta feature; no es defecto de implementación ni CP-3.* El
+código aplica la regla aprobada, AC-09 fija una semilla y con ella se cumple. El retraso se corrige
+solo y es el error menos dañino: una parada ya pasada sigue en pantalla unos segundos, no desaparece
+una por pasar (el problema de P-01). **Lo que no se puede afirmar** es que 150 m sea una cota de la
+regla: se fijó en v1.2 mirando una sola realización del ruido (139 m máximo).
+
+*Dos datos para decidir*, de una simulación mía que **no forma parte de AC-09** (mismos trazados y
+semillas, con 30 s parado cada 300 m):
+- Regla actual: posiciones a más de 150 m en 12 de 20 semillas con ruido correlado (máx. 169,5 delante,
+  430,5 detrás) y 19 de 20 con ruido independiente (máx. 191,3 delante). Hay errores **por delante**
+  con el autobús parado, que es la dirección dañina.
+- Mover la marca solo cuando avanza el progreso (ver N-06): baja el retraso a 172–184 m, pero con paradas
+  el adelanto llega a **590 m** en 20 de 20 semillas. Reintroduce P-01, así que no es la solución.
+
+Es ruido sintético; no hay trazas GPS reales. **Propuesta para la persona:** aceptar la limitación ahora
+y volver a medir con `driver_gps_simulator`, con paradas y giros en U, antes de apoyarse en esto en
+`driver_demand`.
+
+**N-06 · redacción de la spec · `specs/driver_session/design.md:95-96` frente a `specs/driver_session/requirements.md:92-93`**
+AC-09 dice "la última aceptada"; el design añade "(la que fijó el progreso)", que no cubre una posición
+aceptada que no avanza. El implementer sigue AC-09, que manda sobre el design, y lo fija
+`test_driver_sessions.py:396-400`; los datos de N-05 respaldan esa lectura. Conviene quitar el paréntesis
+en la próxima revisión. No requiere CP-3.
+
+**N-07 · `backend/tests/integration/test_upcoming_stops_real_shapes.py:190-196`.** `design.md` §6 pide
+informar del máximo "por trazado"; el test lo da por nivel de ruido. Solo afecta al informe: las
+aserciones cubren cada posición.
+
+**N-08 · redacción de la spec · `specs/driver_session/design.md:52-61,153-156`.** `progress_recorded_at`
+falta en el modelo de §3 y en la tabla de §4; solo aparece en el texto de §3. Sin efecto en el código.
+
+**N-09 · `docs/conventions.md` §7 · commit `f34e3de`.** El tipo `wip(...)` no es habitual en el repositorio.
+Irrelevante si la rama se aplasta al fusionar.
+
+Del ciclo 1: **N-02 cerrado**; N-01, N-03 y N-04 siguen abiertos, sin cambios.
+
+### Comprobaciones pedidas
+
+**Metros reales.** `TripRoutes._load` usa `cumulative_distances` para la forma y `stop_distances` para las
+paradas (`application/driver_sessions.py:331-334`). `project_progress`, `_window`, `OFF_ROUTE_M` y
+`upcoming_stops` operan sobre esos valores. Ningún cálculo de AC-09/AC-10 usa ya unidades del feed
+(`shape_distances` no aparece en `application/` ni en `upcoming_stops.py`).
+
+**Test `slow`.** Mide lo que dice AC-09: los 94 trazados, 30 km/h, posición cada 5 s, σ 10 m correlado
+ρ 0,95 e independiente, con `UpdateDriverPosition` y `TripRoutes` reales, y el error en metros reales. El
+umbral es 150 m, el de v1.2; las constantes 100/20/50/30/150 coinciden con la spec. El paso de 100 a
+150 m (`587702a`) es el autorizado por la persona en v1.2.
+
+**Semilla.** No hay indicios de que se eligiera mirando resultados:
+- `SEED = 20261109` (la fecha del día) y la clave del generador ya están en el primer commit del test
+  (`f34e3de`), cuando el test **fallaba** con 100 m, y no han cambiado después.
+- Con las semillas 1–20, pasan la prueba 15 de 20 (correlado) y 19 de 20 (independiente): que la del test
+  pase no es un resultado raro.
+- **Límite:** git no prueba qué se hizo antes de ese commit. Las cifras de P-03 (139,1 m), obtenidas con un
+  experimento en el scratchpad que no está en el repositorio, no coinciden con las del test (66,9 m), así
+  que corresponden a otra realización del ruido.
+
+**Decisiones del implementer.**
+
+| Decisión | Valoración |
+|---|---|
+| `_stop_distances` → `stop_distances` en `position_estimator.py` | Cabe. Es un renombrado sin cambio de comportamiento que evita duplicar la lógica que el design pide usar "exactamente como" `position_estimation` v1.4. No está en los ficheros de T-08; se acepta por ser mínimo. |
+| `progress_recorded_at` con toda posición aceptada | Cabe: es la lectura de AC-09, y la alternativa empeora con paradas (N-05, N-06). |
+| `elapsed_s` = 0 sin marca | Cabe. Solo es alcanzable con filas anteriores a la columna; es la opción conservadora. |
+| Distancia mínima en la primera posición | Cabe: AC-09 define "fuera de recorrido" por la distancia al trazado. |
+| Sin migración (ADR-011) | Cabe. `driver_session` no existe en `data/avisabus.sqlite` y los datos son efímeros. |
+
+**Regresiones.** Ninguna. En `position_estimator.py` el único cambio es el renombrado y sus tests pasan.
+**Alcance:** fuera de la feature solo el renombrado y `test_main_position.py`, ya valorado en el ciclo 1.
+Contrato OpenAPI sin cambios en T-08. Sin textos de interfaz. `qr/` ignorada.
+
+---
+
 Ciclo: 1 · Fecha: 2026-11-09 · Agente: reviewer · Spec: specs/driver_session/ v1.0 (APPROVED)
 Base: `origin/feat/driver_codes_cli...HEAD` (20704eb)
 

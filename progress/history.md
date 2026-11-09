@@ -507,3 +507,6 @@
 ## 2026-11-09 · driver_session v1.2 · implementing → in_review (ciclo 2)
 - F-01 y T-08 en metros reales; trazados reales dentro de 150 m con la semilla del test. Aviso: con otras semillas
   a σ 10 m correlado hay casos fuera (hasta 422 m por detrás). Verify --e2e y `slow` en verde (1711 backend).
+
+## 2026-11-09 · driver_session · in_review → done
+- Revisión ciclo 2 (v1.2): APPROVED (25/26 mutantes); N-05: el umbral de 150 m depende de la semilla.
