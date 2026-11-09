@@ -1,6 +1,6 @@
 # Turno del conductor — requirements
 
-> Feature: `driver_session` · Versión: 1.1 · Estado: APPROVED
+> Feature: `driver_session` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-24, RF-25, RF-26, RF-30, RNF-06, RNF-07, RNF-13 · Casos de uso: CU-08, CU-09 (posición), CU-10, CU-13 (revocación) · Depende de: gtfs_import, driver_codes_cli
 
 ## Contexto
@@ -100,7 +100,10 @@ capacidad) y el WebSocket del conductor son de `driver_demand`.
   pasadas a pocos metros separadas por 400 m de recorrido; hueco de GPS de 5 min) + integration
   `slow` con los trazados del feed real: recorriendo cada trazado a 30 km/h con una posición cada
   5 s y ruido gaussiano σ = 10 m (semilla fija, correlado ρ = 0,95 e independiente), NINGUNA
-  posición DEBERÁ tener el progreso más de 100 m por delante del real ni más de 100 m por detrás.
+  posición DEBERÁ tener el progreso más de 150 m por delante del real ni más de 150 m por detrás
+  (v1.2: las pasadas posteriores que causaban P-01 están a 330 m o más). (v1.2) El progreso, las
+  ventanas y los márgenes de AC-09 y AC-10 se miden en **metros reales** sobre la forma, con las
+  mismas distancias que `position_estimation.AC-06` v1.4.
 - **driver_session.AC-10** — EL SISTEMA DEBERÁ calcular las próximas paradas del viaje como las
   que están más de 20 m por delante del progreso, en orden y hasta 5, con `stop_id`, nombre,
   `stop_sequence` y distancia; SI el progreso alcanza la última parada (a menos de 20 m), ENTONCES
@@ -155,3 +158,4 @@ capacidad) y el WebSocket del conductor son de `driver_demand`.
 |---|---|---|---|
 | 1.0 | 2026-11-09 | Versión inicial aprobada (PR #46). | CP-1 del bloque 4. Aprobada por la persona. |
 | 1.1 | 2026-11-09 | AC-09: ventana de búsqueda limitada por la distancia que el autobús ha podido recorrer (`20 m/s × Δt + 50 m`) y, sin progreso anterior, tramo más temprano entre los casi mínimos; verificación con los trazados reales y ruido. CU-08 4b alineado (trazado del viaje elegido). | CP-3 de `driver_session` (P-01): con la ventana fija de 3 km, el ruido GPS hacía saltar el progreso a la pasada posterior en 56–91 de 94 trazados reales. Aprobada por la persona (PR #50). |
+| 1.2 | 2026-11-09 | AC-09 y AC-10 en metros reales (las distancias de `shape_dist_traveled` no son metros); umbral del test con trazados reales y ruido σ 10 m: 150 m (máximo observado: 108 m por delante y 139 m por detrás). | CP-3 de `driver_session` en T-08: P-02 y P-03. Pendiente de aprobación. |

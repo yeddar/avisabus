@@ -1,6 +1,6 @@
 # Estimación de la posición del autobús — design
 
-> Feature: `position_estimation` · Versión: 1.3 · Estado: APPROVED
+> Feature: `position_estimation` · Versión: 1.4 · Estado: APPROVED
 > Requisitos: RF-12, RNF-01 · Casos de uso: CU-02 · Depende de: gtfs_import, stop_arrivals_api
 
 ## 1. Resumen
@@ -20,7 +20,7 @@ flowchart LR
 | Capa | Módulo | Contenido |
 |---|---|---|
 | domain | `models/position.py` | `PositionStatus`, `PositionEstimate`, `ShapeView` |
-| domain | `services/geometry.py` | `haversine_m`, `cumulative_distances`, `point_at_distance`, `bearing_deg`, `project_onto_shape` |
+| domain | `services/geometry.py` | `haversine_m`, `cumulative_distances`, `point_at_distance`, `bearing_deg`, `project_onto_shape`, `feed_to_metres` (v1.4; sustituye a `shape_distances`, que devolvía el valor del feed) |
 | domain | `services/position_estimator.py` | `estimate_position(...)` |
 | domain | `ports/network.py` | Ampliación: `trip_shape_id`, `shape_stops` |
 | application | `get_vehicle_position.py` | `GetVehiclePosition` |
@@ -86,9 +86,12 @@ def estimate_position(
 ```
 
 Algoritmo:
-1. Distancias de la forma: `dist_traveled` o `cumulative_distances(shape)` (AC-06).
-2. Distancias de paradas: `shape_dist_traveled` o `project_onto_shape` con restricción monótona
-   (cada parada se proyecta sobre el tramo de forma posterior a la anterior) (AC-06).
+1. (v1.4) Distancias de la forma: siempre `cumulative_distances(shape)` en metros (AC-06).
+2. (v1.4) Distancias de paradas: si las paradas y todos los puntos de la forma traen
+   `shape_dist_traveled`, `feed_to_metres(shape, feed_values)`: para cada valor, el tramo de la
+   forma cuyo `dist_traveled` lo contiene y la interpolación lineal de su distancia en metros
+   (acotado a los extremos); si no, `project_onto_shape` con restricción monótona (AC-06). En
+   ambos casos se aplica después `max` acumulado para que no decrezcan.
 3. Parada objetivo `k`: aparición de `target_stop_id` con `|sched_k − arrival_at|` mínimo (AC-07).
 4. `δ = arrival_at − sched_k`; `s = (now − δ − service_day_start).total_seconds()`.
 5. (v1.2) Si `k = 0` (la parada objetivo es la primera del viaje) → `AT_STOP`, `d = d_0`.

@@ -1,6 +1,6 @@
 # Importación del GTFS — requirements
 
-> Feature: `gtfs_import` · Versión: 1.3 · Estado: APPROVED
+> Feature: `gtfs_import` · Versión: 1.4 · Estado: APPROVED
 > Requisitos: RF-01, RF-02, RF-03, RF-04, RF-32 · Casos de uso: CU-11 · Depende de: project_scaffold
 
 ## Contexto
@@ -15,7 +15,7 @@ paradas); una línea comercial puede tener varios `route_id` (24, 62, 73, 98, C2
 valenciano; `wheelchair_boarding = 0` en todas las paradas; no incluye líneas nocturnas;
 **`trips.txt` no incluye `direction_id`** (columnas: `route_id, service_id, trip_id,
 trip_headsign, trip_short_name, shape_id`), por lo que el sentido se deriva al importar;
-`shape_dist_traveled` viene en `stop_times` y `shapes`, en metros.
+`shape_dist_traveled` viene en `stop_times` y `shapes`, en una unidad propia del feed que **no son metros** (v1.4: la longitud que indica es entre 1,64 y 4,25 veces la real, mediana 2,97, con un factor distinto en cada forma; P-02 de `driver_session`). Solo sirve para ordenar y situar puntos a lo largo de la forma; las distancias en metros se calculan con la geometría (`position_estimation` v1.4).
 
 La exploración E-01 (`progress/explore_gtfs_feed.md`) confirmó además:
 - 42 líneas con viajes (las 23 y 30 no tienen ninguno, y el `route_id` 1068 tampoco);
@@ -214,3 +214,4 @@ La exploración E-01 (`progress/explore_gtfs_feed.md`) confirmó además:
 | 1.1 | 2026-10-31 | Circulares de EMT tratadas como lineales (medios bucles); AC-24 y AC-25 con verificaciones ajustadas; AC-07 incluye `trip_headsign`; AC-28 (solo líneas con viajes); AC-29 (todas las formas por sentido); línea 98 en `gtfs_mini`. | CP-3 tras la exploración E-01 (`progress/explore_gtfs_feed.md`). Aprobada por la persona. |
 | 1.2 | 2026-10-31 | Design §8 y T-04: `gtfs_mini` con `--date 2026-11-09` (lunes + domingo) y límite < 2,5 MB. Design §3: `gtfs import` sin la opción `--yes` (no tenía comportamiento definido). | Bloqueo B-01 del implementer (T-04): con 2026-11-04 faltaba el `route_id` 1055 de la 98, necesario para AC-24 y AC-29. Aprobada por la persona. |
 | 1.3 | 2026-10-31 | Se documenta lo implementado: desempate de AC-09; definición de "hoy" y último día válido en AC-19; `FeedInfoSource`/`DirectionReport` en design §2–§3; errores de datos de design §6 (incluido `direction_id` parcial = error). Nota sobre la ventana de `scheduled_stop_times`, ampliada por `stop_arrivals_api` v1.2. Sin cambios de código en esta feature. | Hallazgos S-1, S-2, S-3 y N-07 de `progress/review_gtfs_import.md`. Aprobada por la persona. |
+| 1.4 | 2026-11-09 | Solo documentación: `shape_dist_traveled` no está en metros (factor 1,64–4,25 respecto a la longitud real, distinto por forma); se importa tal cual y se usa solo como posición relativa a lo largo de la forma. | P-02 de `driver_session` (CP-3), comprobado con los 103 trazados del feed. Pendiente de aprobación. |
