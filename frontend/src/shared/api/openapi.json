@@ -285,6 +285,84 @@
         "title": "CreateAlertRequest",
         "type": "object"
       },
+      "DepartureSchema": {
+        "properties": {
+          "departure_at": {
+            "description": "Departure from the first stop.",
+            "format": "date-time",
+            "title": "Departure At",
+            "type": "string"
+          },
+          "first_stop_name": {
+            "title": "First Stop Name",
+            "type": "string"
+          },
+          "headsign": {
+            "title": "Headsign",
+            "type": "string"
+          },
+          "service_date": {
+            "description": "Service day of the trip (may be yesterday).",
+            "format": "date",
+            "title": "Service Date",
+            "type": "string"
+          },
+          "taken": {
+            "description": "Whether another open shift already drives it.",
+            "title": "Taken",
+            "type": "boolean"
+          },
+          "trip_id": {
+            "title": "Trip Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "trip_id",
+          "service_date",
+          "departure_at",
+          "first_stop_name",
+          "headsign",
+          "taken"
+        ],
+        "title": "DepartureSchema",
+        "type": "object"
+      },
+      "DeparturesResponse": {
+        "properties": {
+          "departures": {
+            "description": "From 30 min before to 60 min after now, by time.",
+            "items": {
+              "$ref": "#/components/schemas/DepartureSchema"
+            },
+            "title": "Departures",
+            "type": "array"
+          }
+        },
+        "required": ["departures"],
+        "title": "DeparturesResponse",
+        "type": "object"
+      },
+      "DirectionSchema": {
+        "properties": {
+          "direction_id": {
+            "title": "Direction Id",
+            "type": "integer"
+          },
+          "headsign": {
+            "title": "Headsign",
+            "type": "string"
+          }
+        },
+        "required": ["direction_id", "headsign"],
+        "title": "DirectionSchema",
+        "type": "object"
+      },
+      "GpsState": {
+        "enum": ["WAITING", "OK", "STALE"],
+        "title": "GpsState",
+        "type": "string"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -312,6 +390,47 @@
         },
         "required": ["status", "version"],
         "title": "HealthResponse",
+        "type": "object"
+      },
+      "LineSchema": {
+        "properties": {
+          "color": {
+            "title": "Color",
+            "type": "string"
+          },
+          "directions": {
+            "items": {
+              "$ref": "#/components/schemas/DirectionSchema"
+            },
+            "title": "Directions",
+            "type": "array"
+          },
+          "line": {
+            "title": "Line",
+            "type": "string"
+          },
+          "text_color": {
+            "title": "Text Color",
+            "type": "string"
+          }
+        },
+        "required": ["line", "color", "text_color", "directions"],
+        "title": "LineSchema",
+        "type": "object"
+      },
+      "LinesResponse": {
+        "properties": {
+          "lines": {
+            "description": "Lines of the active network, in line order.",
+            "items": {
+              "$ref": "#/components/schemas/LineSchema"
+            },
+            "title": "Lines",
+            "type": "array"
+          }
+        },
+        "required": ["lines"],
+        "title": "LinesResponse",
         "type": "object"
       },
       "MyAlertsResponse": {
@@ -435,6 +554,36 @@
         "title": "PositionArrivalSchema",
         "type": "object"
       },
+      "PositionRequest": {
+        "properties": {
+          "accuracy_m": {
+            "minimum": 0.0,
+            "title": "Accuracy M",
+            "type": "number"
+          },
+          "lat": {
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Lon",
+            "type": "number"
+          },
+          "recorded_at": {
+            "description": "At most 30 s in the future.",
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          }
+        },
+        "required": ["lat", "lon", "accuracy_m", "recorded_at"],
+        "title": "PositionRequest",
+        "type": "object"
+      },
       "PositionSchema": {
         "properties": {
           "bearing_deg": {
@@ -518,6 +667,74 @@
         },
         "required": ["type", "title", "status"],
         "title": "ProblemSchema",
+        "type": "object"
+      },
+      "ServiceSchema": {
+        "properties": {
+          "direction_id": {
+            "title": "Direction Id",
+            "type": "integer"
+          },
+          "line": {
+            "title": "Line",
+            "type": "string"
+          },
+          "service_date": {
+            "format": "date",
+            "title": "Service Date",
+            "type": "string"
+          },
+          "trip_id": {
+            "title": "Trip Id",
+            "type": "string"
+          }
+        },
+        "required": ["line", "direction_id", "trip_id", "service_date"],
+        "title": "ServiceSchema",
+        "type": "object"
+      },
+      "SessionStateResponse": {
+        "properties": {
+          "finished": {
+            "description": "The trip has reached its last stop.",
+            "title": "Finished",
+            "type": "boolean"
+          },
+          "gps": {
+            "$ref": "#/components/schemas/GpsState",
+            "description": "`WAITING` without a position; `STALE` if the last one is over 30 s old."
+          },
+          "off_route": {
+            "description": "The last position is over 150 m from the shape.",
+            "title": "Off Route",
+            "type": "boolean"
+          },
+          "service": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ServiceSchema"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The chosen departure, if any."
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "upcoming": {
+            "description": "Next stops of the trip, up to 5.",
+            "items": {
+              "$ref": "#/components/schemas/UpcomingStopSchema"
+            },
+            "title": "Upcoming",
+            "type": "array"
+          }
+        },
+        "required": ["session_id", "service", "gps", "off_route", "finished", "upcoming"],
+        "title": "SessionStateResponse",
         "type": "object"
       },
       "ShapeResponse": {
@@ -620,6 +837,45 @@
         },
         "required": ["stop_id", "name", "lat", "lon", "sequence"],
         "title": "ShapeStopSchema",
+        "type": "object"
+      },
+      "StartSessionRequest": {
+        "examples": [
+          {
+            "code": "4821 0937"
+          }
+        ],
+        "properties": {
+          "code": {
+            "description": "Access code: 8 digits; spaces are ignored.",
+            "title": "Code",
+            "type": "string"
+          }
+        },
+        "required": ["code"],
+        "title": "StartSessionRequest",
+        "type": "object"
+      },
+      "StartSessionResponse": {
+        "properties": {
+          "idle_timeout_s": {
+            "description": "Seconds without a position before the shift closes.",
+            "title": "Idle Timeout S",
+            "type": "integer"
+          },
+          "session_id": {
+            "description": "Random UUID v4.",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "session_token": {
+            "description": "Bearer token of the shift. It is only returned here.",
+            "title": "Session Token",
+            "type": "string"
+          }
+        },
+        "required": ["session_id", "session_token", "idle_timeout_s"],
+        "title": "StartSessionResponse",
         "type": "object"
       },
       "StopArrivalsResponse": {
@@ -768,6 +1024,30 @@
         },
         "required": ["stop_id", "name", "lines"],
         "title": "StopResponse",
+        "type": "object"
+      },
+      "UpcomingStopSchema": {
+        "properties": {
+          "distance_m": {
+            "description": "Along the shape, from the bus.",
+            "title": "Distance M",
+            "type": "number"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "stop_id": {
+            "title": "Stop Id",
+            "type": "string"
+          },
+          "stop_sequence": {
+            "title": "Stop Sequence",
+            "type": "integer"
+          }
+        },
+        "required": ["stop_id", "name", "stop_sequence", "distance_m"],
+        "title": "UpcomingStopSchema",
         "type": "object"
       },
       "ValidationError": {
@@ -962,6 +1242,13 @@
         "required": ["trip_id", "service_date"],
         "title": "VehicleSchema",
         "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "description": "`session_token` returned by `POST /driver/sessions`.",
+        "scheme": "bearer",
+        "type": "http"
       }
     }
   },
@@ -1271,6 +1558,475 @@
         },
         "summary": "Cancel Alert",
         "tags": ["alerts"]
+      }
+    },
+    "/api/v1/driver/departures": {
+      "get": {
+        "operationId": "departures_api_v1_driver_departures_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "line",
+            "required": true,
+            "schema": {
+              "title": "Line",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "direction_id",
+            "required": true,
+            "schema": {
+              "title": "Direction Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeparturesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 401,
+                  "title": "Unauthorized",
+                  "type": "https://avisabus/problems/invalid-session"
+                }
+              }
+            },
+            "description": "Missing token, or not of an open shift."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 503,
+                  "title": "Service Unavailable",
+                  "type": "https://avisabus/problems/network-unavailable"
+                }
+              }
+            },
+            "description": "No active GTFS feed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Departures",
+        "tags": ["driver"]
+      }
+    },
+    "/api/v1/driver/lines": {
+      "get": {
+        "operationId": "lines_api_v1_driver_lines_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 401,
+                  "title": "Unauthorized",
+                  "type": "https://avisabus/problems/invalid-session"
+                }
+              }
+            },
+            "description": "Missing token, or not of an open shift."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 503,
+                  "title": "Service Unavailable",
+                  "type": "https://avisabus/problems/network-unavailable"
+                }
+              }
+            },
+            "description": "No active GTFS feed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Lines",
+        "tags": ["driver"]
+      }
+    },
+    "/api/v1/driver/sessions": {
+      "post": {
+        "operationId": "start_session_api_v1_driver_sessions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartSessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartSessionResponse"
+                }
+              }
+            },
+            "description": "Shift started. An open shift of the code is closed first."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 401,
+                  "title": "Unauthorized",
+                  "type": "https://avisabus/problems/invalid-driver-code"
+                }
+              }
+            },
+            "description": "Unknown or revoked code (same body in every case)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 429,
+                  "title": "Too Many Requests",
+                  "type": "https://avisabus/problems/rate-limited"
+                }
+              }
+            },
+            "description": "Too many failed attempts from the IP address.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before trying again.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Start Session",
+        "tags": ["driver"]
+      }
+    },
+    "/api/v1/driver/sessions/current": {
+      "delete": {
+        "operationId": "end_session_api_v1_driver_sessions_current_delete",
+        "responses": {
+          "204": {
+            "description": "Shift ended and deleted with its position."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 401,
+                  "title": "Unauthorized",
+                  "type": "https://avisabus/problems/invalid-session"
+                }
+              }
+            },
+            "description": "Missing token, or not of an open shift."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "End Session",
+        "tags": ["driver"]
+      },
+      "get": {
+        "operationId": "get_session_api_v1_driver_sessions_current_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionStateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 401,
+                  "title": "Unauthorized",
+                  "type": "https://avisabus/problems/invalid-session"
+                }
+              }
+            },
+            "description": "Missing token, or not of an open shift."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Session",
+        "tags": ["driver"]
+      }
+    },
+    "/api/v1/driver/sessions/current/position": {
+      "put": {
+        "operationId": "update_position_api_v1_driver_sessions_current_position_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PositionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Accepted (a position older than the stored one is discarded)."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 401,
+                  "title": "Unauthorized",
+                  "type": "https://avisabus/problems/invalid-session"
+                }
+              }
+            },
+            "description": "Missing token, or not of an open shift."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 422,
+                  "title": "Unprocessable Entity",
+                  "type": "about:blank"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              }
+            },
+            "description": "`recorded_at` is more than 30 s in the future (problem+json), or the body is invalid (FastAPI validation error, application/json)."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Position",
+        "tags": ["driver"]
+      }
+    },
+    "/api/v1/driver/sessions/current/service": {
+      "put": {
+        "operationId": "select_service_api_v1_driver_sessions_current_service_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServiceSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionStateResponse"
+                }
+              }
+            },
+            "description": "Departure chosen; the state of the shift."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 401,
+                  "title": "Unauthorized",
+                  "type": "https://avisabus/problems/invalid-session"
+                }
+              }
+            },
+            "description": "Missing token, or not of an open shift."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 409,
+                  "title": "Conflict",
+                  "type": "https://avisabus/problems/departure-taken"
+                }
+              }
+            },
+            "description": "Another open shift already drives it."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 422,
+                  "title": "Unprocessable Entity",
+                  "type": "https://avisabus/problems/invalid-departure"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              }
+            },
+            "description": "The departure is not among those offered (problem+json), or the body is invalid (FastAPI validation error, application/json)."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 503,
+                  "title": "Service Unavailable",
+                  "type": "https://avisabus/problems/network-unavailable"
+                }
+              }
+            },
+            "description": "No active GTFS feed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Select Service",
+        "tags": ["driver"]
       }
     },
     "/api/v1/health": {

@@ -55,6 +55,109 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/driver/departures': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Departures */
+    get: operations['departures_api_v1_driver_departures_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/driver/lines': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lines */
+    get: operations['lines_api_v1_driver_lines_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/driver/sessions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Start Session */
+    post: operations['start_session_api_v1_driver_sessions_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/driver/sessions/current': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Session */
+    get: operations['get_session_api_v1_driver_sessions_current_get'];
+    put?: never;
+    post?: never;
+    /** End Session */
+    delete: operations['end_session_api_v1_driver_sessions_current_delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/driver/sessions/current/position': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Update Position */
+    put: operations['update_position_api_v1_driver_sessions_current_position_put'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/driver/sessions/current/service': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Select Service */
+    put: operations['select_service_api_v1_driver_sessions_current_service_put'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/health': {
     parameters: {
       query?: never;
@@ -296,6 +399,52 @@ export interface components {
        */
       trip_id: string;
     };
+    /** DepartureSchema */
+    DepartureSchema: {
+      /**
+       * Departure At
+       * Format: date-time
+       * @description Departure from the first stop.
+       */
+      departure_at: string;
+      /** First Stop Name */
+      first_stop_name: string;
+      /** Headsign */
+      headsign: string;
+      /**
+       * Service Date
+       * Format: date
+       * @description Service day of the trip (may be yesterday).
+       */
+      service_date: string;
+      /**
+       * Taken
+       * @description Whether another open shift already drives it.
+       */
+      taken: boolean;
+      /** Trip Id */
+      trip_id: string;
+    };
+    /** DeparturesResponse */
+    DeparturesResponse: {
+      /**
+       * Departures
+       * @description From 30 min before to 60 min after now, by time.
+       */
+      departures: components['schemas']['DepartureSchema'][];
+    };
+    /** DirectionSchema */
+    DirectionSchema: {
+      /** Direction Id */
+      direction_id: number;
+      /** Headsign */
+      headsign: string;
+    };
+    /**
+     * GpsState
+     * @enum {string}
+     */
+    GpsState: 'WAITING' | 'OK' | 'STALE';
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
@@ -310,6 +459,25 @@ export interface components {
       status: 'ok';
       /** Version */
       version: string;
+    };
+    /** LineSchema */
+    LineSchema: {
+      /** Color */
+      color: string;
+      /** Directions */
+      directions: components['schemas']['DirectionSchema'][];
+      /** Line */
+      line: string;
+      /** Text Color */
+      text_color: string;
+    };
+    /** LinesResponse */
+    LinesResponse: {
+      /**
+       * Lines
+       * @description Lines of the active network, in line order.
+       */
+      lines: components['schemas']['LineSchema'][];
     };
     /**
      * MyAlertsResponse
@@ -392,6 +560,21 @@ export interface components {
        */
       sae_destination: string | null;
     };
+    /** PositionRequest */
+    PositionRequest: {
+      /** Accuracy M */
+      accuracy_m: number;
+      /** Lat */
+      lat: number;
+      /** Lon */
+      lon: number;
+      /**
+       * Recorded At
+       * Format: date-time
+       * @description At most 30 s in the future.
+       */
+      recorded_at: string;
+    };
     /** PositionSchema */
     PositionSchema: {
       /**
@@ -443,6 +626,44 @@ export interface components {
       title: string;
       /** Type */
       type: string;
+    };
+    /** ServiceSchema */
+    ServiceSchema: {
+      /** Direction Id */
+      direction_id: number;
+      /** Line */
+      line: string;
+      /**
+       * Service Date
+       * Format: date
+       */
+      service_date: string;
+      /** Trip Id */
+      trip_id: string;
+    };
+    /** SessionStateResponse */
+    SessionStateResponse: {
+      /**
+       * Finished
+       * @description The trip has reached its last stop.
+       */
+      finished: boolean;
+      /** @description `WAITING` without a position; `STALE` if the last one is over 30 s old. */
+      gps: components['schemas']['GpsState'];
+      /**
+       * Off Route
+       * @description The last position is over 150 m from the shape.
+       */
+      off_route: boolean;
+      /** @description The chosen departure, if any. */
+      service: components['schemas']['ServiceSchema'] | null;
+      /** Session Id */
+      session_id: string;
+      /**
+       * Upcoming
+       * @description Next stops of the trip, up to 5.
+       */
+      upcoming: components['schemas']['UpcomingStopSchema'][];
     };
     /**
      * ShapeResponse
@@ -510,6 +731,37 @@ export interface components {
       sequence: number;
       /** Stop Id */
       stop_id: string;
+    };
+    /**
+     * StartSessionRequest
+     * @example {
+     *       "code": "4821 0937"
+     *     }
+     */
+    StartSessionRequest: {
+      /**
+       * Code
+       * @description Access code: 8 digits; spaces are ignored.
+       */
+      code: string;
+    };
+    /** StartSessionResponse */
+    StartSessionResponse: {
+      /**
+       * Idle Timeout S
+       * @description Seconds without a position before the shift closes.
+       */
+      idle_timeout_s: number;
+      /**
+       * Session Id
+       * @description Random UUID v4.
+       */
+      session_id: string;
+      /**
+       * Session Token
+       * @description Bearer token of the shift. It is only returned here.
+       */
+      session_token: string;
     };
     /**
      * StopArrivalsResponse
@@ -626,6 +878,20 @@ export interface components {
       name: string;
       /** Stop Id */
       stop_id: string;
+    };
+    /** UpcomingStopSchema */
+    UpcomingStopSchema: {
+      /**
+       * Distance M
+       * @description Along the shape, from the bus.
+       */
+      distance_m: number;
+      /** Name */
+      name: string;
+      /** Stop Id */
+      stop_id: string;
+      /** Stop Sequence */
+      stop_sequence: number;
     };
     /** ValidationError */
     ValidationError: {
@@ -975,6 +1241,415 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  departures_api_v1_driver_departures_get: {
+    parameters: {
+      query: {
+        line: string;
+        direction_id: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DeparturesResponse'];
+        };
+      };
+      /** @description Missing token, or not of an open shift. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProblemSchema'];
+          /**
+           * @example {
+           *       "status": 401,
+           *       "title": "Unauthorized",
+           *       "type": "https://avisabus/problems/invalid-session"
+           *     }
+           */
+          'application/problem+json': unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+      /** @description No active GTFS feed. */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProblemSchema'];
+          /**
+           * @example {
+           *       "status": 503,
+           *       "title": "Service Unavailable",
+           *       "type": "https://avisabus/problems/network-unavailable"
+           *     }
+           */
+          'application/problem+json': unknown;
+        };
+      };
+    };
+  };
+  lines_api_v1_driver_lines_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LinesResponse'];
+        };
+      };
+      /** @description Missing token, or not of an open shift. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProblemSchema'];
+          /**
+           * @example {
+           *       "status": 401,
+           *       "title": "Unauthorized",
+           *       "type": "https://avisabus/problems/invalid-session"
+           *     }
+           */
+          'application/problem+json': unknown;
+        };
+      };
+      /** @description No active GTFS feed. */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProblemSchema'];
+          /**
+           * @example {
+           *       "status": 503,
+           *       "title": "Service Unavailable",
+           *       "type": "https://avisabus/problems/network-unavailable"
+           *     }
+           */
+          'application/problem+json': unknown;
+        };
+      };
+    };
+  };
+  start_session_api_v1_driver_sessions_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['StartSessionRequest'];
+      };
+    };
+    responses: {
+      /** @description Shift started. An open shift of the code is closed first. */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['StartSessionResponse'];
+        };
+      };
+      /** @description Unknown or revoked code (same body in every case). */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProblemSchema'];
+          /**
+           * @example {
+           *       "status": 401,
+           *       "title": "Unauthorized",
+           *       "type": "https://avisabus/problems/invalid-driver-code"
+           *     }
+           */
+          'application/problem+json': unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+      /** @description Too many failed attempts from the IP address. */
+      429: {
+        headers: {
+          /** @description Seconds to wait before trying again. */
+          'Retry-After'?: number;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProblemSchema'];
+          /**
+           * @example {
+           *       "status": 429,
+           *       "title": "Too Many Requests",
+           *       "type": "https://avisabus/problems/rate-limited"
+           *     }
+           */
+          'application/problem+json': unknown;
+        };
+      };
+    };
+  };
+  get_session_api_v1_driver_sessions_current_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SessionStateResponse'];
+        };
+      };
+      /** @description Missing token, or not of an open shift. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProblemSchema'];
+          /**
+           * @example {
+           *       "status": 401,
+           *       "title": "Unauthorized",
+           *       "type": "https://avisabus/problems/invalid-session"
+           *     }
+           */
+          'application/problem+json': unknown;
+        };
+      };
+    };
+  };
+  end_session_api_v1_driver_sessions_current_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Shift ended and deleted with its position. */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Missing token, or not of an open shift. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProblemSchema'];
+          /**
+           * @example {
+           *       "status": 401,
+           *       "title": "Unauthorized",
+           *       "type": "https://avisabus/problems/invalid-session"
+           *     }
+           */
+          'application/problem+json': unknown;
+        };
+      };
+    };
+  };
+  update_position_api_v1_driver_sessions_current_position_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PositionRequest'];
+      };
+    };
+    responses: {
+      /** @description Accepted (a position older than the stored one is discarded). */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Missing token, or not of an open shift. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProblemSchema'];
+          /**
+           * @example {
+           *       "status": 401,
+           *       "title": "Unauthorized",
+           *       "type": "https://avisabus/problems/invalid-session"
+           *     }
+           */
+          'application/problem+json': unknown;
+        };
+      };
+      /** @description `recorded_at` is more than 30 s in the future (problem+json), or the body is invalid (FastAPI validation error, application/json). */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+          /**
+           * @example {
+           *       "status": 422,
+           *       "title": "Unprocessable Entity",
+           *       "type": "about:blank"
+           *     }
+           */
+          'application/problem+json': components['schemas']['ProblemSchema'];
+        };
+      };
+    };
+  };
+  select_service_api_v1_driver_sessions_current_service_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ServiceSchema'];
+      };
+    };
+    responses: {
+      /** @description Departure chosen; the state of the shift. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SessionStateResponse'];
+        };
+      };
+      /** @description Missing token, or not of an open shift. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProblemSchema'];
+          /**
+           * @example {
+           *       "status": 401,
+           *       "title": "Unauthorized",
+           *       "type": "https://avisabus/problems/invalid-session"
+           *     }
+           */
+          'application/problem+json': unknown;
+        };
+      };
+      /** @description Another open shift already drives it. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProblemSchema'];
+          /**
+           * @example {
+           *       "status": 409,
+           *       "title": "Conflict",
+           *       "type": "https://avisabus/problems/departure-taken"
+           *     }
+           */
+          'application/problem+json': unknown;
+        };
+      };
+      /** @description The departure is not among those offered (problem+json), or the body is invalid (FastAPI validation error, application/json). */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+          /**
+           * @example {
+           *       "status": 422,
+           *       "title": "Unprocessable Entity",
+           *       "type": "https://avisabus/problems/invalid-departure"
+           *     }
+           */
+          'application/problem+json': components['schemas']['ProblemSchema'];
+        };
+      };
+      /** @description No active GTFS feed. */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProblemSchema'];
+          /**
+           * @example {
+           *       "status": 503,
+           *       "title": "Service Unavailable",
+           *       "type": "https://avisabus/problems/network-unavailable"
+           *     }
+           */
+          'application/problem+json': unknown;
         };
       };
     };
