@@ -1,4 +1,133 @@
 # Revisión: driver_codes_cli
+Ciclo: 2 · Fecha: 2026-11-09 · Agente: reviewer
+Spec: specs/driver_codes_cli/ v1.0 (APPROVED) · Rama: `feat/driver_codes_cli` (HEAD f70a41b), base `origin/feat/passenger_alert_ui-v1.1` · Commits del ciclo: 412e42d, 3dbc8d9
+
+## Veredicto: APPROVED
+
+F-01 está corregido y comprobado con el binario real. No hay hallazgos bloqueantes. Los seis AC tienen
+tests válidos, la verificación completa está en verde y los tests nuevos detectan la regresión. Quedan
+tres observaciones nuevas no bloqueantes (N-07 a N-09); la más útil es fijar `show_locals` (N-07).
+
+## Matriz AC → evidencia
+
+`U` = `backend/tests/unit/test_driver_codes.py`, `C` = `backend/tests/integration/test_cli_driver_codes.py`,
+`R` = `backend/tests/integration/test_driver_code_repository.py`. "Mutantes" son los de este ciclo (ver
+más abajo): todos los de cada AC fueron detectados.
+
+| AC | Test(s) | Resultado | Nota |
+|---|---|---|---|
+| AC-01 | 17: U `test_generator_*` (5), `test_create_stores_the_code_and_returns_the_plain_one`, `test_create_generates_another_code_when_it_already_exists`, `test_create_retries_up_to_five_times`, `test_create_gives_up_after_the_retries_without_storing_anything`; C `test_create_prints_the_code_grouped_with_its_id_and_label`, `test_create_stores_the_generated_code`, `test_create_generates_another_code_when_the_code_exists`, `test_create_fails_cleanly_when_every_retry_collides`; R `test_add_then_get_and_find_by_hash`, `test_add_rejects_*` (3) | OK | Mutantes: espacio 10^7, sin ceros a la izquierda, sin reintentos, código impreso dos veces, sin agrupar. |
+| AC-02 | 5: U `test_create_accepts_labels_of_one_to_forty_printable_characters` (ahora con `"   "`, N-02), `test_create_rejects_invalid_labels_without_storing_anything`; C `test_create_rejects_invalid_labels`, `test_create_requires_a_label`, `test_create_accepts_valid_labels` | OK | Mutantes: límite 41, sin `isprintable`, rechazar solo espacios. |
+| AC-03 | 13: U `test_hash_*` (4), `test_repr_does_not_expose_the_plain_code_nor_the_hash`, `test_create_never_stores_the_plain_code`; C `test_the_hash_uses_the_configured_server_secret`, `test_the_plain_code_is_not_in_the_table`, `test_neither_the_code_nor_its_hash_reach_the_logs`, **`test_a_failed_write_shows_neither_the_hash_nor_the_label`**; R `test_only_the_hash_is_written_to_the_table`, `test_collision_error_carries_no_stored_values`, **`test_a_failed_write_exposes_neither_the_hash_nor_the_label`** | OK | En negrita, los de F-01. Mutantes: dominio distinto, guardar en claro, registrar el código, quitar `from None`, quitar `hide_parameters` y ponerlo a `False`. |
+| AC-04 | 8: U `test_list_pairs_each_code_with_its_open_session_state`; C `test_list_shows_the_table_without_code_nor_hash`, `test_list_aligns_the_columns_with_long_labels`, `test_list_tells_when_a_code_has_an_open_shift`, `test_list_without_codes`, `test_list_as_json_has_the_same_information`, `test_list_as_json_without_codes`, `test_list_as_json_keeps_logs_out_of_stdout` | OK | Mutantes: estados invertidos, *hash* en el JSON, logs a stdout con `--json`. |
+| AC-05 | 12: U `test_revoke_marks_the_code_and_reports_the_open_session`, **`test_revoke_checks_the_open_session_before_revoking`**, `test_revoke_of_an_unknown_code_raises_and_keeps_the_id_in_an_attribute`, `test_revoke_of_a_revoked_code_changes_nothing`; C `test_revoke_marks_the_code_with_its_date`, `test_revoke_reports_the_open_shift`, `test_revoke_of_an_unknown_code_exits_with_one`, `test_revoke_of_a_revoked_code_is_harmless`, `test_revoke_of_a_revoked_code_logs_nothing_new`; R `test_revoke_stores_the_date_and_returns_the_code`, `test_revoke_of_an_unknown_code_returns_none`, `test_revoke_keeps_the_original_date` | OK | En negrita, el de N-01. Mutantes: sobrescribir la fecha, salir con 0 si no existe, consultar el turno tras revocar. |
+| AC-06 | 4: U `test_create_logs_only_the_code_id`, `test_create_logs_once_even_after_a_collision`, `test_revoke_logs_only_the_code_id`; C `test_create_and_revoke_log_the_code_id_only` | OK | Mutante: registrar la etiqueta. |
+
+Alcance de esta matriz: los tests nuevos del ciclo se han leído enteros. El resto se valida con los
+mutantes de este ciclo y con la revisión del ciclo 1, porque el único cambio de código de producción
+desde entonces es `db.py` (`git diff b10e283 HEAD --stat`).
+
+### Mutaciones (en una copia del backend en el scratchpad; el repositorio no se ha tocado)
+
+22 mutantes contra los tres ficheros de test de la feature: **21 detectados, 1 superviviente** (N-07).
+
+| Mutante | Resultado |
+|---|---|
+| Quitar `hide_parameters=True` de `db.py` | Detectado por los 2 tests de F-01, y solo por ellos |
+| `hide_parameters=False` | Detectado por los 2 tests de F-01 |
+| A15: consultar el turno tras revocar (N-01) | Detectado por `test_revoke_checks_the_open_session_before_revoking` |
+| M7: rechazar etiquetas solo de espacios (N-02) | Detectado por `test_create_accepts_labels_of_one_to_forty_printable_characters[   ]` |
+| 17 mutantes de AC-01 a AC-06 (ver matriz) | Detectados |
+| `pretty_exceptions_show_locals=True` en `cli/main.py` | **Sobrevive** (N-07) |
+
+## Verificación ejecutada
+
+`CI=1 ./init.sh verify --e2e` con el puerto 4173 libre (`lsof` sin procesos a la escucha): **exit 0, todo en verde**.
+
+| Paso | Resultado |
+|---|---|
+| backend format / lint | OK |
+| backend `mypy` | OK, 129 ficheros |
+| backend `lint-imports` | OK, 2 contratos, 0 rotos |
+| backend `pytest` (sockets desactivados) | 1413 passed, 6 deselected |
+| frontend format / lint / types | OK |
+| frontend tests | 563 passed, 2 skipped |
+| frontend build + bundle | OK, 5 passed |
+| frontend e2e + a11y | 126 passed |
+| `feature_list.json` y trazabilidad AC→test | OK |
+
+### 1. F-01 con el binario real
+
+`backend/.venv/bin/avisabus`, `AVISABUS_ENV=prod`, BD en el scratchpad y otra conexión con
+`BEGIN IMMEDIATE` retenida durante la orden. En todos los casos se busca la etiqueta, cualquier
+hexadecimal de 64 caracteres y 8 dígitos en stdout y stderr.
+
+| Escenario | Salida | Etiqueta | *Hash* | Código |
+|---|---|---|---|---|
+| `create`, BD bloqueada | 1, `database is locked`, `[SQL parameters hidden due to hide_parameters=True]` | 0 | 0 | 0 |
+| Igual, `AVISABUS_LOG_LEVEL=DEBUG` | 1, igual | 0 | 0 | 0 |
+| Igual, `TYPER_STANDARD_TRACEBACK=1` (traza estándar de Python) | 1, igual | 0 | 0 | 0 |
+| `create`, BD de solo lectura | 1, `attempt to write a readonly database` | 0 | 0 | 0 |
+| `revoke`, BD bloqueada | 1, parámetros ocultos; tampoco sale el `code_id` | 0 | 0 | 0 |
+
+Tras el fallo la tabla no tiene ninguna fila nueva, y el secreto del servidor no aparece en ninguna traza.
+
+### 2. Otras vías de salida
+
+| Vía | Comprobación | Resultado |
+|---|---|---|
+| Otras excepciones de BD | `ProgrammingError` con un valor no enlazable; los errores de `sqlite3` encadenados en `__cause__` no llevan valores | Parámetros ocultos |
+| `str`, `repr`, `args` y traza de la excepción | Sin el *hash* | Limpio. `.params` conserva los valores **en memoria**; ningún módulo de `src/` lo lee |
+| `IntegrityError` | Sigue traducido con `from None` (mutante detectado) | Limpio |
+| `--json` | `list --json` con la BD bloqueada: JSON válido con `code_id`, etiqueta (la pide AC-04), fecha, estado y turno | Sin código ni *hash* |
+| Logs en `DEBUG` | `create` con el nivel `DEBUG`: una línea de log, solo `code_id`. El *logger* `sqlalchemy.engine.Engine` sigue en `WARNING` aunque la raíz esté en `DEBUG` | Limpio |
+| `echo` del motor | Nada en `src/` usa `echo` ni configura `sqlalchemy.engine`. Forzado a `DEBUG` en una prueba, sentencias con los parámetros ocultos, pero ver N-09 | Inalcanzable hoy |
+| Salida no UTF-8 | `create` con `PYTHONIOENCODING=ascii`: salida 0 y salida normal | Limpio |
+| Locales en la traza | Typer 0.27.3: `pretty_exceptions_show_locals=False`, comprobado en el `app` real | Limpio, ver N-07 |
+
+### 3. Efecto de `hide_parameters=True` en otras features
+
+- `create_engine` de `db.py` es el único punto que crea motores, y lo usan la API (`src/avisabus/main.py:68`) y la CLI (`cli/container.py:62`).
+- Ningún módulo de `src/` lee `.params`, `.statement` ni el mensaje de un error de SQLAlchemy. `cli/gtfs.py:54-59` solo usa el tipo de la excepción, y `test_cli_gtfs.py` solo busca ese nombre.
+- Suite completa del backend en verde (1413). Sin `hide_parameters`, en la copia solo cambian de resultado los 2 tests de F-01. Otros 2 tests (`test_openapi_snapshot`, `test_env_example_documents_every_setting`) fallan en la copia con y sin el cambio, porque leen ficheros fuera de `backend/`; en el repositorio pasan.
+
+## Hallazgos
+
+### Bloqueantes
+
+Ninguno. **F-01 queda cerrado.**
+
+### No bloqueantes (nuevos)
+
+- **N-07** — `backend/src/avisabus/adapters/inbound/cli/main.py:12`: que la traza no muestre variables locales depende solo del valor por defecto de Typer; `backend/pyproject.toml:12` no acota la versión (la fija `uv.lock`, 0.27.3) y ningún test lo cubre. Con `pretty_exceptions_show_locals=True` en la copia y una BD de solo lectura, la traza imprime `plain_code = '18186430'` y la etiqueta, que es justo lo que prohíbe AC-03. Hoy no ocurre. Conviene `pretty_exceptions_show_locals=False` explícito en `cli/main.py` (fichero de T-03) y un test que lo fije.
+- **N-08** — `backend/src/avisabus/adapters/inbound/cli/driver_codes.py:67-76`: un `OperationalError` sigue saliendo como traza, con su mensaje y el texto SQL, a diferencia de `cli/gtfs.py:54-59`, que solo muestra el tipo. No contiene valores, así que cumple el fin de `docs/conventions.md` §3, que además habla de logs y no de stderr, y es la corrección que propuso el ciclo 1. Un mensaje de error limpio sería más amable para el administrador.
+- **N-09 (informativo)** — `backend/src/avisabus/adapters/outbound/persistence/db.py:35`: `hide_parameters` oculta los parámetros, no las filas. Con el *logger* `sqlalchemy.engine` en `DEBUG` (o `echo="debug"`) se registran las filas leídas, con *hash* y etiqueta. Hoy nada lo activa y `AVISABUS_LOG_LEVEL=DEBUG` no le afecta; se anota para que no se habilite en producción.
+
+### No bloqueantes del ciclo 1
+
+| Id | Estado |
+|---|---|
+| N-01, N-02 | **Cerrados** (3dbc8d9; mutantes detectados). |
+| N-03, N-04 | Abiertos, sin cambios; siguen sin bloquear. |
+| N-05 | Abierto, corresponde al orquestador: `progress/current.md:7` dice `implementing` y `feature_list.json` dice `in_review`. |
+| N-06 | Abierto: imprecisión de spec, sin CP-3. |
+
+## Lista de comprobación (`docs/verification.md` §4)
+
+| Bloque | Resultado |
+|---|---|
+| Contrato | Sin cambios respecto al ciclo 1; coincide con los AC y con el design (salvo N-06). |
+| Arquitectura | `lint-imports` OK; sin `datetime.now()` ni `time.time()` en el código de la feature. |
+| Tests | Sin red ni sleeps; `FakeClock`; los `OperationalError` son reales (`DROP TABLE` antes del `INSERT`, sin esperar el `busy_timeout`). El bloqueo real se ha comprobado a mano con el binario. |
+| Privacidad y seguridad | F-01 corregido; sin vías de salida alcanzables (N-07 y N-09 son riesgos latentes). |
+| Frontend | No aplica: sin cambios en `frontend/`. |
+| Convenciones | Commits `fix(driver_codes_cli)` y `test(driver_codes_cli)` correctos. Sin variables nuevas en `.env.example`. |
+| Alcance | Ciclo 2: `db.py` (fichero de T-02), tres ficheros de test y progreso. La carpeta `qr/` sin versionar se ha ignorado. |
+
+---
+
+Histórico: revisión del ciclo 1, sin cambios.
+
 Ciclo: 1 · Fecha: 2026-11-09 · Agente: reviewer
 Spec: specs/driver_codes_cli/ v1.0 (APPROVED) · Rama: `feat/driver_codes_cli` (HEAD b10e283), base `origin/feat/passenger_alert_ui-v1.1`
 

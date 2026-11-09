@@ -4,8 +4,7 @@
 
 **Fecha:** 2026-11-09
 **Fase:** Implementación — Bloque 4 (conductor)
-**Feature en curso:** `driver_codes_cli` v1.0 — `implementing`, ciclo 2 (F-01) (rama `feat/driver_codes_cli`, apilada sobre
-`feat/passenger_alert_ui-v1.1`)
+**Feature en curso:** `driver_codes_cli` v1.0 — `done`, PR abierta. Siguiente: `driver_session`.
 
 ## Último paso
 Bloque 3 fusionado (PR #40…#44). PR #45 (cierre del bloque 3, CP-6) y PR #46 (specs del bloque 4, CP-1)
@@ -14,12 +13,17 @@ fusionadas.
 ## Siguiente paso
 Cada una con reviewer nuevo y PR contra `develop` sin fusionar:
 1. `realtime_events` T-06: APPROVED; PR #47.
-2. `passenger_alert_ui` T-09: APPROVED; PR abierta (apilada sobre la #47).
+2. `passenger_alert_ui` T-09: APPROVED; PR #48 (apilada sobre la #47).
 3. Bloque 4 por orden: `driver_codes_cli`, `driver_session` (T-02 amplía la red: `list_lines`,
    `departures`; autorizado), `driver_demand` (T-02 amplía el repositorio de avisos; autorizado),
    `driver_ui`, `driver_gps_simulator`.
 
 ## Pendiente para specs futuras
+- **driver_codes_cli:** N-07 que la traza de Typer no muestre variables locales depende del valor por
+  defecto (`show_locals`): con `True` imprimiría `plain_code` → fijarlo a `False` y testearlo. N-08 un
+  `OperationalError` sale como traza (sin valores). N-09 `hide_parameters` no oculta filas con
+  `sqlalchemy.engine` en DEBUG (nada lo activa). N-03/N-04 abiertos. N-06 (spec): design §2 cita
+  `IntegrityError` y T-01 no lista `errors.py`. Etiqueta solo de espacios aceptada por el literal de AC-02.
 - **passenger_alert_ui v1.1:** H-10 la cláusula de AC-06 "sin `Retry-After`, N = 10" no tiene test que la
   fije. H-11 hueco de test (V07). H-12 (persona, siguiente CP): `alerts.snapshot` con el diálogo abierto
   hace caer el foco en `body` (también al recargar con solicitud activa); redacción propuesta en
