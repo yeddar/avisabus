@@ -1,6 +1,6 @@
 # Turno del conductor — design
 
-> Feature: `driver_session` · Versión: 1.0 · Estado: APPROVED
+> Feature: `driver_session` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-24, RF-25, RF-26, RF-30, RNF-06, RNF-07, RNF-13 · Casos de uso: CU-08, CU-09 (posición), CU-10, CU-13 (revocación) · Depende de: gtfs_import, driver_codes_cli
 
 ## 1. Resumen
@@ -76,18 +76,28 @@ class SessionProgress:
 # domain/services/upcoming_stops.py
 PASSED_MARGIN_M = 20.0
 OFF_ROUTE_M = 150.0
+MAX_SPEED_MPS = 20.0          # v1.1: 72 km/h, por encima de lo que hace un autobús urbano
+AHEAD_MARGIN_M = 50.0
+FIRST_FIX_TOLERANCE_M = 30.0
 def project_progress(shape: Sequence[ShapePoint], distances: Sequence[float], lat: float, lon: float,
-                     previous_m: float | None, back_m: float = 100.0, ahead_m: float = 3000.0
+                     previous_m: float | None, elapsed_s: float | None, back_m: float = 100.0
                      ) -> tuple[float, float]:
-    # (progreso candidato, distancia al trazado): segmento más cercano dentro de
-    # [previous − back, previous + ahead] (todo el trazado si previous es None)
+    # (progreso candidato, distancia al trazado).
+    # Con previous_m: segmento más cercano dentro de
+    #   [previous − back, previous + MAX_SPEED_MPS · max(elapsed_s, 0) + AHEAD_MARGIN_M].
+    # Sin previous_m: de los segmentos cuya distancia ≤ mínima + FIRST_FIX_TOLERANCE_M, el de
+    #   menor distancia a lo largo del trazado.
 def upcoming_stops(stops: Sequence[tuple[UpcomingStop, float]],   # (parada, distancia sobre el trazado)
                    progress_m: float, limit: int = 5) -> tuple[tuple[UpcomingStop, ...], bool]:
     # paradas con dist > progress + PASSED_MARGIN_M; finished si progress ≥ última − PASSED_MARGIN_M
 ```
 
-Regla en `UpdateDriverPosition`: si la distancia al trazado > `OFF_ROUTE_M` → `off_route=True`,
-progreso sin cambios; si no, `progress = max(previous, candidato)`, `off_route=False`. Las
+Regla en `UpdateDriverPosition`: `elapsed_s` = `recorded_at` de la posición − `recorded_at` de la
+última posición **aceptada sobre el recorrido** (la que fijó el progreso), de modo que la ventana
+sigue creciendo mientras el autobús está fuera de ruta o sin GPS; si la distancia al trazado >
+`OFF_ROUTE_M` → `off_route=True`, progreso sin cambios; si no, `progress = max(previous,
+candidato)`, `off_route=False`. Elegir otra salida reinicia el progreso (`previous_m = None`). La
+sesión guarda `progress_recorded_at` (nueva columna) para calcular `elapsed_s`. Las
 distancias de las paradas del viaje sobre el trazado se calculan con `shape_dist_traveled` o, si
 falta, con `project_onto_shape` (como en `position_estimation`), y se cachean por `shape_id`.
 
@@ -160,7 +170,8 @@ parcial `(trip_id, service_date)` donde `trip_id` no es NULL, `lat`, `lon`, `acc
 |---|---|
 | AC-01–AC-08, AC-11, AC-12 | `tests/integration/test_driver_api.py` (`gtfs_mini`, `FakeClock`, código creado con el caso de uso) |
 | AC-02 (limitador), AC-06 (ventana) | `tests/unit/test_driver_login.py`, `tests/unit/test_departures.py` |
-| AC-09, AC-10 | `tests/unit/test_upcoming_stops.py` (trazados sintéticos: recta, bucle, ida y vuelta por la misma calle; posición fuera de ruta) |
+| AC-09, AC-10 | `tests/unit/test_upcoming_stops.py` (trazados sintéticos: recta, bucle, ida y vuelta por la misma calle, dos pasadas a pocos metros separadas por 400 m, hueco de GPS, posición fuera de ruta) |
+| AC-09 (v1.1) | `tests/integration/test_upcoming_stops_real_shapes.py` (`slow`): todos los trazados del feed real, 30 km/h, cada 5 s, ruido σ 10 m con semilla (correlado e independiente); informa del máximo adelanto y retraso por trazado |
 | AC-13 | `tests/unit/test_reap_driver_sessions.py` + arranque con `lifespan` |
 | AC-14 | `tests/integration/test_cli_driver_codes.py` (amplía) |
 | AC-15 | logger falso + logs capturados |
