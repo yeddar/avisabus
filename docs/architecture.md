@@ -1,6 +1,6 @@
 # Arquitectura — AvisaBus
 
-> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-04: avisos por viaje elegido, ADR-016, aprobada en la PR #37; v1.2 · 2026-11-09: ubicación del limitador y orden de validaciones, pendiente de aprobación). Deriva de `docs/vision.md`, `docs/requirements.md`
+> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-04: avisos por viaje elegido, ADR-016, aprobada en la PR #37; v1.2 · 2026-11-09: ubicación del limitador y orden de validaciones, pendiente de aprobación; v1.3 · 2026-11-09: conductor (salida elegida, códigos con HMAC, API y eventos), ADR-017 y ADR-018, pendiente de aprobación en la PR del bloque 4). Deriva de `docs/vision.md`, `docs/requirements.md`
 > y `docs/use_cases.md`. Las decisiones se registran como ADR en la sección 10.
 > Los nombres de código están en inglés; ver glosario en `docs/conventions.md`.
 
@@ -116,8 +116,8 @@ classDiagram
   class Alert { alert_id; stop_id; line; direction_id; trip_id; service_date; stop_sequence; needs: set~Need~; device_hash; created_at; status; last_seen_at; last_arrival_at; last_delay_s; delivered_to: session_id|None }
   class Need { <<enum>> RAMP; EXTRA_TIME; SEAT; VISUAL }
   class AlertStatus { <<enum>> PENDING_DRIVER; DELIVERED; EXPIRED; CANCELLED }
-  class DriverSession { session_id; code_id; line; direction_id; last_position; last_seen_at }
-  class DriverCode { code_id; code_hash; revoked: bool }
+  class DriverSession { session_id; token_hash; code_id; line; direction_id; trip_id; service_date; position; progress_m; off_route; last_position_at }
+  class DriverCode { code_id; code_hash; label; created_at; revoked_at }
   Alert --> Need
   Alert --> AlertStatus
   Line "1" --> "*" Direction
@@ -153,11 +153,11 @@ Notas:
 | `NetworkRepository` | `SqliteNetworkRepository` | Paradas, líneas, direcciones, shapes, horarios activos por fecha. |
 | `AlertRepository` | `SqliteAlertRepository` | Persistente para sobrevivir a reinicios. |
 | `DriverSessionRepository` | `SqliteDriverSessionRepository` | Posición solo la última; se borra al cerrar turno. |
-| `DriverCodeRepository` | `SqliteDriverCodeRepository` | Hash `scrypt`. |
+| `DriverCodeRepository` | `SqliteDriverCodeRepository` | HMAC-SHA256 con clave derivada del secreto del servidor (ADR-017). |
 | `OccupancySensor` | `SimulatedOccupancySensor` | Determinista con semilla configurable. |
 | `EventPublisher` | `InMemoryEventPublisher` | Pub/sub por canal (`device:<hash>`, `driver:<session>`). |
 | `DeviceHasher` | `HmacDeviceHasher` | `device_hash` = HMAC-SHA256 del identificador anónimo con una clave derivada del secreto del servidor. |
-| `DriverDirectory` | `NoDriverDirectory` (bloque 3); el de `driver_demand` (bloque 4) | Conductor conectado que lleva un viaje. |
+| `DriverDirectory` | `NoDriverDirectory` (bloque 3); `SessionDriverDirectory` (`driver_demand`) | Turno abierto que lleva un viaje (el conductor elige su salida, ADR-018). |
 | `Clock` | `SystemClock`, `FakeClock` (tests) | Siempre `datetime` UTC con zona. |
 | `StopTokenSigner` | `HmacStopTokenSigner` | Token = HMAC-SHA256(secret, stop_id) truncado, base64url. |
 
@@ -176,7 +176,10 @@ El contrato es el OpenAPI generado por FastAPI; el frontend genera sus tipos a p
 | POST | `/alerts` | Crear aviso (`stop_id`, `token`, `line`, `direction_id`, `trip_id`, `service_date`, `needs`) | CU-03 |
 | GET | `/alerts/mine` | Avisos activos del dispositivo | CU-03 |
 | DELETE | `/alerts/{alert_id}` | Cancelar | CU-04 |
-| POST | `/driver/sessions` | Iniciar turno (`code`, `line`, `direction_id`) → token de sesión | CU-08 |
+| POST | `/driver/sessions` | Iniciar turno (`code`) → token de sesión | CU-08 |
+| GET | `/driver/lines` · `/driver/departures` | Líneas y salidas próximas de una línea y sentido | CU-08 |
+| PUT | `/driver/sessions/current/service` | Elegir salida (`line`, `direction_id`, `trip_id`, `service_date`) | CU-08 |
+| GET | `/driver/sessions/current` · `/driver/sessions/current/view` | Estado del turno · vista de demanda (respaldo del WebSocket) | CU-09 |
 | PUT | `/driver/sessions/current/position` | Enviar posición GPS | CU-09 |
 | DELETE | `/driver/sessions/current` | Finalizar turno | CU-10 |
 | WS | `/ws/passenger` | Eventos de los avisos del dispositivo | CU-03/04/07 |
@@ -192,6 +195,7 @@ El contrato es el OpenAPI generado por FastAPI; el frontend genera sus tipos a p
 | `alert.expired` | pasajero | motivo: `PASSED` \| `NEXT_STOP` \| `TIMEOUT` |
 | `alert.cancelled` | pasajero | confirmación de cancelación |
 | `driver.view` | conductor | snapshot completo: próximas paradas, avisos, plazas libres, alerta de capacidad, estado GPS |
+| `session.closed` | conductor | el turno se ha cerrado (`ENDED`, `IDLE`, `REVOKED`, `REPLACED`) |
 
 La vista del conductor recibe siempre **snapshots completos** (no deltas): simplifica el cliente y la reconexión.
 
@@ -311,6 +315,8 @@ frontend/src/
 | ADR-014 | Trazado servido por `shape_id` (no por línea y sentido) | `/lines/{line}/directions/{d}/shape` | El viaje concreto puede usar una variante de recorrido distinta de la representativa |
 | ADR-015 | Tiempos de llegada leídos de la página `QR.php` (HTML) que enlaza el Ajuntament, con User-Agent identificado | XML `getSAE` mediante `emtvlcapi`/`pyemtvlc` | EMT restringe `getSAE` a su visor; usarlo exigiría imitar al visor y eludir un control de acceso. Permiso solicitado a EMT el 2026-11-02; si lo concede, adaptador nuevo tras `ArrivalsSource` |
 | ADR-016 | El aviso se asigna al **viaje GTFS** que elige el pasajero (no al "próximo autobús") y se sigue por ese viaje | Seguir el ETA mínimo de la línea | Permite esperar a un autobús menos lleno; la identidad por viaje (ADR-013) evita confundir autobuses al detectar el paso. Si el emparejamiento cambia de viaje entre consultas, el aviso puede caducar más tarde (LIM-02) |
+| ADR-017 | Códigos de conductor con HMAC-SHA256 y clave derivada del secreto del servidor | `scrypt` por código | Búsqueda por índice; con 8 dígitos la protección real es el límite de intentos y, sin el secreto, la base de datos no permite probar códigos |
+| ADR-018 | El conductor elige la **salida** (viaje GTFS) al iniciar el turno | Deducir el viaje con GPS, horario y SAE | Entrega exacta de las solicitudes por viaje (ADR-016); un paso más para el conductor, una vez por recorrido |
 
 ## 12. Riesgos técnicos
 

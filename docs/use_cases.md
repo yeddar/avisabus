@@ -1,6 +1,6 @@
 # Casos de uso — AvisaBus
 
-> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-03: textos de botón "Solicitar"/"Cancelar solicitud" en CU-03 y CU-04, aprobada en la PR #7; v1.2 · 2026-11-04: autobús elegido en CU-03, necesidad visual en CU-05 y detección de paso por viaje en CU-07, aprobada en la PR #37; v1.3 · 2026-11-09: LIM-02 ampliada, pendiente de aprobación). Deriva de `docs/vision.md` y `docs/requirements.md`.
+> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-03: textos de botón "Solicitar"/"Cancelar solicitud" en CU-03 y CU-04, aprobada en la PR #7; v1.2 · 2026-11-04: autobús elegido en CU-03, necesidad visual en CU-05 y detección de paso por viaje en CU-07, aprobada en la PR #37; v1.3 · 2026-11-09: LIM-02 ampliada, pendiente de aprobación; v1.4 · 2026-11-09: salida en CU-08, demanda de su autobús en CU-09 y LIM-01, pendiente de aprobación en la PR del bloque 4). Deriva de `docs/vision.md` y `docs/requirements.md`.
 > Cada caso de uso referencia los requisitos que cubre. Los flujos alternativos se numeran
 > `<paso><letra>` (p. ej. `3a` es una alternativa al paso 3).
 
@@ -202,12 +202,13 @@ flowchart LR
 **Flujo principal**
 1. El conductor abre la vista de conductor e introduce su código.
 2. El sistema valida el código.
-3. El conductor selecciona línea y sentido.
+3. El conductor selecciona línea, sentido y la salida que realiza (lista de las que salen entre 30 min antes y 60 min después de ahora).
 4. El sistema solicita permiso de geolocalización y empieza a recibir la posición del dispositivo.
 5. El sistema muestra la vista de demanda (CU-09).
 
 **Flujos alternativos**
-- **2a** Código inválido o revocado → mensaje de error; tras 5 intentos fallidos desde el mismo dispositivo/IP se bloquea durante 15 minutos.
+- **2a** Código inválido o revocado → mensaje de error; tras 5 intentos fallidos desde la misma IP se bloquea durante 15 minutos.
+- **3a** La salida elegida ya la lleva otro turno abierto → aviso y se vuelve a la lista.
 - **4a** Permiso de geolocalización denegado → el sistema no puede determinar las próximas paradas y lo indica; se ofrece reintentar.
 - **4b** La posición está a más de 150 metros del trazado de la línea y sentido elegidos → aviso "no estás en el recorrido de esta línea"; se mantiene la sesión.
 
@@ -222,7 +223,7 @@ flowchart LR
 
 **Flujo principal**
 1. El sistema proyecta la posición del conductor sobre el trazado y determina sus próximas paradas.
-2. El sistema muestra al menos las 3 próximas paradas con: nombre, número de personas esperando y avisos de accesibilidad destacados (rampa, tiempo extra, asiento).
+2. El sistema muestra al menos las 3 próximas paradas con: nombre, número de personas que esperan a su autobús y avisos de accesibilidad destacados (rampa, tiempo extra, asiento, discapacidad visual). Una solicitud nueva se señala con un tono breve (silenciable) y resaltando su parada.
 3. El sistema muestra las plazas libres del autobús.
 4. Ante cualquier aviso nuevo, cancelado o caducado, la vista se actualiza en tiempo real.
 5. Al avanzar el autobús, las paradas superadas desaparecen y se incorporan las siguientes.
@@ -292,7 +293,7 @@ flowchart LR
 
 | ID | Limitación | Consecuencia | Mitigación / trabajo futuro |
 |---|---|---|---|
-| LIM-01 | El SAE no identifica el vehículo concreto de cada ETA. | Si delante del conductor conectado circula otro autobús de la misma línea sin conductor conectado, un aviso puede entregarse al conductor equivocado. | Cruzar el ETA estimado desde el GPS del conductor con el ETA del SAE para elegir el vehículo más probable; integrar AVL/GTFS-RT real. |
+| LIM-01 | El SAE no identifica el vehículo concreto de cada ETA. | La entrega al conductor es exacta por viaje (el conductor elige su salida, ADR-018), pero la solicitud se asigna al viaje que el emparejamiento atribuye a esa llegada (ADR-013): si el emparejamiento se equivoca, la solicitud llega al conductor de otro autobús de la línea. | Cruzar la posición GPS de los conductores conectados con el ETA del SAE para corregir el emparejamiento; integrar AVL/GTFS-RT real. |
 | LIM-02 | La detección de paso depende de la frecuencia de consulta y de la exactitud del SAE, y el SAE no identifica vehículos (el aviso sigue al viaje GTFS emparejado, ADR-013/ADR-016). | Un aviso puede caducar con unos segundos de retraso; si el emparejamiento traslada el viaje al autobús siguiente, caduca con ese autobús (unos minutos tarde); si el SAE falla, por la parada siguiente estimada o por el tiempo máximo (30 min). | Usar el GPS del conductor como fuente adicional. |
 | LIM-03 | La posición del autobús es estimada, no medida. | Puede desviarse de la real en tráfico irregular. | Se etiqueta como "posición estimada"; sustituible por AVL real vía adaptador. |
 | LIM-04 | La ocupación es simulada. | No refleja la ocupación real. | Interfaz de sensor preparada para datos reales. |
