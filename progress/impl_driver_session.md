@@ -1,5 +1,5 @@
 # Implementación: driver_session
-Spec: specs/driver_session/ (v1.1, APPROVED) · Ciclo de revisión: 2 (corrige F-01 de `progress/review_driver_session.md` y aplica T-08) · Agente: implementer · Fecha: 2026-11-09
+Spec: specs/driver_session/ (v1.2, APPROVED) · Ciclo de revisión: 2 (corrige F-01 de `progress/review_driver_session.md` y aplica T-08) · Agente: implementer · Fecha: 2026-11-09
 
 ## Tareas
 - [x] T-01 Modelos, puertos, errores, `SqliteDriverSessionRepository` y consulta de turno abierto para `driver-codes list/revoke` (AC-14) (commit cd4d2e0)
@@ -10,10 +10,10 @@ Spec: specs/driver_session/ (v1.1, APPROVED) · Ciclo de revisión: 2 (corrige F
 - [x] T-06 `ReapDriverSessions` y su tarea de fondo (AC-13) (commit 04651ae)
 - [x] T-07 Contrato del frontend regenerado (`npm run gen:api`) y verificación completa (commit f8466bf)
 
-### Ciclo 2 (v1.1)
+### Ciclo 2 (v1.1 y v1.2)
 - [x] F-01 (bloqueante, AC-08): fechas fuera del calendario al pasar a UTC → `422` y no `500` (commit 8e0826d)
 - [x] N-02 (opcional): dígitos no ASCII por HTTP con el *hasher* real (commit fbf8093)
-- [ ] T-08 (AC-09): **bloqueada, CP-3.** El código y los tests están en el árbol de trabajo, sin commit; ver "Bloqueos"
+- [x] T-08 (AC-09, AC-10): ventana `20 m/s × Δt + 50 m`, primera posición, `progress_recorded_at` (commit f34e3de, WIP) y metros reales con v1.2 (commit 587702a)
 
 ## Decisiones locales
 
@@ -73,56 +73,41 @@ reviewer pueden pedir otra cosa sin rehacer nada más.
 
 ## Bloqueos
 
-### CP-3 · T-08 / AC-09 v1.1: el test con trazados reales no puede cumplir los umbrales
+Ninguno abierto. El CP-3 de T-08 se resolvió con la spec v1.2 (PR #51), apoyada en `position_estimation`
+v1.4 (T-11):
+- **P-02 (resuelto):** `shape_dist_traveled` no son metros (longitud del feed 1,66–4,25 veces la real).
+  v1.2 mide el progreso, la ventana y los márgenes en metros reales.
+- **P-03 (resuelto):** umbral de la prueba con trazados reales a σ 10 m fijado en 150 m.
 
-T-08 no se cierra. El `slow` `tests/integration/test_upcoming_stops_real_shapes.py` falla; no he
-aflojado los umbrales. La parte implementable de T-08 (ventana `20 m/s × Δt + 50 m`, regla de la
-primera posición, `progress_recorded_at` y su persistencia, tests unitarios en verde) está en el árbol
-de trabajo, sin commit, porque la verificación de la tarea no pasa.
+### Resultado de la prueba con trazados reales (`test_upcoming_stops_real_shapes.py`)
 
-**P-02 · La spec parte de una premisa que los datos desmienten: `shape_dist_traveled` no son metros.**
-`specs/position_estimation/requirements.md:14` lo declara "en metros en el feed de EMT", y design §3
-(v1.1) lo usa para las distancias de paradas. Con los 94 trazados del feed activo, comparado con la
-geodesia de los puntos:
+94 trazados, 18 714 posiciones por nivel, 30 km/h, una posición cada 5 s, semilla 20261109, autobús y
+error en metros reales, con `UpdateDriverPosition` y `TripRoutes` reales:
 
-| Medida | Valor |
-|---|---|
-| Longitud total `shape_dist_traveled` / geodésica | mín. 1,66 · mediana 2,98 · máx. 4,25 |
-| Segmentos con más de +400 m sobre su longitud real | mediana 11,7 % por trazado (máx. 22,5 %) |
-| Ejemplo `1017_1585_2403`, tramos consecutivos | feed 611,4 / 94,6 / 669,8 / 516,2 frente a real 109,4 / 93,2 / 166,8 / 16,0 |
-| Mismo trazado, longitud total | feed 21 922 frente a 6 715 m reales |
+| Ruido | Máx. delante (m) | Máx. detrás (m) | Posiciones > 150 m |
+|---|---|---|---|
+| Sin ruido (control) | 0,0 | 41,7 | 0 |
+| σ 3 m, correlado ρ 0,95 | 105,9 | 89,4 | 0 |
+| σ 5 m, correlado | 95,7 | 127,4 | 0 |
+| σ 5 m, independiente | 107,0 | 82,9 | 0 |
+| σ 10 m, correlado (AC-09) | 97,5 | 66,9 | 0 |
+| σ 10 m, independiente (AC-09) | 104,7 | 56,7 | 0 |
 
-Como `progress_m`, la ventana de v1.1 y los márgenes de AC-09/AC-10 (100 m, 150 m, 20 m) se expresan
-en metros, aplicarlos sobre estas unidades rompe el seguimiento: un autobús real a 30 km/h no alcanza a
-ser proyectado (la ventana recorre 150 "unidades" donde el tramo real de 16 m mide 516).
+Antes del cambio, con las distancias del feed y la misma prueba: 6 de 6 fallidos, con 23 099 m por
+delante y 8 709 m por detrás como máximos, y unas 17 500 posiciones fuera por nivel.
 
-**P-03 · Incluso con metros reales, los umbrales se superan por poco a σ = 10 m.**
-Simulación de `tests/integration/test_upcoming_stops_real_shapes.py` y un experimento en el scratchpad
-(94 trazados, 30 km/h, posición cada 5 s, 18 714 posiciones por nivel, semilla fija). El autobús se
-mueve en metros reales y el error se mide en metros reales:
+### Aviso para la persona: el cumplimiento depende de la semilla
 
-| Ruido | Con distancias del feed (lo que hay): máx. delante / máx. detrás / posiciones > 100 m | Con metros geodésicos: máx. delante / máx. detrás / posiciones > 100 m |
-|---|---|---|
-| Sin ruido (control) | 0 / 10 956 / 10 732 detrás | 0,0 / 41,7 / 0 |
-| σ 3 m, correlado ρ 0,95 | 18 / 10 956 / 10 673 | 18,3 / 87,0 / 0 |
-| σ 5 m, correlado | 92 / 11 024 / 10 724 | 91,7 / 127,3 / 1 detrás |
-| σ 5 m, independiente | 22 / 10 954 / 10 677 | 98,1 / 64,2 / 0 |
-| σ 10 m, correlado | 97 / 10 963 / 10 764 | 105,9 / 139,1 / 2 delante y 3 detrás (5 trazados) |
-| σ 10 m, independiente | 92 / 10 956 / 10 500 | 108,0 / 83,2 / 2 delante (2 trazados) |
+AC-09 fija una semilla, y con la del test se cumple (la elegí antes de ver resultados, en el ciclo 2 de
+v1.1). Repitiendo con las semillas 1 a 20 a σ 10 m (scratchpad, no forma parte de la suite):
 
-(Con la v1.0 la simulación daba máximos de 2 825 m por delante; la v1.1 elimina los saltos.)
+| Ruido | Semillas con alguna posición > 150 m | Posiciones | Máx. delante / detrás (m) |
+|---|---|---|---|
+| Correlado ρ 0,95 | 5 de 20 | 28 | 130,8 / 422,2 |
+| Independiente | 1 de 20 | 1 | 157,1 / 121,9 |
 
-Propuesta para la persona (no aplicada):
-1. Medir `progress_m` y la ventana en **metros reales**: `distances` = `cumulative_distances(shape)`,
-   y las paradas por interpolación de su `shape_dist_traveled` sobre el par (feed, metros) de los puntos
-   del trazado (o con `project_onto_shape`). Implica corregir design §3 y revisar
-   `position_estimation` (mismo supuesto; `distance_to_stop_m` y las distancias mostradas salen
-   infladas ~3×).
-2. Decidir si se relaja el umbral de AC-09 a σ = 10 (p. ej. 150 m; el máximo observado es 139 m),
-   se ajusta la regla (retroceso de 100 m o margen delantero) o se cambia el ruido exigido.
-
-Pendiente tras la decisión: rematar T-08, repetir el `slow` y `./init.sh verify --e2e`, y regenerar
-los umbrales del test según lo que se apruebe.
+El test pasa, pero el umbral de 150 m no tiene margen frente a otras realizaciones del ruido. No he
+diagnosticado el caso de 422 m por detrás. Conviene decidirlo al validar con `driver_gps_simulator`.
 
 ### Avisos para la persona del ciclo 0 (no bloquean)
 - **Destinos de C2 y C3 (nota de `progress/current.md`).** La nota dice que el conductor vea todos los
@@ -142,7 +127,7 @@ los umbrales del test según lo que se apruebe.
   delante) puede quedar más cerca por ruido del GPS, y el progreso no retrocede. Los tests cubren
   trazados idénticos. Conviene observarlo con `driver_gps_simulator` y en la demo del bloque.
 
-## Decisiones locales del ciclo 2 (T-08, en el árbol de trabajo)
+## Decisiones locales del ciclo 2 (T-08)
 
 - **Distancia devuelta en la primera posición:** `project_progress` devuelve la **mínima** al trazado
   aunque elija un tramo anterior dentro de los 30 m, porque AC-09 define "fuera de recorrido" por la
@@ -152,15 +137,20 @@ los umbrales del test según lo que se apruebe.
 - **`elapsed_s` sin marca** (progreso sin `progress_recorded_at`): se trata como 0 (solo el margen).
 - **ADR-011:** la tabla gana una columna sin migración. La BD de `data/` no tiene aún la tabla; una BD
   creada con la v1.0 fallaría al escribir hasta borrar la tabla (datos efímeros).
+- **Paradas en metros (v1.2):** `TripRoutes` reutiliza `stop_distances` de `position_estimator` (antes
+  `_stop_distances`, renombrada: cambio mínimo en código de `position_estimation`), que comprueba que
+  exista `shape_dist_traveled` y aplica el `max` acumulado. Evita duplicar esa lógica.
+- **El test real usa `TripRoutes`** con una red mínima, de modo que fallaría si la producción volviera a
+  las unidades del feed. Los niveles σ 3 y σ 5 usan el mismo umbral de 150 m, aunque AC-09 solo lo fije
+  para σ 10.
 - **F-01:** `OverflowError` de `astimezone` → `InvalidPositionError` (`422`, igual que AC-08).
 
 ## Verificación
 
-Ciclo 2 · `CI=1 ./init.sh verify --e2e` (puerto 4173 libre), salida 0, con los commits F-01 y N-02 y
-la parte de T-08 sin commitear en el árbol de trabajo. **No cierra la feature**: el `slow` de T-08 falla
-(ver Bloqueos). `pytest -m slow` de `test_gtfs_real_feed.py` y `test_stops_api_real_feed.py`: 4 passed.
-Backend 1691 passed, 9 deselected, cobertura 99,60 %; Vitest 563 passed y 2 skipped; Playwright + axe
-126 passed; lint, tipos, arquitectura, build y trazabilidad en verde.
+Ciclo 2 (v1.2) · `CI=1 ./init.sh verify --e2e` (puerto 4173 libre), salida 0, "verify: todo en verde":
+backend 1711 passed, 12 deselected, cobertura 99,61 %; Vitest 563 passed y 2 skipped; Playwright + axe
+126 passed; lint, tipos, arquitectura, build y trazabilidad en verde. `uv run pytest -m slow`: 12 passed.
+Contrato OpenAPI sin cambios en T-08 (no hace falta `gen:api`).
 
 Ciclo 0 · `CI=1 ./init.sh verify --e2e` (puerto 4173 libre), salida 0, "verify: todo en verde":
 
