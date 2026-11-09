@@ -4,7 +4,8 @@
 
 **Fecha:** 2026-11-09
 **Fase:** Implementación — Bloque 4 (conductor)
-**Feature en curso:** `driver_codes_cli` v1.0 — `done`, PR abierta. Siguiente: `driver_session`.
+**Feature en curso:** `position_estimation` v1.4 — `implementing` (solo T-11), rama `feat/position_estimation-v1.4`.
+`driver_session`: en `feat/driver_session` (T-08 como commit WIP), a la espera de T-11.
 
 ## Último paso
 Bloque 3 fusionado (PR #40…#44). PR #45 (cierre del bloque 3, CP-6) y PR #46 (specs del bloque 4, CP-1)
@@ -128,7 +129,8 @@ Cada una con reviewer nuevo y PR contra `develop` sin fusionar:
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Ninguno. CP-6 del bloque 3 aprobado; CP-1 del bloque 4 aprobado (PR #45 y #46).
+Ninguno. CP-3 de `driver_session` (P-02, P-03) resuelto en la PR #51: `position_estimation` 1.4, `driver_session` 1.2
+(umbral 150 m), `gtfs_import` 1.4 (solo docs).
 
 ## Bloqueos
 Ninguno. 

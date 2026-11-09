@@ -473,3 +473,6 @@
 
 ## 2026-11-09 · driver_codes_cli · in_review → done
 - Revisión ciclo 2: APPROVED (F-01 corregido y reproducido con el binario real; 21/22 mutantes).
+
+## 2026-11-09 · CP-3 driver_session resuelto (PR #51) · position_estimation · done → implementing (v1.4, T-11)
+- Distancias en metros reales (`feed_to_metres`). Después, T-08 de `driver_session` con la v1.2 (umbral 150 m).
