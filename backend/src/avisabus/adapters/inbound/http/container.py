@@ -60,6 +60,7 @@ from avisabus.application.get_stop import GetStop
 from avisabus.application.get_stop_arrivals import GetStopArrivals
 from avisabus.application.get_vehicle_position import GetVehiclePosition
 from avisabus.application.list_my_alerts import ListMyAlerts
+from avisabus.application.reap_driver_sessions import ReapDriverSessions
 from avisabus.application.scheduled_arrivals import ScheduledArrivalsProvider
 from avisabus.application.watch_passages import WatchPassages
 from avisabus.config import Settings
@@ -303,6 +304,9 @@ class DriverUseCases:
     update_position: UpdateDriverPosition
     get_session: GetDriverSession
     end_session: EndDriverSession
+    reap: ReapDriverSessions
+    reaper_interval: timedelta
+    """`avisabus.main` runs `reap.tick` periodically in its lifespan (`background.driver_tasks`)."""
 
 
 def build_driver_use_cases(
@@ -321,10 +325,12 @@ def build_driver_use_cases(
     routes = TripRoutes(network)
     close = CloseDriverSession(sessions, session_listener, clock, logger)
     block = timedelta(minutes=settings.driver_login_block_min)
+    idle_timeout = timedelta(minutes=settings.driver_idle_timeout_min)
+    codes = SqliteDriverCodeRepository(engine)
     get_session = GetDriverSession(routes, clock, timedelta(seconds=settings.driver_gps_stale_s))
     return DriverUseCases(
         start_session=StartDriverSession(
-            codes=SqliteDriverCodeRepository(engine),
+            codes=codes,
             code_hasher=HmacDriverCodeHasher(settings.stop_token_secret_bytes()),
             sessions=sessions,
             token_hasher=token_hasher,
@@ -334,7 +340,7 @@ def build_driver_use_cases(
                 block=block,
             ),
             clock=clock,
-            idle_timeout=timedelta(minutes=settings.driver_idle_timeout_min),
+            idle_timeout=idle_timeout,
             logger=logger,
         ),
         authenticate=AuthenticateDriverSession(sessions, token_hasher),
@@ -346,4 +352,6 @@ def build_driver_use_cases(
         update_position=UpdateDriverPosition(sessions, routes, session_listener, clock),
         get_session=get_session,
         end_session=EndDriverSession(close),
+        reap=ReapDriverSessions(sessions, codes, close, clock, idle_timeout, logger),
+        reaper_interval=timedelta(seconds=settings.driver_reaper_interval_s),
     )

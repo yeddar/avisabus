@@ -33,6 +33,7 @@ from avisabus.adapters.outbound.persistence.sqlite_occupancy_override import (
 )
 from avisabus.adapters.outbound.sae.compose import build_arrivals_source
 from avisabus.background.alert_tasks import start_alert_tasks, stop_tasks
+from avisabus.background.driver_tasks import start_driver_tasks
 from avisabus.background.sae_stats import run_sae_stats
 from avisabus.config import (
     Settings,
@@ -92,8 +93,8 @@ driver_use_cases = build_driver_use_cases(settings, engine, clock)
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    """Runs the `sae.stats` task (sae_arrivals_source AC-13) and the alert expiry tasks
-    (alert_expiry AC-10), and closes the SAE HTTP client."""
+    """Runs the `sae.stats` task (sae_arrivals_source AC-13), the alert expiry tasks (alert_expiry
+    AC-10) and the driver session reaper (driver_session AC-13), and closes the SAE HTTP client."""
     stats_task = asyncio.create_task(run_sae_stats(arrivals_source), name="sae.stats")
     expiry_tasks = start_alert_tasks(
         watch_tick=alert_expiry.watch_passages.tick,
@@ -102,10 +103,15 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         expiry_interval=alert_expiry.expiry_interval,
         logger=structlog.get_logger(BACKGROUND_LOGGER),
     )
+    driver_tasks = start_driver_tasks(
+        reap_tick=driver_use_cases.reap.tick,
+        interval=driver_use_cases.reaper_interval,
+        logger=structlog.get_logger(BACKGROUND_LOGGER),
+    )
     try:
         yield
     finally:
-        await stop_tasks(expiry_tasks)
+        await stop_tasks([*expiry_tasks, *driver_tasks])
         stats_task.cancel()
         with suppress(asyncio.CancelledError):
             await stats_task
