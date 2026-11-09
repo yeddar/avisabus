@@ -503,3 +503,7 @@
 
 ## 2026-11-09 · position_estimation v1.4 PR #52 abierta · driver_session · spec_blocked → implementing (v1.2)
 - `feat/driver_session` actualizada con `develop` y con la rama de T-11 (PR #52 sin fusionar). Se remata T-08.
+
+## 2026-11-09 · driver_session v1.2 · implementing → in_review (ciclo 2)
+- F-01 y T-08 en metros reales; trazados reales dentro de 150 m con la semilla del test. Aviso: con otras semillas
+  a σ 10 m correlado hay casos fuera (hasta 422 m por detrás). Verify --e2e y `slow` en verde (1711 backend).
