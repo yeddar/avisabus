@@ -151,6 +151,9 @@ class Harness:
 
 
 def _on_service(**values) -> Harness:  # noqa: ANN003
+    """A shift on its departure; a given progress was fixed a minute ago (window of 1250 m)."""
+    if values.get("progress_m") is not None:
+        values.setdefault("progress_recorded_at", NOW - timedelta(seconds=60))
     return Harness(session_of(1, SERVICE, **values))
 
 
@@ -368,11 +371,103 @@ async def test_the_progress_does_not_go_back() -> None:
 
 
 @pytest.mark.spec("driver_session.AC-09")
-async def test_the_search_starts_from_the_previous_progress() -> None:
-    harness = _on_service(progress_m=1000.0)
-    await harness.send(4500)  # beyond 3 km ahead: the closest stretch is at 4000
+async def test_the_search_is_limited_by_the_time_since_the_last_position_on_route() -> None:
+    harness = _on_service(progress_m=1000.0, progress_recorded_at=NOW - timedelta(seconds=10))
+    await harness.send(1500)  # 20 m/s × 10 s + 50 m reach 1250 m: 250 m from the window
     assert harness.stored().off_route is True
     assert harness.stored().progress_m == 1000.0
+
+
+@pytest.mark.spec("driver_session.AC-09")
+async def test_the_elapsed_time_uses_the_recorded_at_of_the_positions() -> None:
+    harness = _on_service(progress_m=1000.0, progress_recorded_at=NOW - timedelta(seconds=10))
+    await harness.send(1400, recorded_at=NOW + timedelta(seconds=10))  # 20 s of GPS time
+    assert harness.stored().progress_m == pytest.approx(1400, abs=TOLERANCE_M)
+
+
+@pytest.mark.spec("driver_session.AC-09")
+async def test_a_position_on_route_moves_the_mark_of_the_elapsed_time() -> None:
+    harness = _on_service(progress_m=1000.0)
+    await harness.send(1500)
+    assert harness.stored().progress_recorded_at == NOW
+
+
+@pytest.mark.spec("driver_session.AC-09")
+async def test_a_position_on_route_that_does_not_advance_also_moves_the_mark() -> None:
+    harness = _on_service(progress_m=1000.0)
+    await harness.send(950)
+    assert harness.stored().progress_m == 1000.0
+    assert harness.stored().progress_recorded_at == NOW
+
+
+@pytest.mark.spec("driver_session.AC-09")
+async def test_off_route_keeps_the_mark_so_the_search_goes_on_growing() -> None:
+    mark = NOW - timedelta(seconds=10)
+    harness = _on_service(progress_m=1000.0, progress_recorded_at=mark)
+    await harness.send(1650)  # 10 s since the mark: reaches 1250
+    assert harness.stored().off_route is True
+    assert harness.stored().progress_recorded_at == mark
+
+    harness.clock.advance(timedelta(seconds=10))
+    await harness.send(1650, recorded_at=harness.clock.now())  # 20 s: reaches 1450, 200 m away
+
+    assert harness.stored().off_route is True
+    harness.clock.advance(timedelta(seconds=10))
+    await harness.send(1650, recorded_at=harness.clock.now())  # 30 s: reaches 1650
+
+    assert harness.stored().off_route is False
+    assert harness.stored().progress_m == pytest.approx(1650, abs=TOLERANCE_M)
+    assert harness.stored().progress_recorded_at == harness.clock.now()
+
+
+@pytest.mark.spec("driver_session.AC-09")
+async def test_a_gps_gap_of_five_minutes_recovers_the_progress() -> None:
+    harness = _on_service(progress_m=1000.0, progress_recorded_at=NOW)
+    harness.clock.advance(timedelta(minutes=5))
+    await harness.send(4800, recorded_at=harness.clock.now())
+    assert harness.stored().off_route is False
+    assert harness.stored().progress_m == pytest.approx(4800, abs=TOLERANCE_M)
+
+
+@pytest.mark.spec("driver_session.AC-09")
+async def test_the_first_position_on_route_sets_the_mark() -> None:
+    harness = _on_service()
+    await harness.send(1200, recorded_at=NOW - timedelta(seconds=2))
+    assert harness.stored().progress_recorded_at == NOW - timedelta(seconds=2)
+
+
+@pytest.mark.spec("driver_session.AC-09")
+async def test_a_first_position_off_route_leaves_no_mark() -> None:
+    harness = _on_service()
+    await harness.send(1000, north=500)
+    assert harness.stored().progress_m is None
+    assert harness.stored().progress_recorded_at is None
+
+
+@pytest.mark.spec("driver_session.AC-09")
+async def test_a_position_without_service_leaves_no_mark() -> None:
+    harness = Harness(session_of(1))
+    await harness.send(1000)
+    assert harness.stored().progress_recorded_at is None
+
+
+@pytest.mark.spec("driver_session.AC-09")
+async def test_a_new_departure_clears_the_mark() -> None:
+    previous = DriverService("93", 0, "trip-0", MONDAY)
+    harness = Harness(
+        session_of(1, previous, progress_m=900.0, progress_recorded_at=NOW - timedelta(seconds=9))
+    )
+    await harness.select.execute(SelectDriverServiceCommand(harness.stored(), SERVICE))
+    assert harness.stored().progress_m is None
+    assert harness.stored().progress_recorded_at is None
+
+
+@pytest.mark.spec("driver_session.AC-09")
+async def test_after_a_new_departure_the_first_position_searches_the_whole_shape() -> None:
+    harness = _on_service(progress_m=100.0)
+    await harness.select.execute(SelectDriverServiceCommand(harness.stored(), SERVICE))
+    await harness.send(4200)
+    assert harness.stored().progress_m == pytest.approx(4200, abs=TOLERANCE_M)
 
 
 @pytest.mark.spec("driver_session.AC-09")

@@ -677,11 +677,14 @@ async def test_state_reports_off_route(client: httpx.AsyncClient, auth: dict[str
 
 @pytest.mark.spec("driver_session.AC-11")
 async def test_state_reports_the_end_of_the_trip(
-    client: httpx.AsyncClient, auth: dict[str, str], engine: Engine
+    client: httpx.AsyncClient, auth: dict[str, str], engine: Engine, clock: FakeClock
 ) -> None:
     departure = await _take_first_departure(client, auth)
     shape = _shape_of(engine, departure["trip_id"])
-    await client.put(POSITION, json=_position_at(shape[-1], NOW), headers=auth)
+    await client.put(POSITION, json=_position_at(shape[-2], NOW), headers=auth)
+    later = NOW + timedelta(seconds=10)
+    clock.set(later)
+    await client.put(POSITION, json=_position_at(shape[-1], later), headers=auth)
     body = (await client.get(CURRENT, headers=auth)).json()
     assert body["finished"] is True
     assert body["upcoming"] == []

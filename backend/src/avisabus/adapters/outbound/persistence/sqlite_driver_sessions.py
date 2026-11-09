@@ -48,6 +48,7 @@ driver_session = Table(
     Column("last_position_at", Text, nullable=True),
     Column("progress_m", Float, nullable=True),
     Column("off_route", Integer, nullable=False),
+    Column("progress_recorded_at", Text, nullable=True),
     Index(
         "ux_driver_session_departure",
         "trip_id",
@@ -134,6 +135,7 @@ def _mutable_values(session: DriverSession) -> dict[str, Any]:
         "last_position_at": _optional_text(session.last_position_at),
         "progress_m": session.progress_m,
         "off_route": int(session.off_route),
+        "progress_recorded_at": _optional_text(session.progress_recorded_at),
     }
 
 
@@ -165,6 +167,9 @@ def _to_model(row: Any) -> DriverSession:
         off_route=bool(row.off_route),
         last_position_at=(
             None if row.last_position_at is None else _from_text(row.last_position_at)
+        ),
+        progress_recorded_at=(
+            None if row.progress_recorded_at is None else _from_text(row.progress_recorded_at)
         ),
     )
 

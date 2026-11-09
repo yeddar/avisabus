@@ -10,7 +10,11 @@ from avisabus.domain.services.geometry import EARTH_RADIUS_M, haversine_m
 
 PASSED_MARGIN_M = 20.0
 OFF_ROUTE_M = 150.0
-_TIE_DECIMALS = 3
+MAX_SPEED_MPS = 20.0
+"""72 km/h: above what an urban bus does (AC-09, v1.1)."""
+AHEAD_MARGIN_M = 50.0
+FIRST_FIX_TOLERANCE_M = 30.0
+_TIE_M = 0.001
 """Distances to the shape are equal when they match to the millimetre (same street twice)."""
 
 
@@ -20,22 +24,24 @@ def project_progress(
     lat: float,
     lon: float,
     previous_m: float | None,
+    elapsed_s: float | None,
     back_m: float = 100.0,
-    ahead_m: float = 3000.0,
 ) -> tuple[float, float]:
-    """(candidate progress, distance to the shape) of the position on the closest stretch of the
-    shape inside `[previous − back, previous + ahead]`, or anywhere if `previous_m` is `None`.
+    """(candidate progress, distance to the shape) of the position (AC-09, v1.1).
 
-    The stretch is searched near the previous progress so that a shape passing twice through the
-    same place (loops, out and back along a street) stays on the right pass; on a tie, the
-    earliest one. Distances are measured on a local equirectangular plane, accurate at city
-    scale.
+    With `previous_m`, on the closest stretch inside `[previous − back, previous + MAX_SPEED_MPS ·
+    max(elapsed_s, 0) + AHEAD_MARGIN_M]`, so that a later pass of the shape near the position is
+    out of reach until the bus has been able to get there; on a tie, the earliest one. Without it
+    the whole shape is searched and, among the segments within `FIRST_FIX_TOLERANCE_M` of the
+    minimum distance, the earliest one wins: the bus starts its trip at the beginning. The distance
+    returned is always the minimum one, which is the distance to the shape. Distances are measured
+    on a local equirectangular plane, accurate at city scale.
     """
     if not shape:
         raise ValueError("an empty shape has no points")
     if len(shape) == 1:
         return float(distances[0]), haversine_m(shape[0].lat, shape[0].lon, lat, lon)
-    low, high = _window(distances, previous_m, back_m, ahead_m)
+    low, high = _window(distances, previous_m, elapsed_s, back_m)
     ref_lat = math.radians(sum(p.lat for p in shape) / len(shape))
     ref_lon = shape[0].lon
     origin_lat = shape[0].lat
@@ -47,8 +53,7 @@ def project_progress(
 
     px, py = plane(lat, lon)
     vertices = [plane(p.lat, p.lon) for p in shape]
-    best: tuple[float, float] | None = None
-    best_key: tuple[float, float] | None = None
+    found: list[tuple[float, float]] = []  # (distance to the position, candidate progress)
     for s in range(len(shape) - 1):
         d_a, d_b = distances[s], distances[s + 1]
         if d_b < low or d_a > high:
@@ -59,23 +64,24 @@ def project_progress(
         distance, fraction = _closest_on_stretch(
             px, py, vertices[s], vertices[s + 1], f_low, f_high
         )
-        candidate = d_a + fraction * span
-        key = (round(distance, _TIE_DECIMALS), candidate)
-        if best_key is None or key < best_key:
-            best_key = key
-            best = (candidate, distance)
-    if best is None:  # unreachable: `_window` always overlaps some segment
+        found.append((distance, d_a + fraction * span))
+    if not found:  # unreachable: `_window` always overlaps some segment
         raise ValueError("no segment of the shape overlaps the window")
-    return best
+    nearest = min(distance for distance, _ in found)
+    tolerance = FIRST_FIX_TOLERANCE_M if previous_m is None else _TIE_M
+    return min(
+        candidate for distance, candidate in found if distance <= nearest + tolerance
+    ), nearest
 
 
 def _window(
-    distances: Sequence[float], previous_m: float | None, back_m: float, ahead_m: float
+    distances: Sequence[float], previous_m: float | None, elapsed_s: float | None, back_m: float
 ) -> tuple[float, float]:
     """The search window, always overlapping the shape (the progress may be past its end if the
     network changed)."""
     if previous_m is None:
         return distances[0], distances[-1]
+    ahead_m = MAX_SPEED_MPS * max(elapsed_s or 0.0, 0.0) + AHEAD_MARGIN_M
     low = min(previous_m - back_m, distances[-1])
     high = max(previous_m + ahead_m, distances[0])
     return low, high

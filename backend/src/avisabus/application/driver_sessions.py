@@ -422,7 +422,9 @@ class SelectDriverService:
         holder = self._sessions.by_trip(service.trip_id, service.service_date)
         if holder is not None and holder.session_id != session.session_id:
             raise DepartureTakenError()
-        updated = replace(session, service=service, progress_m=None, off_route=False)
+        updated = replace(
+            session, service=service, progress_m=None, progress_recorded_at=None, off_route=False
+        )
         self._sessions.save(updated)
         self._listener.service_selected(updated, session.service)
         self._log.info(
@@ -471,33 +473,32 @@ class UpdateDriverPosition:
         if session.position is not None and recorded_at < session.position.recorded_at:
             return
         position = DriverPosition(command.lat, command.lon, command.accuracy_m, recorded_at)
-        progress_m, off_route = self._progress(session, position)
         updated = replace(
-            session,
-            position=position,
-            progress_m=progress_m,
-            off_route=off_route,
-            last_position_at=now,
+            self._with_progress(session, position), position=position, last_position_at=now
         )
         self._sessions.save(updated)
         self._listener.position_updated(updated)
 
-    def _progress(
-        self, session: DriverSession, position: DriverPosition
-    ) -> tuple[float | None, bool]:
-        if session.service is None:
-            return session.progress_m, session.off_route
-        route = self._routes.of(session.service.trip_id)
+    def _with_progress(self, session: DriverSession, position: DriverPosition) -> DriverSession:
+        """AC-09: the mark of the elapsed time only moves on the route, so the search goes on
+        growing while the bus is off route or without GPS."""
+        route = None if session.service is None else self._routes.of(session.service.trip_id)
         if route is None:
-            return session.progress_m, session.off_route
+            return session
+        mark = session.progress_recorded_at
+        elapsed_s = None if mark is None else (position.recorded_at - mark).total_seconds()
         candidate, distance = project_progress(
-            route.shape, route.distances, position.lat, position.lon, session.progress_m
+            route.shape, route.distances, position.lat, position.lon, session.progress_m, elapsed_s
         )
         if distance > OFF_ROUTE_M:
-            return session.progress_m, True
-        if session.progress_m is None:
-            return candidate, False
-        return max(session.progress_m, candidate), False
+            return replace(session, off_route=True)
+        progress_m = candidate if session.progress_m is None else max(session.progress_m, candidate)
+        return replace(
+            session,
+            progress_m=progress_m,
+            progress_recorded_at=position.recorded_at,
+            off_route=False,
+        )
 
 
 class EndDriverSession:

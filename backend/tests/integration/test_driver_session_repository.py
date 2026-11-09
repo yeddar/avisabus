@@ -61,6 +61,7 @@ def test_table_has_the_columns_of_the_design(engine: Engine) -> None:
         "last_position_at",
         "progress_m",
         "off_route",
+        "progress_recorded_at",
     ]
 
 
@@ -85,6 +86,7 @@ def test_saved_service_position_and_progress_round_trip(
         progress_m=1234.5,
         off_route=True,
         last_position_at=NOW,
+        progress_recorded_at=NOW - timedelta(seconds=1),
     )
     repo.save(updated)
     assert repo.by_token_hash(session.token_hash) == updated

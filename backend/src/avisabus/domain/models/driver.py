@@ -78,6 +78,8 @@ class DriverSession:
     off_route: bool
     last_position_at: datetime | None
     """Server instant of the last accepted position."""
+    progress_recorded_at: datetime | None = None
+    """`recorded_at` of the last position accepted on the route (AC-09, v1.1)."""
 
 
 @dataclass(frozen=True, slots=True)

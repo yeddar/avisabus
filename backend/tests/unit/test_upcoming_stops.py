@@ -8,6 +8,9 @@ from avisabus.domain.models.driver import UpcomingStop
 from avisabus.domain.models.network import ShapePoint
 from avisabus.domain.services.geometry import EARTH_RADIUS_M, cumulative_distances
 from avisabus.domain.services.upcoming_stops import (
+    AHEAD_MARGIN_M,
+    FIRST_FIX_TOLERANCE_M,
+    MAX_SPEED_MPS,
     OFF_ROUTE_M,
     PASSED_MARGIN_M,
     project_progress,
@@ -48,14 +51,18 @@ def _project(
     distances: list[float],
     at: tuple[float, float],
     previous: float | None,
+    elapsed: float | None = 5.0,
 ) -> tuple[float, float]:
     lat, lon = _lat_lon(*at)
-    return project_progress(shape, distances, lat, lon, previous)
+    return project_progress(shape, distances, lat, lon, previous, elapsed)
 
 
 def test_constants_of_the_design() -> None:
     assert PASSED_MARGIN_M == 20.0
     assert OFF_ROUTE_M == 150.0
+    assert MAX_SPEED_MPS == 20.0
+    assert AHEAD_MARGIN_M == 50.0
+    assert FIRST_FIX_TOLERANCE_M == 30.0
 
 
 @pytest.mark.spec("driver_session.AC-09")
@@ -107,24 +114,81 @@ def test_search_reaches_exactly_100_m_back() -> None:
 
 
 @pytest.mark.spec("driver_session.AC-09")
-def test_search_does_not_go_further_ahead_than_3_km() -> None:
-    candidate, distance = _project(STRAIGHT, STRAIGHT_D, (4500, 0), 1000)
-    assert candidate == pytest.approx(4000, abs=TOLERANCE_M)
-    assert distance == pytest.approx(500, abs=TOLERANCE_M)
+def test_search_ahead_is_what_the_bus_could_have_travelled() -> None:
+    candidate, distance = _project(STRAIGHT, STRAIGHT_D, (2000, 0), 1000, elapsed=10)
+    assert candidate == pytest.approx(1250, abs=TOLERANCE_M)
+    assert distance == pytest.approx(750, abs=TOLERANCE_M)
 
 
 @pytest.mark.spec("driver_session.AC-09")
-def test_search_reaches_exactly_3_km_ahead() -> None:
-    candidate, distance = _project(STRAIGHT, STRAIGHT_D, (4000, 0), 1000)
-    assert candidate == pytest.approx(4000, abs=TOLERANCE_M)
+def test_search_reaches_exactly_the_travelled_distance() -> None:
+    candidate, distance = _project(STRAIGHT, STRAIGHT_D, (1250, 0), 1000, elapsed=10)
+    assert candidate == pytest.approx(1250, abs=TOLERANCE_M)
     assert distance == pytest.approx(0, abs=TOLERANCE_M)
 
 
 @pytest.mark.spec("driver_session.AC-09")
-def test_custom_window() -> None:
-    lat, lon = _lat_lon(3000, 0)
-    candidate, _ = project_progress(STRAIGHT, STRAIGHT_D, lat, lon, 1000, back_m=10, ahead_m=500)
-    assert candidate == pytest.approx(1500, abs=TOLERANCE_M)
+@pytest.mark.parametrize("elapsed", [0.0, -30.0, None])
+def test_without_elapsed_time_only_the_margin_is_ahead(elapsed: float | None) -> None:
+    candidate, _ = _project(STRAIGHT, STRAIGHT_D, (2000, 0), 1000, elapsed=elapsed)
+    assert candidate == pytest.approx(1050, abs=TOLERANCE_M)
+
+
+@pytest.mark.spec("driver_session.AC-09")
+def test_a_gps_gap_of_five_minutes_widens_the_search() -> None:
+    candidate, distance = _project(STRAIGHT, STRAIGHT_D, (4900, 0), 1000, elapsed=300)
+    assert candidate == pytest.approx(4900, abs=TOLERANCE_M)
+    assert distance == pytest.approx(0, abs=TOLERANCE_M)
+
+
+@pytest.mark.spec("driver_session.AC-09")
+def test_custom_back_distance() -> None:
+    candidate, _ = _project(STRAIGHT, STRAIGHT_D, (500, 0), 1000)
+    lat, lon = _lat_lon(500, 0)
+    narrow, _ = project_progress(STRAIGHT, STRAIGHT_D, lat, lon, 1000, 5.0, back_m=10)
+    assert candidate == pytest.approx(900, abs=TOLERANCE_M)
+    assert narrow == pytest.approx(990, abs=TOLERANCE_M)
+
+
+# The second pass over (300, 0) comes 400 m of route after the first one.
+TWO_PASSES = _shape((0, 0), (400, 0), (400, -100), (300, -100), (300, 60), (300, 500))
+TWO_PASSES_D = cumulative_distances(TWO_PASSES)
+
+
+@pytest.mark.spec("driver_session.AC-09")
+def test_a_later_pass_out_of_reach_is_ignored_even_if_closer() -> None:
+    candidate, distance = _project(TWO_PASSES, TWO_PASSES_D, (300, 8), 290, elapsed=5)
+    assert candidate == pytest.approx(300, abs=TOLERANCE_M)
+    assert distance == pytest.approx(8, abs=TOLERANCE_M)
+
+
+@pytest.mark.spec("driver_session.AC-09")
+def test_the_later_pass_is_found_when_it_is_within_reach() -> None:
+    candidate, distance = _project(TWO_PASSES, TWO_PASSES_D, (300, 8), 290, elapsed=20)
+    assert candidate == pytest.approx(708, abs=TOLERANCE_M)
+    assert distance == pytest.approx(0, abs=TOLERANCE_M)
+
+
+@pytest.mark.spec("driver_session.AC-09")
+def test_the_first_position_takes_the_earliest_of_the_near_minimum_passes() -> None:
+    candidate, distance = _project(TWO_PASSES, TWO_PASSES_D, (300, 29.5), None)
+    assert candidate == pytest.approx(300, abs=TOLERANCE_M)
+    assert distance == pytest.approx(0, abs=TOLERANCE_M)
+
+
+@pytest.mark.spec("driver_session.AC-09")
+def test_a_pass_farther_than_the_tolerance_is_not_taken_on_the_first_position() -> None:
+    candidate, distance = _project(TWO_PASSES, TWO_PASSES_D, (300, 30.5), None)
+    assert candidate == pytest.approx(730.5, abs=TOLERANCE_M)
+    assert distance == pytest.approx(0, abs=TOLERANCE_M)
+
+
+@pytest.mark.spec("driver_session.AC-09")
+def test_the_first_position_reports_the_real_distance_to_the_shape() -> None:
+    shape = _shape((0, 0), (1000, 0), (1000, 20), (0, 20))
+    candidate, distance = _project(shape, cumulative_distances(shape), (500, 160), None)
+    assert distance == pytest.approx(140, abs=TOLERANCE_M)
+    assert candidate == pytest.approx(500, abs=TOLERANCE_M)
 
 
 @pytest.mark.spec("driver_session.AC-09")
@@ -170,7 +234,7 @@ def test_a_single_point_shape_is_that_point() -> None:
 @pytest.mark.spec("driver_session.AC-09")
 def test_an_empty_shape_is_an_error() -> None:
     with pytest.raises(ValueError, match="empty"):
-        project_progress([], [], ORIGIN_LAT, ORIGIN_LON, None)
+        project_progress([], [], ORIGIN_LAT, ORIGIN_LON, None, None)
 
 
 @pytest.mark.spec("driver_session.AC-09")
