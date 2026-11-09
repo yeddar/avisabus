@@ -4,8 +4,12 @@
 
 **Fecha:** 2026-11-09
 **Fase:** Implementación — Bloque 4 (conductor)
+<<<<<<< HEAD
 **Feature en curso:** `driver_session` v1.1 — `spec_blocked` (CP-3: P-02 y P-03); F-01 y N-02 con commit; T-08 sin
 commit, en el árbol de trabajo de `feat/driver_session`
+=======
+**Feature en curso:** `position_estimation` v1.4 — `done`, PR abierta. Siguiente: T-08 de `driver_session` (v1.2).
+>>>>>>> feat/position_estimation-v1.4
 
 ## Último paso
 Bloque 3 fusionado (PR #40…#44). PR #45 (cierre del bloque 3, CP-6) y PR #46 (specs del bloque 4, CP-1)
@@ -20,11 +24,19 @@ Cada una con reviewer nuevo y PR contra `develop` sin fusionar:
    `driver_ui`, `driver_gps_simulator`.
 
 ## Pendiente para specs futuras
+<<<<<<< HEAD
 - **Privacidad (feature cerrada):** uvicorn escribe la IP en el log de acceso en `/alerts`, lo que incumple
   `alert_create.AC-13`; en `/driver` ya se enmascara (`http/access_log.py`). Necesita tarea propia
   (generalizar el filtro en `configure_logging` o `--no-access-log` en `deployment_rpi`).
 - **driver_session:** CU-08 4b (CP-4) conserva "trazado de la línea y sentido elegidos" frente a AC-09.
   N-02 dígitos no ASCII sin test con el hasher real; N-03 → `deployment_rpi`: limitador por IP tras proxy.
+=======
+- **position_estimation v1.4:** N-01 fixtures del frontend con distancias infladas (3403 m frente a ~1242 m
+  reales; las capturas `map-*` muestran "3,4 km") → regenerar antes del CP-6 del bloque 4. N-02 texto residual
+  en requirements (`:13-14`, AC-05). N-03 aclarar AC-06 (la 1282 difiere 339 m de la proyección). N-04/N-05
+  huecos de test (horarios parciales; valores iguales del feed, D-25). N-06 `_stop_distances` es privada:
+  `driver_session` no debe duplicar esa lógica.
+>>>>>>> feat/position_estimation-v1.4
 - **driver_codes_cli:** N-07 que la traza de Typer no muestre variables locales depende del valor por
   defecto (`show_locals`): con `True` imprimiría `plain_code` → fijarlo a `False` y testearlo. N-08 un
   `OperationalError` sale como traza (sin valores). N-09 `hide_parameters` no oculta filas con
@@ -134,6 +146,7 @@ Cada una con reviewer nuevo y PR contra `develop` sin fusionar:
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
+<<<<<<< HEAD
 **CP-3 `driver_session` T-08** (detalle en Bloqueos de `progress/impl_driver_session.md`):
 - **P-02:** `shape_dist_traveled` no son metros: longitud del feed / longitud real entre 1,64 y 4,25
   (mediana 2,97; comprobado también por el orquestador con los 103 trazados de `data/avisabus.sqlite`). La
@@ -141,6 +154,10 @@ Cada una con reviewer nuevo y PR contra `develop` sin fusionar:
   (`distance_to_stop_m` inflada ~3×, visible en el resumen del mapa), feature cerrada.
 - **P-03:** incluso en metros reales, a σ 10 m hay hasta 139 m por detrás y 105–108 m por delante, por encima
   del umbral de 100 m (5 y 2 posiciones de 18 714). Propuesta: umbral 150 m, ajustar la regla o cambiar el ruido exigido.
+=======
+Ninguno. CP-3 de `driver_session` (P-02, P-03) resuelto en la PR #51: `position_estimation` 1.4, `driver_session` 1.2
+(umbral 150 m), `gtfs_import` 1.4 (solo docs).
+>>>>>>> feat/position_estimation-v1.4
 
 ## Bloqueos
 Ninguno. 

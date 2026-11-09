@@ -1,4 +1,215 @@
 # Revisión: position_estimation
+Ciclo: 1 (v1.4) · Fecha: 2026-11-09 · Agente: reviewer
+Spec revisada: `specs/position_estimation/` v1.4 (APPROVED, PR #51) · Rama:
+`feat/position_estimation-v1.4` (HEAD `e49dc19`; código y tests en `1ca3b69`) · Base:
+`origin/develop` (`7b7660e`). Alcance de esta revisión: T-11 y la re-verificación de T-08 de la
+v1.4. Las revisiones de la v1.3, la v1.2 y la v1.1 se conservan más abajo, sin cambios.
+
+## Veredicto: APPROVED
+
+No hay hallazgos bloqueantes. `distance_to_stop_m` está en metros reales: sobre el feed real, las
+8070 estimaciones que recalculé por mi cuenta coinciden con el código, y las paradas quedan donde
+dice su geometría (mediana de 3,9 m hasta la parada real). AC-17 sigue con 139 pares y 5 excluidos,
+y las distancias bajan en la proporción esperada. `CI=1 ./init.sh verify --e2e` está en verde.
+Hay 6 observaciones no bloqueantes. Las tres del implementer son **notas, ninguna es un CP-3**
+(N-01…N-03). La más visible para la persona es N-01: las capturas del mapa muestran "3,4 km" donde
+el backend v1.4 daría unos 1,2 km.
+
+## Matriz AC → evidencia (v1.4)
+
+La v1.4 solo cambia el comportamiento de AC-06. Los demás AC conservan la evidencia de las matrices
+anteriores y sus tests vuelven a pasar. AC-05 y AC-17 se añaden por el efecto del cambio.
+
+| AC | Test(s) | Resultado | Nota |
+|---|---|---|---|
+| AC-06, forma en metros aunque el feed traiga `shape_dist_traveled` | `backend/tests/unit/test_position_estimator.py:332` (`uniform` y `by_segment`), `:360`, `:374` | OK | Con el feed ×3 y con escala distinta por kilómetro, el resultado es el mismo: 2500 m recorridos y 1500 m a la parada. Valores esperados calculados a mano. El mutante E1 (forma con los valores del feed) muere. |
+| AC-06, parada interpolada entre los valores del feed de la forma | `backend/tests/unit/test_geometry.py:94`, `:101`, `:113`; `test_position_estimator.py:345` | OK | Cubren escala uniforme, escala por tramo, forma con esquina y paradas dentro de un tramo. G1 (escala global), G7 y G8 (unidades del feed) mueren. |
+| AC-06, acotado a los extremos y casos degenerados | `test_geometry.py:121`, `:130`, `:142`, `:149` | OK | Valores antes y después de la forma, punto único, lista vacía, forma vacía y punto sin valor. G2, G3, G4, G9, G10 y G11 mueren. Ver N-05 para los valores iguales. |
+| AC-06, proyección si los horarios o la forma no traen el dato | `test_position_estimator.py:259`, `:276`, `:360`, `:374`, `:390`, `:473` | OK | E4 y E6 mueren. El caso de horarios **parcialmente** sin dato no tiene test (N-04), aunque el código lo resuelve bien. |
+| AC-06, distancias no decrecientes | `test_position_estimator.py:398`; `test_geometry.py:229`, `:250` | OK | La parada C retrocede en el feed y se mantiene en la distancia de B. E2 (sin `max`) muere. |
+| AC-06, tolerancia de 2 % o 10 m frente a la medida sobre la forma | `backend/tests/integration/test_position_api.py:143` | OK | Replay de 75 ciclos con las líneas 70 y 93, y haversine propia del test. Exige más de 100 comparaciones y alguna distancia de más de 1000 m. Por sí solo detecta un error de escala del 3 % (E7). Cubre solo la parada 508; ver N-03. |
+| AC-05 (tests adaptados a metros) | `test_geometry.py:165-208` | OK | Pasan `cumulative_distances` en lugar de `shape_distances`, sin cambiar las aserciones. Redacción de AC-05: N-02. |
+| AC-17 | `backend/tests/integration/test_position_real_session.py:147`, `:160`, `:167` | OK | **139 pares y 5 excluidos**, igual que en `origin/develop`. Ver la tabla de abajo. |
+
+**AC-17 antes y después** (ejecutado en una copia de `origin/develop` y en esta rama):
+
+| Par excluido | `develop` | v1.4 | Cociente |
+|---|---|---|---|
+| 93, ciclos 14→15 | 0→4765 | 0→1496 | 3,19 |
+| 70, ciclos 23→24 | 0→1288 | 0→458 | 2,81 |
+| 70, ciclos 54→55 | 0→1380 | 0→485 | 2,85 |
+| 70, ciclos 58→69 | 0→2752 | 0→981 | 2,81 |
+| 70, ciclos 70→71 | 2707→4729 | 967→1447 | 2,80 y 3,27 |
+
+Los cocientes encajan con la escala de las formas de `gtfs_mini` (entre 2,69 y 3,40; forma de la 93:
+2,79; formas de la 70: 3,27 y 3,40) y con que la escala varía a lo largo de cada forma.
+
+## Verificación ejecutada
+
+- `CI=1 ./init.sh verify --e2e`, con el puerto 4173 libre: **"verify: todo en verde", código 0**.
+  - backend: format, lint, types y architecture OK; tests OK (1426 passed, 6 deselected).
+  - frontend: format, lint y types OK; tests OK (55 ficheros, 563 passed y 2 skipped); build + bundle
+    OK (5 tests); e2e + a11y OK (126 passed).
+  - harness: `feature_list.json` y trazabilidad OK.
+- Tras la verificación, `git status` solo muestra `qr/`, que estaba antes.
+- Sin cambios fuera del alcance: el diff respecto a `origin/develop` toca `geometry.py`,
+  `position_estimator.py`, sus tres ficheros de tests y los ficheros de progreso y estado. No toca
+  `frontend/`, `specs/` ni `docs/`. Los commits siguen Conventional Commits y citan la tarea.
+
+### Comprobación con el feed real (`data/gtfs/emt`, solo lectura)
+
+Scripts en el scratchpad, con haversine e interpolación propias:
+`/private/tmp/claude-501/-Users-diegob-Developer-avisabus/7c6d7bf6-af5b-4ade-b145-3b1f50f59c8b/scratchpad/real_feed_check.py`
+y
+`/private/tmp/claude-501/-Users-diegob-Developer-avisabus/7c6d7bf6-af5b-4ade-b145-3b1f50f59c8b/scratchpad/real_feed_e2e.py`.
+
+| Comprobación | Resultado |
+|---|---|
+| Datos | 103 formas, 20 598 viajes, 94 patrones, 2281 paradas |
+| Escala del feed frente a la longitud real | mín. 1,64, mediana 2,97, máx. 4,25 (coincide con `gtfs_import` v1.4) |
+| Precondiciones | 0 formas con valores decrecientes, 0 tramos de longitud 0 en el feed, 0 secuencias de paradas decrecientes; 1 parada más allá del final de su forma |
+| `feed_to_metres` frente a mi interpolación por recorrido lineal | diferencia máxima 0,0 m |
+| `estimate_position` en 8070 instantes (viaje, parada objetivo, tramo) frente a mi cálculo | `distance_to_stop_m` y posición: diferencia máxima 0,0 m. Comprueba la implementación, no la interpretación de la spec: uso la misma fórmula de AC-06 |
+| Distancia antigua frente a la nueva, por estimación | mediana 3,05, entre 1,06 y 9,92. La escala varía mucho por tramo, y por eso hace falta interpolar por tramo |
+| **Punto que da el feed frente a la parada real** (comprobación geométrica independiente de la fórmula) | mediana 3,9 m, p95 10,5 m, p99 19,0 m, máximo 54,8 m |
+| Parada según el feed frente a su proyección | mediana 0,59 m, p95 7,2 m, p99 18,7 m, máximo 337,9 m (confirma las cifras del implementer) |
+
+### Otros usos de `shape_dist_traveled` en `backend/src`
+
+No queda ninguno tratado como metros.
+
+- Solo importan y leen el valor `gtfs_rows.py:168,198`, `sqlite_network.py:130,153,573,592` y los
+  modelos. Su único consumidor es `position_estimator.py:117-119`, a través de `feed_to_metres`.
+- `get_stop_arrivals`, `watch_passages` y `trip_matcher` no usan distancias.
+- `shape_distances` ya no aparece en el código ni en los tests.
+- El contrato sigue igual y ahora es correcto: `routes/position.py:53` documenta "in metres", y
+  `openapi.json` y `schema.d.ts` no cambian.
+- `passenger_map_view` solo da formato al valor (`summary.ts:107`). `NOT_STARTED` no lo muestra.
+
+### Pruebas de mutación (copia en el scratchpad)
+
+Copia con `git archive` de `HEAD` en
+`/private/tmp/claude-501/-Users-diegob-Developer-avisabus/7c6d7bf6-af5b-4ade-b145-3b1f50f59c8b/scratchpad/v14/`,
+ejecutada con el `.venv` del repositorio y `PYTHONPATH` apuntando a la copia (comprobado con
+`avisabus.__file__`). Script:
+`/private/tmp/claude-501/-Users-diegob-Developer-avisabus/7c6d7bf6-af5b-4ade-b145-3b1f50f59c8b/scratchpad/mutate_v14.py`.
+Cada mutante se ejecuta con `-k "geometry or position"`, y los supervivientes con la suite completa.
+Al final, `diff -r` confirma que `src/` de la copia coincide con el repositorio.
+
+| Mutante | Resultado |
+|---|---|
+| G1 escala global de la forma | Muerto |
+| G2 sin acotar al inicio | Muerto |
+| G3 sin acotar al final | Muerto |
+| G4 `value > feed[last]` | Muerto |
+| G5 `value < feed[0]` | **Sobrevive** (N-05): solo difiere con un tramo de longitud 0 al inicio |
+| G6 `bisect_left` | **Sobrevive** (N-05): difiere con valores iguales en el interior de la forma |
+| G7 fracción 0 | Muerto |
+| G8 interpolar en unidades del feed | Muerto |
+| G9 punto único devuelve el feed | Muerto |
+| G10 acepta puntos sin valor | Muerto |
+| G11 sin comprobar forma vacía | Muerto |
+| G12 sin `min(…, last - 1)` | Sobrevive: equivalente con el feed no decreciente |
+| E1 forma con los valores del feed | Muerto |
+| E2 sin `max` acumulado | Muerto |
+| E3 acepta horarios con valores parciales | **Sobrevive** (N-04) |
+| E4 sin condición sobre la forma | Muerto |
+| E5 proyectar siempre que haya coordenadas | Muerto (por los tests de `get_vehicle_position` y de la API; el test de tolerancia solo no lo detecta, como cabe esperar) |
+| E6 `any` en lugar de `all` | Muerto |
+| E7 `distance_to_stop_m` ×1,03 | Muerto, también por el test de integración solo |
+
+15 de 19 detectados; de los 4 supervivientes, G12 es equivalente y los otros 3 se describen en N-04
+y N-05.
+
+### Lista de comprobación (`docs/verification.md` §4)
+
+| Bloque | Resultado |
+|---|---|
+| Contrato | OK: AC-06 y design §3 (pasos 1, 2 y 7). `feed_to_metres` sustituye a `shape_distances`, como pide el design §2 |
+| Arquitectura | OK: `domain/` solo usa la biblioteca estándar; `lint-imports` en verde; sin reloj real |
+| Tests | OK: sin red ni reloj real; los tests de AC-06 calculan los valores esperados a mano y fallan con mutantes de escala |
+| Privacidad y seguridad | No aplica: sin identificadores nuevos ni logs nuevos |
+| Frontend | Sin cambios de código; ver N-01 |
+| Convenciones | OK |
+
+## Hallazgos
+
+### Bloqueantes
+
+Ninguno.
+
+### No bloqueantes
+
+- **N-01 (O-01) Las fixtures y las capturas del mapa muestran una distancia engañosa. Nota, no
+  CP-3.** La spec es correcta y ningún AC fija estos datos; es un resto de datos de prueba.
+  - Medí sobre `shape-93.json`: `position-en-route.json:31` dice 3403 m y son **1242 m**;
+    `position-not-started.json:31` dice 4251 m y son **1835 m**. El implementer daba unos 1248 m y
+    1839 m porque medía hasta el vértice más cercano; el orden de magnitud es el mismo.
+  - **Sí hay valores engañosos en lo que se ve.** Las capturas que muestran el resumen en ruta dicen
+    "3,4 km", y el backend v1.4 daría unos 1,2 km: lo vi en
+    `frontend/test-results/passenger_map_view/pixel/map-en-route-es.png`. Las generan
+    `map-en-route-{es,ca}`, `map-focused-es` y `map-zoom-focused-es` (`frontend/e2e/map-view.spec.ts:248,406,420`)
+    en los tres perfiles. No están versionadas, pero son la evidencia de `passenger_map_view.AC-15`
+    y se revisan en CP-6. `map-not-started-es` no muestra la distancia.
+  - **También engaña el texto de origen.** `frontend/e2e/fixtures/index.ts:6-9` y
+    `frontend/src/test/fixtures/api/index.ts:6-9` presentan estas fixtures como "answers of the real
+    backend", lo que ya no es cierto para las distancias.
+  - Los tests **no** dan una falsa garantía: los "3,4 km" (`map-view.spec.ts:52,66`,
+    `summary.test.ts:35,41,155`, `PositionSummary.test.tsx:28,37`, `MapPage.test.tsx:153,348,364,394`)
+    solo comprueban el formato y la sustitución del dato simulado. Ningún test compara las fixtures
+    con el backend.
+  - T-11 no incluye `frontend/`, así que no era su alcance. Recomendación: regenerar las dos fixtures
+    y ajustar esos textos en una tarea aparte, antes de la demo de CP-6.
+- **N-02 (O-02) Texto residual en la spec. Nota, "Problema de spec" de redacción, no CP-3.**
+  `specs/position_estimation/requirements.md:13-14` dice "`shape_dist_traveled`, en metros en el feed
+  de EMT", lo que es falso según `gtfs_import` v1.4 y `docs/vision.md:77`. AC-05 (`:61-63`) dice
+  literalmente que se interpola entre los puntos "cuyo `shape_dist_traveled`" contienen `d`, y `d`
+  ya está en metros. No queda ninguna decisión abierta: AC-06 v1.4 ("aunque el feed traiga
+  `shape_dist_traveled`") y el design §3 (pasos 1 y 6) fijan la interpretación, y el código la
+  sigue. Conviene corregir esas dos frases en la próxima revisión de la spec, porque `driver_session`
+  remite a esta.
+- **N-03 (O-03) Alcance de la tolerancia de AC-06. Nota, no CP-3.** AC-06 tiene una lectura
+  coherente, y es la implementada: primero define dónde está cada parada (interpolando el feed), y la
+  tolerancia comprueba que la distancia hasta ese punto está en metros. Con esa lectura el error es
+  0 m. Si la referencia fuera la proyección geométrica de la parada, ninguna implementación que siga
+  AC-06 podría cumplir la tolerancia en todos los casos:
+  - 290 de 28 993 pares de paradas (1,0 %) quedan fuera de 2 % o 10 m.
+  - Sin la parada 1282 son 264 pares, con un error máximo de 91 m.
+  - Con la cabecera 1282 (forma `1030_2278_1282`), el error llega a 339 m (un 12,6 % en ese par).
+
+  He comprobado el caso de la 1282: la forma pasa a 27,4 m de la parada en el metro 5025, da una
+  vuelta a la manzana y termina a 49,6 m de la parada, en el metro 5419. El feed sitúa la parada al
+  final de la forma. Los 337,9 m salen de que la proyección de la cabecera queda fijada en la parada
+  anterior, la 1283 (metro 5081,5), por la restricción monótona. Por tanto, la distancia del feed no
+  es un error del código y el impacto se limita a una cabecera final. Si se quiere evitar la duda, basta con añadir a AC-06 "hasta el
+  punto que da su `shape_dist_traveled`" en la próxima revisión.
+- **N-04 Test ausente para horarios con valores parciales.** El mutante E3
+  (`position_estimator.py:118`, sin `len(feed) == len(ordered)`) sobrevive a toda la suite. El código
+  es correcto: lo comprobé con horarios parciales, que se proyectan si hay coordenadas y dan
+  `missing_stop_coordinates` si no. El feed real no tiene este caso. Bastaría un test parametrizado.
+- **N-05 D-25 no está cubierta por tests y no se aplica al inicio de la forma.** D-25 dice que el
+  caso de un valor igual a un tramo de longitud 0 "se prueba con una forma sintética", pero
+  `test_geometry.py:130` solo tiene valores iguales al final, que resuelve la cota final, no
+  `bisect_right`. Por eso G6 sobrevive (con el feed 0, 100, 100, 200 y el valor 100, el código da
+  2000 m como dice D-25, pero ningún test lo fija). Además, con el tramo de longitud 0 al inicio
+  (`geometry.py:75`), el código devuelve el **primer** punto, y no el último como dice D-25 (G5
+  sobrevive). El feed real no tiene tramos de longitud 0 (0 en 103 formas), así que no tiene efecto.
+- **N-06 Reutilización en `driver_session`.** `feed_to_metres` sirve tal cual (`geometry.py:57`,
+  misma firma que pide el design), pero quien la reutilice debe tener en cuenta tres cosas:
+  1. Aplicar el `max` acumulado, que está fuera de la función (D-23; el mutante E2 confirma que hace
+     falta).
+  2. Comprobar antes que todos los puntos de la forma traen el dato, porque si no lanza `ValueError`
+     (`geometry.py:67-68`), que no es `PositionNotEstimableError`.
+  3. La función asume que el feed de la forma no decrece, sin decirlo en su docstring. Con una forma
+     decreciente el resultado no es fiable; el feed real cumple la condición (0 de 103).
+
+  Como `_stop_distances` es privada y `specs/driver_session/design.md:101-103` pide hacerlo
+  "exactamente como" aquí, el riesgo es duplicar esa lógica. Conviene que la tarea de `driver_session`
+  que la use la reutilice o la mueva a `geometry.py`, sin cambiar el comportamiento.
+
+---
+
+# Revisión: position_estimation
 Ciclo: 1 (v1.3) · Fecha: 2026-11-04 · Agente: reviewer
 Spec revisada: `specs/position_estimation/` v1.3 (APPROVED, PR #33) · Rama:
 `feat/position_estimation-v1.3` (HEAD `088025e`; tests en `ad41c2c`) · Base: `origin/develop`

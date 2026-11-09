@@ -5,6 +5,7 @@
 """
 
 import json
+import math
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
@@ -26,6 +27,7 @@ from tests.support.position import position_client
 from tests.support.sae import DERIVED_NO_ARRIVALS, STOP_508_PEAK
 from tests.support.stops import API, CountingSource, import_feed, new_engine, replay, token
 
+EARTH_RADIUS_M = 6_371_008.8
 PROBLEM_JSON = "application/problem+json"
 PEAK_START = datetime(2026, 11, 2, 19, 42, 23, 769219, tzinfo=UTC)
 POSITION_93 = f"{API}/stops/508/lines/93/position"
@@ -100,6 +102,76 @@ def _expected_estimate(
         arrival_at,
         now,
     )
+
+
+# --- AC-06: distance_to_stop_m is measured in real metres ---
+
+
+def _haversine_m(a: tuple[float, float], b: tuple[float, float]) -> float:
+    """Written here on purpose: the test must not depend on `domain.services.geometry`."""
+    phi1, phi2 = math.radians(a[0]), math.radians(b[0])
+    d_phi, d_lambda = phi2 - phi1, math.radians(b[1] - a[1])
+    h = math.sin(d_phi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(d_lambda / 2) ** 2
+    return 2 * EARTH_RADIUS_M * math.asin(math.sqrt(h))
+
+
+def _metres_along(shape: list[tuple[float, float]], point: tuple[float, float]) -> float:
+    """Haversine length of the shape from its start to the point of the shape closest to `point`
+    (on a plane tangent at `point`)."""
+    cos_lat = math.cos(math.radians(point[0]))
+
+    def plane(p: tuple[float, float]) -> tuple[float, float]:
+        return (
+            EARTH_RADIUS_M * math.radians(p[1] - point[1]) * cos_lat,
+            EARTH_RADIUS_M * math.radians(p[0] - point[0]),
+        )
+
+    best_off, best_along, travelled = math.inf, 0.0, 0.0
+    for a, b in zip(shape, shape[1:], strict=False):
+        length = _haversine_m(a, b)
+        (ax, ay), (bx, by) = plane(a), plane(b)
+        dx, dy = bx - ax, by - ay
+        length2 = dx * dx + dy * dy
+        f = 0.0 if length2 == 0 else max(0.0, min(1.0, -(ax * dx + ay * dy) / length2))
+        off = math.hypot(ax + f * dx, ay + f * dy)
+        if off < best_off:
+            best_off, best_along = off, travelled + f * length
+        travelled += length
+    return best_along
+
+
+@pytest.mark.spec("position_estimation.AC-06")
+async def test_distance_to_the_stop_matches_the_length_measured_on_the_shape(
+    mini_engine: Engine, repo: SqliteNetworkRepository
+) -> None:
+    """`shape_dist_traveled` of `gtfs_mini` is 2.7–3.4 times the real length of its shapes."""
+    clock = FakeClock(PEAK_START)
+    source, _ = replay(STOP_508_PEAK, clock)
+    compared: list[int] = []
+    async with position_client(mini_engine, clock, source) as (client, _):
+        for _cycle in range(75):
+            for line, direction_id in (("70", 1), ("93", 0)):
+                response = await client.get(
+                    f"{API}/stops/508/lines/{line}/position", params=_params(direction_id)
+                )
+                body = response.json()
+                position = body["position"]
+                if position is None or body["status"] == "AT_STOP":
+                    continue
+                shape = [(p.lat, p.lon) for p in repo.shape_points(body["shape_id"])]
+                stop = (body["stop"]["lat"], body["stop"]["lon"])
+                bus = (position["lat"], position["lon"])
+                measured = _metres_along(shape, stop) - _metres_along(shape, bus)
+                reported = position["distance_to_stop_m"]
+                assert abs(reported - measured) < max(0.02 * measured, 10), (
+                    body["vehicle"],
+                    reported,
+                    measured,
+                )
+                compared.append(reported)
+            clock.advance(timedelta(seconds=20))
+    assert len(compared) > 100
+    assert max(compared) > 1000  # not only a few metres from the stop
 
 
 # --- AC-09: contract, first arrival, same SAE cache ---

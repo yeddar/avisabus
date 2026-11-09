@@ -13,10 +13,10 @@ from avisabus.domain.services.geometry import (
     EARTH_RADIUS_M,
     bearing_deg,
     cumulative_distances,
+    feed_to_metres,
     haversine_m,
     point_at_distance,
     project_onto_shape,
-    shape_distances,
 )
 
 LAT0 = 39.45
@@ -82,22 +82,80 @@ def test_cumulative_distances_add_up_haversine_from_the_first_point() -> None:
     assert cumulative_distances([]) == []
 
 
-@pytest.mark.spec("position_estimation.AC-06")
-def test_shape_distances_use_the_feed_values_when_present() -> None:
-    # The feed values are deliberately not the haversine distances: they must be kept.
-    shape = _shape([_north(0), _north(1000), _north(2000)], [0, 1010.5, 2030])
-    assert shape_distances(shape) == [0, 1010.5, 2030]
+def _feed_scaled(points_m: list[float], factors: list[float]) -> list[float]:
+    """`shape_dist_traveled` of points at `points_m`: `factors[n]` feed units per metre on the
+    segment between the points `n` and `n + 1` (EMT's feed is not in metres, gtfs_import v1.4)."""
+    feed = [0.0]
+    for n, factor in enumerate(factors):
+        feed.append(feed[-1] + (points_m[n + 1] - points_m[n]) * factor)
+    return feed
 
 
 @pytest.mark.spec("position_estimation.AC-06")
-def test_shape_distances_are_computed_when_the_feed_lacks_them() -> None:
-    without = _shape([_north(0), _north(1000), _north(2000)])
-    assert shape_distances(without) == pytest.approx([0, 1000, 2000], abs=1e-6)
+def test_feed_to_metres_undoes_a_uniform_scale_of_the_feed() -> None:
+    shape = _shape([_north(0), _north(1000), _north(2000)], [0, 3000, 6000])
+    values = [0, 1500, 3000, 4500, 6000]
+    assert feed_to_metres(shape, values) == pytest.approx([0, 500, 1000, 1500, 2000], abs=1e-6)
+
+
+@pytest.mark.spec("position_estimation.AC-06")
+def test_feed_to_metres_interpolates_within_the_segment_that_contains_the_value() -> None:
+    # A different scale on each segment, as in the feed (1.64 to 4.25 feed units per metre).
+    points_m = [0.0, 1000.0, 2000.0, 3000.0]
+    feed = _feed_scaled(points_m, [1.64, 4.25, 2.97])
+    assert feed == pytest.approx([0, 1640, 5890, 8860])
+    shape = _shape([_north(d) for d in points_m], feed)
+    assert feed_to_metres(shape, [820, 1640, 3765, 7375]) == pytest.approx(
+        [500, 1000, 1500, 2500], abs=1e-6
+    )
+
+
+@pytest.mark.spec("position_estimation.AC-06")
+def test_feed_to_metres_measures_the_real_length_of_a_shape_with_corners() -> None:
+    corner = _north(1000)
+    end = (corner[0], corner[1] + _east_offset_deg(1000, corner[0]))
+    shape = _shape([_north(0), corner, end], [0, 2970, 5940])
+    assert feed_to_metres(shape, [2970 + 1485]) == pytest.approx([1500], abs=1e-3)
+
+
+@pytest.mark.spec("position_estimation.AC-06")
+def test_feed_to_metres_clamps_the_values_to_the_ends_of_the_shape() -> None:
+    # Some stops of the real feed are beyond the last point of their shape (19392 vs 18892).
+    shape = _shape([_north(100), _north(600), _north(1100)], [40, 1540, 3040])
+    assert feed_to_metres(shape, [0, 40, 3040, 19392]) == pytest.approx(
+        [0, 0, 1000, 1000], abs=1e-6
+    )
+
+
+@pytest.mark.spec("position_estimation.AC-06")
+def test_feed_to_metres_with_repeated_points() -> None:
+    # A segment with feed length but no real length, and a segment with no feed length.
+    shape = _shape(
+        [_north(0), _north(1000), _north(1000), _north(2000), _north(3000)],
+        [0, 3000, 3500, 6500, 6500],
+    )
+    assert feed_to_metres(shape, [1500, 3250, 3500, 5000, 6500]) == pytest.approx(
+        [500, 1000, 1000, 1500, 3000], abs=1e-6
+    )
+
+
+@pytest.mark.spec("position_estimation.AC-06")
+def test_feed_to_metres_on_degenerate_inputs() -> None:
+    single = _shape([_north(0)], [7.0])
+    assert feed_to_metres(single, [0, 7, 9]) == [0.0, 0.0, 0.0]
+    assert feed_to_metres(_shape([_north(0), _north(10)], [0, 30]), []) == []
+
+
+@pytest.mark.spec("position_estimation.AC-06")
+def test_feed_to_metres_needs_the_feed_values_of_every_point() -> None:
+    with pytest.raises(ValueError, match="empty"):
+        feed_to_metres([], [1.0])
     partial = [
         ShapePoint(lat, lon, n + 1, 0.0 if n == 0 else None)
         for n, (lat, lon) in enumerate([_north(0), _north(500)])
     ]
-    assert shape_distances(partial) == pytest.approx([0, 500], abs=1e-6)
+    with pytest.raises(ValueError, match="shape_dist_traveled"):
+        feed_to_metres(partial, [1.0])
 
 
 # --- point at a distance (AC-05) ---
@@ -107,7 +165,7 @@ def test_shape_distances_are_computed_when_the_feed_lacks_them() -> None:
 @pytest.mark.parametrize("d", [0.0, 1.0, 999.0, 1000.0, 1500.0, 2345.6, 4000.0])
 def test_point_at_distance_on_a_straight_shape_is_within_one_metre(d: float) -> None:
     shape = _meridian_shape([0, 1000, 2000, 3000, 4000])
-    point = point_at_distance(shape, shape_distances(shape), d)
+    point = point_at_distance(shape, cumulative_distances(shape), d)
     expected = _north(d)
     assert haversine_m(point.lat, point.lon, *expected) < 1
     assert point.bearing_deg == pytest.approx(0.0, abs=0.01)
@@ -119,18 +177,18 @@ def test_point_at_distance_interpolates_between_the_points_that_contain_it() -> 
     corner = _north(1000)
     east = (corner[0], corner[1] + _east_offset_deg(1000, corner[0]))
     shape = _shape([_north(0), corner, east], [0, 1000, 2000])
-    point = point_at_distance(shape, shape_distances(shape), 1500)
+    point = point_at_distance(shape, cumulative_distances(shape), 1500)
     expected = (corner[0], corner[1] + _east_offset_deg(500, corner[0]))
     assert haversine_m(point.lat, point.lon, *expected) < 1
     assert point.bearing_deg == pytest.approx(90.0, abs=0.05)
-    before = point_at_distance(shape, shape_distances(shape), 400)
+    before = point_at_distance(shape, cumulative_distances(shape), 400)
     assert before.bearing_deg == pytest.approx(0.0, abs=0.01)
 
 
 @pytest.mark.spec("position_estimation.AC-05")
 def test_point_at_distance_is_clamped_to_the_shape() -> None:
     shape = _meridian_shape([0, 1000, 2000])
-    distances = shape_distances(shape)
+    distances = cumulative_distances(shape)
     before = point_at_distance(shape, distances, -50)
     after = point_at_distance(shape, distances, 2500)
     assert (before.lat, before.lon) == pytest.approx(_north(0))
@@ -143,7 +201,7 @@ def test_point_at_distance_is_clamped_to_the_shape() -> None:
 def test_bearing_skips_repeated_points() -> None:
     # Repeated points (zero-length segments) take the bearing of the closest real segment.
     shape = _shape([_north(0), _north(0), _north(1000), _north(1000)], [0, 0, 1000, 1000])
-    distances = shape_distances(shape)
+    distances = cumulative_distances(shape)
     assert point_at_distance(shape, distances, 0).bearing_deg == pytest.approx(0.0, abs=0.01)
     assert point_at_distance(shape, distances, 1000).bearing_deg == pytest.approx(0.0, abs=0.01)
 
@@ -164,7 +222,7 @@ def test_stops_beside_the_shape_project_onto_their_distance() -> None:
     shape = _meridian_shape([0, 1000, 2000, 3000, 4000], with_dist=False)
     offset = _east_offset_deg(12, LAT0)  # stops on the pavement, 12 m from the shape
     stops = [(lat, lon + offset) for lat, lon in (_north(d) for d in (0, 950, 2000, 3999))]
-    projected = project_onto_shape(stops, shape, shape_distances(shape))
+    projected = project_onto_shape(stops, shape, cumulative_distances(shape))
     assert projected == pytest.approx([0, 950, 2000, 3999], abs=1)
 
 
@@ -179,7 +237,7 @@ def test_projection_never_goes_back_along_the_trip() -> None:
     back_top = (out_end[0], out_end[1] + _east_offset_deg(30, out_end[0]))
     back_bottom = (LAT0, LON0 + east)
     shape = _shape([_north(0), out_end, back_top, back_bottom])
-    distances = shape_distances(shape)
+    distances = cumulative_distances(shape)
     stops = [_north(0), _north(1000), back_top, _north(0)]
     projected = project_onto_shape(stops, shape, distances)
     assert projected == sorted(projected)
@@ -194,7 +252,7 @@ def test_projection_of_stops_out_of_order_does_not_decrease() -> None:
     shape = _meridian_shape([0, 1000, 2000], with_dist=False)
     # Second stop slightly behind the first one: kept at the first one's distance.
     stops = [_north(800), _north(790), _north(1500)]
-    projected = project_onto_shape(stops, shape, shape_distances(shape))
+    projected = project_onto_shape(stops, shape, cumulative_distances(shape))
     assert projected == sorted(projected)
     assert projected[0] == pytest.approx(800, abs=1)
     assert projected[1] == pytest.approx(projected[0])
