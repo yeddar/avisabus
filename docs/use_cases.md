@@ -1,6 +1,6 @@
 # Casos de uso — AvisaBus
 
-> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-03: textos de botón "Solicitar"/"Cancelar solicitud" en CU-03 y CU-04, aprobada en la PR #7; v1.2 · 2026-11-04: autobús elegido en CU-03, necesidad visual en CU-05 y detección de paso por viaje en CU-07, aprobada en la PR #37). Deriva de `docs/vision.md` y `docs/requirements.md`.
+> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-03: textos de botón "Solicitar"/"Cancelar solicitud" en CU-03 y CU-04, aprobada en la PR #7; v1.2 · 2026-11-04: autobús elegido en CU-03, necesidad visual en CU-05 y detección de paso por viaje en CU-07, aprobada en la PR #37; v1.3 · 2026-11-09: LIM-02 ampliada, pendiente de aprobación). Deriva de `docs/vision.md` y `docs/requirements.md`.
 > Cada caso de uso referencia los requisitos que cubre. Los flujos alternativos se numeran
 > `<paso><letra>` (p. ej. `3a` es una alternativa al paso 3).
 
@@ -293,7 +293,7 @@ flowchart LR
 | ID | Limitación | Consecuencia | Mitigación / trabajo futuro |
 |---|---|---|---|
 | LIM-01 | El SAE no identifica el vehículo concreto de cada ETA. | Si delante del conductor conectado circula otro autobús de la misma línea sin conductor conectado, un aviso puede entregarse al conductor equivocado. | Cruzar el ETA estimado desde el GPS del conductor con el ETA del SAE para elegir el vehículo más probable; integrar AVL/GTFS-RT real. |
-| LIM-02 | La detección de paso depende de la frecuencia de consulta y de la exactitud del SAE. | Un aviso puede caducar con unos segundos de retraso o, si el SAE falla, solo por el tiempo máximo (30 min). | Usar el GPS del conductor como fuente adicional. |
+| LIM-02 | La detección de paso depende de la frecuencia de consulta y de la exactitud del SAE, y el SAE no identifica vehículos (el aviso sigue al viaje GTFS emparejado, ADR-013/ADR-016). | Un aviso puede caducar con unos segundos de retraso; si el emparejamiento traslada el viaje al autobús siguiente, caduca con ese autobús (unos minutos tarde); si el SAE falla, por la parada siguiente estimada o por el tiempo máximo (30 min). | Usar el GPS del conductor como fuente adicional. |
 | LIM-03 | La posición del autobús es estimada, no medida. | Puede desviarse de la real en tráfico irregular. | Se etiqueta como "posición estimada"; sustituible por AVL real vía adaptador. |
 | LIM-04 | La ocupación es simulada. | No refleja la ocupación real. | Interfaz de sensor preparada para datos reales. |
 

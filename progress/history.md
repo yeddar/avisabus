@@ -426,3 +426,11 @@
 ## 2026-11-05 · passenger_alert_ui · in_review → done · bloque 3 completo
 - Revisión ciclo 1: APPROVED (25/28 mutantes; los 3 restantes son huecos de test con código correcto).
   PR sin fusionar, apilada sobre la #43. Bloque 3: 5/5 en `done` → CP-6.
+
+## 2026-11-09 · bloque 3 · CP-6 aprobado (cierre del bloque)
+- La persona prueba el bloque 3 con datos en tiempo real (solicitar, cancelar, caducidad, lector de
+  pantalla) sin incidencias y sigue las recomendaciones: título del diálogo con el headsign GTFS
+  (H-07) y LIM-02 documentada (traslado del viaje al autobús siguiente).
+- Ajustes de cierre: `alert_expiry` 1.1, `alert_create` 1.1, `passenger_alert_ui` 1.1 (T-09),
+  `realtime_events` 1.2 (T-06, `pytest-timeout`), `docs/` (LIM-02, limitador, guía §7).
+  Pendiente de aprobación.

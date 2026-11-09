@@ -1,6 +1,6 @@
 # Caducidad de las solicitudes de parada — requirements
 
-> Feature: `alert_expiry` · Versión: 1.0 · Estado: APPROVED
+> Feature: `alert_expiry` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-21, RF-28 (pasajero), RNF-06, RNF-08 · Casos de uso: CU-07 · Depende de: alert_create
 
 ## Contexto
@@ -20,7 +20,10 @@ Al caducar, el aviso se **borra** con sus necesidades (RNF-06) y el pasajero rec
 
 El emparejamiento de viajes puede cambiar de viaje entre consultas (CP-3 de
 `position_estimation`), así que la detección prefiere **caducar tarde a caducar antes de tiempo**:
-un autobús que desaparece cuando aún estaba lejos no se da por pasado (LIM-02).
+un autobús que desaparece cuando aún estaba lejos no se da por pasado (LIM-02). (v1.1) Además, si
+el emparejamiento traslada el viaje del aviso al autobús siguiente **sin que desaparezca**, el
+aviso sigue a ese autobús y caduca con él (observado en E-01: unos 8 min tarde). No se añade una
+regla de salto de ETA porque también saltaría con re-predicciones del SAE.
 
 ## Alcance
 
@@ -93,8 +96,10 @@ un autobús que desaparece cuando aún estaba lejos no se da por pasado (LIM-02)
   *Verificación:* unit + integration (arranque y parada con el `lifespan`)
 - **alert_expiry.AC-11** — CON la red de `gtfs_mini` y la reproducción de `stop_508_peak`, para
   avisos creados sobre los autobuses de la línea 93 en la parada 508 y el vigilante ejecutado cada
-  20 s de la sesión: (a) NINGÚN aviso DEBERÁ caducar como `PASSED` mientras su viaje siga
-  apareciendo en la observación siguiente con más de 2 min; (b) AL MENOS un aviso DEBERÁ caducar
+  20 s de la sesión: (a) (v1.1) NINGÚN aviso DEBERÁ caducar como `PASSED` en un ciclo en el que
+  su autobús siga en la lista del SAE, es decir, cuando el número de llegadas de su línea y
+  sentido con antelación ≤ (última antelación observada del viaje + 2 min) no disminuye respecto
+  al ciclo anterior; (b) AL MENOS un aviso DEBERÁ caducar
   como `PASSED` en los dos ciclos siguientes a la última observación en que su viaje aparecía con
   ≤ 2 min. El test DEBERÁ informar de cuántos avisos caducan por cada motivo.
   *Verificación:* integration (sesión real; resultado contrastado con la exploración E-01)
@@ -116,3 +121,4 @@ un autobús que desaparece cuando aún estaba lejos no se da por pasado (LIM-02)
 | Versión | Fecha | Cambio | Motivo |
 |---|---|---|---|
 | 1.0 | 2026-11-04 | Versión inicial aprobada (PR #37). | CP-1 del bloque 3. Aprobada por la persona. |
+| 1.1 | 2026-11-09 | AC-11 (a) reformulada para que compruebe de verdad la ausencia de pasos prematuros (propuesta de E-01); Contexto: traslado del viaje al autobús siguiente sin desaparecer (LIM-02); design: `observed_at` = `StopArrivals.generated_at` y rango recomendado de la ventana en `.env.example`. | CP-6 del bloque 3: E-01 y revisión de `alert_expiry`. Pendiente de aprobación. |

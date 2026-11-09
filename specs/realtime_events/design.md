@@ -1,6 +1,6 @@
 # Eventos en tiempo real — design
 
-> Feature: `realtime_events` · Versión: 1.1 · Estado: APPROVED
+> Feature: `realtime_events` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-23, RF-28 (base), RNF-02, RNF-06, RNF-07, RNF-12, RNF-13 · Casos de uso: CU-03, CU-04, CU-07 (canal) · Depende de: project_scaffold
 
 ## 1. Resumen
@@ -29,7 +29,7 @@ navegador ──WS /ws/passenger── hello{device_id} ─▶ DeviceHasher ─�
 | adapters/inbound | `http/errors.py` | Ampliación: `InvalidDeviceIdError` → 400 (lo usa `alert_create`) |
 | adapters/inbound | `http/device.py` | Dependencia FastAPI `device_hash_from_header` (`X-Device-Id`) |
 | raíz | `logging.py` | Filtro de excepciones (AC-12) |
-| raíz | `main.py` | Composición, `ConnectionRegistry` en el `lifespan` |
+| adapters/inbound | `http/app.py`, `http/container.py` | Composición y `ConnectionRegistry` en el `lifespan` (v1.2: aquí y no en `main.py`, como el resto de la app) |
 
 ## 3. Interfaces
 

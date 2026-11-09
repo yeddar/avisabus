@@ -1,6 +1,6 @@
 # Arquitectura — AvisaBus
 
-> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-04: avisos por viaje elegido, ADR-016, aprobada en la PR #37). Deriva de `docs/vision.md`, `docs/requirements.md`
+> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-04: avisos por viaje elegido, ADR-016, aprobada en la PR #37; v1.2 · 2026-11-09: ubicación del limitador y orden de validaciones, pendiente de aprobación). Deriva de `docs/vision.md`, `docs/requirements.md`
 > y `docs/use_cases.md`. Las decisiones se registran como ADR en la sección 10.
 > Los nombres de código están en inglés; ver glosario en `docs/conventions.md`.
 
@@ -78,7 +78,8 @@ backend/
 │   │       ├── persistence/   # SQLAlchemy + SQLite: network, alerts, driver sessions/codes
 │   │       ├── occupancy/     # simulated sensor
 │   │       ├── events/        # in-memory pub/sub
-│   │       ├── security/      # HMAC stop tokens, code hashing, rate limiter
+│   │       ├── security/      # HMAC stop tokens and device ids, code hashing
+│   │       ├── rate_limit/    # in-memory sliding-window rate limiter
 │   │       └── clock.py       # SystemClock
 │   ├── background/            # PassageWatcher, AlertExpiryTicker, DriverSessionReaper
 │   ├── config.py              # pydantic-settings
@@ -220,7 +221,7 @@ sequenceDiagram
   participant DR as Conductor (WS)
   PA->>API: POST /alerts (X-Device-Id, token, line, direction_id, needs)
   API->>UC: execute(cmd)
-  UC->>UC: validar token, rate limit, unicidad
+  UC->>UC: rate limit (dispositivo, IP), unicidad, token y autobús (GetStopArrivals)
   UC->>AS: assign(stop, trip elegido)
   AS-->>UC: driver_session?
   UC->>REPO: save(alert)

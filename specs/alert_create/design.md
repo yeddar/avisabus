@@ -1,6 +1,6 @@
 # Crear solicitud de parada — design
 
-> Feature: `alert_create` · Versión: 1.0 · Estado: APPROVED
+> Feature: `alert_create` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-16, RF-17, RF-19, RF-20, RF-23, RNF-02, RNF-06, RNF-07 · Casos de uso: CU-03 · Depende de: stop_arrivals_api, realtime_events
 
 ## 1. Resumen

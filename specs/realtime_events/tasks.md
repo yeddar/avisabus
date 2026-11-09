@@ -1,6 +1,6 @@
 # Eventos en tiempo real — tasks
 
-> Feature: `realtime_events` · Versión: 1.1 · Estado: APPROVED
+> Feature: `realtime_events` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-23, RF-28 (base), RNF-02, RNF-06, RNF-07, RNF-12, RNF-13 · Casos de uso: CU-03, CU-04, CU-07 (canal) · Depende de: project_scaffold
 
 ## Exploración
@@ -32,6 +32,12 @@ No necesaria.
   - AC: realtime_events.AC-03, AC-05, AC-06, AC-07, AC-08, AC-09, AC-10, AC-11, AC-12, AC-13
   - Ficheros: `adapters/inbound/ws/{passenger,connections}.py`, `adapters/inbound/http/{device,errors,app}.py`, `config.py`, `main.py`, `.env.example`, `tests/integration/test_ws_passenger.py`, `tests/unit/test_ws_connections.py`
   - Verificación: `cd backend && uv run pytest tests/integration/test_ws_passenger.py tests/unit/test_ws_connections.py`
+
+- [ ] **T-06** — (v1.2, arnés) `pytest-timeout` como dependencia de desarrollo con `timeout = 30`
+  en la configuración de pytest (los tests `slow` pueden subirlo con `@pytest.mark.timeout`), y
+  límite explícito en las esperas de WebSocket de los tests (`receive_json` con tiempo máximo).
+  - Ficheros: `backend/pyproject.toml`, `backend/uv.lock`, tests de integración con WebSocket
+  - Verificación: `cd backend && uv run pytest` en verde; un test temporal que espera un evento que nunca llega falla por tiempo (no se versiona)
 
 - [ ] **T-05** — Verificación completa.
   - Verificación: `./init.sh verify`

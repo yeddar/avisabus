@@ -1,6 +1,6 @@
 # Interfaz de la solicitud de parada — tasks
 
-> Feature: `passenger_alert_ui` · Versión: 1.0 · Estado: APPROVED
+> Feature: `passenger_alert_ui` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-16, RF-17, RF-18, RF-19, RF-22, RF-23, RNF-02, RNF-03, RNF-04, RNF-05, RNF-06 · Casos de uso: CU-03, CU-04, CU-05, CU-07 · Depende de: passenger_stop_view, alert_create, alert_cancel, alert_expiry
 
 ## Exploración
@@ -46,6 +46,12 @@ No necesaria.
   - AC: passenger_alert_ui.AC-04, AC-12, AC-13
   - Ficheros: `e2e/alerts.spec.ts`, `e2e/fixtures/*`
   - Verificación: `cd frontend && npm run e2e`
+
+- [ ] **T-09** — (v1.1) Con el diálogo abierto, `alert.registered`/`alert.delivered` de la misma
+  parada y línea cierra el diálogo y lleva el foco a "Cancelar solicitud" (AC-11).
+  - AC: passenger_alert_ui.AC-11
+  - Ficheros: `src/features/passenger/alerts/{AlertsProvider,RequestDialog,AlertAction}.tsx`, `StopPage.alerts.test.tsx`
+  - Verificación: `cd frontend && npm run test -- StopPage RequestDialog`
 
 - [ ] **T-08** — Verificación completa.
   - Verificación: `./init.sh verify --e2e`

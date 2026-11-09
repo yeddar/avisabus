@@ -1,6 +1,6 @@
 # Caducidad de las solicitudes de parada — tasks
 
-> Feature: `alert_expiry` · Versión: 1.0 · Estado: APPROVED
+> Feature: `alert_expiry` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-21, RF-28 (pasajero), RNF-06, RNF-08 · Casos de uso: CU-07 · Depende de: alert_create
 
 ## Exploración
