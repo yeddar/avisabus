@@ -449,3 +449,5 @@
 
 ## 2026-11-09 · realtime_events v1.2 · in_review → done
 - Revisión ciclo 1 de la v1.2: APPROVED. Las ramas siguientes se apilan para evitar conflictos en `progress/`.
+
+## 2026-11-09 · realtime_events v1.2 PR #47 abierta · passenger_alert_ui · done → implementing (v1.1, T-09)

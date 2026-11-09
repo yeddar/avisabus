@@ -4,7 +4,8 @@
 
 **Fecha:** 2026-11-09
 **Fase:** Cierre del Bloque 3 (CP-6 aprobado) — ajustes previos al bloque 4
-**Feature en curso:** `realtime_events` v1.2 — `done`, PR abierta. Siguiente: `passenger_alert_ui` T-09.
+**Feature en curso:** `passenger_alert_ui` v1.1 — `implementing` (solo T-09), rama `feat/passenger_alert_ui-v1.1`,
+apilada sobre `feat/realtime_events-v1.2` (PR #47)
 
 ## Último paso
 Bloque 3 fusionado (PR #40…#44). PR #45 (cierre del bloque 3, CP-6) y PR #46 (specs del bloque 4, CP-1)
@@ -12,7 +13,7 @@ fusionadas.
 
 ## Siguiente paso
 Cada una con reviewer nuevo y PR contra `develop` sin fusionar:
-1. `realtime_events` T-06: APPROVED; PR abierta.
+1. `realtime_events` T-06: APPROVED; PR #47.
 2. `passenger_alert_ui` T-09.
 3. Bloque 4 por orden: `driver_codes_cli`, `driver_session` (T-02 amplía la red: `list_lines`,
    `departures`; autorizado), `driver_demand` (T-02 amplía el repositorio de avisos; autorizado),
