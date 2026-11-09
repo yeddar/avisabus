@@ -37,7 +37,7 @@ from avisabus.domain.models.network import (
     Stop,
     TripStopTime,
 )
-from avisabus.domain.services.geometry import EARTH_RADIUS_M
+from avisabus.domain.services.geometry import EARTH_RADIUS_M, cumulative_distances
 from tests.support.drivers import InMemorySessions, RecordingListener, RecordingLogger, session_of
 from tests.support.fake_clock import FakeClock
 
@@ -509,6 +509,84 @@ async def test_stop_distances_come_from_the_shape_if_the_feed_lacks_them() -> No
     )
     state = await harness.get.execute(harness.stored())
     assert [stop.stop_id for stop in state.progress.upcoming[:2]] == ["s2", "s3"]
+    assert state.progress.upcoming[0].distance_m == pytest.approx(500, abs=TOLERANCE_M)
+
+
+# A feed like EMT's: its `shape_dist_traveled` are not metres (each kilometre counts as 3000).
+INFLATED_SHAPE = [replace(p, dist_traveled=(p.dist_traveled or 0.0) * 3) for p in SHAPE]
+INFLATED_STOPS = [
+    replace(st, shape_dist_traveled=(st.shape_dist_traveled or 0.0) * 3) for st in STOP_TIMES
+]
+
+
+def _inflated(**values) -> FakeNetwork:  # noqa: ANN003
+    return FakeNetwork(**{"stop_times": INFLATED_STOPS, "shape": INFLATED_SHAPE, **values})
+
+
+@pytest.mark.spec("driver_session.AC-09")
+def test_the_route_measures_the_shape_in_real_metres() -> None:
+    route = TripRoutes(_inflated()).of("trip-1")
+    assert route is not None
+    assert route.distances == pytest.approx(cumulative_distances(SHAPE))
+    assert route.distances[-1] == pytest.approx(5000, abs=TOLERANCE_M)
+
+
+@pytest.mark.spec("driver_session.AC-10")
+def test_stops_of_the_feed_are_converted_to_real_metres() -> None:
+    route = TripRoutes(_inflated()).of("trip-1")
+    assert route is not None
+    assert [along for _, along in route.stops] == pytest.approx(
+        [1000.0 * n for n in range(6)], abs=TOLERANCE_M
+    )
+
+
+@pytest.mark.spec("driver_session.AC-10")
+def test_stops_never_go_back_along_the_trip() -> None:
+    out_of_order = [
+        replace(st, shape_dist_traveled=d)
+        for st, d in zip(STOP_TIMES, [0, 3000, 2400, 9000, 12000, 15000], strict=True)
+    ]
+    route = TripRoutes(FakeNetwork(stop_times=out_of_order, shape=INFLATED_SHAPE)).of("trip-1")
+    assert route is not None
+    alongs = [along for _, along in route.stops]
+    assert alongs == sorted(alongs)
+    assert alongs[2] == pytest.approx(1000, abs=TOLERANCE_M)
+
+
+@pytest.mark.spec("driver_session.AC-10")
+def test_stops_are_projected_if_the_shape_lacks_the_feed_distance() -> None:
+    shape = [replace(p, dist_traveled=None) for p in SHAPE]
+    route = TripRoutes(FakeNetwork(shape=shape)).of("trip-1")
+    assert route is not None
+    assert [along for _, along in route.stops] == pytest.approx(
+        [1000.0 * n for n in range(6)], abs=TOLERANCE_M
+    )
+
+
+@pytest.mark.spec("driver_session.AC-09")
+async def test_the_progress_is_in_real_metres_with_a_feed_not_in_metres() -> None:
+    harness = Harness(session_of(1, SERVICE), network=_inflated())
+    await harness.send(1500)
+    assert harness.stored().progress_m == pytest.approx(1500, abs=TOLERANCE_M)
+
+
+@pytest.mark.spec("driver_session.AC-09")
+async def test_the_window_is_in_real_metres_with_a_feed_not_in_metres() -> None:
+    mark = NOW - timedelta(seconds=10)
+    harness = Harness(
+        session_of(1, SERVICE, progress_m=1000.0, progress_recorded_at=mark),
+        network=_inflated(),
+    )
+    await harness.send(1200)  # 10 s reach 1250 real metres
+    assert harness.stored().off_route is False
+    assert harness.stored().progress_m == pytest.approx(1200, abs=TOLERANCE_M)
+
+
+@pytest.mark.spec("driver_session.AC-10")
+async def test_upcoming_distances_are_real_metres() -> None:
+    harness = Harness(session_of(1, SERVICE, progress_m=1500.0), network=_inflated())
+    state = await harness.get.execute(harness.stored())
+    assert state.progress.upcoming[0].stop_id == "s2"
     assert state.progress.upcoming[0].distance_m == pytest.approx(500, abs=TOLERANCE_M)
 
 

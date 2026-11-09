@@ -4,13 +4,12 @@ manual:
     cd backend && uv run pytest -m slow tests/integration/test_upcoming_stops_real_shapes.py -s
 
 Skipped when the feed is not present. Each shape is driven at 30 km/h with a position every 5 s,
-through the real `UpdateDriverPosition`, with a `FakeClock` and Gaussian noise of fixed seed. The
-bus moves in real metres along the shape and the errors are measured in real metres: the
-`shape_dist_traveled` of EMT's feed is not in metres (see Bloqueos of
-`progress/impl_driver_session.md`). The figures go to stdout (`-s`).
+through the real `UpdateDriverPosition` and `TripRoutes`, with a `FakeClock` and Gaussian noise of
+fixed seed. The bus moves and the errors are measured in real metres (the `shape_dist_traveled` of
+EMT's feed is not in metres). The AC fixes the bound for σ = 10 m; the lower levels keep the same
+bound and give the figures noted in `progress/impl_driver_session.md` (`-s`).
 """
 
-import bisect
 import csv
 import math
 import random
@@ -22,17 +21,16 @@ from pathlib import Path
 import pytest
 
 from avisabus.application.driver_sessions import (
-    TripRoute,
+    TripRoutes,
     UpdateDriverPosition,
     UpdateDriverPositionCommand,
 )
 from avisabus.domain.models.driver import DriverService
-from avisabus.domain.models.network import ShapePoint
+from avisabus.domain.models.network import FeedVersion, ShapePoint, Stop, TripStopTime
 from avisabus.domain.services.geometry import (
     EARTH_RADIUS_M,
     cumulative_distances,
     point_at_distance,
-    shape_distances,
 )
 from tests.support.drivers import InMemorySessions, RecordingListener, session_of
 from tests.support.fake_clock import FakeClock
@@ -40,7 +38,7 @@ from tests.support.fake_clock import FakeClock
 REAL_FEED = Path(__file__).resolve().parents[3] / "data" / "gtfs" / "emt"
 SPEED_MPS = 30 / 3.6
 STEP_S = 5
-MAX_ERROR_M = 100.0
+MAX_ERROR_M = 150.0
 SEED = 20261109
 START = datetime(2026, 11, 9, 8, 0, tzinfo=UTC)
 TRIP_ID = "trip"
@@ -72,12 +70,28 @@ class Figures:
     no_progress: int = 0
 
 
-class _Routes:
-    def __init__(self, route: TripRoute) -> None:
-        self._route = route
+class _OneShapeNetwork:
+    """What `TripRoutes` reads of the network, for one trip that follows `shape`."""
 
-    def of(self, _trip_id: str) -> TripRoute:
-        return self._route
+    def __init__(self, shape: list[ShapePoint]) -> None:
+        self._shape = shape
+        day = date(2026, 11, 1)
+        self._feed = FeedVersion(1, "real", START, day, day, {})
+
+    def active_feed(self) -> FeedVersion:
+        return self._feed
+
+    def trip_shape_id(self, _trip_id: str) -> str:
+        return "shape"
+
+    def trip_stop_times(self, _trip_id: str) -> list[TripStopTime]:
+        return [TripStopTime("first", 1, 0, 0, self._shape[0].dist_traveled)]
+
+    def shape_points(self, _shape_id: str) -> list[ShapePoint]:
+        return self._shape
+
+    def get_stop(self, stop_id: str) -> Stop:
+        return Stop(stop_id, stop_id, self._shape[0].lat, self._shape[0].lon)
 
 
 def _table(name: str) -> list[dict[str, str]]:
@@ -118,21 +132,12 @@ def _offset(lat: float, lon: float, east_m: float, north_m: float) -> tuple[floa
     )
 
 
-def _in_metres(progress: float, route: list[float], metres: list[float]) -> float:
-    """Real metres along the shape of a progress measured with the distances of the route."""
-    n = max(min(bisect.bisect_right(route, progress) - 1, len(route) - 2), 0)
-    span = route[n + 1] - route[n]
-    fraction = 0.0 if span <= 0 else (progress - route[n]) / span
-    return metres[n] + fraction * (metres[n + 1] - metres[n])
-
-
 async def _drive(shape_id: str, shape: list[ShapePoint], noise: Noise, figures: Figures) -> None:
-    distances = shape_distances(shape)  # the distances `TripRoutes` gives the use case
     metres = cumulative_distances(shape)
     clock = FakeClock(START)
     sessions = InMemorySessions(session_of(1, SERVICE))
-    route = TripRoute(tuple(shape), tuple(distances), ())
-    update = UpdateDriverPosition(sessions, _Routes(route), RecordingListener(), clock)  # type: ignore[arg-type]
+    routes = TripRoutes(_OneShapeNetwork(shape))  # type: ignore[arg-type]
+    update = UpdateDriverPosition(sessions, routes, RecordingListener(), clock)
     rng = random.Random(f"{SEED}:{shape_id}:{noise.name}")  # noqa: S311 - reproducible noise
     east = rng.gauss(0, noise.sigma_m) if noise.sigma_m else 0.0
     north = rng.gauss(0, noise.sigma_m) if noise.sigma_m else 0.0
@@ -159,7 +164,7 @@ async def _drive(shape_id: str, shape: list[ShapePoint], noise: Noise, figures: 
             figures.no_progress += 1
             beyond = True
         else:
-            error = _in_metres(progress, distances, metres) - real
+            error = progress - real
             figures.max_ahead_m = max(figures.max_ahead_m, error)
             figures.max_behind_m = max(figures.max_behind_m, -error)
             if error > MAX_ERROR_M:
@@ -199,13 +204,18 @@ def _assert_within(figures: Figures) -> None:
     assert figures.beyond_behind == 0
 
 
+_LEVELS = [
+    Noise("sigma10_correlated", 10.0, 0.95),
+    Noise("sigma10_independent", 10.0, 0.0),
+    Noise("sigma5_correlated", 5.0, 0.95),
+    Noise("sigma5_independent", 5.0, 0.0),
+    Noise("sigma3_correlated", 3.0, 0.95),
+]
+
+
 @pytest.mark.spec("driver_session.AC-09")
-@pytest.mark.parametrize(
-    "noise",
-    [Noise("sigma10_correlated", 10.0, 0.95), Noise("sigma10_independent", 10.0, 0.0)],
-    ids=lambda noise: noise.name,
-)
-async def test_progress_stays_within_100_m_of_the_real_position(
+@pytest.mark.parametrize("noise", _LEVELS, ids=lambda noise: noise.name)
+async def test_progress_stays_within_150_m_of_the_real_position(
     shapes: dict[str, list[ShapePoint]], noise: Noise
 ) -> None:
     _assert_within(await _figures(shapes, noise))

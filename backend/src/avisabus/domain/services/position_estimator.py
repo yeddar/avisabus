@@ -46,7 +46,7 @@ def estimate_position(
     if not shape:
         raise PositionNotEstimableError("empty_shape")
     along_shape = cumulative_distances(shape)
-    along_stops = _stop_distances(ordered, shape, along_shape, stop_coordinates)
+    along_stops = stop_distances(ordered, shape, along_shape, stop_coordinates)
 
     def scheduled(n: int) -> datetime:
         return service_day_start + timedelta(seconds=ordered[n].arrival_s)
@@ -103,7 +103,7 @@ def _interpolate(
     return along_stops[k]
 
 
-def _stop_distances(
+def stop_distances(
     ordered: Sequence[TripStopTime],
     shape: Sequence[ShapePoint],
     along_shape: Sequence[float],

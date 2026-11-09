@@ -49,8 +49,9 @@ from avisabus.domain.ports.driver import (
     SessionTokenHasher,
 )
 from avisabus.domain.ports.network import NetworkRepository
-from avisabus.domain.services.geometry import project_onto_shape, shape_distances
+from avisabus.domain.services.geometry import cumulative_distances
 from avisabus.domain.services.occupancy_simulation import LOCAL_TIMEZONE, service_day_start
+from avisabus.domain.services.position_estimator import stop_distances
 from avisabus.domain.services.upcoming_stops import (
     OFF_ROUTE_M,
     project_progress,
@@ -289,8 +290,9 @@ class TripRoute:
 
 
 class TripRoutes:
-    """Shape and stop distances of a trip (design §3), cached per feed version, shape and stop
-    pattern: trips of a shape may call at different stops (design §7, local decision)."""
+    """Shape and stop distances of a trip in real metres (design §3, v1.2), cached per feed
+    version, shape and stop pattern: trips of a shape may call at different stops (design §7,
+    local decision)."""
 
     def __init__(self, network: NetworkRepository) -> None:
         self._network = network
@@ -326,12 +328,10 @@ class TripRoutes:
         stops = [stop for stop in found if stop is not None]
         if len(stops) != len(stop_times):
             return None
-        distances = shape_distances(shape)
-        feed = [st.shape_dist_traveled for st in stop_times]
-        if all(d is not None for d in feed):
-            along = [float(d) for d in feed if d is not None]
-        else:
-            along = project_onto_shape([(s.lat, s.lon) for s in stops], shape, distances)
+        distances = cumulative_distances(shape)
+        along = stop_distances(
+            stop_times, shape, distances, {s.stop_id: (s.lat, s.lon) for s in stops}
+        )
         return TripRoute(
             shape=tuple(shape),
             distances=tuple(distances),
