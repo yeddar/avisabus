@@ -2,26 +2,27 @@
 
 > Fichero vivo: lo reescribe el orquestador al final de cada sesión.
 
-**Fecha:** 2026-11-05
-**Fase:** Fin del Bloque 3 — pendiente de fusión de PRs y CP-6
-**Feature en curso:** ninguna. Bloque 3 completo (5/5 `done`); PRs apiladas abiertas: #40 → #41 → #42 → #43
-→ `passenger_alert_ui`.
+**Fecha:** 2026-11-09
+**Fase:** Cierre del Bloque 3 (CP-6 aprobado) — ajustes previos al bloque 4
+**Feature en curso:** `realtime_events` v1.2 — `done`, PR abierta. Siguiente: `passenger_alert_ui` T-09.
 
 ## Último paso
-Bloque 3 implementado y revisado (cada feature APPROVED en su ciclo 1):
-- `realtime_events` v1.1: PR #40.
-- `alert_create`: PR #41 (sobre #40).
-- `alert_cancel`: PR #42 (sobre #41).
-- `alert_expiry` (con E-01): PR #43 (sobre #42).
-- `passenger_alert_ui`: PR abierta (sobre #43).
+Bloque 3 fusionado (PR #40…#44). PR #45 (cierre del bloque 3, CP-6) y PR #46 (specs del bloque 4, CP-1)
+fusionadas.
 
 ## Siguiente paso
-1. La persona fusiona las PRs **en orden** (#40, #41, #42, #43 y la de `passenger_alert_ui`).
-2. **CP-6 del bloque 3** (persona): textos es/ca (`progress/impl_passenger_alert_ui.md`), prueba con
-   lector de pantalla del diálogo de solicitud, anuncios y cancelación; decisiones de spec pendientes
-   (AC-11 (a) y LIM-02 de `alert_expiry`; H-06, H-07 de `passenger_alert_ui`); CP-4 pendientes de `docs/`.
+Cada una con reviewer nuevo y PR contra `develop` sin fusionar:
+1. `realtime_events` T-06: APPROVED; PR abierta.
+2. `passenger_alert_ui` T-09.
+3. Bloque 4 por orden: `driver_codes_cli`, `driver_session` (T-02 amplía la red: `list_lines`,
+   `departures`; autorizado), `driver_demand` (T-02 amplía el repositorio de avisos; autorizado),
+   `driver_ui`, `driver_gps_simulator`.
 
 ## Pendiente para specs futuras
+- **realtime_events v1.2:** NB-1 si un endpoint bloquea el bucle de forma síncrona la suite sigue colgada
+  (valorar `timeout_method = "thread"`). NB-2 `test_gtfs_real_feed.py:34` admite 120 s (AC-22 de
+  `gtfs_import`) pero el límite general corta a 30 s (hoy 5,3 s). NB-3 cinco `timeout=60` de subprocesos ya
+  no se alcanzan. NB-4 T-06 dice "con tiempo máximo" y el límite es en vueltas del bucle.
 - **passenger_alert_ui:** huecos de test (código correcto): H-01 ninguna llegada con `can_alert=false` y
   vehículo y sentido (`ArrivalRow.tsx:113`); H-02 el test de AC-08 no comprueba el filtro por parada
   (`StopPage.alerts.test.tsx:111`); H-03 solicitud cuyo viaje solo aparece fuera de red. H-04 `shared/`
@@ -118,7 +119,7 @@ Bloque 3 implementado y revisado (cada feature APPROVED en su ciclo 1):
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-**CP-6 — fin del bloque 3** (tras fusionar las cinco PRs).
+Ninguno. CP-6 del bloque 3 aprobado; CP-1 del bloque 4 aprobado (PR #45 y #46).
 
 ## Bloqueos
 Ninguno. 

@@ -22,7 +22,7 @@ from avisabus.domain.models.events import Event
 from avisabus.domain.ports.events import device_channel
 from tests.conftest import DEFAULT_NOW
 from tests.support.fake_clock import FakeClock
-from tests.support.ws import FakeSleep, wait_until_closed
+from tests.support.ws import FakeSleep, receive_json_soon, receive_soon, wait_until_closed
 
 ENDPOINT = "/ws/passenger"
 DEVICE = "3f2b8c1e-9a4d-4e6f-8b2a-1c3d5e7f9a0b"
@@ -109,7 +109,7 @@ def test_closes_with_4408_when_no_hello_arrives_in_5_seconds(
     app, realtime = _build(settings, sleep=sleep)
     client = client_for(app)
     with client.websocket_connect(ENDPOINT) as ws:
-        assert ws.receive() == {"type": "websocket.close", "code": 4408, "reason": ""}
+        assert receive_soon(ws) == {"type": "websocket.close", "code": 4408, "reason": ""}
     assert 5 in sleep.calls
     wait_until_closed(client, realtime.registry)
     assert realtime.publisher.subscriber_count() == 0
@@ -122,7 +122,7 @@ def test_hello_timeout_is_configurable(
     sleep = FakeSleep({0.5: 1})
     app, _ = _build(settings, sleep=sleep, ws_hello_timeout_s=0.5)
     with client_for(app).websocket_connect(ENDPOINT) as ws:
-        assert ws.receive()["code"] == 4408
+        assert receive_soon(ws)["code"] == 4408
     assert 0.5 in sleep.calls
 
 
@@ -154,7 +154,7 @@ def test_closes_with_4400_when_the_hello_is_invalid(
     client = client_for(app)
     with client.websocket_connect(ENDPOINT) as ws:
         ws.send_text(message)
-        assert ws.receive() == {"type": "websocket.close", "code": 4400, "reason": ""}
+        assert receive_soon(ws) == {"type": "websocket.close", "code": 4400, "reason": ""}
     wait_until_closed(client, realtime.registry)
     assert snapshots.calls == []
     assert realtime.publisher.subscriber_count() == 0
@@ -167,7 +167,7 @@ def test_closes_with_4400_when_the_hello_is_a_binary_frame(
     app, _ = _build(settings)
     with client_for(app).websocket_connect(ENDPOINT) as ws:
         ws.send_bytes(b'{"type": "hello", "device_id": "' + DEVICE.encode() + b'"}')
-        assert ws.receive()["code"] == 4400
+        assert receive_soon(ws)["code"] == 4400
 
 
 # --- AC-07: subscription, snapshot and events ----------------------------------------------------
@@ -180,7 +180,7 @@ def test_valid_hello_gets_an_empty_snapshot_by_default(
     app, realtime = _build(settings)
     with client_for(app).websocket_connect(ENDPOINT) as ws:
         ws.send_json(HELLO)
-        assert ws.receive_json() == SNAPSHOT_EMPTY
+        assert receive_json_soon(ws) == SNAPSHOT_EMPTY
         channel = device_channel(_device_hash(settings))
         assert realtime.publisher.subscriber_count(channel) == 1
 
@@ -206,13 +206,13 @@ def test_subscribes_before_the_snapshot_and_forwards_events_after_it_in_order(
     client = client_for(app)
     with client.websocket_connect(ENDPOINT) as ws:
         ws.send_json(HELLO)
-        assert ws.receive_json() == {
+        assert receive_json_soon(ws) == {
             "type": "alerts.snapshot",
             "alerts": [{"alert_id": "a1", "stop_id": "508"}],
         }
-        assert ws.receive_json() == {"type": "alert.test", "n": 0}
+        assert receive_json_soon(ws) == {"type": "alert.test", "n": 0}
         _publish(client, realtime, channel, _event(1), _event(2), _event(3))
-        assert [ws.receive_json() for _ in range(3)] == [
+        assert [receive_json_soon(ws) for _ in range(3)] == [
             {"type": "alert.test", "n": 1},
             {"type": "alert.test", "n": 2},
             {"type": "alert.test", "n": 3},
@@ -232,12 +232,12 @@ def test_receives_only_the_events_of_its_own_device(
     with client.websocket_connect(ENDPOINT) as ws, client.websocket_connect(ENDPOINT) as ws2:
         ws.send_json(HELLO)
         ws2.send_json({"type": "hello", "device_id": OTHER_DEVICE})
-        assert ws.receive_json() == SNAPSHOT_EMPTY
-        assert ws2.receive_json() == SNAPSHOT_EMPTY
+        assert receive_json_soon(ws) == SNAPSHOT_EMPTY
+        assert receive_json_soon(ws2) == SNAPSHOT_EMPTY
         _publish(client, realtime, other, _event(1))
         _publish(client, realtime, mine, _event(2))
-        assert ws.receive_json() == {"type": "alert.test", "n": 2}
-        assert ws2.receive_json() == {"type": "alert.test", "n": 1}
+        assert receive_json_soon(ws) == {"type": "alert.test", "n": 2}
+        assert receive_json_soon(ws2) == {"type": "alert.test", "n": 1}
 
 
 # --- AC-08: ping and client messages -------------------------------------------------------------
@@ -252,11 +252,11 @@ def test_sends_ping_every_25_seconds(
     client = client_for(app)
     with client.websocket_connect(ENDPOINT) as ws:
         ws.send_json(HELLO)
-        assert ws.receive_json() == SNAPSHOT_EMPTY
-        assert ws.receive_json() == {"type": "ping"}
-        assert ws.receive_json() == {"type": "ping"}
+        assert receive_json_soon(ws) == SNAPSHOT_EMPTY
+        assert receive_json_soon(ws) == {"type": "ping"}
+        assert receive_json_soon(ws) == {"type": "ping"}
         _publish(client, realtime, device_channel(_device_hash(settings)), _event(1))
-        assert ws.receive_json() == {"type": "alert.test", "n": 1}
+        assert receive_json_soon(ws) == {"type": "alert.test", "n": 1}
     assert sleep.calls.count(25) == 3
 
 
@@ -268,8 +268,8 @@ def test_ping_interval_is_configurable(
     app, _ = _build(settings, sleep=sleep, ws_ping_interval_s=0.25)
     with client_for(app).websocket_connect(ENDPOINT) as ws:
         ws.send_json(HELLO)
-        assert ws.receive_json() == SNAPSHOT_EMPTY
-        assert ws.receive_json() == {"type": "ping"}
+        assert receive_json_soon(ws) == SNAPSHOT_EMPTY
+        assert receive_json_soon(ws) == {"type": "ping"}
     assert 0.25 in sleep.calls
 
 
@@ -281,7 +281,7 @@ def test_ignores_pong_and_any_other_client_message(
     client = client_for(app)
     with client.websocket_connect(ENDPOINT) as ws:
         ws.send_json(HELLO)
-        assert ws.receive_json() == SNAPSHOT_EMPTY
+        assert receive_json_soon(ws) == SNAPSHOT_EMPTY
         ws.send_json({"type": "pong"})
         ws.send_text("not json")
         ws.send_bytes(b"\x00\x01")
@@ -289,7 +289,7 @@ def test_ignores_pong_and_any_other_client_message(
         ws.send_json({"type": "subscribe", "channel": "device:x"})
         _publish(client, realtime, device_channel(_device_hash(settings)), _event(1))
         # Nothing answered the client's messages and the connection is still open.
-        assert ws.receive_json() == {"type": "alert.test", "n": 1}
+        assert receive_json_soon(ws) == {"type": "alert.test", "n": 1}
         assert realtime.publisher.subscriber_count() == 1
         assert (
             realtime.publisher.subscriber_count(
@@ -312,10 +312,10 @@ def test_closes_with_4429_when_the_subscription_overflows(
     channel = device_channel(_device_hash(settings))
     with client.websocket_connect(ENDPOINT) as ws:
         ws.send_json(HELLO)
-        assert ws.receive_json() == SNAPSHOT_EMPTY
+        assert receive_json_soon(ws) == SNAPSHOT_EMPTY
         _publish(client, realtime, channel, _event(1), _event(2), _event(3))
         with pytest.raises(WebSocketDisconnect) as closed:
-            ws.receive_json()
+            receive_json_soon(ws)
         assert closed.value.code == 4429
     wait_until_closed(client, realtime.registry)
     assert realtime.publisher.subscriber_count() == 0
@@ -323,7 +323,7 @@ def test_closes_with_4429_when_the_subscription_overflows(
     # Reconnecting gives a fresh snapshot.
     with client.websocket_connect(ENDPOINT) as ws:
         ws.send_json(HELLO)
-        assert ws.receive_json() == SNAPSHOT_EMPTY
+        assert receive_json_soon(ws) == SNAPSHOT_EMPTY
 
 
 # --- AC-10: maximum of connections ---------------------------------------------------------------
@@ -339,16 +339,16 @@ def test_closes_new_connections_with_1013_beyond_the_maximum(
     with client.websocket_connect(ENDPOINT) as first, client.websocket_connect(ENDPOINT):
         # The second one counts while it waits for its hello.
         first.send_json(HELLO)
-        assert first.receive_json() == SNAPSHOT_EMPTY
+        assert receive_json_soon(first) == SNAPSHOT_EMPTY
         with client.websocket_connect(ENDPOINT) as third:
             third.send_json({"type": "hello", "device_id": OTHER_DEVICE})
-            assert third.receive() == {"type": "websocket.close", "code": 1013, "reason": ""}
+            assert receive_soon(third) == {"type": "websocket.close", "code": 1013, "reason": ""}
         assert snapshots.calls == [_device_hash(settings)]  # the third hello was not processed
     wait_until_closed(client, realtime.registry)
 
     with client.websocket_connect(ENDPOINT) as again:
         again.send_json(HELLO)
-        assert again.receive_json() == SNAPSHOT_EMPTY
+        assert receive_json_soon(again) == SNAPSHOT_EMPTY
 
 
 def test_default_limits_come_from_the_settings(settings: Settings) -> None:
@@ -372,8 +372,8 @@ def test_closing_the_socket_removes_its_subscription(
     with client.websocket_connect(ENDPOINT) as ws, client.websocket_connect(ENDPOINT) as ws2:
         ws.send_json(HELLO)
         ws2.send_json(HELLO)  # same device, two tabs
-        assert ws.receive_json() == SNAPSHOT_EMPTY
-        assert ws2.receive_json() == SNAPSHOT_EMPTY
+        assert receive_json_soon(ws) == SNAPSHOT_EMPTY
+        assert receive_json_soon(ws2) == SNAPSHOT_EMPTY
         assert realtime.publisher.subscriber_count() == 2
         ws.close(1000)
         ws2.close(1001)
@@ -394,14 +394,18 @@ def test_closes_open_connections_with_1001_when_the_application_stops(
         connected = client.websocket_connect(ENDPOINT).__enter__()
         waiting_hello = client.websocket_connect(ENDPOINT).__enter__()
         connected.send_json(HELLO)
-        assert connected.receive_json() == SNAPSHOT_EMPTY
+        assert receive_json_soon(connected) == SNAPSHOT_EMPTY
 
         # Stop the application (lifespan shutdown) while both sockets are open.
         assert client.portal is not None
         client.portal.call(client.wait_shutdown)
 
-        assert connected.receive() == {"type": "websocket.close", "code": 1001, "reason": ""}
-        assert waiting_hello.receive() == {"type": "websocket.close", "code": 1001, "reason": ""}
+        assert receive_soon(connected) == {"type": "websocket.close", "code": 1001, "reason": ""}
+        assert receive_soon(waiting_hello) == {
+            "type": "websocket.close",
+            "code": 1001,
+            "reason": "",
+        }
         assert realtime.registry.open_connections == 0
         assert realtime.publisher.subscriber_count() == 0
         connected.__exit__(None, None, None)

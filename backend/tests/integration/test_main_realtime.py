@@ -64,7 +64,7 @@ def _run_main(tmp_path: Path, **env: str) -> subprocess.CompletedProcess[str]:
         env=clean,
         capture_output=True,
         text=True,
-        timeout=60,
+        timeout=25,  # the socket waits of the probe: below the 30 s per test
         check=False,
     )
 

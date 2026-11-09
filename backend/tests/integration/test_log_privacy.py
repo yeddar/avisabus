@@ -31,7 +31,7 @@ from avisabus.domain.ports.events import device_channel
 from avisabus.logging import configure_logging
 from tests.conftest import DEFAULT_NOW
 from tests.support.fake_clock import FakeClock
-from tests.support.ws import FakeSleep, wait_until_closed
+from tests.support.ws import FakeSleep, receive_json_soon, receive_soon, wait_until_closed
 
 DEVICE = "3f2b8c1e-9a4d-4e6f-8b2a-1c3d5e7f9a0b"
 
@@ -233,7 +233,7 @@ def test_websocket_unhandled_exception_logs_only_its_type_and_closes_with_1011(
     app = create_app(settings, realtime=realtime)
     with TestClient(app) as client, client.websocket_connect("/ws/passenger") as ws:
         ws.send_json({"type": "hello", "device_id": DEVICE})
-        assert ws.receive() == {"type": "websocket.close", "code": 1011, "reason": ""}
+        assert receive_soon(ws) == {"type": "websocket.close", "code": 1011, "reason": ""}
 
     out = capsys.readouterr().out
     assert marker not in out
@@ -262,20 +262,20 @@ def test_a_complete_websocket_session_never_logs_the_device(
     with TestClient(app) as client:
         with client.websocket_connect("/ws/passenger") as ws:
             ws.send_json({"type": "hello", "device_id": DEVICE})
-            assert ws.receive_json() == {"type": "alerts.snapshot", "alerts": []}
+            assert receive_json_soon(ws) == {"type": "alerts.snapshot", "alerts": []}
             assert client.portal is not None
             client.portal.call(
                 realtime.publisher.publish,
                 device_channel(device_hash),
                 Event(type="alert.test", payload={"n": 1}),
             )
-            assert ws.receive_json() == {"type": "alert.test", "n": 1}
+            assert receive_json_soon(ws) == {"type": "alert.test", "n": 1}
             ws.send_json({"type": "pong"})
             ws.close(1000)
             wait_until_closed(client, realtime.registry)
         with client.websocket_connect("/ws/passenger") as invalid:
             invalid.send_json({"type": "hello", "device_id": DEVICE.upper()})
-            assert invalid.receive()["code"] == 4400
+            assert receive_soon(invalid)["code"] == 4400
 
     out = capsys.readouterr().out
     assert DEVICE not in out

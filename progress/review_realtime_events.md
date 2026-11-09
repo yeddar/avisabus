@@ -1,3 +1,134 @@
+# Revisión: realtime_events (v1.2, T-06)
+Ciclo: 1 (de la v1.2) · Fecha: 2026-11-09 · Agente: reviewer · Spec: `specs/realtime_events/` v1.2 (APPROVED)
+Rama: `feat/realtime_events-v1.2` · Base: `origin/develop` · Commit de código: `f2cfe78`
+
+## Veredicto: APPROVED
+
+T-06 está hecha: `pytest-timeout` con `timeout = 30` y ninguna espera de WebSocket sin límite. Los
+5 mutantes que colgaban la suite (N-03 de la revisión anterior) ahora fallan sin colgarse, y los
+47 reemplazos no debilitan ningún test. `CI=1 ./init.sh verify --e2e` en verde. Sin hallazgos
+bloqueantes; cuatro no bloqueantes, abajo.
+
+**Decisión de las 1000 vueltas: cumple T-06 y no requiere CP-3.** T-06 pide un "límite explícito
+en las esperas"; "`receive_json` con tiempo máximo" es el ejemplo entre paréntesis.
+`receive_soon` tiene un límite explícito y finito, y `pytest-timeout` pone el límite en segundos a
+todo el test. El límite en vueltas respeta además "sin reloj real" (AGENTS §6, conventions §6) y
+no depende de la carga de la máquina: el máximo medido son 11 vueltas de 1000, bajo carga. La
+contrapartida es que, si un endpoint delegase en un hilo, el test fallaría antes de tiempo (rojo
+falso, no cuelgue); hoy no hay `to_thread`, `run_in_executor` ni `aiosqlite` en `backend/src`, y
+la limitación está documentada en `tests/support/ws.py:50-53`.
+
+## Matriz AC → evidencia
+
+La v1.2 no cambia código de producción (`git diff origin/develop..HEAD -- backend/src`: vacío).
+La tabla comprueba que cada AC conserva sus tests y que estos siguen detectando el fallo con las
+esperas nuevas. Los ID de mutante son los de "Verificación ejecutada".
+
+| AC | Test(s) | Resultado | Nota |
+|---|---|---|---|
+| AC-01 | `unit/test_in_memory_publisher.py`, `integration/test_ws_passenger.py` (orden, aislamiento por canal) | OK | M5 (solo la primera suscripción): 4 fallos, sin cuelgue. |
+| AC-02 | `unit/test_in_memory_publisher.py` | OK | M1c (el publicador ignora el desbordamiento): 6 fallos. |
+| AC-03 | `unit/test_in_memory_publisher.py`, `test_ws_passenger.py` (`subscriber_count` tras cerrar) | OK | Sin cambios salvo la espera; `wait_until_closed` ya estaba acotado. |
+| AC-04 | `unit/test_device.py`, `integration/test_device_header.py` | OK | No usan WebSocket; sin cambios. |
+| AC-05 | `unit/test_device.py`, `test_device_header.py`, `test_log_privacy.py::test_a_complete_websocket_session_never_logs_the_device` | OK | Las aserciones de logs no cambian; solo las 3 esperas de esa sesión. |
+| AC-06 | `test_ws_passenger.py` (`4408`, `4400`, binario, configurable) | OK | W1 (`4408`→`4400`): 2 fallos. W2 (`4400`→`1008`): 16 fallos. |
+| AC-07 | `test_ws_passenger.py` (instantánea y orden), `test_main_realtime.py` | OK | M5 y W7 detectados. |
+| AC-08 | `test_ws_passenger.py` (`ping`, intervalo configurable, mensajes ignorados) | OK | W5 (`ping`→`pong`): 2 fallos. |
+| AC-09 | `test_ws_passenger.py::test_closes_with_4429_when_the_subscription_overflows` | OK | W4 (`1001`): falla. M1a y M1b (ignorar el desbordamiento): fallan al momento. |
+| AC-10 | `test_ws_passenger.py::test_closes_new_connections_with_1013_beyond_the_maximum`, `unit/test_ws_connections.py` | OK | W6 (`1000`): 2 fallos. M4 (no contar hasta el `hello`): 12 fallos. |
+| AC-11 | `test_ws_passenger.py::test_closes_open_connections_with_1001_when_the_application_stops`, `test_ws_connections.py`, `test_main_realtime.py` | OK | W3 (`1000`): 2 fallos. M2 y M3 fallan; el subproceso corta a los 25,01 s. |
+| AC-12 | `test_log_privacy.py`, `unit/test_logging.py` | OK | W10 (`1011`→`1000`): falla. |
+| AC-13 | `test_ws_connections.py`, `test_log_privacy.py` | OK | Sin cambios salvo la espera. |
+
+T-06, por su criterio de verificación: un test temporal en una copia, con `ws.receive_json()` sobre
+un evento que nunca llega, falla en 30,1 s con `Failed: Timeout (>30.0s) from pytest-timeout`.
+Con `receive_json_soon` falla al momento con `AssertionError: the socket sent nothing`.
+
+## Verificación ejecutada
+
+- `CI=1 ./init.sh verify --e2e` (puerto 4173 libre, comprobado con `lsof`): **todo en verde**,
+  salida 0. Backend: format, lint, tipos y arquitectura OK; 1325 passed, 6 deselected; cobertura
+  99,59 %. Frontend: format, lint y tipos OK; 555 passed, 2 skipped; build y presupuesto OK; e2e +
+  a11y 126 passed. Arnés: `feature_list.json` y trazabilidad OK.
+- `uv lock --check`: OK. `pytest-timeout` 2.4.0 en el grupo `dev` (`pyproject.toml:35`);
+  `timeout = 30` (`pyproject.toml:52`).
+- **Esperas sin límite** (`grep` de `receive_json`, `receive_text`, `receive_bytes`, `.receive(` e
+  `iter_*` en `backend/tests/`): solo quedan `test_main_realtime.py:34` y `:37`, dentro del
+  subproceso y limitadas por el `timeout=25` de `subprocess.run`. `test_alert_expiry.py`,
+  `test_alerts_ws.py` y `test_alerts_cancel_api.py` usan `receive_json_soon`. Las llamadas a
+  `next_event()` en tests de integración son `ensure_future` con una vuelta y cancelación.
+- **47 reemplazos**: comparación línea a línea del diff, 1:1 sin más cambios en las aserciones
+  (31 + 8 + 4 + 4; la línea 48 eliminada es el docstring del ayudante). `receive_soon` lee la misma
+  cola que `ws.receive()` (`_send_rx`, Starlette 1.10.0) y `receive_json_soon` hace lo mismo que
+  `receive_json` (`_raise_on_close` y `json.loads`). No se ha quitado ni añadido ningún test ni
+  marcador.
+- **`test_main_realtime.py` (60 → 25 s)**: 0,28 s en reposo; 16 de 16 pasan con 14 procesos de
+  CPU y 8 ejecuciones en paralelo, sin `.pyc` del código (2,9-3,3 s contando el arranque de
+  pytest). El margen frente a 25 s es amplio: no introduce intermitencias.
+- **Estrés de las esperas**: 12 ejecuciones de los 57 tests de WebSocket (6 en paralelo, 14
+  procesos de CPU): 0 fallos. 828 esperas instrumentadas: mediana 5 vueltas, máximo 11 de 1000.
+- **Tests `slow`**: `uv run pytest -m slow`: 6 passed con el feed real presente (ninguno omitido),
+  sin `@pytest.mark.timeout`. El más largo, 5,31 s.
+- **Mutaciones** (copias en el scratchpad, venv original con `PYTHONPATH` a la copia, vigía externo,
+  8 ficheros de tests, 85 tests; línea base 85 passed). Los 5 de N-03:
+
+  | Mutante | Resultado | Duración |
+  |---|---|---|
+  | M1a, M1b: ignorar `SubscriptionOverflowError` en `_write` | 1 fallo | 4,5 s |
+  | M1c: el publicador ignora el desbordamiento | 6 fallos | 3,0 s |
+  | M2: sin `close_all` | 3 fallos | 28,2 s (25,01 s del subproceso) |
+  | M3: registro fuera del `lifespan` | 2 fallos | 28,0 s (25,01 s del subproceso) |
+  | M4: no contar hasta el `hello` | 12 fallos | 3,6 s |
+  | M5: entregar solo a la primera suscripción | 4 fallos | 67,1 s (2 tests a 30 s por `pytest-timeout`) |
+
+  Ninguno cuelga la suite. El recuento de M2 y M3 difiere en uno del de
+  `progress/impl_realtime_events.md`, seguramente por el conjunto de ficheros ejecutado o la forma
+  del mutante; no afecta al resultado.
+  Comportamiento (W1-W10: códigos de cierre, `ping`, eventos `alert.registered`, `alert.cancelled`
+  y `alert.expired`): los 10 detectados, de 1 a 16 fallos, unos 3 s cada uno.
+  M6 (el endpoint nunca acepta; cubre la espera dentro de `websocket_connect`): falla en 30,1 s
+  por `pytest-timeout`, comprobado sobre un test. No se ha medido con la suite completa: lo paré
+  antes de terminar, porque cada test de WebSocket consumiría sus 30 s.
+- **Alcance** (`git diff origin/develop..HEAD`): `backend/pyproject.toml`, `backend/uv.lock`, tests
+  de integración con WebSocket y su ayudante `tests/support/ws.py`, más `feature_list.json` y
+  `progress/`. Sin cambios en `backend/src`, `frontend/`, `specs/` ni `docs/`. Commits con formato
+  Conventional Commits y ámbito de la feature.
+- Lista de `docs/verification.md` §4: arquitectura, privacidad, accesibilidad e i18n no cambian
+  (sin código de producción ni frontend). Tests sin red, sin reloj real ni sleeps reales en el
+  camino normal; los límites en segundos solo actúan si algo falla.
+
+## Hallazgos
+
+### Bloqueantes
+Ninguno.
+
+### No bloqueantes
+- **NB-1** `backend/pyproject.toml:52` (método por defecto de `pytest-timeout`, `signal`): si un
+  endpoint bloquea el bucle de eventos de forma síncrona, la suite sigue colgada. Con
+  `time.sleep(3600)` antes de `accept`, en una copia, seguía colgada a los 100 s, cuando la paró
+  el vigía externo. Causa probable (no aislada): tras la señal, la salida de `websocket_connect`
+  llama a `portal.call` sobre un bucle bloqueado, y el temporizador ya ha saltado. No incumple
+  T-06, que trata de esperas sin límite, y los mutantes de N-03 no son de este tipo. Si se quiere
+  cubrir, valorar `timeout_method = "thread"`, que mata el proceso y vuelca las pilas, a cambio de
+  perder el resto de la ejecución.
+- **NB-2** `backend/tests/integration/test_gtfs_real_feed.py:34`: `MAX_SECONDS = 120`
+  (`gtfs_import.AC-22`, "menos de 2 minutos") queda por encima del límite de 30 s por test, de modo
+  que una importación que cumpla el AC entre 30 y 120 s fallaría por tiempo. Hoy tarda 5,3 s. T-06
+  permite subirlo con `@pytest.mark.timeout`; conviene hacerlo si el test se usa en una máquina
+  más lenta.
+- **NB-3** `timeout=60` en `test_alerts_cancel_api.py:386`, `test_occupancy_composition.py:217`,
+  `test_main_composition.py:44`, `test_main_alerts.py:67` y `test_main_stop_token.py:39`: ya no se
+  alcanzan, porque `pytest-timeout` corta antes a los 30 s (estos tests tardan unos 0,3 s). Sin
+  efecto funcional; solo cambia el mensaje de fallo. No usan WebSocket, así que quedan fuera de T-06.
+- **NB-4** `specs/realtime_events/tasks.md:38`: "con tiempo máximo" no describe con exactitud el
+  límite en vueltas. No es una contradicción y no requiere CP-3; se puede precisar la redacción si
+  hay otra versión de la spec.
+
+Estado de los hallazgos de la revisión anterior: N-01 resuelto (`impl_realtime_events.md` al
+día), N-02 resuelto (design v1.2), N-03 resuelto (este ciclo), N-04 sigue abierto (no es de T-06).
+
+---
+
 # Revisión: realtime_events
 Ciclo: 1 · Fecha: 2026-11-04 · Agente: reviewer · Spec: `specs/realtime_events/` v1.1 (APPROVED)
 Rama: `feat/realtime_events` · Base: `origin/develop` (`git diff origin/develop...HEAD`)
