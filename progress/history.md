@@ -458,3 +458,5 @@
 
 ## 2026-11-09 · passenger_alert_ui v1.1 · in_review → done
 - Revisión ciclo 1 de la v1.1: APPROVED (17 de 23 mutantes, 3 equivalentes, 3 huecos de test). PR sin fusionar.
+
+## 2026-11-09 · passenger_alert_ui v1.1 PR abierta · bloque 4 · driver_codes_cli · spec_approved → implementing

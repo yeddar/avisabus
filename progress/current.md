@@ -3,8 +3,9 @@
 > Fichero vivo: lo reescribe el orquestador al final de cada sesión.
 
 **Fecha:** 2026-11-09
-**Fase:** Cierre del Bloque 3 (CP-6 aprobado) — ajustes previos al bloque 4
-**Feature en curso:** `passenger_alert_ui` v1.1 — `done`, PR abierta. Siguiente: `driver_codes_cli`.
+**Fase:** Implementación — Bloque 4 (conductor)
+**Feature en curso:** `driver_codes_cli` v1.0 — `implementing` (rama `feat/driver_codes_cli`, apilada sobre
+`feat/passenger_alert_ui-v1.1`)
 
 ## Último paso
 Bloque 3 fusionado (PR #40…#44). PR #45 (cierre del bloque 3, CP-6) y PR #46 (specs del bloque 4, CP-1)
