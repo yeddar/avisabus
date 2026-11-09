@@ -460,3 +460,6 @@
 - Revisión ciclo 1 de la v1.1: APPROVED (17 de 23 mutantes, 3 equivalentes, 3 huecos de test). PR sin fusionar.
 
 ## 2026-11-09 · passenger_alert_ui v1.1 PR abierta · bloque 4 · driver_codes_cli · spec_approved → implementing
+
+## 2026-11-09 · driver_codes_cli · implementing → in_review
+- T-01…T-04: `driver-codes create/list/revoke`, código solo como hash en la BD. Verify --e2e en verde (1409 backend).
