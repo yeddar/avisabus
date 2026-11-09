@@ -443,3 +443,6 @@
 
 ## 2026-11-09 · Bloque 3 fusionado · CP-6 bloque 3 y CP-1 bloque 4 (PR #45, #46) · realtime_events · done → implementing (v1.2, T-06)
 - Ajustes previos al bloque 4: `realtime_events` T-06 y `passenger_alert_ui` T-09; después, bloque 4 por orden.
+
+## 2026-11-09 · realtime_events v1.2 · implementing → in_review
+- T-06: `pytest-timeout` (30 s) y 47 esperas de WebSocket acotadas. Verify --e2e en verde (1325 backend).

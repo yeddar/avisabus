@@ -259,7 +259,7 @@
       "order": 11,
       "block": 3,
       "title": "Publicador de eventos en memoria y WebSockets de pasajero y conductor",
-      "status": "implementing",
+      "status": "in_review",
       "depends_on": [
         "project_scaffold"
       ],
