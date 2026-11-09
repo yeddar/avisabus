@@ -1,9 +1,11 @@
 # Implementación: passenger_alert_ui
-Spec: specs/passenger_alert_ui/ (v1.0, APPROVED, PR #37) · Ciclo de revisión: 0 · Rama: `feat/passenger_alert_ui`
-(apilada sobre `feat/alert_expiry`, PR #43). Exploración: no necesaria (tasks.md).
+Spec: specs/passenger_alert_ui/ (v1.1, APPROVED, PR #45) · Ciclo de revisión: 0 de la v1.1 · Rama:
+`feat/passenger_alert_ui-v1.1` (apilada sobre `feat/realtime_events-v1.2`, PR #47). La v1.0 (PR #37) se
+hizo en `feat/passenger_alert_ui`. Exploración: no necesaria (tasks.md).
 
 ## Estado
-T-01 a T-08 terminadas. `CI=1 ./init.sh verify --e2e` en verde (ver "Verificación"). Sin bloqueos.
+T-01 a T-09 terminadas. `CI=1 ./init.sh verify --e2e` en verde (ver "Verificación"). Sin bloqueos de
+T-09; un hueco de spec anotado en "Bloqueos" para decidir aparte.
 
 ## Tareas
 - [x] T-01 `getDeviceId`, perfil de necesidades, `apiSend` con `X-Device-Id` y `Retry-After` (commit 5504833)
@@ -13,7 +15,8 @@ T-01 a T-08 terminadas. `CI=1 ./init.sh verify --e2e` en verde (ver "Verificaci�
 - [x] T-05 `RequestDialog` (commit b93a1a8)
 - [x] T-06 Integración en `StopPage`: `AlertsProvider`, `OrphanAlerts`, cancelación, anuncios y foco (commit ad91f69)
 - [x] T-07 E2E con API y WebSocket simulados, axe y capturas (commit ea41214)
-- [x] T-08 Verificación completa (este fichero)
+- [x] T-09 (v1.1) Con el diálogo abierto, `alert.registered`/`alert.delivered` de la misma parada y línea lo cierra y lleva el foco a "Cancelar solicitud" (commit 7bf4ab6)
+- [x] T-08 Verificación completa (este fichero; repetida para la v1.1)
 
 Tests escritos antes del código y vistos en rojo en todas las tareas, salvo `AlertsProvider.test.tsx`
 (T-03), escrito justo después del proveedor: se comprobó con dos mutaciones temporales, ya revertidas
@@ -52,6 +55,26 @@ AC-08, AC-09, AC-11, AC-12, AC-13).
 - **Reapertura rápida:** cada apertura del diálogo es una instancia nueva (`key`); el evento `close`
   del diálogo anterior, que el navegador entrega en una tarea posterior, ya no cierra el nuevo
   (detectado en el e2e de teclado; test unitario en `RequestDialog.test.tsx`).
+
+### v1.1 (T-09)
+AC-04 (título con destino hablado) y AC-06 (429 sin `Retry-After` → 10 min) ya estaban implementados
+(ver arriba y D-3); la v1.1 solo añade código para AC-11. No hay textos nuevos.
+- **Cierre del diálogo:** no se llama a `close()`. Al llegar la solicitud, las tarjetas dejan de ofrecer
+  "Solicitar" y `RequestDialog` se desmonta, lo que lo saca de la capa superior sin evento `close` (que
+  devolvería el foco a "Solicitar"). `RequestDialog` avisa al proveedor con `registerDialog(stopId, line)`
+  (ampliación de `useAlerts`) y este mueve el foco con el mismo mecanismo que AC-05 y AC-09.
+- **`AlertAction` olvida el diálogo** cuando la tarjeta pasa a "Ya has solicitado otro autobús…": si
+  no, reaparecía al terminar esa solicitud (lo mostró el test en rojo).
+- **"Sin anuncio adicional":** `alert.registered` no anuncia nada y `alert.delivered` mantiene su anuncio
+  propio de AC-11; el cierre del diálogo no añade ninguno.
+- **Evento de la propia solicitud antes de la respuesta del `POST`:** se trata igual (diálogo cerrado,
+  foco en "Cancelar solicitud"); al llegar el `201` se anuncia "Parada solicitada…" (AC-05).
+- **Comprobación en navegador real:** AC-11 se verifica con tests unitarios, y T-09 no incluye e2e. El
+  foco tras quitar un `<dialog>` modal se comprobó con un spec Playwright temporal, no versionado (tarjeta
+  y aviso huérfano, en los 3 perfiles: 6 passed).
+- **Tests:** 6 en rojo antes del cambio. Los 2 casos de guarda (otra línea, otra parada) pasan
+  también antes, porque el diálogo ya seguía abierto; se comprobaron con dos mutaciones temporales,
+  ya revertidas (sin filtro de parada → 1 fallo; sin filtro de línea → 1 fallo).
 
 ## Desviaciones y huecos menores (resueltos sin cambiar contratos; a confirmar en la revisión)
 - **D-1 `GET /alerts/mine` necesita `X-Device-Id`** (`alert_create.AC-05`) pero el design §3 limita
@@ -148,13 +171,17 @@ Las capturas de `passenger_stop_view` (`test-results/passenger_stop_view/…`) m
 el botón "Solicitar" en las tarjetas.
 
 ## Bloqueos
-Ninguno.
+Ninguno que impida T-09. Hueco de spec para decidir aparte (no improvisado):
+- **`alerts.snapshot` con el diálogo abierto.** AC-11 v1.1 solo regula `alert.registered` y
+  `alert.delivered`. Si la solicitud de otra pestaña llega por una instantánea (reconexión, o el
+  respaldo `GET /alerts/mine`), el diálogo también desaparece, pero el foco cae en `body`, como en la
+  v1.0 (por lectura del código, sin test). Propuesta: ampliar AC-11 a `alerts.snapshot` en la próxima versión.
 
 ## Verificación
-`CI=1 ./init.sh verify --e2e` (2026-11-05, puerto 4173 libre): **todo en verde**.
+`CI=1 ./init.sh verify --e2e` (2026-11-09, v1.1, puerto 4173 libre): **todo en verde** (exit 0).
 - backend: format, lint, types, architecture OK; pytest 1325 passed, 6 deselected; cobertura 99,59 %.
-- frontend: format, lint, types OK; vitest 55 ficheros, 555 passed, 2 skipped.
-- build + bundle: JS inicial `index-*.js` 146,92 KB gzip (presupuesto 200 KB); Leaflet solo en
+- frontend: format, lint, types OK; vitest 55 ficheros, 563 passed, 2 skipped.
+- build + bundle: JS inicial `index-*.js` 147,05 KB gzip (presupuesto 200 KB); Leaflet solo en
   `MapPage-*.js` (50,23 KB gzip, bajo demanda); `test:bundle` 5 passed.
 - e2e + a11y: 126 passed (39 de `alerts.spec.ts`: 13 por perfil), axe sin violaciones, sin
   `waitForTimeout`.

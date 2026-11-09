@@ -54,6 +54,10 @@ export function AlertAction({
   const key = arrivalTripKey(arrival);
   const { vehicle, direction_id: directionId } = arrival;
 
+  // Another tab requested a bus of this line: the dialog is over, not just out of sight, and
+  // must not come back when that request ends (AC-11).
+  if (otherBus && session !== null) setSession(null);
+
   if (otherBus) {
     return (
       <p className="flex flex-1 items-center text-[0.9375rem] text-text-muted">

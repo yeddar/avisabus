@@ -58,7 +58,7 @@ export function RequestDialog({ arrival, request, now, scheduled, onDismiss }: R
   const { t } = useTranslation();
   const language = useUiLanguage();
   const queryClient = useQueryClient();
-  const { create } = useAlerts();
+  const { create, registerDialog } = useAlerts();
   const dialog = useRef<HTMLDialogElement>(null);
   const title = useRef<HTMLHeadingElement>(null);
   const errorMessage = useRef<HTMLParagraphElement>(null);
@@ -78,6 +78,11 @@ export function RequestDialog({ arrival, request, now, scheduled, onDismiss }: R
       mounted.current = false;
     };
   }, []);
+
+  useEffect(
+    () => registerDialog(request.stop_id, request.line),
+    [registerDialog, request.stop_id, request.line],
+  );
 
   useEffect(() => {
     if (error !== null) errorMessage.current?.focus();

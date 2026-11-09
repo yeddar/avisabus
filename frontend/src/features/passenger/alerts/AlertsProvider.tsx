@@ -63,6 +63,8 @@ export interface AlertsContextValue {
   requestButtonRef(key: string): (element: HTMLButtonElement | null) => void;
   /** Ref of the AlertStatus box of an alert (its "Cancelar solicitud" is the only button). */
   statusRef(alertId: string): (element: HTMLElement | null) => void;
+  /** Tells the provider that the request dialog of that stop and line is open; returns the undo. */
+  registerDialog(stopId: string, line: string): () => void;
 }
 
 const AlertsContext = createContext<AlertsContextValue | null>(null);
@@ -91,7 +93,8 @@ export interface AlertsProviderProps {
  * State of the alerts of this device while the stop view is open (passenger_alert_ui design §1):
  * kept up to date by /ws/passenger (or GET /alerts/mine every 30 s while it is down), with the
  * create and cancel actions, the polite announcements of the events (AC-11) and the focus
- * when a control of an alert disappears (AC-05, AC-09, AC-11).
+ * when a control of an alert disappears or the request dialog closes because of an event
+ * (AC-05, AC-09, AC-11).
  */
 export function AlertsProvider({ children, fallbackFocus }: AlertsProviderProps) {
   const { t } = useTranslation();
@@ -105,6 +108,7 @@ export function AlertsProvider({ children, fallbackFocus }: AlertsProviderProps)
   const requestButtons = useRef(new Map<string, HTMLButtonElement>());
   const statusBoxes = useRef(new Map<string, HTMLElement>());
   const pendingFocus = useRef<FocusTarget | null>(null);
+  const openDialog = useRef<{ stopId: string; line: string } | null>(null);
   const [focusTick, setFocusTick] = useState(0);
 
   const apply = useCallback((action: PassengerMessage | LocalAction) => {
@@ -138,8 +142,18 @@ export function AlertsProvider({ children, fallbackFocus }: AlertsProviderProps)
         (alert) => active !== null && statusBoxes.current.get(alert.alert_id)?.contains(active),
       );
       const announcement = eventAnnouncement(message, before, t);
+      const arrived =
+        message.type === 'alert.registered' || message.type === 'alert.delivered'
+          ? message.alert
+          : null;
+      const dialog = openDialog.current;
       apply(message);
       if (focusLost !== undefined) requestFocus({ target: 'request', tripKey: tripKey(focusLost) });
+      // With an alert for that stop and line the cards stop offering "Solicitar", which takes
+      // the dialog away: its "Cancelar solicitud" is the next place for the focus (AC-11).
+      if (arrived !== null && dialog?.stopId === arrived.stop_id && dialog.line === arrived.line) {
+        requestFocus({ target: 'cancel', alertId: arrived.alert_id });
+      }
       if (announcement !== null) announce(announcement, 'polite');
     },
     [apply, requestFocus, announce, t],
@@ -237,6 +251,14 @@ export function AlertsProvider({ children, fallbackFocus }: AlertsProviderProps)
     [],
   );
 
+  const registerDialog = useCallback((stopId: string, line: string) => {
+    const dialog = { stopId, line };
+    openDialog.current = dialog;
+    return () => {
+      if (openDialog.current === dialog) openDialog.current = null;
+    };
+  }, []);
+
   const value = useMemo<AlertsContextValue>(() => {
     const all = Object.values(state.alerts);
     return {
@@ -248,8 +270,9 @@ export function AlertsProvider({ children, fallbackFocus }: AlertsProviderProps)
       connected,
       requestButtonRef,
       statusRef,
+      registerDialog,
     };
-  }, [state, create, cancel, connected, requestButtonRef, statusRef]);
+  }, [state, create, cancel, connected, requestButtonRef, statusRef, registerDialog]);
 
   return <AlertsContext.Provider value={value}>{children}</AlertsContext.Provider>;
 }
