@@ -1,6 +1,6 @@
 # Estimación de la posición del autobús — tasks
 
-> Feature: `position_estimation` · Versión: 1.3 · Estado: APPROVED
+> Feature: `position_estimation` · Versión: 1.4 · Estado: APPROVED
 > Requisitos: RF-12, RNF-01 · Casos de uso: CU-02 · Depende de: gtfs_import, stop_arrivals_api
 
 ## Exploración
@@ -59,6 +59,13 @@ exploración de `gtfs_import`).
   - AC: position_estimation.AC-04, AC-11
   - Ficheros: tests unitarios de `position_estimator` y `get_vehicle_position`
   - Verificación: `cd backend && uv run pytest -k position`
+
+- [ ] **T-11** — (v1.4) Distancias en metros reales: `feed_to_metres`, forma siempre con
+  `cumulative_distances`, y retirar `shape_distances`; actualizar los tests que asumían
+  `shape_dist_traveled` en metros. `driver_session` usará las mismas funciones.
+  - AC: position_estimation.AC-06
+  - Ficheros: `domain/services/{geometry,position_estimator}.py`, `application/get_vehicle_position.py` (si usa `shape_distances`), `tests/unit/test_geometry.py`, `tests/unit/test_position_estimator.py`, `tests/integration/test_position_api.py`
+  - Verificación: `cd backend && uv run pytest -k "geometry or position"`
 
 - [ ] **T-08** — Regenerar el contrato del frontend (`npm run gen:api`) si existe
   `frontend/src/shared/api/openapi.json`, y verificación completa.

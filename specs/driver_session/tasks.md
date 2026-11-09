@@ -1,6 +1,6 @@
 # Turno del conductor — tasks
 
-> Feature: `driver_session` · Versión: 1.1 · Estado: APPROVED
+> Feature: `driver_session` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-24, RF-25, RF-26, RF-30, RNF-06, RNF-07, RNF-13 · Casos de uso: CU-08, CU-09 (posición), CU-10, CU-13 (revocación) · Depende de: gtfs_import, driver_codes_cli
 
 ## Exploración
@@ -48,6 +48,7 @@ No necesaria.
   - AC: driver_session.AC-09
   - Ficheros: `domain/services/upcoming_stops.py`, `domain/models/driver.py`, `application/driver_sessions.py`, `adapters/outbound/persistence/sqlite_driver_sessions.py`, `tests/unit/test_upcoming_stops.py`, `tests/unit/test_driver_sessions.py`, `tests/integration/test_upcoming_stops_real_shapes.py`
   - Verificación: `cd backend && uv run pytest -k upcoming_stops -m "slow or not slow"`
+  - (v1.2) Requiere `position_estimation` T-11 (distancias en metros); umbral del test real: 150 m.
 
 - [ ] **T-07** — Regenerar el contrato del frontend (`npm run gen:api`) y verificación completa.
   - Verificación: `./init.sh verify`

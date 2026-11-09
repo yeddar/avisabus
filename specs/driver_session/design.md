@@ -1,6 +1,6 @@
 # Turno del conductor — design
 
-> Feature: `driver_session` · Versión: 1.1 · Estado: APPROVED
+> Feature: `driver_session` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-24, RF-25, RF-26, RF-30, RNF-06, RNF-07, RNF-13 · Casos de uso: CU-08, CU-09 (posición), CU-10, CU-13 (revocación) · Depende de: gtfs_import, driver_codes_cli
 
 ## 1. Resumen
@@ -98,8 +98,9 @@ sigue creciendo mientras el autobús está fuera de ruta o sin GPS; si la distan
 `OFF_ROUTE_M` → `off_route=True`, progreso sin cambios; si no, `progress = max(previous,
 candidato)`, `off_route=False`. Elegir otra salida reinicia el progreso (`previous_m = None`). La
 sesión guarda `progress_recorded_at` (nueva columna) para calcular `elapsed_s`. Las
-distancias de las paradas del viaje sobre el trazado se calculan con `shape_dist_traveled` o, si
-falta, con `project_onto_shape` (como en `position_estimation`), y se cachean por `shape_id`.
+distancias (v1.2) son **metros reales**: la forma con `cumulative_distances` y las paradas con
+`feed_to_metres` o, si falta `shape_dist_traveled`, con `project_onto_shape`, exactamente como
+`position_estimation` v1.4 (mismas funciones de `geometry.py`); se cachean por `shape_id`.
 
 ```python
 # domain/ports/driver.py
