@@ -9,7 +9,14 @@ import type { Language } from '../../../../shared/i18n/languages';
 import { FakeWebSocket } from '../../../../test/FakeWebSocket';
 import { alert70, alertFixture } from '../../../../test/fixtures/alerts';
 import { ARRIVALS_REALTIME, STOP_508 } from '../../../../test/fixtures/api';
-import { NetworkFailure, mockApi, ok, problem, type FakeReply } from '../../../../test/mockApi';
+import {
+  NetworkFailure,
+  deferred,
+  mockApi,
+  ok,
+  problem,
+  type FakeReply,
+} from '../../../../test/mockApi';
 import { renderWithProviders } from '../../../../test/render';
 
 const TOKEN = 'AbCdEfGhIjKlMnOpQrStUv';
@@ -254,6 +261,124 @@ describe('StopPage with stop requests', () => {
     await flush(100);
 
     expect(other).toHaveFocus();
+  });
+
+  describe('with the request dialog open', () => {
+    function cancelIn(element: HTMLElement): HTMLElement {
+      return within(element).getByRole('button', { name: 'Cancelar solicitud' });
+    }
+
+    function openDialogIn(index: number): HTMLElement {
+      fireEvent.click(within(card(index)).getByRole('button', { name: LABEL_93 }));
+      return screen.getByRole('dialog');
+    }
+
+    it('[passenger_alert_ui.AC-11] alert.registered of the same stop and line closes it and moves the focus to "Cancelar solicitud" of its card, silently', async () => {
+      await openWith([]);
+      openDialogIn(1);
+
+      receive({ type: 'alert.registered', alert: ON_CARD });
+      await flush(100);
+
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(cancelIn(card(1))).toHaveFocus();
+      expect(politeRegion()).toHaveTextContent('');
+    });
+
+    it('[passenger_alert_ui.AC-11] alert.delivered closes it too, with only the announcement of the delivery', async () => {
+      await openWith([]);
+      openDialogIn(1);
+
+      receive({ type: 'alert.delivered', alert: { ...ON_CARD, status: 'DELIVERED' } });
+      await flush(100);
+
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(cancelIn(card(1))).toHaveFocus();
+      expect(politeRegion().textContent).toBe(
+        'El conductor de la línea 93 ha recibido tu solicitud',
+      );
+    });
+
+    it('[passenger_alert_ui.AC-11] a request for another bus of the line moves the focus to the card of that bus', async () => {
+      await openWith([]);
+      openDialogIn(3);
+
+      receive({ type: 'alert.registered', alert: ON_CARD });
+      await flush(100);
+
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(cancelIn(card(1))).toHaveFocus();
+      expect(card(3)).toHaveTextContent('Ya has solicitado otro autobús de esta línea');
+    });
+
+    it('[passenger_alert_ui.AC-11] a request whose bus is not in the list moves the focus to its notice above the arrivals', async () => {
+      await openWith([]);
+      openDialogIn(1);
+
+      receive({ type: 'alert.registered', alert: ORPHAN });
+      await flush(100);
+
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(cancelIn(arrivalsSection())).toHaveFocus();
+    });
+
+    it('[passenger_alert_ui.AC-11] the dialog closed by another tab does not come back when that request ends', async () => {
+      await openWith([]);
+      openDialogIn(3);
+      receive({ type: 'alert.registered', alert: ON_CARD });
+      await flush(100);
+
+      receive({ type: 'alert.cancelled', alert_id: ON_CARD.alert_id });
+      await flush(100);
+
+      expect(within(card(3)).getByRole('button', { name: LABEL_93 })).toBeVisible();
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+
+    it('[passenger_alert_ui.AC-11] the event of the own request arriving before the response of the POST also moves the focus', async () => {
+      const reply = deferred<FakeReply>();
+      mockApi((url, init) => {
+        if (url.pathname === '/api/v1/stops/508') return ok(STOP_508());
+        if (url.pathname === '/api/v1/stops/508/arrivals') return ok(ARRIVALS_REALTIME());
+        if (url.pathname === '/api/v1/alerts' && init?.method === 'POST') return reply.promise;
+        throw new Error(`unexpected request ${url.pathname}`);
+      });
+      await openWith([]);
+      const dialog = openDialogIn(1);
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Solicitar parada' }));
+      await flush();
+
+      receive({ type: 'alert.registered', alert: ON_CARD });
+      await flush(100);
+
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(cancelIn(card(1))).toHaveFocus();
+      expect(politeRegion()).toHaveTextContent('');
+
+      reply.resolve({ status: 201, body: ON_CARD });
+      await flush(100);
+
+      expect(politeRegion().textContent).toBe('Parada solicitada para la línea 93');
+      expect(cancelIn(card(1))).toHaveFocus();
+    });
+
+    it.each([
+      ['another line', alert70()],
+      ['another stop', alertFixture({ alert_id: 'x', stop_id: '1234', trip_id: '999' })],
+    ])(
+      '[passenger_alert_ui.AC-11] a request of %s leaves it open with the focus inside',
+      async (_case, alert) => {
+        await openWith([]);
+        const dialog = openDialogIn(1);
+        const title = within(dialog).getByRole('heading', { level: 2, name: LABEL_93 });
+
+        receive({ type: 'alert.registered', alert });
+        await flush(100);
+
+        expect(screen.getByRole('dialog')).toBe(dialog);
+        expect(title).toHaveFocus();
+      },
+    );
   });
 
   it('[passenger_alert_ui.AC-06] a 422 on the request refreshes the arrivals', async () => {
