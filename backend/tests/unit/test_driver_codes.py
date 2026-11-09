@@ -288,7 +288,7 @@ def test_create_gives_up_after_the_retries_without_storing_anything() -> None:
 
 
 @pytest.mark.spec("driver_codes_cli.AC-02")
-@pytest.mark.parametrize("label", ["T", "x" * 40, "Tablet 3", "Conductor nº 12 · València"])
+@pytest.mark.parametrize("label", ["T", "x" * 40, "Tablet 3", "Conductor nº 12 · València", "   "])
 def test_create_accepts_labels_of_one_to_forty_printable_characters(label: str) -> None:
     assert _create(FakeRepository()).execute(label).code.label == label
 
@@ -350,6 +350,20 @@ def test_revoke_marks_the_code_and_reports_the_open_session(open_session: bool) 
     assert code.revoked_at == NOW
     assert repository.codes["dc-abc123"].revoked_at == NOW
     assert had_open_session is open_session
+
+
+@pytest.mark.spec("driver_codes_cli.AC-05")
+def test_revoke_checks_the_open_session_before_revoking() -> None:
+    repository = FakeRepository([_code()])
+    use_case = RevokeDriverCode(
+        repository=repository,
+        clock=FakeClock(NOW),
+        # Stands for a shift that ends as soon as its code is revoked.
+        has_open_session=lambda code_id: not repository.codes[code_id].revoked,
+        logger=FakeLogger(),
+    )
+    _code_after, had_open_session = use_case.execute("dc-abc123")
+    assert had_open_session is True
 
 
 @pytest.mark.spec("driver_codes_cli.AC-05")
