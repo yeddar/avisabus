@@ -483,3 +483,6 @@
 ## 2026-11-09 · driver_session · in_review → changes_requested → spec_blocked (CP-3)
 - Revisión ciclo 1: CHANGES_REQUESTED. F-01 (AC-08, fechas extremas → 500) y P-01 (AC-09: la regla falla
   con trazados reales, saltos > 300 m con ruido GPS sintético en la mayoría de los 94 trazados).
+
+## 2026-11-09 · driver_session · spec_blocked → spec_approved (v1.1, PR #50) → implementing (ciclo 2)
+- AC-09 con ventana limitada por `20 m/s × Δt + 50 m`. Pendiente: F-01 (AC-08) y T-08. Rama actualizada con `develop`.

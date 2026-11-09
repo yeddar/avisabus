@@ -4,7 +4,7 @@
 
 **Fecha:** 2026-11-09
 **Fase:** Implementación — Bloque 4 (conductor)
-**Feature en curso:** `driver_session` v1.0 — `spec_blocked` (CP-3 en AC-09, P-01); F-01 pendiente de corregir
+**Feature en curso:** `driver_session` v1.1 — `implementing`, ciclo 2 (F-01 y T-08)
 
 ## Último paso
 Bloque 3 fusionado (PR #40…#44). PR #45 (cierre del bloque 3, CP-6) y PR #46 (specs del bloque 4, CP-1)
@@ -133,11 +133,8 @@ Cada una con reviewer nuevo y PR contra `develop` sin fusionar:
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-**CP-3 `driver_session` AC-09 (P-01):** la regla "segmento más cercano" + `progress = max(previous, candidato)`
-falla con trazados reales: con ruido GPS sintético, saltos de > 300 m en 56/94 trazados (σ 3 m), 67/94
-(σ 5 m) y 91/94 (σ 10 m), y desaparecen paradas aún no pasadas. Detalle y vías en
-`progress/review_driver_session.md`. Además, F-01 (AC-08): fechas extremas en `recorded_at` dan 500 en vez
-de 422 (corrección de código). PRs apiladas abiertas: #47, #48, #49.
+Ninguno. CP-3 de `driver_session` resuelto (PR #50, v1.1: AC-09 con ventana `20 m/s × Δt + 50 m` y primera posición
+en el tramo más temprano). PRs apiladas abiertas o pendientes de fusión: #47, #48, #49.
 
 ## Bloqueos
 Ninguno. 
