@@ -1,6 +1,6 @@
 # Casos de uso — AvisaBus
 
-> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-03: textos de botón "Solicitar"/"Cancelar solicitud" en CU-03 y CU-04, aprobada en la PR #7; v1.2 · 2026-11-04: autobús elegido en CU-03, necesidad visual en CU-05 y detección de paso por viaje en CU-07, aprobada en la PR #37; v1.3 · 2026-11-09: LIM-02 ampliada, aprobada en la PR #45; v1.4 · 2026-11-09: salida en CU-08, demanda de su autobús en CU-09 y LIM-01, aprobada en la PR #46). Deriva de `docs/vision.md` y `docs/requirements.md`.
+> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-03: textos de botón "Solicitar"/"Cancelar solicitud" en CU-03 y CU-04, aprobada en la PR #7; v1.2 · 2026-11-04: autobús elegido en CU-03, necesidad visual en CU-05 y detección de paso por viaje en CU-07, aprobada en la PR #37; v1.3 · 2026-11-09: LIM-02 ampliada, aprobada en la PR #45; v1.4 · 2026-11-09: salida en CU-08, demanda de su autobús en CU-09 y LIM-01, aprobada en la PR #46; v1.5 · 2026-11-09: CU-08 4b con el trazado del viaje elegido, pendiente de aprobación). Deriva de `docs/vision.md` y `docs/requirements.md`.
 > Cada caso de uso referencia los requisitos que cubre. Los flujos alternativos se numeran
 > `<paso><letra>` (p. ej. `3a` es una alternativa al paso 3).
 
@@ -210,7 +210,7 @@ flowchart LR
 - **2a** Código inválido o revocado → mensaje de error; tras 5 intentos fallidos desde la misma IP se bloquea durante 15 minutos.
 - **3a** La salida elegida ya la lleva otro turno abierto → aviso y se vuelve a la lista.
 - **4a** Permiso de geolocalización denegado → el sistema no puede determinar las próximas paradas y lo indica; se ofrece reintentar.
-- **4b** La posición está a más de 150 metros del trazado de la línea y sentido elegidos → aviso "no estás en el recorrido de esta línea"; se mantiene la sesión.
+- **4b** La posición está a más de 150 metros del trazado del viaje elegido (en el tramo que el autobús ha podido recorrer desde la última posición) → aviso "no estás en el recorrido de esta línea"; se mantiene la sesión.
 
 **Postcondiciones:** existe una sesión de conductor asociada a línea y sentido.
 
