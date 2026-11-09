@@ -19,6 +19,7 @@ from avisabus.adapters.inbound.http.container import (
     build_alert_expiry,
     build_alert_snapshots,
     build_alert_use_cases,
+    build_driver_use_cases,
     build_position_use_cases,
     build_realtime,
     build_stop_use_cases,
@@ -85,6 +86,8 @@ alert_use_cases = build_alert_use_cases(settings, engine, clock, stop_use_cases,
 # Expiry of the alerts (alert_expiry): the passage watcher reads the stops through the same
 # `GetStopArrivals` (and SAE cache); `alert.expired` goes through the real-time publisher.
 alert_expiry = build_alert_expiry(settings, engine, clock, stop_use_cases, realtime.publisher)
+# Shifts of the drivers (driver_session); nobody listens to them until `driver_demand`.
+driver_use_cases = build_driver_use_cases(settings, engine, clock)
 
 
 @asynccontextmanager
@@ -116,4 +119,5 @@ app = create_app(
     positions=position_use_cases,
     realtime=realtime,
     alerts=alert_use_cases,
+    drivers=driver_use_cases,
 )

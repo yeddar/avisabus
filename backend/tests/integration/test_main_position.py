@@ -14,7 +14,11 @@ PROBE = """
 import avisabus.main as main
 from starlette.middleware.gzip import GZipMiddleware
 paths = main.app.openapi()["paths"]
-print(sorted(p for p in paths if p.endswith("/position") or p.startswith("/api/v1/shapes")))
+print(sorted(
+    p for p in paths
+    if (p.endswith("/position") and not p.startswith("/api/v1/driver/"))
+    or p.startswith("/api/v1/shapes")
+))
 position = main.position_use_cases.get_vehicle_position
 print(position._stop_arrivals is main.stop_use_cases.get_stop_arrivals)
 print(position._clock is main.clock)

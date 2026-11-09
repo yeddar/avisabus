@@ -22,15 +22,37 @@ from avisabus.adapters.inbound.ws.passenger import (
 )
 from avisabus.adapters.outbound.drivers.no_driver_directory import NoDriverDirectory
 from avisabus.adapters.outbound.drivers.noop_notifier import NoopDriverViewNotifier
+from avisabus.adapters.outbound.drivers.noop_session_listener import NoopDriverSessionListener
 from avisabus.adapters.outbound.events.in_memory import InMemoryEventPublisher
 from avisabus.adapters.outbound.persistence.sqlite_alerts import SqliteAlertRepository
+from avisabus.adapters.outbound.persistence.sqlite_driver_codes import SqliteDriverCodeRepository
+from avisabus.adapters.outbound.persistence.sqlite_driver_sessions import (
+    SqliteDriverSessionRepository,
+)
 from avisabus.adapters.outbound.persistence.sqlite_network import SqliteNetworkRepository
 from avisabus.adapters.outbound.rate_limit.in_memory import InMemoryRateLimiter
 from avisabus.adapters.outbound.security.hmac_device_hasher import HmacDeviceHasher
+from avisabus.adapters.outbound.security.hmac_driver_code_hasher import HmacDriverCodeHasher
 from avisabus.adapters.outbound.security.hmac_stop_token import HmacStopTokenSigner
+from avisabus.adapters.outbound.security.sha256_session_token_hasher import (
+    Sha256SessionTokenHasher,
+)
 from avisabus.application.cancel_alert import CancelAlert
+from avisabus.application.close_driver_session import CloseDriverSession
 from avisabus.application.create_alert import CreateAlert
 from avisabus.application.direction_overrides import validate_direction_overrides
+from avisabus.application.driver_sessions import (
+    AuthenticateDriverSession,
+    EndDriverSession,
+    GetDriverSession,
+    ListDepartures,
+    ListDriverLines,
+    LoginLimiter,
+    SelectDriverService,
+    StartDriverSession,
+    TripRoutes,
+    UpdateDriverPosition,
+)
 from avisabus.application.expire_alert import ExpireAlert
 from avisabus.application.expire_alerts import ExpireDueAlerts
 from avisabus.application.get_shape import GetShape
@@ -44,6 +66,7 @@ from avisabus.config import Settings
 from avisabus.domain.ports.arrivals import ArrivalsSource
 from avisabus.domain.ports.clock import Clock
 from avisabus.domain.ports.device import DeviceHasher
+from avisabus.domain.ports.driver import DriverSessionListener
 from avisabus.domain.ports.events import EventPublisher
 from avisabus.domain.ports.occupancy import OccupancySensor
 from avisabus.domain.services.direction_resolver import DEFAULT_ALIASES
@@ -53,6 +76,7 @@ POSITION_LOGGER = "avisabus.position"
 WS_LOGGER = "avisabus.ws"
 ALERTS_LOGGER = "avisabus.alerts"
 BACKGROUND_LOGGER = "avisabus.background"
+DRIVER_LOGGER = "avisabus.driver"
 
 
 @dataclass(frozen=True, slots=True)
@@ -264,4 +288,62 @@ def build_alert_expiry(
         ),
         watch_interval=timedelta(seconds=settings.passage_watch_interval_s),
         expiry_interval=timedelta(seconds=settings.alert_expiry_interval_s),
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class DriverUseCases:
+    """Use cases of the driver endpoints (driver_session design §2)."""
+
+    start_session: StartDriverSession
+    authenticate: AuthenticateDriverSession
+    list_lines: ListDriverLines
+    list_departures: ListDepartures
+    select_service: SelectDriverService
+    update_position: UpdateDriverPosition
+    get_session: GetDriverSession
+    end_session: EndDriverSession
+
+
+def build_driver_use_cases(
+    settings: Settings,
+    engine: Engine,
+    clock: Clock,
+    listener: DriverSessionListener | None = None,
+) -> DriverUseCases:
+    """`listener` defaults to `NoopDriverSessionListener`; `driver_demand` passes its own. The
+    code hash key derives from the stop token secret, as in the `driver-codes` commands."""
+    sessions = SqliteDriverSessionRepository(engine)
+    network = SqliteNetworkRepository(engine)
+    logger = structlog.get_logger(DRIVER_LOGGER)
+    session_listener = listener or NoopDriverSessionListener()
+    token_hasher = Sha256SessionTokenHasher()
+    routes = TripRoutes(network)
+    close = CloseDriverSession(sessions, session_listener, clock, logger)
+    block = timedelta(minutes=settings.driver_login_block_min)
+    get_session = GetDriverSession(routes, clock, timedelta(seconds=settings.driver_gps_stale_s))
+    return DriverUseCases(
+        start_session=StartDriverSession(
+            codes=SqliteDriverCodeRepository(engine),
+            code_hasher=HmacDriverCodeHasher(settings.stop_token_secret_bytes()),
+            sessions=sessions,
+            token_hasher=token_hasher,
+            close=close,
+            limiter=LoginLimiter(
+                InMemoryRateLimiter(limit=settings.driver_login_max_failures - 1, window=block),
+                block=block,
+            ),
+            clock=clock,
+            idle_timeout=timedelta(minutes=settings.driver_idle_timeout_min),
+            logger=logger,
+        ),
+        authenticate=AuthenticateDriverSession(sessions, token_hasher),
+        list_lines=ListDriverLines(network),
+        list_departures=ListDepartures(network, sessions, clock),
+        select_service=SelectDriverService(
+            network, sessions, session_listener, get_session, clock, logger
+        ),
+        update_position=UpdateDriverPosition(sessions, routes, session_listener, clock),
+        get_session=get_session,
+        end_session=EndDriverSession(close),
     )
