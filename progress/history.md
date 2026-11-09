@@ -510,3 +510,5 @@
 
 ## 2026-11-09 · driver_session · in_review → done
 - Revisión ciclo 2 (v1.2): APPROVED (25/26 mutantes); N-05: el umbral de 150 m depende de la semilla.
+
+## 2026-11-09 · driver_session PR #53 abierta · driver_demand · spec_approved → implementing
