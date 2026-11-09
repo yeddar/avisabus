@@ -446,3 +446,6 @@
 
 ## 2026-11-09 · realtime_events v1.2 · implementing → in_review
 - T-06: `pytest-timeout` (30 s) y 47 esperas de WebSocket acotadas. Verify --e2e en verde (1325 backend).
+
+## 2026-11-09 · realtime_events v1.2 · in_review → done
+- Revisión ciclo 1 de la v1.2: APPROVED. Las ramas siguientes se apilan para evitar conflictos en `progress/`.

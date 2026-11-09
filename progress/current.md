@@ -4,8 +4,7 @@
 
 **Fecha:** 2026-11-09
 **Fase:** Cierre del Bloque 3 (CP-6 aprobado) — ajustes previos al bloque 4
-**Feature en curso:** `realtime_events` v1.2 — `implementing` (solo T-06, `pytest-timeout`), rama
-`feat/realtime_events-v1.2`
+**Feature en curso:** `realtime_events` v1.2 — `done`, PR abierta. Siguiente: `passenger_alert_ui` T-09.
 
 ## Último paso
 Bloque 3 fusionado (PR #40…#44). PR #45 (cierre del bloque 3, CP-6) y PR #46 (specs del bloque 4, CP-1)
@@ -13,13 +12,17 @@ fusionadas.
 
 ## Siguiente paso
 Cada una con reviewer nuevo y PR contra `develop` sin fusionar:
-1. `realtime_events` T-06 (`pytest-timeout`, primero).
+1. `realtime_events` T-06: APPROVED; PR abierta.
 2. `passenger_alert_ui` T-09.
 3. Bloque 4 por orden: `driver_codes_cli`, `driver_session` (T-02 amplía la red: `list_lines`,
    `departures`; autorizado), `driver_demand` (T-02 amplía el repositorio de avisos; autorizado),
    `driver_ui`, `driver_gps_simulator`.
 
 ## Pendiente para specs futuras
+- **realtime_events v1.2:** NB-1 si un endpoint bloquea el bucle de forma síncrona la suite sigue colgada
+  (valorar `timeout_method = "thread"`). NB-2 `test_gtfs_real_feed.py:34` admite 120 s (AC-22 de
+  `gtfs_import`) pero el límite general corta a 30 s (hoy 5,3 s). NB-3 cinco `timeout=60` de subprocesos ya
+  no se alcanzan. NB-4 T-06 dice "con tiempo máximo" y el límite es en vueltas del bucle.
 - **passenger_alert_ui:** huecos de test (código correcto): H-01 ninguna llegada con `can_alert=false` y
   vehículo y sentido (`ArrivalRow.tsx:113`); H-02 el test de AC-08 no comprueba el filtro por parada
   (`StopPage.alerts.test.tsx:111`); H-03 solicitud cuyo viaje solo aparece fuera de red. H-04 `shared/`

@@ -259,7 +259,7 @@
       "order": 11,
       "block": 3,
       "title": "Publicador de eventos en memoria y WebSockets de pasajero y conductor",
-      "status": "in_review",
+      "status": "done",
       "depends_on": [
         "project_scaffold"
       ],
@@ -271,7 +271,7 @@
       "spec": "specs/realtime_events/",
       "needs_exploration": false,
       "review_cycles": 0,
-      "passes": false
+      "passes": true
     },
     {
       "id": "alert_create",
