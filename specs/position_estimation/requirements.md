@@ -1,6 +1,6 @@
 # Estimación de la posición del autobús — requirements
 
-> Feature: `position_estimation` · Versión: 1.3 · Estado: APPROVED
+> Feature: `position_estimation` · Versión: 1.4 · Estado: APPROVED
 > Requisitos: RF-12, RNF-01 · Casos de uso: CU-02 · Depende de: gtfs_import, stop_arrivals_api
 
 ## Contexto
@@ -62,11 +62,18 @@ las líneas.
   interpolando linealmente entre los dos puntos de la forma cuyo `shape_dist_traveled` la
   contienen, y calcular el rumbo (0–360°) del segmento.
   *Verificación:* unit (error < 1 m en forma sintética)
-- **position_estimation.AC-06** — SI la forma no tiene `shape_dist_traveled`, ENTONCES EL SISTEMA
-  DEBERÁ calcularlo como distancia acumulada (haversine); SI los horarios del viaje no lo tienen,
-  ENTONCES DEBERÁ calcular la distancia de cada parada proyectándola sobre la forma, de manera que
-  las distancias resultantes no decrezcan a lo largo del viaje.
-  *Verificación:* unit
+- **position_estimation.AC-06** — (v1.4) LAS DISTANCIAS a lo largo de la forma DEBERÁN estar en
+  **metros reales**: las de los puntos de la forma, como distancia acumulada (haversine), aunque
+  el feed traiga `shape_dist_traveled` (que no está en metros, `gtfs_import` v1.4). LA DISTANCIA
+  DE CADA PARADA DEBERÁ obtenerse interpolando su `shape_dist_traveled` entre los
+  `shape_dist_traveled` de los puntos de la forma y tomando la distancia en metros
+  correspondiente; SI los horarios o la forma no traen `shape_dist_traveled`, ENTONCES
+  proyectándola sobre la forma. En ambos casos las distancias resultantes no DEBERÁN decrecer a lo
+  largo del viaje, y `distance_to_stop_m` DEBERÁ quedar a menos del 2 % (o de 10 m) de la
+  distancia haversine acumulada medida sobre la forma.
+  *Verificación:* unit (forma sintética con `shape_dist_traveled` escalado ×3 y con escala
+  distinta por tramo) + integration (`gtfs_mini`: `distance_to_stop_m` frente a la medida directa
+  sobre la forma)
 - **position_estimation.AC-07** — CUANDO la parada objetivo aparece más de una vez en el viaje
   (líneas circulares), EL SISTEMA DEBERÁ usar la aparición cuya hora programada esté más próxima a
   `arrival_at`.
@@ -152,3 +159,4 @@ las líneas.
 | 1.1 | 2026-11-03 | AC-17: la propiedad de distancia no creciente se limita a pares sucesivos en que los minutos del SAE no aumentan (los retrocesos por retraso del SAE se aceptan); design §3: parámetro `stop_coordinates` de `estimate_position` (AC-06) y frontera de `NOT_STARTED` según AC-04. | CP-3 de `position_estimation` (T-07): en `stop_508_peak` la distancia aumenta 5 veces, todas cuando el SAE sube los minutos. D-03 y D-04 del implementer. Aprobada por la persona (PR #25). |
 | 1.2 | 2026-11-04 | AC-04: con la parada objetivo como primera del viaje prevalece `AT_STOP` (AC-03); AC-11: posición no estimable por datos incoherentes → `NO_VEHICLE` y `position.estimate_failed`, nunca `500`. T-09. | Hallazgos H-01 y H-02 de la revisión de `position_estimation` 1.1. Aprobada por la persona (PR #29). |
 | 1.3 | 2026-11-04 | Solo design y tests: firma de `GetVehiclePosition` con `logger`; en `position.estimate_failed`, `shape_id` es el del viaje (puede ser `null`) y la respuesta lleva el `shape_id` representativo, conserva `arrival` y `vehicle` y `position = null`. T-10 (test con la segunda parada como objetivo). | Hallazgos H-01…H-03 de la revisión de `position_estimation` 1.2. Aprobada por la persona (PR #33). |
+| 1.4 | 2026-11-09 | AC-06: distancias siempre en metros reales (haversine sobre la forma); la de cada parada, interpolando su `shape_dist_traveled` en los de la forma o proyectando si falta. Corrige `distance_to_stop_m`, inflado ~×3 en el feed de EMT. T-11. | P-02 de `driver_session` (CP-3): `shape_dist_traveled` del feed no está en metros. Aprobada por la persona (PR #51). |

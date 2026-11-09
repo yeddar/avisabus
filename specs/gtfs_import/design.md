@@ -1,6 +1,6 @@
 # Importación del GTFS — design
 
-> Feature: `gtfs_import` · Versión: 1.3 · Estado: APPROVED
+> Feature: `gtfs_import` · Versión: 1.4 · Estado: APPROVED
 > Requisitos: RF-01, RF-02, RF-03, RF-04, RF-32 · Casos de uso: CU-11 · Depende de: project_scaffold
 
 ## 1. Resumen
@@ -151,7 +151,7 @@ calendar_dates  service_id,date,exception_type
 ```
 
 - **No hay `direction_id`** → el sentido se **deriva** al importar (§4.3).
-- `shape_dist_traveled` está en `stop_times` y `shapes`, en **metros**.
+- `shape_dist_traveled` está en `stop_times` y `shapes`, en una unidad propia del feed que **no son metros** (v1.4: la longitud que indica es entre 1,64 y 4,25 veces la real, mediana 2,97, con un factor distinto en cada forma; P-02 de `driver_session`). Solo sirve para ordenar y situar puntos a lo largo de la forma; las distancias en metros se calculan con la geometría (`position_estimation` v1.4).
 
 ### 4.3 Derivación del sentido
 

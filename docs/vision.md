@@ -74,7 +74,7 @@ usan grabaciones (replay) y fixtures, nunca la red.
 - `trips.txt` **no incluye `direction_id`** (columnas: `route_id, service_id, trip_id,
   trip_headsign, trip_short_name, shape_id`) → el sentido se deriva al importar a partir de los
   extremos y la orientación de cada trazado (`specs/gtfs_import/design.md` §4.3).
-- `shape_dist_traveled` está presente en `stop_times` y `shapes`, en metros.
+- `shape_dist_traveled` está presente en `stop_times` y `shapes`, pero **no en metros** (unidad propia del feed, distinta por forma; ver `gtfs_import` v1.4).
 - Nombres en valenciano (`feed_lang = ca`).
 
 ## 6. Decisiones
