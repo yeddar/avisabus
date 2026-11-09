@@ -43,6 +43,7 @@ from tests.support.fake_clock import FakeClock
 from tests.support.gtfs import GTFS_MINI
 from tests.support.sae import E01, STOP_508_PEAK
 from tests.support.stops import API, import_feed, new_engine, replay, token
+from tests.support.ws import receive_json_soon
 
 PEAK_START = datetime(2026, 11, 2, 19, 42, 23, 769219, tzinfo=UTC)
 ALERTS = f"{API}/alerts"
@@ -148,7 +149,7 @@ def test_cancelling_deletes_the_alert_and_tells_the_device_sockets(
         ):
             for ws, device in ((tab, DEVICE), (other_tab, DEVICE), (other_device, OTHER_DEVICE)):
                 ws.send_json({"type": "hello", "device_id": device})
-                assert ws.receive_json()["type"] == "alerts.snapshot"
+                assert receive_json_soon(ws)["type"] == "alerts.snapshot"
             response = client.delete(f"{ALERTS}/{created['alert_id']}", headers=headers())
             assert response.status_code == 204  # else no event: fail instead of waiting for it
             # The row is gone, with its needs; the other device's alert is untouched.
@@ -156,14 +157,14 @@ def test_cancelling_deletes_the_alert_and_tells_the_device_sockets(
             mine = client.get(f"{ALERTS}/mine", headers=headers()).json()
             # Published while the DELETE is served: every socket of the device gets it at once.
             cancelled = {"type": "alert.cancelled", "alert_id": created["alert_id"]}
-            assert tab.receive_json() == cancelled
-            assert other_tab.receive_json() == cancelled
+            assert receive_json_soon(tab) == cancelled
+            assert receive_json_soon(other_tab) == cancelled
             # The other device's socket did not get it: its first event is its own cancellation.
             theirs_cancelled = client.delete(
                 f"{ALERTS}/{theirs['alert_id']}", headers=headers(OTHER_DEVICE)
             )
             assert theirs_cancelled.status_code == 204
-            assert other_device.receive_json() == {
+            assert receive_json_soon(other_device) == {
                 "type": "alert.cancelled",
                 "alert_id": theirs["alert_id"],
             }

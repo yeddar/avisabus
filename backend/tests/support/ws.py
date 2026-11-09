@@ -7,8 +7,11 @@ from typing import Any
 
 import anyio
 from starlette.testclient import TestClient, WebSocketTestSession
+from starlette.types import Message
 
 from avisabus.adapters.inbound.ws.connections import ConnectionRegistry
+
+DEFAULT_TURNS = 1000
 
 
 class FakeSleep:
@@ -40,11 +43,17 @@ def wait_until_closed(client: TestClient, registry: ConnectionRegistry) -> None:
     client.portal.call(wait)
 
 
-def receive_json_soon(ws: WebSocketTestSession, turns: int = 1000) -> Any:
-    """`ws.receive_json()` that fails instead of hanging when no message comes: it lets the
-    application's event loop run at most `turns` times (no real time) waiting for one."""
+def receive_soon(ws: WebSocketTestSession, turns: int = DEFAULT_TURNS) -> Message:
+    """`ws.receive()` that fails instead of hanging when no message comes: it lets the
+    application's event loop run at most `turns` times (no real time) waiting for one.
 
-    async def receive() -> Any:
+    The limit is in loop turns, not seconds: the socket endpoint does all its work in the event
+    loop (no threads) and the tests never let real time pass, so it does not depend on the load
+    of the machine. This is the only place that uses Starlette's private `_send_rx`: there is no
+    public receive with a limit.
+    """
+
+    async def receive() -> Message:
         for _ in range(turns):
             try:
                 return ws._send_rx.receive_nowait()  # noqa: SLF001 - no public bounded receive
@@ -52,6 +61,11 @@ def receive_json_soon(ws: WebSocketTestSession, turns: int = 1000) -> Any:
                 await asyncio.sleep(0)
         raise AssertionError("the socket sent nothing")
 
-    message = ws.portal.call(receive)
+    return ws.portal.call(receive)
+
+
+def receive_json_soon(ws: WebSocketTestSession, turns: int = DEFAULT_TURNS) -> Any:
+    """`ws.receive_json()` with the limit of `receive_soon`."""
+    message = receive_soon(ws, turns)
     ws._raise_on_close(message)  # noqa: SLF001
     return json.loads(message["text"])

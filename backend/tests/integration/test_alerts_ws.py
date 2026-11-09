@@ -18,6 +18,7 @@ from tests.support.fake_clock import FakeClock
 from tests.support.gtfs import GTFS_MINI
 from tests.support.sae import STOP_508_PEAK
 from tests.support.stops import API, import_feed, new_engine, replay, token
+from tests.support.ws import receive_json_soon
 
 PEAK_START = datetime(2026, 11, 2, 19, 42, 23, 769219, tzinfo=UTC)
 ENDPOINT = "/ws/passenger"
@@ -73,13 +74,13 @@ def test_alert_registered_reaches_the_open_socket_of_the_device(client: TestClie
     ):
         mine.send_json({"type": "hello", "device_id": DEVICE})
         theirs.send_json({"type": "hello", "device_id": OTHER_DEVICE})
-        assert mine.receive_json() == {"type": "alerts.snapshot", "alerts": []}
-        assert theirs.receive_json() == {"type": "alerts.snapshot", "alerts": []}
+        assert receive_json_soon(mine) == {"type": "alerts.snapshot", "alerts": []}
+        assert receive_json_soon(theirs) == {"type": "alerts.snapshot", "alerts": []}
         alert = _create(client, "508", "93")
         # The event is published while the POST is served: no time passes (RNF-02, ≤ 5 s).
-        assert mine.receive_json() == {"type": "alert.registered", "alert": alert}
+        assert receive_json_soon(mine) == {"type": "alert.registered", "alert": alert}
         other = _create(client, "508", "93", OTHER_DEVICE)
-        assert theirs.receive_json() == {"type": "alert.registered", "alert": other}
+        assert receive_json_soon(theirs) == {"type": "alert.registered", "alert": other}
 
 
 @pytest.mark.spec("alert_create.AC-11")
@@ -92,7 +93,7 @@ def test_hello_gets_the_active_alerts_of_the_device(client: TestClient, clock: F
     mine = client.get(f"{API}/alerts/mine", headers=headers()).json()
     with client.websocket_connect(ENDPOINT) as ws:
         ws.send_json({"type": "hello", "device_id": DEVICE})
-        snapshot = ws.receive_json()
+        snapshot = receive_json_soon(ws)
     assert snapshot == {"type": "alerts.snapshot", "alerts": [first, second]}
     assert snapshot["alerts"] == mine["alerts"]
 
@@ -102,14 +103,14 @@ def test_a_device_without_alerts_gets_an_empty_snapshot(client: TestClient) -> N
     _create(client, "508", "93", OTHER_DEVICE)
     with client.websocket_connect(ENDPOINT) as ws:
         ws.send_json({"type": "hello", "device_id": DEVICE})
-        assert ws.receive_json() == {"type": "alerts.snapshot", "alerts": []}
+        assert receive_json_soon(ws) == {"type": "alerts.snapshot", "alerts": []}
 
 
 def test_the_snapshot_is_read_at_each_hello(client: TestClient) -> None:
     with client.websocket_connect(ENDPOINT) as ws:
         ws.send_json({"type": "hello", "device_id": DEVICE})
-        assert ws.receive_json()["alerts"] == []
+        assert receive_json_soon(ws)["alerts"] == []
     alert = _create(client, "508", "93")
     with client.websocket_connect(ENDPOINT) as ws:
         ws.send_json({"type": "hello", "device_id": DEVICE})
-        assert ws.receive_json()["alerts"] == [alert]
+        assert receive_json_soon(ws)["alerts"] == [alert]
