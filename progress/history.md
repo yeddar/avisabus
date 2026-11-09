@@ -479,3 +479,7 @@
 ## 2026-11-09 · driver_session · implementing → in_review
 - T-01…T-07; `list_lines`/`departures` añadidos a la red (autorizado). Verify --e2e en verde (1667 backend).
   Avisos: destinos de C2/C3 según la spec, IP en el log de acceso fuera de `/driver`, riesgo de AC-09 con GPS real.
+
+## 2026-11-09 · driver_session · in_review → changes_requested → spec_blocked (CP-3)
+- Revisión ciclo 1: CHANGES_REQUESTED. F-01 (AC-08, fechas extremas → 500) y P-01 (AC-09: la regla falla
+  con trazados reales, saltos > 300 m con ruido GPS sintético en la mayoría de los 94 trazados).

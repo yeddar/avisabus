@@ -4,8 +4,7 @@
 
 **Fecha:** 2026-11-09
 **Fase:** Implementación — Bloque 4 (conductor)
-**Feature en curso:** `driver_session` v1.0 — `implementing` (rama `feat/driver_session`, apilada sobre
-`feat/driver_codes_cli`)
+**Feature en curso:** `driver_session` v1.0 — `spec_blocked` (CP-3 en AC-09, P-01); F-01 pendiente de corregir
 
 ## Último paso
 Bloque 3 fusionado (PR #40…#44). PR #45 (cierre del bloque 3, CP-6) y PR #46 (specs del bloque 4, CP-1)
@@ -20,6 +19,11 @@ Cada una con reviewer nuevo y PR contra `develop` sin fusionar:
    `driver_ui`, `driver_gps_simulator`.
 
 ## Pendiente para specs futuras
+- **Privacidad (feature cerrada):** uvicorn escribe la IP en el log de acceso en `/alerts`, lo que incumple
+  `alert_create.AC-13`; en `/driver` ya se enmascara (`http/access_log.py`). Necesita tarea propia
+  (generalizar el filtro en `configure_logging` o `--no-access-log` en `deployment_rpi`).
+- **driver_session:** CU-08 4b (CP-4) conserva "trazado de la línea y sentido elegidos" frente a AC-09.
+  N-02 dígitos no ASCII sin test con el hasher real; N-03 → `deployment_rpi`: limitador por IP tras proxy.
 - **driver_codes_cli:** N-07 que la traza de Typer no muestre variables locales depende del valor por
   defecto (`show_locals`): con `True` imprimiría `plain_code` → fijarlo a `False` y testearlo. N-08 un
   `OperationalError` sale como traza (sin valores). N-09 `hide_parameters` no oculta filas con
@@ -129,7 +133,11 @@ Cada una con reviewer nuevo y PR contra `develop` sin fusionar:
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Ninguno. CP-6 del bloque 3 aprobado; CP-1 del bloque 4 aprobado (PR #45 y #46).
+**CP-3 `driver_session` AC-09 (P-01):** la regla "segmento más cercano" + `progress = max(previous, candidato)`
+falla con trazados reales: con ruido GPS sintético, saltos de > 300 m en 56/94 trazados (σ 3 m), 67/94
+(σ 5 m) y 91/94 (σ 10 m), y desaparecen paradas aún no pasadas. Detalle y vías en
+`progress/review_driver_session.md`. Además, F-01 (AC-08): fechas extremas en `recorded_at` dan 500 en vez
+de 422 (corrección de código). PRs apiladas abiertas: #47, #48, #49.
 
 ## Bloqueos
 Ninguno. 
