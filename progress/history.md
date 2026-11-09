@@ -433,4 +433,4 @@
   (H-07) y LIM-02 documentada (traslado del viaje al autobús siguiente).
 - Ajustes de cierre: `alert_expiry` 1.1, `alert_create` 1.1, `passenger_alert_ui` 1.1 (T-09),
   `realtime_events` 1.2 (T-06, `pytest-timeout`), `docs/` (LIM-02, limitador, guía §7).
-  Pendiente de aprobación.
+  Aprobados en la PR #45.

@@ -121,4 +121,4 @@ regla de salto de ETA porque también saltaría con re-predicciones del SAE.
 | Versión | Fecha | Cambio | Motivo |
 |---|---|---|---|
 | 1.0 | 2026-11-04 | Versión inicial aprobada (PR #37). | CP-1 del bloque 3. Aprobada por la persona. |
-| 1.1 | 2026-11-09 | AC-11 (a) reformulada para que compruebe de verdad la ausencia de pasos prematuros (propuesta de E-01); Contexto: traslado del viaje al autobús siguiente sin desaparecer (LIM-02); design: `observed_at` = `StopArrivals.generated_at` y rango recomendado de la ventana en `.env.example`. | CP-6 del bloque 3: E-01 y revisión de `alert_expiry`. Pendiente de aprobación. |
+| 1.1 | 2026-11-09 | AC-11 (a) reformulada para que compruebe de verdad la ausencia de pasos prematuros (propuesta de E-01); Contexto: traslado del viaje al autobús siguiente sin desaparecer (LIM-02); design: `observed_at` = `StopArrivals.generated_at` y rango recomendado de la ventana en `.env.example`. | CP-6 del bloque 3: E-01 y revisión de `alert_expiry`. Aprobada por la persona (PR #45). |

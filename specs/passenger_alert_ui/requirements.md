@@ -159,4 +159,4 @@ cancelada desde otra pestaña. En el bloque 3 no hay conductores, así que la so
 | Versión | Fecha | Cambio | Motivo |
 |---|---|---|---|
 | 1.0 | 2026-11-04 | Versión inicial aprobada (PR #37). | CP-1 del bloque 3. Aprobada por la persona. |
-| 1.1 | 2026-11-09 | AC-04: el título del diálogo usa el destino hablado (headsign GTFS); AC-06: 429 sin `Retry-After` → 10 min (lo implementado); AC-11: foco si otra pestaña crea la solicitud con el diálogo abierto. T-09. | CP-6 del bloque 3: H-05, H-06 y H-07 de la revisión de `passenger_alert_ui` (decisión de la persona sobre H-07). Pendiente de aprobación. |
+| 1.1 | 2026-11-09 | AC-04: el título del diálogo usa el destino hablado (headsign GTFS); AC-06: 429 sin `Retry-After` → 10 min (lo implementado); AC-11: foco si otra pestaña crea la solicitud con el diálogo abierto. T-09. | CP-6 del bloque 3: H-05, H-06 y H-07 de la revisión de `passenger_alert_ui` (decisión de la persona sobre H-07). Aprobada por la persona (PR #45). |

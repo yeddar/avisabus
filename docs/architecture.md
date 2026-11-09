@@ -1,6 +1,6 @@
 # Arquitectura — AvisaBus
 
-> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-04: avisos por viaje elegido, ADR-016, aprobada en la PR #37; v1.2 · 2026-11-09: ubicación del limitador y orden de validaciones, pendiente de aprobación). Deriva de `docs/vision.md`, `docs/requirements.md`
+> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-04: avisos por viaje elegido, ADR-016, aprobada en la PR #37; v1.2 · 2026-11-09: ubicación del limitador y orden de validaciones, aprobada en la PR #45). Deriva de `docs/vision.md`, `docs/requirements.md`
 > y `docs/use_cases.md`. Las decisiones se registran como ADR en la sección 10.
 > Los nombres de código están en inglés; ver glosario en `docs/conventions.md`.
 
