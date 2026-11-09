@@ -4,7 +4,8 @@
 
 **Fecha:** 2026-11-09
 **Fase:** Implementación — Bloque 4 (conductor)
-**Feature en curso:** `driver_codes_cli` v1.0 — `done`, PR abierta. Siguiente: `driver_session`.
+**Feature en curso:** `driver_session` v1.0 — `implementing` (rama `feat/driver_session`, apilada sobre
+`feat/driver_codes_cli`)
 
 ## Último paso
 Bloque 3 fusionado (PR #40…#44). PR #45 (cierre del bloque 3, CP-6) y PR #46 (specs del bloque 4, CP-1)

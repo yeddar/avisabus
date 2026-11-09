@@ -473,3 +473,5 @@
 
 ## 2026-11-09 · driver_codes_cli · in_review → done
 - Revisión ciclo 2: APPROVED (F-01 corregido y reproducido con el binario real; 21/22 mutantes).
+
+## 2026-11-09 · driver_codes_cli PR abierta · driver_session · spec_approved → implementing
