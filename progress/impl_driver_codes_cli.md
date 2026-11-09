@@ -1,11 +1,16 @@
 # Implementación: driver_codes_cli
-Spec: specs/driver_codes_cli/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Agente: implementer · Fecha: 2026-11-09
+Spec: specs/driver_codes_cli/ (v1.0, APPROVED) · Ciclo de revisión: 2 (corrige F-01 de `progress/review_driver_codes_cli.md`) · Agente: implementer · Fecha: 2026-11-09
 
 ## Tareas
 - [x] T-01 `DriverCode`, puertos, `HmacDriverCodeHasher`, `SecretsCodeGenerator` y casos de uso (AC-01, AC-03, AC-06) (commit 6eaec64)
 - [x] T-02 Tabla `driver_code` y `SqliteDriverCodeRepository` (AC-01, AC-03, AC-05) (commit 681d227)
 - [x] T-03 Comandos `driver-codes create/list/revoke` y composición en la CLI (AC-01 – AC-06) (commit ad0914a)
-- [x] T-04 Verificación completa: `CI=1 ./init.sh verify --e2e` en verde (commit de este fichero)
+- [x] T-04 Verificación completa: `CI=1 ./init.sh verify --e2e` en verde (commit 1f7e935)
+
+### Ciclo 2 (correcciones de la revisión)
+- [x] F-01 (bloqueante): un error de BD distinto de `IntegrityError` mostraba el *hash* y la etiqueta en la traza; `hide_parameters=True` en `create_engine` (commit 412e42d)
+- [x] N-01 y N-02 (mutantes A15 y M7): tests que fijan que el turno se consulta antes de revocar y que se acepta una etiqueta solo de espacios (commit 3dbc8d9)
+- [x] Verificación completa: `CI=1 ./init.sh verify --e2e` en verde (commit de este fichero)
 
 ## Decisiones locales
 
@@ -57,6 +62,45 @@ la persona o el reviewer pueden pedir otra cosa sin rehacer nada más.
 Ninguno.
 
 ## Verificación
+
+### Ciclo 2 (2026-11-09, tras el commit 3dbc8d9, con el puerto 4173 libre)
+
+`CI=1 ./init.sh verify --e2e`: **todo en verde** (exit 0).
+
+| Paso | Resultado |
+|---|---|
+| backend: format / lint | OK |
+| backend: types (`mypy`) | OK — no issues found in 129 source files |
+| backend: architecture (`lint-imports`) | OK — 2 contracts kept, 0 broken |
+| backend: tests | OK — 1413 passed, 6 deselected; cobertura `domain` + `application` 99,56 % |
+| frontend: format / lint / types | OK |
+| frontend: tests | OK — 563 passed, 2 skipped |
+| frontend: build + bundle | OK — 5 passed |
+| frontend: e2e + a11y | OK — 126 passed |
+| harness: `feature_list.json` y trazabilidad AC→test | OK |
+
+**F-01.** `hide_parameters=True` afecta a todos los repositorios que usan el motor. Ningún test ni
+módulo lee los parámetros SQL de un error: `tests/integration/test_cli_gtfs.py:147` solo busca el
+nombre del tipo `IntegrityError`, y la suite completa pasa. Los mensajes conservan el error y la
+sentencia; solo desaparecen los valores.
+
+Tests nuevos, que citan `driver_codes_cli.AC-03`: provocan un `OperationalError` real con el motor
+real, porque borran la tabla antes del `INSERT` (sin esperar el `busy_timeout`).
+- `test_driver_code_repository.py::test_a_failed_write_exposes_neither_the_hash_nor_the_label`
+- `test_cli_driver_codes.py::test_a_failed_write_shows_neither_the_hash_nor_the_label`
+
+Antes de la corrección fallaban los dos (`2 failed`) porque el *hash* aparecía en la traza; después
+pasan (`2 passed`).
+
+Prueba con el binario real, `AVISABUS_ENV=prod` y otra conexión con `BEGIN IMMEDIATE`: exit 1,
+`database is locked`, `[SQL parameters hidden due to hide_parameters=True]`, y ninguna aparición de
+la etiqueta ni de un *hash* de 64 caracteres.
+
+**N-01 y N-02.** Con los tests nuevos, los mutantes A15 (consultar el turno tras revocar) y M7
+(rechazar etiquetas solo de espacios) hacen fallar un test cada uno. N-03 y N-04 no se han tocado
+por no bloquear; N-05 y N-06 no corresponden al implementer.
+
+### Ciclo 0
 
 `CI=1 ./init.sh verify --e2e` (2026-11-09, rama `feat/driver_codes_cli`, tras el commit ad0914a,
 con el puerto 4173 libre): **todo en verde**.
