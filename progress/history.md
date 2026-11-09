@@ -476,3 +476,7 @@
 
 ## 2026-11-09 · CP-3 driver_session resuelto (PR #51) · position_estimation · done → implementing (v1.4, T-11)
 - Distancias en metros reales (`feed_to_metres`). Después, T-08 de `driver_session` con la v1.2 (umbral 150 m).
+
+## 2026-11-09 · position_estimation v1.4 · implementing → in_review
+- T-11: `feed_to_metres`, forma siempre con `cumulative_distances`, `shape_distances` retirada. AC-17 sin
+  cambios en sus recuentos (139/5). Verify --e2e en verde (1426 backend).
