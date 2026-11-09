@@ -10,6 +10,7 @@ from sqlalchemy.pool import StaticPool
 
 from avisabus.adapters.outbound.persistence.network_tables import metadata
 from avisabus.adapters.outbound.persistence.sqlite_alerts import alert_metadata
+from avisabus.adapters.outbound.persistence.sqlite_driver_codes import driver_code_metadata
 from avisabus.adapters.outbound.persistence.sqlite_occupancy_override import occupancy_metadata
 from avisabus.config import Settings
 
@@ -30,7 +31,8 @@ def create_engine(settings: Settings) -> Engine:
         kwargs["connect_args"] = {"check_same_thread": False}
     else:
         Path(url.database).parent.mkdir(parents=True, exist_ok=True)
-    engine = sqlalchemy.create_engine(url, **kwargs)
+    # hide_parameters: database errors must not carry bound values (hashes, labels) into traces.
+    engine = sqlalchemy.create_engine(url, hide_parameters=True, **kwargs)
     event.listen(engine, "connect", _apply_pragmas)
     return engine
 
@@ -45,7 +47,8 @@ def _apply_pragmas(dbapi_connection: Any, _record: Any) -> None:
 
 
 def init_db(engine: Engine) -> None:
-    """Create the network tables and the `occupancy_override` and `alert` tables (idempotent)."""
+    """Create the network, `occupancy_override`, `alert` and `driver_code` tables (idempotent)."""
     metadata.create_all(engine)
     occupancy_metadata.create_all(engine)
     alert_metadata.create_all(engine)
+    driver_code_metadata.create_all(engine)

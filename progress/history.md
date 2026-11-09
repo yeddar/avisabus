@@ -458,3 +458,18 @@
 
 ## 2026-11-09 · passenger_alert_ui v1.1 · in_review → done
 - Revisión ciclo 1 de la v1.1: APPROVED (17 de 23 mutantes, 3 equivalentes, 3 huecos de test). PR sin fusionar.
+
+## 2026-11-09 · passenger_alert_ui v1.1 PR abierta · bloque 4 · driver_codes_cli · spec_approved → implementing
+
+## 2026-11-09 · driver_codes_cli · implementing → in_review
+- T-01…T-04: `driver-codes create/list/revoke`, código solo como hash en la BD. Verify --e2e en verde (1409 backend).
+
+## 2026-11-09 · driver_codes_cli · in_review → changes_requested → implementing (ciclo 2)
+- Revisión ciclo 1: CHANGES_REQUESTED por F-01: un fallo de escritura distinto de `IntegrityError` imprime
+  hash y etiqueta (parámetros de SQLAlchemy en la traza). Corrección: `hide_parameters=True` y test.
+
+## 2026-11-09 · driver_codes_cli · implementing → in_review (ciclo 2)
+- F-01 corregido (`hide_parameters=True`, tests con `OperationalError` real). Verify --e2e en verde (1413 backend).
+
+## 2026-11-09 · driver_codes_cli · in_review → done
+- Revisión ciclo 2: APPROVED (F-01 corregido y reproducido con el binario real; 21/22 mutantes).

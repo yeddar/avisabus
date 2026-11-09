@@ -1,5 +1,7 @@
 """Domain exceptions. Inbound adapters translate them into problem+json responses."""
 
+from datetime import datetime
+
 
 class DomainError(Exception):
     """Base class for every domain error."""
@@ -122,3 +124,37 @@ class AlertNotFoundError(DomainError):
 
     def __init__(self) -> None:
         super().__init__("alert not found")
+
+
+class InvalidDriverCodeLabelError(DomainError):
+    """The label of a driver code is not 1 to 40 printable characters (driver_codes_cli AC-02)."""
+
+    def __init__(self) -> None:
+        super().__init__("invalid driver code label")
+
+
+class DriverCodeCollisionError(DomainError):
+    """The hash or the identifier of a new driver code already exist (driver_codes_cli AC-01)."""
+
+    def __init__(self) -> None:
+        super().__init__("driver code collision")
+
+
+class DriverCodeNotFoundError(DomainError):
+    """No driver code has that identifier (driver_codes_cli AC-05). It is in `code_id`."""
+
+    def __init__(self, code_id: str) -> None:
+        self.code_id = code_id
+        super().__init__("driver code not found")
+
+
+class DriverCodeAlreadyRevokedError(DomainError):
+    """The driver code was already revoked, so nothing changed (driver_codes_cli AC-05).
+
+    The identifier and the original date are in `code_id` and `revoked_at`.
+    """
+
+    def __init__(self, code_id: str, revoked_at: datetime) -> None:
+        self.code_id = code_id
+        self.revoked_at = revoked_at
+        super().__init__("driver code already revoked")
