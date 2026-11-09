@@ -480,3 +480,6 @@
 ## 2026-11-09 · position_estimation v1.4 · implementing → in_review
 - T-11: `feed_to_metres`, forma siempre con `cumulative_distances`, `shape_distances` retirada. AC-17 sin
   cambios en sus recuentos (139/5). Verify --e2e en verde (1426 backend).
+
+## 2026-11-09 · position_estimation v1.4 · in_review → done
+- Revisión ciclo 1 de la v1.4: APPROVED (feed real: 8070 estimaciones coherentes; 15/19 mutantes). PR sin fusionar.
