@@ -223,6 +223,14 @@ async def test_a_malformed_code_is_an_invalid_code(client: httpx.AsyncClient) ->
 
 
 @pytest.mark.spec("driver_session.AC-02")
+async def test_non_ascii_digits_are_an_invalid_code_with_the_real_hasher(
+    client: httpx.AsyncClient,
+) -> None:
+    response = await client.post(SESSIONS, json={"code": "١٢٣٤٥٦٧٨"})
+    _assert_problem(response, 401, INVALID_CODE)
+
+
+@pytest.mark.spec("driver_session.AC-02")
 async def test_five_failures_block_the_address_even_with_a_valid_code(
     client: httpx.AsyncClient, code: IssuedCode, clock: FakeClock
 ) -> None:
