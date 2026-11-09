@@ -1,6 +1,6 @@
 # Turno del conductor — tasks
 
-> Feature: `driver_session` · Versión: 1.0 · Estado: APPROVED
+> Feature: `driver_session` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-24, RF-25, RF-26, RF-30, RNF-06, RNF-07, RNF-13 · Casos de uso: CU-08, CU-09 (posición), CU-10, CU-13 (revocación) · Depende de: gtfs_import, driver_codes_cli
 
 ## Exploración
@@ -41,6 +41,13 @@ No necesaria.
   - AC: driver_session.AC-13
   - Ficheros: `application/reap_driver_sessions.py`, `background/driver_tasks.py`, `adapters/inbound/http/app.py`, `tests/unit/test_reap_driver_sessions.py`
   - Verificación: `cd backend && uv run pytest tests/unit/test_reap_driver_sessions.py`
+
+- [ ] **T-08** — (v1.1) Ventana de búsqueda limitada por `Δt` y regla de la primera posición en
+  `project_progress`; `progress_recorded_at` en la sesión; test `slow` con los trazados reales y
+  ruido.
+  - AC: driver_session.AC-09
+  - Ficheros: `domain/services/upcoming_stops.py`, `domain/models/driver.py`, `application/driver_sessions.py`, `adapters/outbound/persistence/sqlite_driver_sessions.py`, `tests/unit/test_upcoming_stops.py`, `tests/unit/test_driver_sessions.py`, `tests/integration/test_upcoming_stops_real_shapes.py`
+  - Verificación: `cd backend && uv run pytest -k upcoming_stops -m "slow or not slow"`
 
 - [ ] **T-07** — Regenerar el contrato del frontend (`npm run gen:api`) y verificación completa.
   - Verificación: `./init.sh verify`
