@@ -1,6 +1,6 @@
 # Guía visual — AvisaBus
 
-> Estado: **APROBADO** (v1.0 · 2026-11-03, PR #7; v1.1 · 2026-11-03, PR #24; v1.2 · 2026-11-04, PR #29; v1.3 · 2026-11-04, PR #37; v1.4 · 2026-11-09, PR #45).
+> Estado: **APROBADO** (v1.0 · 2026-11-03, PR #7; v1.1 · 2026-11-03, PR #24; v1.2 · 2026-11-04, PR #29; v1.3 · 2026-11-04, PR #37; v1.4 · 2026-11-09, PR #45; v1.5 · 2026-11-09: §5.9, aprobada en la PR #46).
 > Deriva de `docs/requirements.md` (RNF-03, RNF-05, RNF-14, RNF-15) y del boceto revisado por la
 > persona el 2026-11-03.
 
@@ -189,6 +189,30 @@ De arriba abajo:
 - **Mis necesidades:** mismas casillas que el diálogo; "Guardar" principal y "Borrar mis
   necesidades" secundario.
 
+### 5.9 Vista del conductor (bloque 4)
+
+Tablet en horizontal, mirada de reojo con el autobús en marcha: pocas palabras, cifras grandes,
+contraste máximo. Misma tipografía y tokens que el pasajero.
+
+- **Cabecera de turno:** distintivo de línea (40 px de alto) + "hacia {destino}" (22 px 700) +
+  hora de salida; a la derecha, estado (GPS, conexión) y "Silenciar tono". Botón "Finalizar
+  turno" (secundario) en la esquina inferior derecha, lejos de las tarjetas.
+- **Franjas de alerta** (capacidad, asientos): ancho completo bajo la cabecera, fondo
+  `occ-full-bg`, borde 3 px `occ-full-fg`, icono de 32 px y texto de 26 px 700.
+- **Próximas paradas:** las 3 primeras en tres columnas iguales; cada tarjeta con nombre (24 px
+  700, hasta dos líneas), distancia (18 px `text-muted`), personas esperando (cifra de **64 px**
+  700 + "esperando" 18 px) y necesidades en filas con icono de 28 px y texto de 20 px ("1 rampa").
+  Sin solicitudes, la cifra es "0" en `text-muted`. Las paradas 4 y 5, en una fila compacta debajo
+  (nombre 18 px + cifra 28 px).
+- **Solicitud nueva:** borde de 4 px `accent` y etiqueta "Nueva" (fondo `accent`, texto blanco,
+  16 px 700) durante 10 s.
+- **Plazas libres:** pie de la vista, 22 px ("30 plazas libres · 4 asientos").
+- **Estados** (sin GPS, desactualizado, fuera de recorrido, sin conexión, fin del recorrido):
+  caja de §5.6 en lugar de las franjas, con el texto de `driver_ui.AC-08`.
+- **Acceso y elección de salida:** una columna centrada de 560 px; código en un campo de 40 px
+  con espaciado entre dígitos; botones de línea de 64 × 64 px; salidas en filas de ≥ 64 px con la
+  hora a 28 px.
+
 ## 6. Iconos
 
 SVG propios en línea, de trazo (2–2,2 px, extremos redondeados), `aria-hidden="true"` y
@@ -218,3 +242,4 @@ actualizar, mapa, mano (Solicitar), información, siluetas de ocupación, flecha
 | 1.2 | 2026-11-04 | §5.1: la atribución del mapa va solo dentro del mapa, no en el pie. | Observación O-2 de `passenger_map_view`. Aprobada por la persona (PR #29). |
 | 1.3 | 2026-11-04 | §5.8: fila de acciones con "Solicitar", estado de la solicitud, diálogo de confirmación y "Mis necesidades". | Specs del bloque 3. Aprobada por la persona (PR #37). |
 | 1.4 | 2026-11-09 | §7: los títulos que son nombre accesible usan el headsign del GTFS. | H-07 de `passenger_alert_ui`, decisión de la persona en el CP-6. Aprobada por la persona (PR #45). |
+| 1.5 | 2026-11-09 | §5.9: vista del conductor. | Specs del bloque 4. Aprobada por la persona (PR #46). |

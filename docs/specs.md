@@ -120,11 +120,11 @@ siempre "Verificación completa" (`./init.sh verify`). Cada AC aparece en al men
 | 13 | `alert_cancel` | 3 | [specs/alert_cancel](../specs/alert_cancel/) |
 | 14 | `alert_expiry` | 3 | [specs/alert_expiry](../specs/alert_expiry/) |
 | 15 | `passenger_alert_ui` | 3 | [specs/passenger_alert_ui](../specs/passenger_alert_ui/) |
-| 16 | `driver_codes_cli` | 4 | pendiente |
-| 17 | `driver_session` | 4 | pendiente |
-| 18 | `driver_demand` | 4 | pendiente |
-| 19 | `driver_ui` | 4 | pendiente |
-| 20 | `driver_gps_simulator` | 4 | pendiente |
+| 16 | `driver_codes_cli` | 4 | [specs/driver_codes_cli](../specs/driver_codes_cli/) |
+| 17 | `driver_session` | 4 | [specs/driver_session](../specs/driver_session/) |
+| 18 | `driver_demand` | 4 | [specs/driver_demand](../specs/driver_demand/) |
+| 19 | `driver_ui` | 4 | [specs/driver_ui](../specs/driver_ui/) |
+| 20 | `driver_gps_simulator` | 4 | [specs/driver_gps_simulator](../specs/driver_gps_simulator/) |
 | 21 | `deployment_rpi` | 5 | pendiente |
 | 22 | `nfr_validation` | 5 | pendiente |
 

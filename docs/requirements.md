@@ -1,6 +1,6 @@
 # Requisitos del sistema — AvisaBus
 
-> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-04: RF-17 con discapacidad visual, RF-20 con el autobús elegido, aprobada en la PR #37). Deriva de `docs/vision.md`.
+> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-04: RF-17 con discapacidad visual, RF-20 con el autobús elegido, aprobada en la PR #37; v1.2 · 2026-11-09: RF-25 con la salida, RF-27 con la demanda de su autobús, aprobada en la PR #46). Deriva de `docs/vision.md`.
 > Los requisitos aquí son **globales**. Cada feature en `specs/<feature>/requirements.md`
 > los refina en criterios de aceptación EARS y referencia sus IDs (trazabilidad).
 >
@@ -66,9 +66,9 @@
 | ID | Requisito | Prio | Objetivo |
 |---|---|---|---|
 | RF-24 | El conductor deberá acceder a su vista mediante un código de acceso. | M | OBJ-05 |
-| RF-25 | El conductor deberá seleccionar línea y sentido al iniciar el turno. | M | OBJ-05 |
+| RF-25 | El conductor deberá seleccionar línea, sentido y la salida (expedición) que realiza al iniciar el turno. | M | OBJ-05 |
 | RF-26 | El sistema deberá determinar las próximas paradas del conductor a partir de la posición GPS de su dispositivo (real o simulada). | M | OBJ-05 |
-| RF-27 | La vista del conductor deberá mostrar al menos las 3 próximas paradas con el número de personas esperando y los avisos de accesibilidad destacados. | M | OBJ-05 |
+| RF-27 | La vista del conductor deberá mostrar al menos las 3 próximas paradas con el número de personas que esperan a su autobús (solicitudes hechas a su viaje) y los avisos de accesibilidad destacados. | M | OBJ-05 |
 | RF-28 | La vista del conductor deberá actualizarse en tiempo real (push) al crearse, cancelarse o caducar un aviso. | M | OBJ-05 |
 | RF-29 | El sistema deberá mostrar una alerta de capacidad cuando la suma de personas esperando en las próximas paradas supere las plazas libres. | M | OBJ-06 |
 | RF-30 | El conductor deberá poder finalizar el turno, eliminando su sesión y su posición. | M | OBJ-05 |
