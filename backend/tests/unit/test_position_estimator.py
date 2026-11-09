@@ -6,6 +6,8 @@ on the code under test.
 """
 
 import math
+from collections.abc import Callable
+from dataclasses import replace
 from datetime import date, datetime, timedelta
 
 import pytest
@@ -294,6 +296,115 @@ def test_an_empty_shape_makes_the_position_not_estimable() -> None:
     with pytest.raises(PositionNotEstimableError) as raised:
         _estimate(300, arrival_s=480, shape=[])
     assert raised.value.reason == "empty_shape"
+
+
+# --- AC-06: distances in real metres, whatever the scale of the feed ---
+
+
+FACTORS_BY_KM = (1.64, 4.25, 2.97, 2.0)
+"""Feed units per metre on each kilometre of the trip: the scale changes along a real shape."""
+
+
+def _uniform_feed(d_m: float) -> float:
+    return 3.0 * d_m
+
+
+def _varying_feed(d_m: float) -> float:
+    """`shape_dist_traveled` at `d_m` metres, with a different scale on each kilometre."""
+    feed, previous = 0.0, 0
+    for km, factor in enumerate(FACTORS_BY_KM):
+        end = 1000 * (km + 1)
+        feed += factor * (min(d_m, end) - previous)
+        if d_m <= end:
+            break
+        previous = end
+    return feed
+
+
+def _feed_shape(feed: Callable[[float], float], step_m: int = 250) -> list[ShapePoint]:
+    return [replace(p, dist_traveled=feed(step_m * n)) for n, p in enumerate(_shape(step_m=step_m))]
+
+
+def _feed_trip(feed: Callable[[float], float]) -> list[TripStopTime]:
+    return [replace(st, shape_dist_traveled=feed(1000.0 * n)) for n, st in enumerate(TRIP)]
+
+
+@pytest.mark.spec("position_estimation.AC-06")
+@pytest.mark.parametrize("feed", [_uniform_feed, _varying_feed], ids=["uniform", "by_segment"])
+def test_the_estimate_is_in_metres_whatever_the_scale_of_the_feed(
+    feed: Callable[[float], float],
+) -> None:
+    estimate = _estimate(300, arrival_s=480, trip=_feed_trip(feed), shape=_feed_shape(feed))
+    assert estimate.status is PositionStatus.EN_ROUTE
+    _assert_at(estimate, 2500)
+    assert estimate.distance_to_stop_m == pytest.approx(1500, abs=1e-6)
+    assert estimate.stops_away == 1
+    assert estimate.next_stop == StopRef("D", "Stop D")
+
+
+@pytest.mark.spec("position_estimation.AC-06")
+def test_stops_between_two_points_of_the_shape_are_interpolated_with_their_scale() -> None:
+    # Only three points; the stops fall inside the segments, where the scale is different.
+    points = [_north(0), _north(1000), _north(4000)]
+    shape = [
+        ShapePoint(lat, lon, n + 1, feed)
+        for n, ((lat, lon), feed) in enumerate(zip(points, [0.0, 2000.0, 14000.0], strict=True))
+    ]
+    feed_at_stops = [0.0, 2000.0, 6000.0, 10000.0, 14000.0]  # 0, 1000, 2000, 3000 and 4000 m
+    trip = [replace(st, shape_dist_traveled=f) for st, f in zip(TRIP, feed_at_stops, strict=True)]
+    estimate = _estimate(300, arrival_s=480, trip=trip, shape=shape)
+    _assert_at(estimate, 2500)
+    assert estimate.distance_to_stop_m == pytest.approx(1500, abs=1e-6)
+
+
+@pytest.mark.spec("position_estimation.AC-06")
+def test_a_shape_with_feed_values_is_measured_when_the_stops_have_none() -> None:
+    coords = {stop: _north(1000 * n) for n, stop in enumerate(STOPS)}
+    estimate = _estimate(
+        300,
+        arrival_s=480,
+        trip=_trip(with_dist=False),
+        shape=_feed_shape(_uniform_feed),
+        stop_coordinates=coords,
+    )
+    assert estimate.shape_distance_m == pytest.approx(2500, abs=1)
+    assert estimate.distance_to_stop_m == pytest.approx(1500, abs=1)
+
+
+@pytest.mark.spec("position_estimation.AC-06")
+def test_stops_with_feed_values_are_projected_when_a_point_of_the_shape_lacks_them() -> None:
+    shape = _feed_shape(_uniform_feed)
+    shape[3] = replace(shape[3], dist_traveled=None)
+    coords = {stop: _north(1000 * n) for n, stop in enumerate(STOPS)}
+    estimate = _estimate(
+        300,
+        arrival_s=480,
+        trip=_feed_trip(_uniform_feed),
+        shape=shape,
+        stop_coordinates=coords,
+    )
+    assert estimate.shape_distance_m == pytest.approx(2500, abs=1)
+    assert estimate.distance_to_stop_m == pytest.approx(1500, abs=1)
+
+
+@pytest.mark.spec("position_estimation.AC-06")
+@pytest.mark.spec("position_estimation.AC-11")
+def test_stops_with_feed_values_need_coordinates_if_the_shape_lacks_them() -> None:
+    with pytest.raises(PositionNotEstimableError) as raised:
+        _estimate(300, arrival_s=480, trip=_feed_trip(_uniform_feed), shape=_shape(with_dist=False))
+    assert raised.value.reason == "missing_stop_coordinates"
+
+
+@pytest.mark.spec("position_estimation.AC-06")
+def test_stop_distances_never_decrease_along_the_trip() -> None:
+    # C says it is before B in the feed: it stays at B's distance, and the bus does not go back.
+    feed_at_stops = [0.0, 6000.0, 4500.0, 9000.0, 12000.0]  # B at 2000 m, C at 1500 m
+    trip = [replace(st, shape_dist_traveled=f) for st, f in zip(TRIP, feed_at_stops, strict=True)]
+    shape = _feed_shape(_uniform_feed)
+    assert _estimate(120, 480, trip=trip, shape=shape).shape_distance_m == pytest.approx(2000)
+    between = _estimate(180, 480, trip=trip, shape=shape)  # halfway from B to C
+    assert between.shape_distance_m == pytest.approx(2000, abs=1e-6)
+    assert between.distance_to_stop_m == pytest.approx(2000, abs=1e-6)
 
 
 # --- AC-07: circular lines ---
