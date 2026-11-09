@@ -156,7 +156,13 @@ los umbrales del test según lo que se apruebe.
 
 ## Verificación
 
-`CI=1 ./init.sh verify --e2e` (puerto 4173 libre), salida 0, "verify: todo en verde":
+Ciclo 2 · `CI=1 ./init.sh verify --e2e` (puerto 4173 libre), salida 0, con los commits F-01 y N-02 y
+la parte de T-08 sin commitear en el árbol de trabajo. **No cierra la feature**: el `slow` de T-08 falla
+(ver Bloqueos). `pytest -m slow` de `test_gtfs_real_feed.py` y `test_stops_api_real_feed.py`: 4 passed.
+Backend 1691 passed, 9 deselected, cobertura 99,60 %; Vitest 563 passed y 2 skipped; Playwright + axe
+126 passed; lint, tipos, arquitectura, build y trazabilidad en verde.
+
+Ciclo 0 · `CI=1 ./init.sh verify --e2e` (puerto 4173 libre), salida 0, "verify: todo en verde":
 
 | Paso | Resultado |
 |---|---|
