@@ -589,6 +589,19 @@ async def test_a_position_too_far_in_the_future_is_rejected(
 
 
 @pytest.mark.spec("driver_session.AC-08")
+@pytest.mark.parametrize("recorded_at", ["9999-12-31T23:59:59-14:00", "0001-01-01T00:00:00+14:00"])
+async def test_a_date_outside_the_calendar_in_utc_is_rejected(
+    client: httpx.AsyncClient, auth: dict[str, str], engine: Engine, recorded_at: str
+) -> None:
+    response = await client.put(
+        POSITION, json={**GOOD_POSITION, "recorded_at": recorded_at}, headers=auth
+    )
+    assert response.status_code == 422
+    assert response.headers["content-type"] == PROBLEM_JSON
+    assert _rows(engine)[0]["recorded_at"] is None
+
+
+@pytest.mark.spec("driver_session.AC-08")
 async def test_a_position_30_seconds_ahead_is_accepted(
     client: httpx.AsyncClient, auth: dict[str, str]
 ) -> None:

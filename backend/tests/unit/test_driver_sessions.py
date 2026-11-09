@@ -2,7 +2,7 @@
 
 import math
 from dataclasses import replace
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta, timezone
 
 import pytest
 
@@ -307,6 +307,22 @@ async def test_a_position_more_than_30_s_ahead_is_invalid() -> None:
     harness = Harness(session_of(1))
     with pytest.raises(InvalidPositionError):
         await harness.send(100, recorded_at=NOW + timedelta(seconds=31))
+    assert harness.stored().position is None
+    assert harness.listener.calls == []
+
+
+@pytest.mark.spec("driver_session.AC-08")
+@pytest.mark.parametrize(
+    "recorded_at",
+    [
+        datetime(9999, 12, 31, 23, 59, 59, tzinfo=timezone(timedelta(hours=-14))),
+        datetime(1, 1, 1, 0, 0, tzinfo=timezone(timedelta(hours=14))),
+    ],
+)
+async def test_a_date_outside_the_calendar_in_utc_is_invalid(recorded_at: datetime) -> None:
+    harness = Harness(session_of(1))
+    with pytest.raises(InvalidPositionError):
+        await harness.send(100, recorded_at=recorded_at)
     assert harness.stored().position is None
     assert harness.listener.calls == []
 

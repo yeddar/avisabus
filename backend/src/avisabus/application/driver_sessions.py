@@ -462,7 +462,10 @@ class UpdateDriverPosition:
         `InvalidPositionError` if it was recorded too far in the future."""
         session = command.session
         now = self._clock.now()
-        recorded_at = command.recorded_at.astimezone(UTC)
+        try:
+            recorded_at = command.recorded_at.astimezone(UTC)
+        except OverflowError:  # outside the calendar once in UTC (year 1 or 9999 with an offset)
+            raise InvalidPositionError() from None
         if recorded_at > now + POSITION_FUTURE_TOLERANCE:
             raise InvalidPositionError()
         if session.position is not None and recorded_at < session.position.recorded_at:
