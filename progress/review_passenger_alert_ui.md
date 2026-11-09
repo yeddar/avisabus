@@ -1,4 +1,143 @@
 # Revisión: passenger_alert_ui
+
+## Revisión de la v1.1
+
+Ciclo: 1 de la v1.1 · Fecha: 2026-11-09 · Agente: reviewer
+Spec: `specs/passenger_alert_ui/` v1.1 (APPROVED, PR #45) · Rama: `feat/passenger_alert_ui-v1.1`, apilada
+sobre `feat/realtime_events-v1.2` (PR #47). Diff revisado: `git diff origin/feat/realtime_events-v1.2..HEAD`
+(commit de código 7bf4ab6; 7482463, c3e75db y 7c8c569 son de progreso).
+
+## Veredicto: APPROVED
+
+No hay hallazgos bloqueantes. `CI=1 ./init.sh verify --e2e` está en verde y AC-11 v1.1 se cumple en
+tarjeta, aviso huérfano, otro autobús de la línea, otra línea y otra parada. Lo comprobé también
+en navegador real (Chromium y WebKit), con un spec temporal en la copia del scratchpad: 30 de 30.
+De 23 mutantes, 17 se detectan, 3 son equivalentes y 3 son huecos de test con el código correcto
+(H-10, H-11 y el H-01 de la v1.0). El hueco de `alerts.snapshot` es una nota para la siguiente
+versión de la spec, no un CP-3 (H-12).
+
+## Matriz AC → evidencia
+
+Solo T-09 cambia código. Los AC sin cambios conservan la evidencia de la v1.0 (abajo) y sus tests
+siguen en verde en esta ejecución; donde cito mutantes, son de esta revisión.
+
+| AC | Test(s) | Resultado | Nota |
+|---|---|---|---|
+| AC-01, AC-02 | Los de la v1.0 | OK | El diff no toca identificador, perfil ni `apiSend` |
+| AC-03 | Los de la v1.0 | OK, con hueco | V19 (quitar `can_alert`) sigue sobreviviendo: H-01 de la v1.0, abierto |
+| AC-04 (v1.1: destino hablado en el título) | `RequestDialog.test.tsx:100` y `:132` (nombre accesible y `h2` con el headsign, es/ca) | OK | V23 (título con `sae_destination`) detectado: 5 fallos |
+| AC-05 | Los de la v1.0; `StopPage.alerts.test.tsx:338` (carrera con el `POST`) | OK | V14 (sin anuncio tras el 201) y V15 (sin foco tras el 201) detectados |
+| AC-06 (v1.1: sin `Retry-After`, N = 10) | Los de la v1.0; `client.test.ts:253` (cabecera ausente o inválida → `null`) | OK, con hueco | **V20 (`RATE_FALLBACK_MIN = 5`) sobrevive** → H-10 |
+| AC-07, AC-08, AC-09, AC-10 | Los de la v1.0 | OK | El diff no toca su lógica; V16 y V17 confirman el foco de AC-09/AC-11 |
+| AC-11 (v1.0) | `alertMessages.test.ts`, `alertsReducer.test.ts`, `AlertsProvider.test.tsx`, `StopPage.alerts.test.tsx:219-264` | OK | V16 y V18 detectados |
+| AC-11 (v1.1, cierre y foco) | `StopPage.alerts.test.tsx:276` (`registered`, tarjeta), `:288` (`delivered`), `:302` (otro autobús), `:314` (huérfano), `:325` (no reaparece) | OK | V03, V04, V05, V06, V09, V10, V11 y V17 detectados. Spec temporal en navegador real: 3 perfiles |
+| AC-11 (v1.1, guardas) | `StopPage.alerts.test.tsx:365-381` (otra línea, otra parada: mismo diálogo y foco en el título) | OK, con hueco | V01 y V02 detectados. Diálogo ya cerrado sin test: V07 sobrevive → H-11 |
+| AC-11 (v1.1, "sin anuncio adicional") | `:276` (región vacía), `:288` (`textContent` exacto) | OK | V12 detectado |
+| AC-12 | `e2e/alerts.spec.ts`, sin cambios | OK | 126 e2e en verde, axe sin violaciones |
+| AC-13 | Sin cambios visuales en el diff | OK | No hay textos ni estilos nuevos; vale el cotejo de capturas de la v1.0 |
+
+## Verificación ejecutada
+
+- `git fetch`; puerto 4173 libre (`lsof` sin resultados).
+- `CI=1 ./init.sh verify --e2e` → **exit 0, "verify: todo en verde"**:
+  - backend: format, lint, types y architecture OK; pytest 1325 passed, 6 deselected.
+  - frontend: format, lint y types OK; vitest 55 ficheros, 563 passed y 2 skipped (la v1.0 tenía
+    555; son los 8 casos nuevos de T-09).
+  - build + bundle y `test:bundle` (5 passed) OK.
+  - e2e + a11y: 126 passed.
+  - harness: `feature_list.json` y trazabilidad AC→test OK.
+- Mutaciones en una copia de `frontend/` en el scratchpad, sin tocar el repositorio. Base de la
+  copia: 563 passed, igual que el repositorio.
+  - Detectados (17): V01–V06, V09–V12, V14–V18, V22 y V23.
+  - Huecos de test (3): V07 (H-11), V19 (H-01 de la v1.0) y V20 (H-10).
+  - Equivalentes (3):
+    - V08: quitar la comparación de identidad de `registerDialog`. React ejecuta la limpieza del
+      diálogo anterior antes del efecto del nuevo, así que no cambia nada.
+    - V13: quitar la guarda `mounted` tras el `POST`, una línea anterior a la v1.1. Sin efecto
+      visible: el `ref` ya es nulo y los `setState` se ignoran.
+    - V21: `arrival.destination` es lo que devuelve `spokenDestination`. Lo sustituí por V23.
+  - Descarté una primera tanda porque la base de la copia fallaba (287 tests): el enlace
+    `frontend/node_modules/node_modules` (sin versionar) apunta en absoluto al repositorio y
+    duplicaba React. Lo quité solo en la copia. Las 3 etiquetas que el script dio mal por un error
+    de análisis (V01, V02 y V12) las repetí con el script corregido.
+- Spec Playwright temporal en la copia (`e2e/zz-review.spec.ts`, sin versionar), 10 casos en los 3
+  perfiles: **30 passed**. Cubre `registered` y `delivered`, otro autobús, huérfano, otra línea y
+  otra parada con los dos eventos, evento propio antes del 201 y el hueco de la instantánea.
+- `git status` después de la revisión: solo `qr/`, que ya estaba y se ignora por indicación.
+
+## Decisiones del implementer (v1.1)
+
+| Decisión | Valoración |
+|---|---|
+| Cierre por desmontaje sin `close()` | **Correcta.** Quitar un `<dialog>` modal lo saca de la capa superior sin evento `close`. En Chromium y WebKit el diálogo desaparece, el foco llega a "Cancelar solicitud" y `Shift+Tab` sigue recorriendo la página, así que no queda nada inerte. El cierre por el usuario sigue yendo por `close` (AC-04). |
+| `registerDialog` en `useAlerts()` (`AlertsProvider.tsx:67`, `:254-260`; `RequestDialog.tsx:82-85`) | **Cabe; sin CP-3.** No está en el design §3, y el design §6 no lo lista como decisión local. Pero T-09 pide tocar justo esos ficheros, el design v1.1 no dice cómo sabe el proveedor que hay un diálogo abierto, es una ampliación interna y aditiva y no toca ningún contrato de API. Es el mismo caso que `requestButtonRef`, `statusRef` y D-1, aceptados en la v1.0. Ver H-13. |
+| Bug corregido en `AlertAction` (`AlertAction.tsx:59`) | **Correcto y dentro de AC-11.** Un diálogo que reaparece al terminar la solicitud no se ha cerrado. Es la forma admitida de ajustar estado durante el render, y la condición evita el bucle. V10 lo confirma. T-09 incluye el fichero. |
+| "Sin anuncio adicional" | **Lectura correcta.** `alert.delivered` tiene su anuncio propio en la primera frase de AC-11; "adicional" significa no añadir otro por cerrar el diálogo. Así lo fijan `:276` y `:288`. |
+| Carrera con el propio `POST` | **Correcta, y no es un caso raro.** `alert_create` publica el evento antes de responder (design, orden de `execute`, paso 8), así que el evento puede llegar antes que el 201 en cualquier solicitud. El diálogo se cierra, el foco va a "Cancelar solicitud" y el 201 anuncia "Parada solicitada…" (AC-05). Comprobado en unitario y en navegador. Con `alert.delivered` antes del 201, los dos anuncios van seguidos y el segundo puede pisar al primero si caen en el mismo frame; es el `Announcer` de siempre y el estado queda en la tarjeta. |
+
+## Comprobaciones de §4 de docs/verification.md
+
+- **Contrato.** AC-11 v1.1 coincide. Interfaces de design §3 respetadas, salvo la ampliación
+  `registerDialog` (H-13).
+- **Tests.** Fake timers y `FakeWebSocket`, sin red. Citan el AC en el nombre. No son
+  tautológicos, salvo los huecos señalados.
+- **Privacidad.** El diff no añade registros, almacenamiento ni identificadores.
+- **Accesibilidad.** Foco verificado en navegador. Anuncios como pide AC-11. Sin cambios visuales.
+- **i18n.** Sin textos nuevos.
+- **Arquitectura y backend.** El diff no toca `backend/`.
+- **Alcance.** El código tocado es exactamente la lista de ficheros de T-09. Los demás cambios son
+  `progress/` y `feature_list.json`, del orquestador y el implementer. Commits Conventional con
+  ámbito y tarea.
+
+## Hallazgos
+
+### Bloqueantes
+
+Ninguno.
+
+### No bloqueantes
+
+- **H-10 (tests, AC-06 v1.1).** La cláusula "sin `Retry-After`, N = 10" no tiene ningún test que la
+  fije. Los casos de `RequestDialog.test.tsx:275-286` llevan siempre cabecera y
+  `client.test.ts:253` se queda en `retryAfterS = null`. Por eso V20 (`RATE_FALLBACK_MIN = 5` en
+  `RequestDialog.tsx:15`) sobrevive. El código es correcto: no bloquea, igual que H-01 de la v1.0
+  (cláusula de un AC con otros tests, código correcto). Es el hueco más claro de esta versión, porque
+  la cláusula es nueva en la v1.1 y T-09 no la cubría.
+  - **Propuesta:** un caso más en `it.each`: 429 sin cabecera → "Inténtalo dentro de 10 minutos.".
+    Conviene hacerlo en cuanto se reabra la rama.
+- **H-11 (tests, AC-11).** Ningún test comprueba que, con el diálogo ya cerrado por "Volver" o
+  Escape, un `alert.registered` de esa línea no mueva el foco. V07 (no deshacer el registro en
+  `AlertsProvider.tsx:258`) sobrevive. El código es correcto.
+  - **Propuesta:** abrir, "Volver", recibir el evento y comprobar que el foco sigue en "Solicitar"
+    o en el elemento donde estaba.
+- **H-12 (Problema de spec, nota para la próxima versión; no CP-3).** Con el diálogo abierto, si la
+  solicitud llega por `alerts.snapshot` (reconexión o `GET /alerts/mine`, que pasa por el mismo
+  `handleMessage`), el diálogo desaparece y el foco cae en `body`. Lo reproduje en los 3 perfiles.
+  `arrived` solo se calcula para `registered` y `delivered` (`AlertsProvider.tsx:145-156`).
+  - **Por qué no es CP-3.** AC-11 v1.1 enumera dos eventos sin ambigüedad y la spec no se contradice.
+    El implementer no inventó nada y el comportamiento es el de la v1.0. No impide terminar la
+    feature y exige coincidencia poco frecuente: diálogo abierto, socket caído y solicitud creada
+    en ese intervalo. Tiene el mismo tratamiento que H-05, H-06 y H-07 de la v1.0.
+  - **Otro desencadenante, sin otra pestaña** (por lectura del código): al recargar con una
+    solicitud activa, la tarjeta ofrece "Solicitar" hasta que llega la primera instantánea. Si se
+    pulsa en ese intervalo, pasa lo mismo. Con el `POST` en curso se corrige solo, porque el 201 mueve
+    el foco.
+  - **Impacto.** Pérdida de foco para teclado y lector de pantalla (RNF-03), sin pérdida de datos:
+    la solicitud se ve en la tarjeta. El diálogo no reaparece (`AlertAction.tsx:59` no depende del
+    evento).
+  - **Propuesta para AC-11:** añadir `alerts.snapshot` a la condición ("…y llega `alert.registered`,
+    `alert.delivered` o `alerts.snapshot` que contenga una solicitud de la misma parada y línea…"),
+    sin anuncio. El cambio es pequeño, en `handleMessage`, y cubre también `GET /alerts/mine`.
+    Conviene que la persona lo vea en el próximo checkpoint.
+- **H-13 (design, próxima versión).** Añadir `registerDialog(stopId, line): () => void` a `useAlerts()`
+  en el design §3, y una línea sobre el cierre sin `close()` en "Gestión del foco" (AC-11).
+- **Siguen abiertos de la v1.0, fuera del alcance de T-09:** H-01 (confirmado de nuevo con V19),
+  H-02, H-03 y H-04.
+
+---
+
+# Revisión de la v1.0 (conservada)
+
 Ciclo: 1 · Fecha: 2026-11-05 · Agente: reviewer
 Spec: `specs/passenger_alert_ui/` v1.0 (APPROVED) · Rama: `feat/passenger_alert_ui`, apilada sobre
 `feat/alert_expiry` (PR #43). Diff revisado: `git diff origin/feat/alert_expiry...HEAD`

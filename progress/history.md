@@ -455,3 +455,6 @@
 ## 2026-11-09 · passenger_alert_ui v1.1 · implementing → in_review
 - T-09 (AC-11): el diálogo se cierra con `alert.registered`/`alert.delivered` y el foco va a "Cancelar
   solicitud". Verify --e2e en verde (563 Vitest, 126 e2e). Hueco señalado: `alerts.snapshot` con el diálogo abierto.
+
+## 2026-11-09 · passenger_alert_ui v1.1 · in_review → done
+- Revisión ciclo 1 de la v1.1: APPROVED (17 de 23 mutantes, 3 equivalentes, 3 huecos de test). PR sin fusionar.
