@@ -9,6 +9,7 @@ import hmac
 import json
 import logging
 import re
+import traceback
 from collections.abc import Callable, Iterable, Iterator
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
@@ -18,6 +19,7 @@ from typing import Any
 import pytest
 import structlog
 from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
 from typer.testing import CliRunner, Result
 
 from avisabus.adapters.inbound.cli import driver_codes as driver_codes_cli
@@ -304,6 +306,29 @@ def test_neither_the_code_nor_its_hash_reach_the_logs(db_path: Path) -> None:
         assert plain not in line
         assert f"{plain[:4]} {plain[4:]}" not in line
         assert code_hash not in line
+
+
+@pytest.mark.spec("driver_codes_cli.AC-03")
+def test_a_failed_write_shows_neither_the_hash_nor_the_label(
+    customise: Callable[..., None],
+) -> None:
+    fixed = _fixed_generator_container(["48210937"])
+
+    def drop_table_after_composing(container: CliContainer) -> dict[str, Any]:
+        # `build_cli_container` runs `init_db`, so the table can only be removed afterwards.
+        with container.engine.begin() as conn:
+            conn.execute(text("DROP TABLE driver_code"))
+        return fixed(container)
+
+    customise(change=drop_table_after_composing)
+    result = _run("create", "--label", "EtiquetaSensible")
+
+    assert result.exit_code == 1
+    assert isinstance(result.exception, OperationalError)
+    shown = result.output + "".join(traceback.format_exception(result.exception))
+    assert _expected_hash("48210937") not in shown
+    assert "EtiquetaSensible" not in shown
+    assert "48210937" not in shown
 
 
 @pytest.mark.spec("driver_codes_cli.AC-06")

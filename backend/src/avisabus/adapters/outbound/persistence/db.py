@@ -31,7 +31,8 @@ def create_engine(settings: Settings) -> Engine:
         kwargs["connect_args"] = {"check_same_thread": False}
     else:
         Path(url.database).parent.mkdir(parents=True, exist_ok=True)
-    engine = sqlalchemy.create_engine(url, **kwargs)
+    # hide_parameters: database errors must not carry bound values (hashes, labels) into traces.
+    engine = sqlalchemy.create_engine(url, hide_parameters=True, **kwargs)
     event.listen(engine, "connect", _apply_pragmas)
     return engine
 

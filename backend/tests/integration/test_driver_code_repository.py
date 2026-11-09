@@ -1,9 +1,11 @@
 """`SqliteDriverCodeRepository` over a temporary database (driver_codes_cli T-02)."""
 
+import traceback
 from datetime import UTC, datetime, timedelta, timezone
 
 import pytest
 from sqlalchemy import Engine, text
+from sqlalchemy.exc import OperationalError
 
 from avisabus.adapters.outbound.persistence.db import create_engine, init_db
 from avisabus.adapters.outbound.persistence.sqlite_driver_codes import SqliteDriverCodeRepository
@@ -125,6 +127,20 @@ def test_collision_error_carries_no_stored_values(repo: SqliteDriverCodeReposito
     assert HASH_A not in str(error.value)
     assert error.value.__cause__ is None
     assert error.value.__suppress_context__ is True
+
+
+@pytest.mark.spec("driver_codes_cli.AC-03")
+def test_a_failed_write_exposes_neither_the_hash_nor_the_label(
+    repo: SqliteDriverCodeRepository, engine: Engine
+) -> None:
+    with engine.begin() as conn:
+        conn.execute(text("DROP TABLE driver_code"))  # the INSERT fails with OperationalError
+    with pytest.raises(OperationalError) as error:
+        repo.add(_code())
+    shown = "".join(traceback.format_exception(error.value))
+    assert "driver_code" in shown  # the error itself is still reported
+    assert HASH_A not in shown
+    assert "Tablet 3" not in shown
 
 
 def test_list_all_is_ordered_by_creation(repo: SqliteDriverCodeRepository) -> None:
