@@ -4,7 +4,7 @@ from dataclasses import dataclass, field, replace
 from datetime import date, datetime
 from typing import Any
 
-from avisabus.domain.models.alert import Alert, AlertTracking
+from avisabus.domain.models.alert import Alert, AlertStatus, AlertTracking
 from avisabus.domain.models.events import Event
 from avisabus.domain.ports.alerts import DriverRef
 
@@ -54,6 +54,22 @@ class FakeAlertRepository:
             (a for a in self.alerts.values() if a.delivered_to == session_id),
             key=lambda a: (a.created_at, a.alert_id),
         )
+
+    def list_by_trip(self, trip_id: str, service_date: date) -> list[Alert]:
+        return sorted(
+            (
+                a
+                for a in self.alerts.values()
+                if (a.trip_id, a.service_date) == (trip_id, service_date)
+            ),
+            key=lambda a: (a.created_at, a.alert_id),
+        )
+
+    def set_delivery(self, alert_id: str, status: AlertStatus, delivered_to: str | None) -> None:
+        if alert_id in self.alerts:
+            self.alerts[alert_id] = replace(
+                self.alerts[alert_id], status=status, delivered_to=delivered_to
+            )
 
     def update_tracking(self, alert_id: str, tracking: AlertTracking) -> None:
         """Like the SQLite one: nothing happens if the alert no longer exists."""

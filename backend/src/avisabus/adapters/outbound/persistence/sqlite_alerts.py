@@ -98,6 +98,22 @@ class SqliteAlertRepository:
     def list_by_session(self, session_id: str) -> list[Alert]:
         return self._all(select(alert_table).where(alert_table.c.delivered_to == session_id))
 
+    def list_by_trip(self, trip_id: str, service_date: date) -> list[Alert]:
+        return self._all(
+            select(alert_table).where(
+                alert_table.c.trip_id == trip_id,
+                alert_table.c.service_date == service_date.isoformat(),
+            )
+        )
+
+    def set_delivery(self, alert_id: str, status: AlertStatus, delivered_to: str | None) -> None:
+        with self._engine.begin() as conn:
+            conn.execute(
+                update(alert_table)
+                .where(alert_table.c.alert_id == alert_id)
+                .values(status=status.value, delivered_to=delivered_to)
+            )
+
     def update_tracking(self, alert_id: str, tracking: AlertTracking) -> None:
         with self._engine.begin() as conn:
             conn.execute(

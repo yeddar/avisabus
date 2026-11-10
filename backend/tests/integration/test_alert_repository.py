@@ -273,3 +273,45 @@ def test_list_by_session_returns_only_its_alerts_by_creation(repo: SqliteAlertRe
     repo.add(_delivered("pending", "d" * 64, None, NOW))
 
     assert [a.alert_id for a in repo.list_by_session("session-1")] == ["earlier", "later"]
+
+
+@pytest.mark.spec("driver_demand.AC-02")
+def test_list_by_trip_filters_by_trip_and_service_day_by_creation(
+    repo: SqliteAlertRepository,
+) -> None:
+    later = _delivered("later", HASH_A, None, NOW + timedelta(seconds=1))
+    earlier = _delivered("earlier", HASH_B, "session-1", NOW)
+    other_day = replace(
+        _delivered("other-day", "c" * 64, None, NOW), service_date=date(2026, 11, 5)
+    )
+    other_trip = replace(_delivered("other-trip", "d" * 64, None, NOW), trip_id="another")
+    for alert in (later, earlier, other_day, other_trip):
+        repo.add(alert)
+
+    assert [a.alert_id for a in repo.list_by_trip(earlier.trip_id, earlier.service_date)] == [
+        "earlier",
+        "later",
+    ]
+
+
+@pytest.mark.spec("driver_demand.AC-02")
+def test_set_delivery_changes_only_the_delivery(repo: SqliteAlertRepository) -> None:
+    alert = _delivered("a", HASH_A, None, NOW)
+    other = _delivered("b", HASH_B, None, NOW)
+    repo.add(alert)
+    repo.add(other)
+
+    repo.set_delivery("a", AlertStatus.DELIVERED, "session-1")
+
+    assert repo.get("a") == replace(alert, status=AlertStatus.DELIVERED, delivered_to="session-1")
+    assert repo.get("b") == other
+
+    repo.set_delivery("a", AlertStatus.PENDING_DRIVER, None)
+
+    assert repo.get("a") == alert
+
+
+def test_set_delivery_of_a_missing_alert_does_nothing(repo: SqliteAlertRepository) -> None:
+    repo.set_delivery("gone", AlertStatus.DELIVERED, "session-1")
+
+    assert repo.list_all() == []
