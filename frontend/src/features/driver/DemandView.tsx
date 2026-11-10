@@ -140,7 +140,11 @@ export function DemandView({
             })}
           </p>
         </div>
-        <Button icon={<BellIcon muted={muted} />} className="min-h-12" onClick={toggleMute}>
+        <Button
+          icon={<BellIcon muted={muted} className="size-[18px]" />}
+          className="min-h-12"
+          onClick={toggleMute}
+        >
           {t(muted ? 'driver.unmute' : 'driver.mute')}
         </Button>
       </div>

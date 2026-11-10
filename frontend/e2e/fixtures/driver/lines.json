@@ -1,0 +1,13 @@
+{
+  "lines": [
+    {
+      "line": "93",
+      "color": "FE0000",
+      "text_color": "FFFFFF",
+      "directions": [
+        { "direction_id": 0, "headsign": "Passeig Marítim - Hospital Malva-rosa" },
+        { "direction_id": 1, "headsign": "Av. del Cid" }
+      ]
+    }
+  ]
+}

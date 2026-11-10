@@ -217,7 +217,7 @@ export function ServicePicker({ initialChoice, onSelected, onExit }: ServicePick
 
       <div>
         <Button
-          icon={<ArrowLeftIcon />}
+          icon={<ArrowLeftIcon className="size-[18px]" />}
           className="min-h-12"
           onClick={() => {
             if (step === 'line') onExit();
