@@ -427,7 +427,7 @@
       "order": 18,
       "block": 4,
       "title": "Demanda del conductor: snapshot, entrega de avisos y alerta de capacidad",
-      "status": "implementing",
+      "status": "in_review",
       "depends_on": [
         "realtime_events",
         "alert_create",
