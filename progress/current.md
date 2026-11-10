@@ -4,14 +4,14 @@
 
 **Fecha:** 2026-11-10
 **Fase:** Implementación — Bloque 4 (conductor)
-**Feature en curso:** `driver_ui` v1.0 — `implementing` (rama `feat/driver_ui`, apilada sobre `feat/driver_demand`, PR #54)
+**Feature en curso:** `driver_ui` v1.0 — `in_review`, ciclo de revisión 1 (rama `feat/driver_ui`, apilada sobre `feat/driver_demand`, PR #54)
 
 ## Último paso
-`driver_demand`: revisión ciclo 2 APPROVED; PR #54 contra `develop`, apilada sobre #53 y #52, sin fusionar.
+`driver_ui` T-01…T-07 implementadas; `CI=1 ./init.sh verify --e2e` en verde (`progress/impl_driver_ui.md`).
 
 ## Siguiente paso
 Por orden, cada una con reviewer nuevo y PR contra `develop` sin fusionar:
-1. `driver_ui`.
+1. `driver_ui`: revisión (ciclo 1).
 2. `driver_gps_simulator`.
 Después, CP-6 del bloque 4 (persona). Orden de fusión: #52, #53, #54 y luego las siguientes `driver_*`.
 
