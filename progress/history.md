@@ -518,3 +518,7 @@
 - `CI=1 ./init.sh verify --e2e` en verde: 1846 backend, 563 Vitest, 126 e2e. Abiertos N-01…N-08.
 
 ## 2026-11-10 · driver_demand PR #54 abierta · driver_ui · spec_approved → implementing
+
+## 2026-11-10 · driver_ui · implementing → in_review → spec_blocked
+- Ciclo 1 CHANGES_REQUESTED: B-01 (posición, `wakeLock` y socket se cortan tras fin de recorrido), B-02 (foco al cerrar el diálogo).
+- CP-3 P-01: AC-04 "enviar la última cada 5 s" frente al cálculo de `STALE` con `last_position_at`.
