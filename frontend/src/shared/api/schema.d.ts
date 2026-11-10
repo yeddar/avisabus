@@ -158,6 +158,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/driver/sessions/current/view': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Current View */
+    get: operations['current_view_api_v1_driver_sessions_current_view_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/health': {
     parameters: {
       query?: never;
@@ -440,6 +457,78 @@ export interface components {
       /** Headsign */
       headsign: string;
     };
+    /** DriverServiceViewSchema */
+    DriverServiceViewSchema: {
+      /** Color */
+      color: string;
+      /**
+       * Departure At
+       * Format: date-time
+       * @description Departure from the first stop.
+       */
+      departure_at: string;
+      /** Direction Id */
+      direction_id: number;
+      /** Headsign */
+      headsign: string;
+      /** Line */
+      line: string;
+      /**
+       * Service Date
+       * Format: date
+       * @description Service day of the trip (may be yesterday).
+       */
+      service_date: string;
+      /** Text Color */
+      text_color: string;
+      /** Trip Id */
+      trip_id: string;
+    };
+    /** DriverViewResponse */
+    DriverViewResponse: {
+      /**
+       * Capacity Alert
+       * @description More people waiting than free places.
+       */
+      capacity_alert: boolean;
+      /** Finished */
+      finished: boolean;
+      /**
+       * Free Places
+       * @description `null` without occupancy data.
+       */
+      free_places: number | null;
+      /**
+       * Free Seats
+       * @description `null` without occupancy data.
+       */
+      free_seats: number | null;
+      /**
+       * Generated At
+       * Format: date-time
+       */
+      generated_at: string;
+      gps: components['schemas']['GpsState'];
+      /** Off Route */
+      off_route: boolean;
+      /**
+       * Seat Alert
+       * @description More requests for a seat than free seats.
+       */
+      seat_alert: boolean;
+      /** @description `null` without a departure. */
+      service: components['schemas']['DriverServiceViewSchema'] | null;
+      /**
+       * Stops
+       * @description Next stops of the trip, up to 5.
+       */
+      stops: components['schemas']['StopDemandSchema'][];
+      /**
+       * Total Waiting
+       * @description Requests in the stops shown.
+       */
+      total_waiting: number;
+    };
     /**
      * GpsState
      * @enum {string}
@@ -516,6 +605,17 @@ export interface components {
      * @enum {string}
      */
     Need: 'RAMP' | 'EXTRA_TIME' | 'SEAT' | 'VISUAL';
+    /** NeedCountsSchema */
+    NeedCountsSchema: {
+      /** Extra Time */
+      EXTRA_TIME: number;
+      /** Ramp */
+      RAMP: number;
+      /** Seat */
+      SEAT: number;
+      /** Visual */
+      VISUAL: number;
+    };
     /** NextStopSchema */
     NextStopSchema: {
       /** Name */
@@ -828,6 +928,29 @@ export interface components {
       source: 'REALTIME' | 'SCHEDULED';
       /** Stop Id */
       stop_id: string;
+    };
+    /** StopDemandSchema */
+    StopDemandSchema: {
+      /** Alert Ids */
+      alert_ids: string[];
+      /**
+       * Distance M
+       * @description Along the shape, from the bus.
+       */
+      distance_m: number;
+      /** Name */
+      name: string;
+      /** @description How many of those requests have each need. */
+      needs: components['schemas']['NeedCountsSchema'];
+      /** Stop Id */
+      stop_id: string;
+      /** Stop Sequence */
+      stop_sequence: number;
+      /**
+       * Waiting
+       * @description Requests delivered to this shift for this stop.
+       */
+      waiting: number;
     };
     /** StopLineSchema */
     StopLineSchema: {
@@ -1647,6 +1770,43 @@ export interface operations {
            *       "status": 503,
            *       "title": "Service Unavailable",
            *       "type": "https://avisabus/problems/network-unavailable"
+           *     }
+           */
+          'application/problem+json': unknown;
+        };
+      };
+    };
+  };
+  current_view_api_v1_driver_sessions_current_view_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The same view as `/ws/driver`, while the socket does not connect. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DriverViewResponse'];
+        };
+      };
+      /** @description Missing token, or not of an open shift. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProblemSchema'];
+          /**
+           * @example {
+           *       "status": 401,
+           *       "title": "Unauthorized",
+           *       "type": "https://avisabus/problems/invalid-session"
            *     }
            */
           'application/problem+json': unknown;

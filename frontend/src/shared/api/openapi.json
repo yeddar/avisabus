@@ -358,6 +358,151 @@
         "title": "DirectionSchema",
         "type": "object"
       },
+      "DriverServiceViewSchema": {
+        "properties": {
+          "color": {
+            "title": "Color",
+            "type": "string"
+          },
+          "departure_at": {
+            "description": "Departure from the first stop.",
+            "format": "date-time",
+            "title": "Departure At",
+            "type": "string"
+          },
+          "direction_id": {
+            "title": "Direction Id",
+            "type": "integer"
+          },
+          "headsign": {
+            "title": "Headsign",
+            "type": "string"
+          },
+          "line": {
+            "title": "Line",
+            "type": "string"
+          },
+          "service_date": {
+            "description": "Service day of the trip (may be yesterday).",
+            "format": "date",
+            "title": "Service Date",
+            "type": "string"
+          },
+          "text_color": {
+            "title": "Text Color",
+            "type": "string"
+          },
+          "trip_id": {
+            "title": "Trip Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "line",
+          "direction_id",
+          "headsign",
+          "trip_id",
+          "service_date",
+          "departure_at",
+          "color",
+          "text_color"
+        ],
+        "title": "DriverServiceViewSchema",
+        "type": "object"
+      },
+      "DriverViewResponse": {
+        "properties": {
+          "capacity_alert": {
+            "description": "More people waiting than free places.",
+            "title": "Capacity Alert",
+            "type": "boolean"
+          },
+          "finished": {
+            "title": "Finished",
+            "type": "boolean"
+          },
+          "free_places": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "`null` without occupancy data.",
+            "title": "Free Places"
+          },
+          "free_seats": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "`null` without occupancy data.",
+            "title": "Free Seats"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "gps": {
+            "$ref": "#/components/schemas/GpsState"
+          },
+          "off_route": {
+            "title": "Off Route",
+            "type": "boolean"
+          },
+          "seat_alert": {
+            "description": "More requests for a seat than free seats.",
+            "title": "Seat Alert",
+            "type": "boolean"
+          },
+          "service": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DriverServiceViewSchema"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "`null` without a departure."
+          },
+          "stops": {
+            "description": "Next stops of the trip, up to 5.",
+            "items": {
+              "$ref": "#/components/schemas/StopDemandSchema"
+            },
+            "title": "Stops",
+            "type": "array"
+          },
+          "total_waiting": {
+            "description": "Requests in the stops shown.",
+            "title": "Total Waiting",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "generated_at",
+          "service",
+          "gps",
+          "off_route",
+          "finished",
+          "stops",
+          "total_waiting",
+          "free_places",
+          "free_seats",
+          "capacity_alert",
+          "seat_alert"
+        ],
+        "title": "DriverViewResponse",
+        "type": "object"
+      },
       "GpsState": {
         "enum": ["WAITING", "OK", "STALE"],
         "title": "GpsState",
@@ -473,6 +618,29 @@
         "enum": ["RAMP", "EXTRA_TIME", "SEAT", "VISUAL"],
         "title": "Need",
         "type": "string"
+      },
+      "NeedCountsSchema": {
+        "properties": {
+          "EXTRA_TIME": {
+            "title": "Extra Time",
+            "type": "integer"
+          },
+          "RAMP": {
+            "title": "Ramp",
+            "type": "integer"
+          },
+          "SEAT": {
+            "title": "Seat",
+            "type": "integer"
+          },
+          "VISUAL": {
+            "title": "Visual",
+            "type": "integer"
+          }
+        },
+        "required": ["RAMP", "EXTRA_TIME", "SEAT", "VISUAL"],
+        "title": "NeedCountsSchema",
+        "type": "object"
       },
       "NextStopSchema": {
         "properties": {
@@ -951,6 +1119,54 @@
         },
         "required": ["stop_id", "source", "generated_at", "refresh_after_s", "arrivals"],
         "title": "StopArrivalsResponse",
+        "type": "object"
+      },
+      "StopDemandSchema": {
+        "properties": {
+          "alert_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Alert Ids",
+            "type": "array"
+          },
+          "distance_m": {
+            "description": "Along the shape, from the bus.",
+            "title": "Distance M",
+            "type": "number"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "needs": {
+            "$ref": "#/components/schemas/NeedCountsSchema",
+            "description": "How many of those requests have each need."
+          },
+          "stop_id": {
+            "title": "Stop Id",
+            "type": "string"
+          },
+          "stop_sequence": {
+            "title": "Stop Sequence",
+            "type": "integer"
+          },
+          "waiting": {
+            "description": "Requests delivered to this shift for this stop.",
+            "title": "Waiting",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "stop_id",
+          "name",
+          "stop_sequence",
+          "distance_m",
+          "waiting",
+          "needs",
+          "alert_ids"
+        ],
+        "title": "StopDemandSchema",
         "type": "object"
       },
       "StopLineSchema": {
@@ -2026,6 +2242,47 @@
           }
         ],
         "summary": "Select Service",
+        "tags": ["driver"]
+      }
+    },
+    "/api/v1/driver/sessions/current/view": {
+      "get": {
+        "operationId": "current_view_api_v1_driver_sessions_current_view_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverViewResponse"
+                }
+              }
+            },
+            "description": "The same view as `/ws/driver`, while the socket does not connect."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemSchema"
+                }
+              },
+              "application/problem+json": {
+                "example": {
+                  "status": 401,
+                  "title": "Unauthorized",
+                  "type": "https://avisabus/problems/invalid-session"
+                }
+              }
+            },
+            "description": "Missing token, or not of an open shift."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Current View",
         "tags": ["driver"]
       }
     },
