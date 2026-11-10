@@ -286,8 +286,8 @@ for (const [lang, locale] of [
 
       // Capacity and seat strips, announced once.
       sendView(backend, capacityView());
-      await expect(page.getByText(texts.capacity, { exact: true })).toBeVisible();
-      await expect(page.getByText(texts.seats, { exact: true })).toBeVisible();
+      await expect(page.getByRole('main').getByText(texts.capacity, { exact: true })).toBeVisible();
+      await expect(page.getByRole('main').getByText(texts.seats, { exact: true })).toBeVisible();
       await expect(page.getByRole('alert')).toContainText(texts.capacity);
       await expectNoAxeViolations(page);
       await capture(page, testInfo, 'alerta-capacidad', lang);
@@ -328,7 +328,7 @@ for (const [lang, locale] of [
       await dialog.getByRole('button', { name: texts.yes, exact: true }).click();
 
       await expect(page).toHaveURL(/\/driver$/);
-      await expect(page.getByText(texts.ended)).toBeVisible();
+      await expect(page.getByRole('main').getByText(texts.ended)).toBeVisible();
       await expectNoAxeViolations(page);
       expect(backend.deletes).toBe(1);
       expect(
