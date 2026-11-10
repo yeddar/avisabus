@@ -1,0 +1,95 @@
+# Implementación: driver_ui
+Spec: specs/driver_ui/ (v1.0, APPROVED, PR #46) · Ciclo de revisión: 0 · Rama: `feat/driver_ui` (apilada
+sobre `feat/driver_demand`). Exploración: no necesaria (tasks.md).
+
+## Tareas
+- [x] T-01 `session.ts`, `driverApi`, `LoginPage`, rutas diferidas y textos (commit 876f585)
+- [x] T-02 `ServicePicker` y `ShiftPage` (commit 5c7ae41)
+- [x] T-03 `useDriverPosition`: posición, permiso y `wakeLock` (commit e377203)
+- [x] T-04 `useDriverSocket`, `newAlerts`, `tone` (commit 709d2e7)
+- [x] T-05 `DemandView`, `StopCard`, `CapacityBanner`, `DriverStatus`, `EndShiftDialog`, silencio y cierre por el servidor (commit b8ddc3d)
+- [x] T-06 E2E del flujo completo, axe y capturas (commits 03793e0 y 472a763)
+- [x] T-07 Verificación completa (este fichero)
+
+Tests escritos antes del código y vistos en rojo en T-01 a T-05. Los e2e de T-06 se escribieron con la
+vista ya hecha y pasaron a la primera, así que no se vieron en rojo.
+
+Ficheros de test por AC (`frontend/src/features/driver/__tests__/`): `session.test.ts`, `LoginPage.test.tsx`
+(AC-01, AC-03, AC-10); `ServicePicker.test.tsx` (AC-02, AC-08); `ShiftPage.test.tsx` (AC-02, AC-03, AC-05,
+AC-08, AC-10); `useDriverPosition.test.tsx` (AC-03, AC-04); `newAlerts.test.ts`, `tone.test.ts`,
+`DemandView.tone.test.tsx` (AC-07); `useDriverSocket.test.tsx` (AC-03, AC-07, AC-09, AC-10);
+`DemandView.test.tsx` (AC-04–AC-06, AC-08, AC-10); `CapacityBanner.test.tsx` (AC-06);
+`DriverStatus.test.tsx` (AC-04, AC-08); `EndShiftDialog.test.tsx` (AC-10); `e2e/driver.spec.ts` (AC-11, AC-12).
+
+Capturas para AC-12: `frontend/test-results/driver_ui/tablet-landscape/<nombre>-<es|ca>.png` (acceso,
+eleccion-salida, sin-solicitudes, solicitud-nueva, alerta-capacidad, gps-desactualizado, fin-recorrido).
+Revisadas contra `docs/design.md` §5.9; de ahí salió un fallo ya corregido: los iconos de "Silenciar tono"
+y "Volver" no tenían tamaño y no se pintaban.
+
+## Decisiones locales
+Dentro de design §5 (maquetación no fijada y envolvente del tono):
+- **Envolvente del tono:** ataque lineal de 20 ms hasta 0,3 de ganancia y caída lineal hasta los 300 ms.
+- **`DriverLayout.tsx`** (no está en la lista de design §1): mismos landmarks que `Layout`, con columna de
+  1200 px para las tres tarjetas. `Layout` es de `frontend_i18n` y su columna de 640 px no sirve aquí.
+- **Tarjetas:** una columna por debajo de `md`, tres por encima; las paradas 4 y 5 en dos columnas.
+- **Ficheros auxiliares:** `types.ts` (alias del esquema; `shared/api/types.ts` no estaba en las tareas),
+  `icons/{NeedIcon,WarningIcon,BellIcon}.tsx`.
+
+Interpretaciones de la spec, fuera de esa lista, para que las valide el reviewer o la persona:
+- **`driverApi` devuelve** cualquier respuesta HTTP salvo el 401; así lo sugiere `{status, data, retryAfterS}`
+  en design §2. Además exporta `subscribeDriverAuthLost` y `loseDriverAuth`: `useDriverPosition(enabled)` no
+  puede avisar de un 401 con la firma fijada, y `ShiftPage` navega a `/driver` desde esa suscripción (AC-03).
+- **La posición se sigue solo en la vista de demanda**, no en el selector: CU-08 pide el permiso después de
+  elegir salida (paso 4) y AC-04 dice "LA VISTA".
+- **"Volver" en el paso de línea** vuelve a `/driver` sin cerrar el turno; al entrar otra vez con el mismo
+  código, `driver_session.AC-03` cierra el anterior.
+- **Estados y franjas a la vez:** §5.9 dice "caja de §5.6 en lugar de las franjas", pero AC-06 no condiciona
+  las franjas. Por `docs/design.md` §1 manda la spec en comportamiento: se muestran las dos, en el mismo sitio.
+- **Cabecera sin indicador de GPS/conexión** (§5.9 "estado (GPS, conexión)"): no hay texto especificado para
+  el estado correcto, y los problemas ya salen en las cajas con el texto de AC-08.
+- **Texto de personas esperando:** se usa el de design §3 ("2 personas esperando"), no "esperando" a secas
+  de §5.9; la cifra va a 64 px y el resto a 18 px. Las paradas 4 y 5 incluyen distancia y necesidades (AC-05).
+- **Franjas anunciadas por el `Announcer`** (región `role="alert"`, `frontend_i18n.AC-12`) y no con `role`
+  en la propia franja: así los cambios de cifras no las anuncian otra vez y dos franjas simultáneas salen en
+  un solo mensaje (AC-06).
+- **Claves i18n de design §3:** `driver.places` y `driver.places.unknown` (igual `driver.end` y
+  `driver.end.confirm/yes/no`) no caben anidadas en JSON; las segundas van como claves con punto dentro de
+  `driver`, que i18next resuelve. Los nombres de clave son los de la spec.
+- **429 sin `Retry-After`:** 15 min, el bloqueo de `driver_session.AC-02`.
+- **`DELETE` fallido al finalizar:** se borra el token y se vuelve a `/driver` igualmente; el servidor cierra
+  el turno por inactividad.
+
+## Bloqueos
+Ninguno impide la revisión. Huecos de spec que quedan para decidir aparte (propuesta entre paréntesis):
+1. **Errores y lista vacía sin texto en la spec.** Fallo de red o 5xx en el acceso y el selector reutiliza
+   `stop.error.body`; un `422` al elegir salida refresca la lista con ese mismo aviso. La lista sin salidas usa
+   un texto nuevo, `driver.pick.empty` ("No hay salidas en este momento"). También son redacción propia
+   `driver.pick.line/direction/departure/lineLabel`, `driver.shift.title` y `driver.demand.departure`, que
+   design §3 nombra sin texto o no lista por ser "extracto". (Añadirlos a la spec.)
+2. **Autobús parado y GPS.** Cada posición se envía una sola vez porque el backend renueva `last_position_at`
+   aunque `recorded_at` se repita (`application/driver_sessions.py:473-477`): reenviar la última ocultaría
+   `STALE` (CU-09 1a), así que "enviar la última cada 5 s" se lee como "si hay una nueva". Si un dispositivo
+   no da posiciones con el autobús parado, saldrá "Posición desactualizada" a los 30 s y el turno se cerraría
+   a los 10 min. No se ha podido probar en una tablet real. (Comprobarlo en CP-6; si pasa, decidir en backend.)
+3. **Plurales fijos en la spec:** salen "Esperan 1 personas y quedan 0 plazas" y "1 plazas libres · 1
+   asientos"; design §3 no define el singular. También "2 más tiempo" y "2 visión". (Añadir `_one`.)
+4. **Comentario desactualizado:** `shared/device/storage.ts` dice "The only keys" y no incluye
+   `avisabus.driverMute`, permitida por `docs/conventions.md` §4. No se ha tocado por estar fuera de las
+   tareas. (Añadirla en una tarea futura.)
+5. **Valenciano:** las traducciones son propias, sin revisión de una persona hablante. (Revisarlas en CP-6.)
+
+## Verificación
+`CI=1 ./init.sh verify --e2e`, puerto 4173 libre: **todo en verde** (salida 0, sobre el commit 472a763).
+
+| Paso | Resultado |
+|---|---|
+| backend: format, lint, types, architecture | OK |
+| backend: tests | 1846 passed, 12 deselected |
+| frontend: format, lint, types | OK |
+| frontend: tests | 651 passed, 2 skipped (68 ficheros) |
+| frontend: build + bundle | OK (5 tests) |
+| frontend: e2e + a11y | 130 passed |
+| harness: feature_list.json, trazabilidad AC→test | OK |
+
+La primera ejecución completa falló en un e2e (`Torn finalitzat`): el texto aparecía a la vez en la vista y en
+la región de anuncios, según el momento. Era un fallo del test; se acotó a `main` (commit 472a763).
