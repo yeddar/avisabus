@@ -5,6 +5,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { Button } from '../../shared/ui/Button';
 import { StatusNotice } from '../../shared/ui/StatusNotice';
 import { usePageTitle } from '../../shared/ui/usePageTitle';
+import { DemandView } from './DemandView';
 import { ServicePicker } from './ServicePicker';
 import { DriverAuthError, driverApi, getDriverToken, subscribeDriverAuthLost } from './session';
 import type { DriverService, DriverView } from './types';
@@ -85,6 +86,24 @@ export function ShiftPage() {
         />
       );
     case 'demand':
-      return null;
+      return (
+        <DemandView
+          key={`${phase.service.trip_id}-${phase.service.service_date}`}
+          service={phase.service}
+          initialView={phase.initialView}
+          onNextDeparture={() =>
+            setPhase({
+              kind: 'picker',
+              initialChoice: {
+                line: phase.service.line,
+                directionId: phase.service.direction_id,
+              },
+            })
+          }
+          onSessionEnd={(reason) => {
+            void navigate('/driver', { replace: true, state: { closedReason: reason } });
+          }}
+        />
+      );
   }
 }
