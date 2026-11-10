@@ -27,6 +27,10 @@ class AlertRepository(Protocol):
         """Used by `alert_expiry`."""
         ...
 
+    def list_by_session(self, session_id: str) -> list[Alert]:
+        """Alerts delivered to that driver session, by `created_at` (driver_demand)."""
+        ...
+
     def update_tracking(self, alert_id: str, tracking: AlertTracking) -> None: ...
 
     def delete(self, alert_id: str) -> bool:

@@ -253,3 +253,23 @@ def test_in_memory_database() -> None:
     repo = SqliteAlertRepository(engine)
     assert repo.add(_alert()) == _alert()
     engine.dispose()
+
+
+def _delivered(alert_id: str, device_hash: str, session_id: str | None, at: datetime) -> Alert:
+    return replace(
+        _alert(alert_id=alert_id, device_hash=device_hash, created_at=at),
+        status=AlertStatus.DELIVERED if session_id else AlertStatus.PENDING_DRIVER,
+        delivered_to=session_id,
+    )
+
+
+@pytest.mark.spec("driver_demand.AC-05")
+def test_list_by_session_returns_only_its_alerts_by_creation(repo: SqliteAlertRepository) -> None:
+    later = _delivered("later", HASH_A, "session-1", NOW + timedelta(seconds=1))
+    earlier = _delivered("earlier", HASH_B, "session-1", NOW)
+    repo.add(later)
+    repo.add(earlier)
+    repo.add(_delivered("other", "c" * 64, "session-2", NOW))
+    repo.add(_delivered("pending", "d" * 64, None, NOW))
+
+    assert [a.alert_id for a in repo.list_by_session("session-1")] == ["earlier", "later"]

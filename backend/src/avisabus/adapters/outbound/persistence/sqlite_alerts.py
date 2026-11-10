@@ -95,6 +95,9 @@ class SqliteAlertRepository:
     def list_all(self) -> list[Alert]:
         return self._all(select(alert_table))
 
+    def list_by_session(self, session_id: str) -> list[Alert]:
+        return self._all(select(alert_table).where(alert_table.c.delivered_to == session_id))
+
     def update_tracking(self, alert_id: str, tracking: AlertTracking) -> None:
         with self._engine.begin() as conn:
             conn.execute(

@@ -49,6 +49,12 @@ class FakeAlertRepository:
     def list_all(self) -> list[Alert]:
         return sorted(self.alerts.values(), key=lambda a: (a.created_at, a.alert_id))
 
+    def list_by_session(self, session_id: str) -> list[Alert]:
+        return sorted(
+            (a for a in self.alerts.values() if a.delivered_to == session_id),
+            key=lambda a: (a.created_at, a.alert_id),
+        )
+
     def update_tracking(self, alert_id: str, tracking: AlertTracking) -> None:
         """Like the SQLite one: nothing happens if the alert no longer exists."""
         if alert_id in self.alerts:
