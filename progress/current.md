@@ -2,22 +2,20 @@
 
 > Fichero vivo: lo reescribe el orquestador al final de cada sesión.
 
-**Fecha:** 2026-11-09
+**Fecha:** 2026-11-10
 **Fase:** Implementación — Bloque 4 (conductor)
-**Feature en curso:** `driver_demand` v1.0 — `implementing` (rama `feat/driver_demand`, apilada sobre `feat/driver_session`,
+**Feature en curso:** `driver_demand` v1.0 — `in_review` (rama `feat/driver_demand`, apilada sobre `feat/driver_session`,
 PR #53, y esta sobre la #52)
 
 ## Último paso
-Bloque 3 fusionado (PR #40…#44). PR #45 (cierre del bloque 3, CP-6) y PR #46 (specs del bloque 4, CP-1)
-fusionadas.
+`driver_demand` T-01…T-05 implementadas; `CI=1 ./init.sh verify --e2e` en verde (`progress/impl_driver_demand.md`).
 
 ## Siguiente paso
-Cada una con reviewer nuevo y PR contra `develop` sin fusionar:
-1. `realtime_events` T-06: APPROVED; PR #47.
-2. `passenger_alert_ui` T-09: APPROVED; PR #48 (apilada sobre la #47).
-3. Bloque 4 por orden: `driver_codes_cli`, `driver_session` (T-02 amplía la red: `list_lines`,
-   `departures`; autorizado), `driver_demand` (T-02 amplía el repositorio de avisos; autorizado),
-   `driver_ui`, `driver_gps_simulator`.
+Por orden, cada una con reviewer nuevo y PR contra `develop` sin fusionar:
+1. `driver_demand`: revisión (ciclo 1).
+2. `driver_ui`.
+3. `driver_gps_simulator`.
+Después, CP-6 del bloque 4 (persona). Orden de fusión: #52, #53 y luego las `driver_*`.
 
 ## Pendiente para specs futuras
 - **driver_session v1.2 (decisión de la persona):** N-05 el umbral de 150 m solo se cumple con la semilla del test:
