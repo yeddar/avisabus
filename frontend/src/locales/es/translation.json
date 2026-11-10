@@ -173,5 +173,71 @@
     "clear": "Borrar mis necesidades",
     "saved": "Necesidades guardadas",
     "cleared": "Necesidades borradas"
+  },
+  "driver": {
+    "login": {
+      "title": "Acceso de conductor",
+      "code": "Código de acceso",
+      "enter": "Entrar",
+      "invalid": "Código no válido",
+      "locked_one": "Demasiados intentos. Inténtalo dentro de {{count}} minuto.",
+      "locked_other": "Demasiados intentos. Inténtalo dentro de {{count}} minutos."
+    },
+    "pick": {
+      "line": "Elige la línea",
+      "direction": "Elige el sentido",
+      "departure": "Elige la salida",
+      "lineLabel": "Línea {{line}}",
+      "taken": "Ya en servicio",
+      "back": "Volver",
+      "takenNow": "Esa salida ya la lleva otro conductor",
+      "empty": "No hay salidas en este momento"
+    },
+    "shift": {
+      "title": "Turno del conductor"
+    },
+    "demand": {
+      "waiting_one": "<number>{{count}}</number> persona esperando",
+      "waiting_other": "<number>{{count}}</number> personas esperando",
+      "none": "Sin solicitudes en las próximas paradas",
+      "new": "Nueva",
+      "departure": "Salida a las {{time}}"
+    },
+    "needs": {
+      "RAMP_one": "{{count}} rampa",
+      "RAMP_other": "{{count}} rampas",
+      "EXTRA_TIME_one": "{{count}} más tiempo",
+      "EXTRA_TIME_other": "{{count}} más tiempo",
+      "SEAT_one": "{{count}} asiento",
+      "SEAT_other": "{{count}} asientos",
+      "VISUAL_one": "{{count}} visión",
+      "VISUAL_other": "{{count}} visión"
+    },
+    "places": "{{places}} plazas libres · {{seats}} asientos",
+    "places.unknown": "Ocupación no disponible",
+    "capacity": "Esperan {{waiting}} personas y quedan {{places}} plazas",
+    "seats": "Piden asiento {{requests}} personas y quedan {{seats}} asientos",
+    "gps": {
+      "waiting": "Esperando ubicación…",
+      "stale": "Posición desactualizada",
+      "denied": "Sin permiso de ubicación: no se pueden calcular las próximas paradas",
+      "retry": "Reintentar"
+    },
+    "offRoute": "No estás en el recorrido de esta línea",
+    "offline": "Sin conexión, reconectando…",
+    "finished": "Fin del recorrido",
+    "nextDeparture": "Elegir la siguiente salida",
+    "mute": "Silenciar tono",
+    "unmute": "Activar tono",
+    "end": "Finalizar turno",
+    "end.confirm": "¿Finalizar el turno?",
+    "end.yes": "Finalizar",
+    "end.no": "Seguir",
+    "closed": {
+      "ENDED": "Turno finalizado",
+      "IDLE": "Turno cerrado por inactividad",
+      "REVOKED": "Código revocado",
+      "REPLACED": "Has iniciado otro turno con este código"
+    }
   }
 }
