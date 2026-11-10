@@ -4,16 +4,16 @@
 
 **Fecha:** 2026-11-10
 **Fase:** Implementación — Bloque 4 (conductor)
-**Feature en curso:** `driver_ui` — siguiente (`driver_demand` v1.0 `done`, rama `feat/driver_demand`)
+**Feature en curso:** `driver_ui` v1.0 — `implementing` (rama `feat/driver_ui`, apilada sobre `feat/driver_demand`, PR #54)
 
 ## Último paso
-`driver_demand`: revisión ciclo 2 APPROVED; rama subida y PR contra `develop` sin fusionar.
+`driver_demand`: revisión ciclo 2 APPROVED; PR #54 contra `develop`, apilada sobre #53 y #52, sin fusionar.
 
 ## Siguiente paso
 Por orden, cada una con reviewer nuevo y PR contra `develop` sin fusionar:
 1. `driver_ui`.
 2. `driver_gps_simulator`.
-Después, CP-6 del bloque 4 (persona). Orden de fusión: #52, #53, `driver_demand` y luego las siguientes `driver_*`.
+Después, CP-6 del bloque 4 (persona). Orden de fusión: #52, #53, #54 y luego las siguientes `driver_*`.
 
 ## Pendiente para specs futuras
 - **driver_demand v1.0:** N-01 tests y `http/access_log.py:9` citan AC-12 para la IP; la regla es `driver_session.AC-15`.
