@@ -1,62 +1,79 @@
 # Revisión: driver_demand
-Ciclo: 1 · Fecha: 2026-11-10 · Agente: reviewer
+Ciclo: 2 · Fecha: 2026-11-10 · Agente: reviewer
 
-## Veredicto: CHANGES_REQUESTED
+## Veredicto: APPROVED
 
-Un único hallazgo bloqueante (B-01): AC-08 hereda el protocolo y los límites de `realtime_events`, y dos de esos comportamientos no tienen ningún test en `/ws/driver`. El código hace lo correcto; lo que falta es la evidencia. No hay defectos funcionales ni de privacidad.
+B-01 está resuelto: `/ws/driver` tiene tests de los cierres `4429` y `1001` que fallan si cambia el código de cierre, comprobado con mutaciones propias en una copia fuera del repositorio. Los 12 AC tienen evidencia válida y la verificación completa está en verde. Quedan abiertos los no bloqueantes N-01 a N-08, ninguno afecta al comportamiento exigido.
 
 ## Matriz AC → evidencia
 
+Rutas relativas a `backend/tests/`. Entre ciclos solo han cambiado `integration/test_driver_demand.py` (53 líneas añadidas) y ficheros de progreso; las líneas de ese test se han actualizado.
+
 | AC | Test(s) | Resultado | Nota |
 |---|---|---|---|
-| AC-01 | `test_driver_demand.py:352,391`; `test_deliver_alerts.py:186,208,218,249,256` | OK | E2E por `POST /alerts`: `DELIVERED`, `alert.delivered` al pasajero y vista nueva con paradas y necesidades. |
-| AC-02 | `test_driver_demand.py:401,423`; `test_deliver_alerts.py:67-131`; `test_demand_views.py:610`; `test_alert_repository.py:278,297` | OK | Cubre entrega al elegir, cambio de salida con `alert.registered` y aviso actualizado, misma salida y otro día de servicio. |
-| AC-03 | `test_driver_demand.py:449,473,486`; `test_deliver_alerts.py:139`; `test_demand_views.py:273,622` | OK | Integración con `ENDED` y `REPLACED`; unit parametrizado con los cuatro motivos. `IDLE` y `REVOKED` pasan por el mismo `CloseDriverSession`. Orden `session.closed` → `1000` comprobado. |
-| AC-04 | `test_demand_views.py:637`; `test_driver_demand.py:496,512` | OK | Cancelación y caducidad reales. |
-| AC-05 | `test_build_driver_view.py:111-189`; `test_demand.py:20-64`; `test_demand_views.py:402`; `test_driver_demand.py:377`; `test_alert_repository.py:266` | OK | Incluye aparición del viaje (`stop_sequence`), máximo 5 paradas, total solo de las mostradas y ausencia de datos del dispositivo. |
-| AC-06 | `test_demand.py:68,94`; `test_build_driver_view.py:199,212,223` | OK | Tabla de casos con límites (`=` no alerta) y sin dato. |
-| AC-07 | `test_build_driver_view.py:241`; `test_demand_views.py:459`; `test_driver_demand.py:221` | OK | `test_build_driver_view.py:253` cita AC-07 para un caso que AC-07 no describe (N-02). |
-| AC-08 | `test_driver_demand.py:209-349`; `test_main_driver.py:110` | **Parcial** | Verificados: `4408`, `4401`, `4400`, vista actual, vistas nuevas, `ping` de 25 s, aislamiento entre turnos, `1013`. **Sin test: `4429` y `1001` (B-01).** |
-| AC-09 | `test_demand_views.py:140-378,545-601,649`; `test_driver_demand.py:531`; `test_main_driver.py:118` | OK | Agrupación con `FakeClock` y contador, refresco de 15 s y arranque y parada de la tarea. |
-| AC-10 | `test_driver_demand.py:548,567`; `test_main_driver.py:111` | OK | Compara la respuesta con el mensaje del socket campo a campo. |
-| AC-11 | `test_driver_demand.py:573` | OK | Válido dentro de lo que permite la regla de no usar reloj real (N-04). |
-| AC-12 | `test_deliver_alerts.py:156,197`; `test_demand_views.py:307`; `test_driver_demand.py:594,620,635` | OK | Campos exactos con logger falso y logs capturados. Tres tests más citan AC-12 por la IP (N-01). |
+| AC-01 | `integration/test_driver_demand.py:405,444`; `unit/test_deliver_alerts.py:186,208,218,249,256` | OK | E2E por `POST /alerts`: `DELIVERED`, `alert.delivered` al pasajero y vista nueva. Mutación (sin `touch` al crear) detectada. |
+| AC-02 | `integration/test_driver_demand.py:454,476`; `unit/test_deliver_alerts.py:67-131`; `unit/test_demand_views.py:610`; `integration/test_alert_repository.py:278,297` | OK | Tres mutaciones detectadas: sin devolver al cambiar de salida, sin entregar pendientes y devolver con la misma salida. |
+| AC-03 | `integration/test_driver_demand.py:502,526,539`; `unit/test_deliver_alerts.py:139`; `unit/test_demand_views.py:273,622` | OK | Sin devolver al cerrar, sin `session.closed` y `1000`→`1001` detectadas. |
+| AC-04 | `unit/test_demand_views.py:637`; `integration/test_driver_demand.py:549,565` | OK | Notificador sin `touch` detectado por unit e integración. |
+| AC-05 | `unit/test_build_driver_view.py:111-189`; `unit/test_demand.py:20-64`; `unit/test_demand_views.py:402`; `integration/test_driver_demand.py:430`; `integration/test_alert_repository.py:266` | OK | Sin comparar `stop_sequence`, `total_waiting = 0` y `VISUAL` contando `SEAT` detectadas. |
+| AC-06 | `unit/test_demand.py:68,94`; `unit/test_build_driver_view.py:199,212,223` | OK | Límites `>`→`>=` de plazas y asientos, y alerta sin dato, detectados. |
+| AC-07 | `unit/test_build_driver_view.py:241`; `unit/test_demand_views.py:459`; `integration/test_driver_demand.py:223` | OK | Alerta o plazas con `service = null` detectadas. `unit/test_build_driver_view.py:253` cita AC-07 para otro caso (N-02). |
+| AC-08 | `integration/test_driver_demand.py:211-402`; `integration/test_main_driver.py:110` | OK | **B-01 cerrado.** `4429` en `:354` y `1001` en `:378`, este con un socket conectado y otro esperando el `hello`. Además: `4408`, `4401`, `4400`, vista actual, vistas nuevas, `ping` de 25 s, aislamiento entre turnos y `1013`. Sin test del orden suscripción → vista (N-03). |
+| AC-09 | `unit/test_demand_views.py:140-378,545-601,649`; `integration/test_driver_demand.py:584`; `integration/test_main_driver.py:118` | OK | Sin agrupación, refresco de turnos sin suscriptores, `touch` en toda posición, ignorar `off_route` o `gps` y refresco de 30 s, detectados. |
+| AC-10 | `integration/test_driver_demand.py:601,620`; `integration/test_main_driver.py:111` | OK | Compara la respuesta con el mensaje del socket; `free_seats` alterado detectado. |
+| AC-11 | `integration/test_driver_demand.py:626` | OK | Válido dentro de lo que permite la regla de no usar reloj real (N-04). Intervalo mínimo de 10 s detectado. |
+| AC-12 | `unit/test_deliver_alerts.py:156,197`; `unit/test_demand_views.py:307`; `integration/test_driver_demand.py:647,673,688` | OK | Log sin `session_id` y log con `needs` detectados. Tres tests más citan AC-12 por la IP (N-01). |
 
 ## Verificación ejecutada
 
 | Comando | Resultado |
 |---|---|
-| `CI=1 ./init.sh verify --e2e` | Salida 0, "verify: todo en verde". Ruff, mypy (148 ficheros), lint-imports (2 contratos), pytest 1844 passed / 12 deselected con cobertura 99,65 %, vitest 563 passed / 2 skipped, build y presupuesto JS 5 passed, Playwright + axe 126 passed, trazabilidad OK. |
-| `cd backend && uv run pytest -m slow` | 12 passed. Imprime `FAIL Required test coverage of 80%` (70,34 %) porque el umbral se aplica a un subconjunto de 12 tests; no es un fallo de la feature, la suite completa da 99,65 %. |
-| Cobertura de adaptadores en `test_driver_demand.py` + `test_main_driver.py` | `ws/driver.py` 95 %, sin cubrir 138, 143, 175, 195-196, 206. |
-| Mutaciones propias, en copia fuera del repositorio | 16 aplicadas, 12 detectadas. Sobreviven: `4429`→`1000` y `1001`→`1000` (B-01), suscribirse tras enviar la vista (N-03) y quitar la comparación de `finished` (equivalente en la práctica: `finished` cambia junto con las próximas paradas). |
-| Sonda con `uvicorn` real en local (`avisabus.main:app`) | Login, `GET …/view`, `/ws/driver?session_token=LEAKME`, token inválido (`4401`) y cierre del turno (`session.closed` y `1000`). En los logs no aparece el token, el código, `LEAKME` ni la IP del cliente; la única coincidencia de `127.0.0.1:` es la línea de arranque "Uvicorn running on". |
-| Pruebas de `4429` y `1001` en la copia | `4429`: pasa. `1001`: las dos conexiones registraron `ws.closed code=1001`; la prueba no terminó limpia por el desmontaje de mi propio arnés, no por la aplicación. |
+| `CI=1 ./init.sh verify --e2e` (puerto 4173 libre) | Salida 0, "verify: todo en verde". Ruff, mypy (148 ficheros), lint-imports, pytest 1846 passed / 12 deselected con cobertura 99,65 %, vitest 563 passed / 2 skipped, build y presupuesto JS 5 passed, Playwright + axe 126 passed, `feature_list.json` y trazabilidad OK. |
+| `git diff e0b4d91 HEAD --stat` y `git diff 2340148 HEAD -- backend/src` | Desde el ciclo 1 solo cambian `test_driver_demand.py` y progreso. Sin cambios en el código de producción. |
+| Mutaciones de B-01, en copia fuera del repositorio (`git archive HEAD`) | 7 de 7 detectadas, ver tabla. |
+| Mutaciones de los demás AC, en la misma copia | 30 aplicadas: 28 detectadas, 1 superviviente (N-03) y 1 equivalente que descarto (la salida inventada también da `service = null`). |
+| Repetición de los dos tests nuevos (`-k "4429 or 1001"`) | 30 de 30 ejecuciones en verde. |
 
-Sin frontend de interfaz en esta feature: i18n y accesibilidad no aplican (solo `openapi.json` y `schema.d.ts` generados). Sin variables de entorno nuevas. Sin `datetime.now()`, `time.time()` ni esperas reales en el diff; el único `asyncio.sleep` es `sleep(0)` en `settle()`.
+La copia usa el intérprete de `backend/.venv` con `PYTHONPATH` a su propio `src` (comprobado con `avisabus.__file__`), sin instalar nada ni usar la red. Al terminar, el `src` de la copia coincide con el del repositorio y `git status` solo muestra `qr/`.
+
+| Mutación de B-01 (`adapters/inbound/ws/driver.py`) | Test en rojo | Fallo |
+|---|---|---|
+| `:196`, `4429`→`1000` | `test_closes_with_4429_when_the_subscription_overflows` | `assert 1000 == 4429` |
+| `:196`, `4429`→`1001` | ídem | `assert 1001 == 4429` |
+| `:196`, `4429`→`1011` | ídem | `assert 1011 == 4429` |
+| `:143`, `1001`→`1000` (esperando el `hello`) | `test_closes_open_sockets_with_1001_when_the_application_stops` | `assert 1000 == 1001` |
+| `:143`, `1001`→`4408` (esperando el `hello`) | ídem | `assert 4408 == 1001` |
+| `:206`, `1001`→`1000` (socket conectado) | ídem | `assert 1000 == 1001` |
+| `:206`, `1001`→`4429` (socket conectado) | ídem | `assert 4429 == 1001` |
+
+No se repiten en este ciclo la sonda con `uvicorn` real ni `pytest -m slow`: el código de producción no ha cambiado desde el ciclo 1.
+
+Sin frontend de interfaz en esta feature: i18n y accesibilidad no aplican (solo `openapi.json` y `schema.d.ts` generados). Sin variables de entorno nuevas. Los tests nuevos no usan reloj real ni esperas reales, y sus sockets se esperan con el límite en vueltas del bucle de `tests/support/ws.py`.
 
 ## Hallazgos
 
 ### Bloqueantes
 
-**B-01 · AC-08 · `backend/src/avisabus/adapters/inbound/ws/driver.py:196`, `:143` y `:206` · `backend/tests/integration/test_driver_demand.py` (falta)**
-AC-08 exige "mismo protocolo y límites que `realtime_events`", y en esa spec el desbordamiento (`4429`, AC-09) y el cierre al detener la aplicación (`1001`, AC-11) se verifican por integración. En `/ws/driver` ningún test los ejercita: cambiar cualquiera de los dos códigos por `1000` deja la suite en verde. Los tests de `/ws/passenger` no los protegen, porque `_write` y `_first_message` de `ws/driver.py` son copias y no código compartido.
-Qué hacer: añadir a `test_driver_demand.py`, con la cita `driver_demand.AC-08`, un test de `4429` (`AVISABUS_EVENT_QUEUE_SIZE` bajo y varios eventos al canal `driver:<session_id>`) y otro de `1001` (socket conectado y socket esperando el `hello`, parada por el `lifespan`). Sirven de modelo `test_ws_passenger.py:307` y `:389`. No hace falta tocar código de producción.
+Ninguno.
+
+**B-01 (ciclo 1) · Resuelto.** `backend/tests/integration/test_driver_demand.py:354` y `:378`, ambos con la cita `driver_demand.AC-08`, ejercitan el desbordamiento real de la cola (`AVISABUS_EVENT_QUEUE_SIZE=2` y tres eventos al canal del turno) y la parada real del `lifespan` con los dos sockets abiertos. También comprueban que se liberan la conexión y la suscripción. Las tres rutas de cierre (`ws/driver.py:196`, `:143` y `:206`) fallan con cualquier código distinto.
 
 ### No bloqueantes
 
-- **N-01 · Trazabilidad · `test_driver_demand.py:665,674,682` y `http/access_log.py:9`:** citan `driver_demand.AC-12` para la IP en logs, pero AC-12 trata de los logs de entrega. La regla aplicable es `driver_session.AC-15` ("ningún log debe incluir… la IP").
-- **N-02 · Problema de spec menor (no requiere parar) · `application/build_driver_view.py:77-91`, `test_build_driver_view.py:253`:** si la salida desaparece de la red activa, la vista da `service = null`. Ninguna spec lo contempla; AC-07 habla de un turno sin salida elegida, y aquí sí la hay. Es una salida razonable y está anotada, pero las solicitudes entregadas a ese turno dejan de verse. Conviene fijarlo en la spec y que el test no cite AC-07.
-- **N-03 · AC-08 · `ws/driver.py:111`:** ningún test comprueba que la suscripción ocurre antes de construir la vista inicial. El orden del código es el correcto, pero una regresión abriría una ventana de vistas perdidas sin que falle nada.
-- **N-04 · AC-11 · `test_driver_demand.py:584,590`:** con `FakeClock` la resta `generated_at - created_at` es siempre 0, así que esa aserción no puede fallar. El test sí tiene valor por `receive_json_soon` y `FakeSleep`: con un intervalo mínimo de 10 s falla por sí solo. El caso peor (vista agrupada, ≤ 1 s) solo lo cubren los unit; la medida real corresponde a `nfr_validation`.
+Siguen abiertos y con la misma numeración; el código al que se refieren no ha cambiado.
+
+- **N-01 · Trazabilidad · `integration/test_driver_demand.py:718,727,735` y `http/access_log.py:9`:** citan `driver_demand.AC-12` para la IP en logs, pero AC-12 trata de los logs de entrega. La regla aplicable es `driver_session.AC-15` ("ningún log debe incluir… la IP").
+- **N-02 · Problema de spec menor (no requiere parar) · `application/build_driver_view.py:77-91`, `unit/test_build_driver_view.py:253`:** si la salida desaparece de la red activa, la vista da `service = null`. Ninguna spec lo contempla; AC-07 habla de un turno sin salida elegida, y aquí sí la hay. Es una salida razonable y está anotada, pero las solicitudes entregadas a ese turno dejan de verse. Conviene fijarlo en la spec y que el test no cite AC-07.
+- **N-03 · AC-08 · `ws/driver.py:111`:** ningún test comprueba que la suscripción ocurre antes de construir la vista inicial. La mutación que suscribe después de enviar la vista sigue sobreviviendo en este ciclo. El orden del código es el correcto, pero una regresión abriría una ventana de vistas perdidas sin que falle nada.
+- **N-04 · AC-11 · `integration/test_driver_demand.py:637,643`:** con `FakeClock` la resta `generated_at - created_at` es siempre 0, así que esa aserción no puede fallar. El test sí tiene valor por `receive_json_soon` y `FakeSleep`: con un intervalo mínimo de 10 s falla por sí solo. El caso peor (vista agrupada, ≤ 1 s) solo lo cubren los unit; la medida real corresponde a `nfr_validation`.
 - **N-05 · Ambigüedad entre AC-09 y design §3 · `adapters/outbound/drivers/demand_listener.py:49-69`:** `distance_m` cambia con cada posición y no dispara `touch`; se actualiza con el refresco de 15 s (`demand_views.py:171-173`). Es coherente con design §3, pero AC-09 dice "próximas paradas" sin precisar. Conviene aclararlo.
 - **N-06 · AC-04, carrera acotada, código de `alert_expiry` · `application/watch_passages.py:73,84` y `application/expire_alert.py:47`:** `WatchPassages` lee los avisos antes de esperar al SAE. Si uno pasa de `PENDING_DRIVER` a `DELIVERED` en esa espera y caduca, no se llama a `alert_removed`. La vista se corrige sola en ≤ 15 s con el refresco. Ninguna tarea autoriza tocar ese módulo; lo dejo anotado.
-- **N-07 · Mantenibilidad · `ws/driver.py:28-43` y `:121-208`:** importa nombres privados de `ws/passenger.py` y duplica `_first_message`, `_forward` y `_write`. Esta duplicación es la causa de B-01. Propuesta para una tarea futura: un `ws/protocol.py` común.
+- **N-07 · Mantenibilidad · `ws/driver.py:28-43` y `:121-208`:** importa nombres privados de `ws/passenger.py` y duplica `_first_message`, `_forward` y `_write`. Propuesta para una tarea futura: un `ws/protocol.py` común.
 - **N-08 · Fuera de esta feature:** la IP sigue escrita en `uvicorn.error` para `/ws/passenger` (código de `realtime_events`). Lo anotó el implementer y corresponde decidirlo a la persona.
 
 ### Desviaciones respecto al design
 
-Ninguna contradice la spec ni inventa un contrato público. Conviene reflejarlas en `design.md` §2-§3 en la próxima revisión de la spec.
+Sin cambios desde el ciclo 1: el código de producción es el mismo. Ninguna contradice la spec ni inventa un contrato público. Conviene reflejarlas en `design.md` §2-§3 en la próxima revisión de la spec.
 
 | Desviación | Juicio |
 |---|---|
@@ -72,7 +89,7 @@ Ninguna contradice la spec ni inventa un contrato público. Conviene reflejarlas
 
 ### Alcance: cambios en código de otras features
 
-Sin cambios fuera del alcance. `qr/` y `.env` no se han tocado.
+Diff respecto a `origin/feat/driver_session`. Sin cambios fuera del alcance. El ciclo 2 solo añade tests a `test_driver_demand.py` y actualiza ficheros de progreso y `feature_list.json`. `qr/` y `.env` no se han tocado.
 
 | Fichero | Autorización | Juicio |
 |---|---|---|
@@ -90,9 +107,9 @@ Sin cambios fuera del alcance. `qr/` y `.env` no se han tocado.
 
 | Bloque | Resultado |
 |---|---|
-| Contrato | OK, salvo la evidencia de B-01. |
+| Contrato | OK. Los cierres de `realtime_events` en `/ws/driver` ya tienen evidencia. |
 | Arquitectura | OK: lint-imports en verde, dominio sin I/O, sin reloj real. |
-| Tests | OK, salvo B-01. Sin red ni esperas reales. |
-| Privacidad y seguridad | OK. `ws.*` sin `session_id`; `alert.delivered` y `alert.undelivered` solo con los campos del design; la vista no se registra; excepciones solo por tipo; sin IP, token ni query string en los logs de `uvicorn` para `/ws/driver` y `GET …/view`. |
+| Tests | OK. Sin red ni esperas reales; los tests de B-01 no son tautológicos (mutaciones detectadas) y son estables (30 de 30). |
+| Privacidad y seguridad | OK. `ws.*` sin `session_id`; `alert.delivered` y `alert.undelivered` solo con los campos del design; la vista no se registra; excepciones solo por tipo. La comprobación con `uvicorn` real es del ciclo 1 y el código no ha cambiado. |
 | Frontend | No aplica. |
 | Convenciones | OK: glosario y Conventional Commits con ámbito. |

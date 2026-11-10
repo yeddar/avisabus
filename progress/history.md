@@ -512,3 +512,7 @@
 - Revisión ciclo 2 (v1.2): APPROVED (25/26 mutantes); N-05: el umbral de 150 m depende de la semilla.
 
 ## 2026-11-09 · driver_session PR #53 abierta · driver_demand · spec_approved → implementing
+
+## 2026-11-10 · driver_demand · implementing → in_review → done
+- Ciclo 1 CHANGES_REQUESTED (B-01: AC-08 sin tests de cierre `4429` y `1001` en `/ws/driver`); ciclo 2 APPROVED.
+- `CI=1 ./init.sh verify --e2e` en verde: 1846 backend, 563 Vitest, 126 e2e. Abiertos N-01…N-08.

@@ -4,20 +4,25 @@
 
 **Fecha:** 2026-11-10
 **Fase:** Implementación — Bloque 4 (conductor)
-**Feature en curso:** `driver_demand` v1.0 — `in_review`, ciclo de revisión 2 (rama `feat/driver_demand`, apilada sobre `feat/driver_session`,
-PR #53, y esta sobre la #52)
+**Feature en curso:** `driver_ui` — siguiente (`driver_demand` v1.0 `done`, rama `feat/driver_demand`)
 
 ## Último paso
-`driver_demand`: B-01 corregido con los tests de cierre `4429` y `1001` de `/ws/driver`; `CI=1 ./init.sh verify --e2e` en verde.
+`driver_demand`: revisión ciclo 2 APPROVED; rama subida y PR contra `develop` sin fusionar.
 
 ## Siguiente paso
 Por orden, cada una con reviewer nuevo y PR contra `develop` sin fusionar:
-1. `driver_demand`: revisión nueva (ciclo 2).
-2. `driver_ui`.
-3. `driver_gps_simulator`.
-Después, CP-6 del bloque 4 (persona). Orden de fusión: #52, #53 y luego las `driver_*`.
+1. `driver_ui`.
+2. `driver_gps_simulator`.
+Después, CP-6 del bloque 4 (persona). Orden de fusión: #52, #53, `driver_demand` y luego las siguientes `driver_*`.
 
 ## Pendiente para specs futuras
+- **driver_demand v1.0:** N-01 tests y `http/access_log.py:9` citan AC-12 para la IP; la regla es `driver_session.AC-15`.
+  N-02 (spec) salida que desaparece de la red da `service = null`, sin contemplar en ninguna spec. N-03 sin test de
+  que la suscripción de `/ws/driver` ocurre antes de la vista inicial (`ws/driver.py:111`). N-04 AC-11 con `FakeClock`:
+  latencia real → `nfr_validation`. N-05 (spec) AC-09 no precisa si `distance_m` cuenta (hoy, refresco de 15 s). N-06
+  carrera acotada en `watch_passages.py:73,84` (se corrige en ≤ 15 s). N-07 `ws/driver.py` usa privados de
+  `ws/passenger.py`; proponer `ws/protocol.py`. N-08 (persona) la IP sigue en `uvicorn.error` para `/ws/passenger`,
+  igual que `/alerts`. Reflejar en `design.md` las desviaciones juzgadas y en `tasks.md` el filtro de `http/access_log.py`.
 - **driver_session v1.2 (decisión de la persona):** N-05 el umbral de 150 m solo se cumple con la semilla del test:
   con semillas 1–20 a σ 10 m, 5/20 correlado (hasta 422 m por detrás, giros en U, se recupera solo) y 1/20
   independiente; con paradas simuladas, 12/20 y 19/20. Limitación aceptada por el reviewer; volver a medir con

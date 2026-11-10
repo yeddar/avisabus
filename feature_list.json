@@ -427,7 +427,7 @@
       "order": 18,
       "block": 4,
       "title": "Demanda del conductor: snapshot, entrega de avisos y alerta de capacidad",
-      "status": "in_review",
+      "status": "done",
       "depends_on": [
         "realtime_events",
         "alert_create",
@@ -446,7 +446,7 @@
       "spec": "specs/driver_demand/",
       "needs_exploration": false,
       "review_cycles": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "driver_ui",
