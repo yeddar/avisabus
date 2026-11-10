@@ -413,7 +413,7 @@ def test_the_application_starts_and_stops_both_tasks(tmp_path: Path) -> None:
         "same publisher: True",
         "shared expiry: True",
         "seen from the watcher: True",
-        "notifier: NoopDriverViewNotifier",
+        "notifier: DemandViewNotifier",
         "running: ['alerts.expiry_ticker', 'alerts.passage_watcher']",
         "running: []",
     ]

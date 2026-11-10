@@ -8,9 +8,13 @@ from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
 
 import avisabus
-from avisabus.adapters.inbound.http.access_log import mask_driver_addresses
+from avisabus.adapters.inbound.http.access_log import (
+    mask_driver_addresses,
+    mask_driver_socket_addresses,
+)
 from avisabus.adapters.inbound.http.container import (
     AlertUseCases,
+    DriverDemand,
     DriverUseCases,
     PositionUseCases,
     Realtime,
@@ -24,6 +28,7 @@ from avisabus.adapters.inbound.http.routes import health
 from avisabus.adapters.inbound.http.routes import position as position_routes
 from avisabus.adapters.inbound.http.routes import shapes as shapes_routes
 from avisabus.adapters.inbound.http.routes import stops as stops_routes
+from avisabus.adapters.inbound.ws import driver as driver_socket
 from avisabus.adapters.inbound.ws import passenger as passenger_socket
 from avisabus.adapters.inbound.ws.connections import ConnectionRegistry
 from avisabus.config import Settings
@@ -45,6 +50,7 @@ def create_app(
     realtime: Realtime | None = None,
     alerts: AlertUseCases | None = None,
     drivers: DriverUseCases | None = None,
+    demand: DriverDemand | None = None,
     *,
     schema_only: bool = False,
 ) -> FastAPI:
@@ -55,7 +61,9 @@ def create_app(
     lifespan, so open sockets are closed with `1001` when the application stops
     (realtime_events); `alerts` adds the alert endpoints (alert_create), which need `realtime`
     for the device header and the events, and answers them with `Cache-Control: no-store`;
-    `drivers` adds the driver endpoints (driver_session), also with `no-store`.
+    `drivers` adds the driver endpoints (driver_session), also with `no-store`; `demand` adds
+    `/ws/driver` and `GET /driver/sessions/current/view` (driver_demand), which need `realtime` and
+    `drivers`.
 
     With `schema_only`, every router is registered without its dependencies, so the app can only
     describe itself (`openapi_document`); its endpoints must not be called."""
@@ -92,6 +100,13 @@ def create_app(
         app.state.driver_use_cases = drivers
     if drivers is not None or schema_only:
         app.include_router(driver_routes.router, prefix=API_PREFIX)
+    if demand is not None:
+        app.state.driver_demand = demand
+        app.state.driver_socket = demand.socket
+        app.include_router(driver_socket.router)  # no /api/v1 (docs/architecture.md §7)
+        mask_driver_socket_addresses(driver_socket.DRIVER_ENDPOINT)
+    if demand is not None or schema_only:
+        app.include_router(driver_routes.view_router, prefix=API_PREFIX)
     return app
 
 

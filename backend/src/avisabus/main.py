@@ -19,6 +19,7 @@ from avisabus.adapters.inbound.http.container import (
     build_alert_expiry,
     build_alert_snapshots,
     build_alert_use_cases,
+    build_driver_demand,
     build_driver_use_cases,
     build_position_use_cases,
     build_realtime,
@@ -33,7 +34,11 @@ from avisabus.adapters.outbound.persistence.sqlite_occupancy_override import (
 )
 from avisabus.adapters.outbound.sae.compose import build_arrivals_source
 from avisabus.background.alert_tasks import start_alert_tasks, stop_tasks
-from avisabus.background.driver_tasks import start_driver_tasks
+from avisabus.background.driver_tasks import (
+    VIEW_REFRESH_INTERVAL,
+    start_demand_tasks,
+    start_driver_tasks,
+)
 from avisabus.background.sae_stats import run_sae_stats
 from avisabus.config import (
     Settings,
@@ -81,20 +86,28 @@ position_use_cases = build_position_use_cases(stop_use_cases, engine, clock)
 # alerts; the connection registry runs in the lifespan that `create_app` composes with this one
 # (realtime_events, alert_create).
 realtime = build_realtime(settings, clock, snapshots=build_alert_snapshots(engine))
+# Delivery of the requests and views of the drivers (driver_demand), wired into the alerts and
+# the shifts below.
+driver_demand = build_driver_demand(settings, engine, clock, occupancy_sensor, realtime)
 # The alerts validate the bus with the stops' `GetStopArrivals` (same SAE cache) and publish their
 # confirmation (alert_create) and cancellation (alert_cancel) through the real-time publisher.
-alert_use_cases = build_alert_use_cases(settings, engine, clock, stop_use_cases, realtime.publisher)
+alert_use_cases = build_alert_use_cases(
+    settings, engine, clock, stop_use_cases, realtime.publisher, driver_demand
+)
 # Expiry of the alerts (alert_expiry): the passage watcher reads the stops through the same
 # `GetStopArrivals` (and SAE cache); `alert.expired` goes through the real-time publisher.
-alert_expiry = build_alert_expiry(settings, engine, clock, stop_use_cases, realtime.publisher)
-# Shifts of the drivers (driver_session); nobody listens to them until `driver_demand`.
-driver_use_cases = build_driver_use_cases(settings, engine, clock)
+alert_expiry = build_alert_expiry(
+    settings, engine, clock, stop_use_cases, realtime.publisher, driver_demand
+)
+# Shifts of the drivers (driver_session), listened to by `driver_demand`.
+driver_use_cases = build_driver_use_cases(settings, engine, clock, driver_demand.listener)
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     """Runs the `sae.stats` task (sae_arrivals_source AC-13), the alert expiry tasks (alert_expiry
-    AC-10) and the driver session reaper (driver_session AC-13), and closes the SAE HTTP client."""
+    AC-10), the driver session reaper (driver_session AC-13) and the refresh of the driver views
+    (driver_demand AC-09), and closes the SAE HTTP client."""
     stats_task = asyncio.create_task(run_sae_stats(arrivals_source), name="sae.stats")
     expiry_tasks = start_alert_tasks(
         watch_tick=alert_expiry.watch_passages.tick,
@@ -108,10 +121,16 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         interval=driver_use_cases.reaper_interval,
         logger=structlog.get_logger(BACKGROUND_LOGGER),
     )
+    demand_tasks = start_demand_tasks(
+        refresh_tick=driver_demand.views.refresh_all,
+        interval=VIEW_REFRESH_INTERVAL,
+        logger=structlog.get_logger(BACKGROUND_LOGGER),
+    )
     try:
         yield
     finally:
-        await stop_tasks([*expiry_tasks, *driver_tasks])
+        await stop_tasks([*expiry_tasks, *driver_tasks, *demand_tasks])
+        await driver_demand.views.aclose()
         stats_task.cancel()
         with suppress(asyncio.CancelledError):
             await stats_task
@@ -126,4 +145,5 @@ app = create_app(
     realtime=realtime,
     alerts=alert_use_cases,
     drivers=driver_use_cases,
+    demand=driver_demand,
 )
