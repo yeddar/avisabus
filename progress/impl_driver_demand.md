@@ -1,5 +1,5 @@
 # Implementación: driver_demand
-Spec: specs/driver_demand/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Agente: implementer · Fecha: 2026-11-10
+Spec: specs/driver_demand/ (v1.0, APPROVED) · Ciclo de revisión: 1 · Agente: implementer · Fecha: 2026-11-10
 
 ## Tareas
 - [x] T-01 `DriverView`, `stop_demand`, `capacity_flags` y `BuildDriverView` (AC-05, AC-06, AC-07) (commit 5f972e0)
@@ -7,6 +7,11 @@ Spec: specs/driver_demand/ (v1.0, APPROVED) · Ciclo de revisión: 0 · Agente: 
 - [x] T-03 `DemandViews`, `DemandSessionListener`, `DemandViewNotifier` y refresco de 15 s (AC-04, AC-09) (commit 5c7e466)
 - [x] T-04 `/ws/driver`, `GET /sessions/current/view` y composición (AC-01 a AC-04, AC-08, AC-10, AC-11) (commit bbf67d3)
 - [x] T-05 Contrato del frontend regenerado (`npm run gen:api`) y verificación completa (commit 8c9e191)
+
+### Ciclo de revisión 1
+- [x] B-01 (T-04, AC-08) Tests de `/ws/driver` para el cierre `4429` por desbordamiento y `1001` por parada de la aplicación, con el socket conectado y con el socket esperando el `hello` (commit 382afae)
+
+Sin cambios en el código de producción: los dos tests pasan con él, como indicó el reviewer. Los no bloqueantes N-01 a N-08 quedan fuera de este ciclo.
 
 ## Decisiones locales
 
@@ -101,6 +106,30 @@ Ninguno.
   siguientes se agrupan; con `touch` constantes el conductor recibe una por segundo, como pide AC-09.
 
 ## Verificación
+
+### Ciclo de revisión 1
+
+`CI=1 ./init.sh verify --e2e` (puerto 4173 libre), salida 0, "verify: todo en verde":
+
+| Paso | Resultado |
+|---|---|
+| Backend: `ruff format --check`, `ruff check`, `mypy`, `lint-imports` | OK (148 ficheros; 2 contratos respetados) |
+| Backend: `pytest` | 1846 passed, 12 deselected; cobertura `domain` + `application` 99,65 % |
+| Frontend: `format:check`, `lint`, `typecheck` | OK |
+| Frontend: `vitest` | 563 passed, 2 skipped (55 ficheros) |
+| Frontend: `build` + presupuesto JS | OK (5 passed) |
+| Frontend: Playwright + axe | 126 passed |
+| Trazabilidad AC → test y esquema de `feature_list.json` | OK |
+
+Detección de fallos de los tests de B-01: cada código de cierre de `ws/driver.py` se cambió temporalmente por `1000` y después se revirtió (`git diff` vacío en ese fichero).
+
+| Mutación | Test en rojo | Fallo |
+|---|---|---|
+| `:196`, `OVERFLOWED` → `1000` | `test_closes_with_4429_when_the_subscription_overflows` | `assert 1000 == 4429` |
+| `:143`, `GOING_AWAY` → `1000` (esperando el `hello`) | `test_closes_open_sockets_with_1001_when_the_application_stops` | `assert 1000 == 1001` |
+| `:206`, `GOING_AWAY` → `1000` (socket conectado) | `test_closes_open_sockets_with_1001_when_the_application_stops` | `assert 1000 == 1001` |
+
+### Ciclo de revisión 0
 
 `CI=1 ./init.sh verify --e2e` (puerto 4173 libre), salida 0, "verify: todo en verde":
 
