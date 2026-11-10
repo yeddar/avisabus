@@ -4,15 +4,15 @@
 
 **Fecha:** 2026-11-10
 **Fase:** Implementación — Bloque 4 (conductor)
-**Feature en curso:** `driver_demand` v1.0 — `in_review` (rama `feat/driver_demand`, apilada sobre `feat/driver_session`,
+**Feature en curso:** `driver_demand` v1.0 — `implementing`, ciclo de revisión 1 (rama `feat/driver_demand`, apilada sobre `feat/driver_session`,
 PR #53, y esta sobre la #52)
 
 ## Último paso
-`driver_demand` T-01…T-05 implementadas; `CI=1 ./init.sh verify --e2e` en verde (`progress/impl_driver_demand.md`).
+`driver_demand`: revisión ciclo 1 CHANGES_REQUESTED por B-01 (AC-08 sin tests de cierre `4429` y `1001` en `/ws/driver`).
 
 ## Siguiente paso
 Por orden, cada una con reviewer nuevo y PR contra `develop` sin fusionar:
-1. `driver_demand`: revisión (ciclo 1).
+1. `driver_demand`: tests de B-01 y revisión nueva (ciclo 2).
 2. `driver_ui`.
 3. `driver_gps_simulator`.
 Después, CP-6 del bloque 4 (persona). Orden de fusión: #52, #53 y luego las `driver_*`.
