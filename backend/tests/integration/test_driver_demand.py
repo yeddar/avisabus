@@ -36,6 +36,8 @@ from avisabus.adapters.inbound.http.container import (
     build_stop_use_cases,
 )
 from avisabus.adapters.outbound.persistence.sqlite_network import SqliteNetworkRepository
+from avisabus.application.demand_views import driver_channel
+from avisabus.domain.models.events import Event
 from tests.support.alerts_app import DEVICE, OTHER_DEVICE, body_for, headers
 from tests.support.driver_app import DRIVER_API, IssuedCode, bearer, issue_code
 from tests.support.fake_clock import FakeClock
@@ -347,6 +349,57 @@ def test_the_socket_counts_against_the_connection_limit(
     ):
         _passenger(first)
         _assert_closed(second, 1013)
+
+
+@pytest.mark.spec("driver_demand.AC-08")
+def test_closes_with_4429_when_the_subscription_overflows(
+    mini_feed: Path, tmp_path: Path, clock: FakeClock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("AVISABUS_EVENT_QUEUE_SIZE", "2")
+    with _running(mini_feed, tmp_path, clock) as built:
+        started = built.client.post(SESSIONS, json={"code": built.code().plain}).json()
+        channel = driver_channel(started["session_id"])
+
+        def publish_all() -> None:
+            for n in range(3):
+                built.realtime.publisher.publish(
+                    channel, Event(type="driver.view", payload={"n": n})
+                )
+
+        with built.client.websocket_connect(ENDPOINT) as ws:
+            _hello(ws, started["session_token"])
+            assert built.client.portal is not None
+            built.client.portal.call(publish_all)  # all in one go: the socket cannot keep up
+            _assert_closed(ws, 4429)
+        wait_until_closed(built.client, built.realtime.registry)
+        assert built.realtime.publisher.subscriber_count() == 0
+
+
+@pytest.mark.spec("driver_demand.AC-08")
+def test_closes_open_sockets_with_1001_when_the_application_stops(
+    mini_feed: Path, tmp_path: Path, clock: FakeClock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+
+    async def already_stopped() -> None:
+        return None
+
+    with _running(mini_feed, tmp_path, clock) as built:
+        client = built.client
+        with (
+            client.websocket_connect(ENDPOINT) as connected,
+            client.websocket_connect(ENDPOINT) as waiting_hello,
+        ):
+            _hello(connected, built.login())
+
+            assert client.portal is not None
+            client.portal.call(client.wait_shutdown)  # the lifespan stops with both sockets open
+            # Before the assertions: leaving TestClient must not wait for the lifespan again.
+            monkeypatch.setattr(client, "wait_shutdown", already_stopped)
+
+            _assert_closed(connected, 1001)
+            _assert_closed(waiting_hello, 1001)
+            assert built.realtime.registry.open_connections == 0
+            assert built.realtime.publisher.subscriber_count() == 0
 
 
 @pytest.mark.spec("driver_demand.AC-01")
