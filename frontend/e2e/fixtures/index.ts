@@ -4,9 +4,9 @@
  * longer match. Data from the examples of specs/stop_arrivals_api/design.md §3 (stop 508).
  *
  * Position and shape (passenger_map_view): the same files as src/test/fixtures/api — answers of
- * the real backend over `gtfs_mini` and the `stop_508_peak` replay (line 93, direction 0, shape
- * 994_488_2271) with the dates moved to 2026-11-04 08:40 in València; `position-not-started` and
- * `position-no-arrival` are derived from `position-en-route`.
+ * the real backend, verbatim (line 93, direction 0, shape 994_488_2271); the positions (v1.3,
+ * `distance_to_stop_m` in real metres) with the SAE replayed and the clock fixed on 2026-11-04 (see
+ * src/test/fixtures/api/index.ts).
  *
  * Alert (passenger_alert_ui): the example of specs/alert_create/design.md §3 for the 93 bus of
  * `arrivals-realtime` that arrives in 4 min (trip 12345).

@@ -150,7 +150,7 @@ describe('MapPage', () => {
     const map = screen.getByTestId('bus-map');
     expect(summary.compareDocumentPosition(map) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(summaryText()).toBe(
-      'El autobús está a 3,4 km de tu parada, a 3 paradas. Próxima parada: Cid - Hospital General. Llega en 5 minutos.',
+      'El autobús está a 844 m de tu parada, a 2 paradas. Próxima parada: Cid - Josep Maestre. Llega en 5 minutos.',
     );
     expect(within(summary).getByText('Posición estimada')).toBeVisible();
   });
@@ -178,14 +178,14 @@ describe('MapPage', () => {
     await flush();
 
     expect(summaryText()).toBe(
-      'El autobús aún no ha salido de la primera parada del recorrido. Llega a las 08:58.',
+      'El autobús aún no ha salido de la primera parada del recorrido. Llega a las 05:57.',
     );
     expect(screen.getByText('Posición según horario')).toBeVisible();
 
     shape.resolve(ok(SHAPE_93()));
     await flush();
     expect(summaryText()).toBe(
-      'El autobús aún no ha salido de Avinguda del Cid. Llega a las 08:58.',
+      'El autobús aún no ha salido de Avinguda del Cid. Llega a las 05:57.',
     );
   });
 
@@ -345,7 +345,7 @@ describe('MapPage', () => {
 
     expect(calls('/position')).toBe(4);
     expect(screen.queryByRole('button', { name: 'Reintentar' })).toBeNull();
-    expect(summaryText()).toMatch(/^El autobús está a 3,4 km/);
+    expect(summaryText()).toMatch(/^El autobús está a 844 m/);
     expect(politeRegion()).toHaveTextContent('Datos actualizados');
   });
 
@@ -361,7 +361,7 @@ describe('MapPage', () => {
 
     expect(screen.getByText('Datos de las 08:40, pueden no estar actualizados')).toBeVisible();
     expect(screen.getByRole('button', { name: 'Reintentar' })).toBeVisible();
-    expect(summaryText()).toMatch(/^El autobús está a 3,4 km/);
+    expect(summaryText()).toMatch(/^El autobús está a 844 m/);
     expect(screen.getByTestId('bus-map')).toBeInTheDocument();
     // Automatic refreshes never announce, not even when they fail.
     expect(politeRegion()).toHaveTextContent('');
@@ -391,7 +391,7 @@ describe('MapPage', () => {
     expect(calls('/shapes/')).toBe(3);
     expect(screen.getByText('No se han podido cargar los datos.')).toBeInTheDocument();
     // The position is still shown, and the map without the shape.
-    expect(summaryText()).toMatch(/^El autobús está a 3,4 km/);
+    expect(summaryText()).toMatch(/^El autobús está a 844 m/);
     expect(mapProps.last?.model.line.coords).toEqual([]);
 
     shapeReply = () => ok(SHAPE_93());

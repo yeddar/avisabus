@@ -2,33 +2,33 @@
   "stop": {
     "stop_id": "508",
     "name": "Parc de l'Oest - Enguera",
-    "lat": 39.467941,
-    "lon": -0.395681
+    "lat": 39.4679406744483,
+    "lon": -0.395681359902679
   },
   "line": "93",
   "direction_id": 0,
   "headsign": "Passeig Marítim - Hospital Malva-rosa",
   "source": "SCHEDULED",
   "status": "NOT_STARTED",
-  "generated_at": "2026-11-04T07:40:00Z",
+  "generated_at": "2026-11-04T04:40:00Z",
   "refresh_after_s": 20,
   "arrival": {
     "kind": "CLOCK_TIME",
     "minutes": null,
-    "arrival_at": "2026-11-04T07:58:00Z",
+    "arrival_at": "2026-11-04T04:57:40Z",
     "destination": "Passeig Marítim - Hospital Malva-rosa",
     "sae_destination": null
   },
   "vehicle": {
-    "trip_id": "93_994_561_488_2271_2_123",
+    "trip_id": "93_994_561_488_2271_2_002",
     "service_date": "2026-11-04"
   },
   "shape_id": "994_488_2271",
   "position": {
     "lat": 39.469657,
     "lon": -0.416091,
-    "bearing_deg": 257.4,
-    "distance_to_stop_m": 4251,
+    "bearing_deg": 257.3558816578534,
+    "distance_to_stop_m": 1839,
     "stops_away": 5,
     "next_stop": {
       "stop_id": "495",

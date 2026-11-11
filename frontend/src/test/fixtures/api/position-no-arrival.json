@@ -2,8 +2,8 @@
   "stop": {
     "stop_id": "508",
     "name": "Parc de l'Oest - Enguera",
-    "lat": 39.467941,
-    "lon": -0.395681
+    "lat": 39.4679406744483,
+    "lon": -0.395681359902679
   },
   "line": "93",
   "direction_id": 0,

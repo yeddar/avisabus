@@ -2,8 +2,8 @@
   "stop": {
     "stop_id": "508",
     "name": "Parc de l'Oest - Enguera",
-    "lat": 39.467941,
-    "lon": -0.395681
+    "lat": 39.4679406744483,
+    "lon": -0.395681359902679
   },
   "line": "93",
   "direction_id": 0,
@@ -20,19 +20,19 @@
     "sae_destination": "Pass. Marítim"
   },
   "vehicle": {
-    "trip_id": "93_994_561_488_2271_2_122",
+    "trip_id": "93_994_561_488_2271_2_023",
     "service_date": "2026-11-04"
   },
   "shape_id": "994_488_2271",
   "position": {
-    "lat": 39.469658,
-    "lon": -0.409893,
-    "bearing_deg": 90.9,
-    "distance_to_stop_m": 3403,
-    "stops_away": 3,
+    "lat": 39.469549,
+    "lon": -0.405244,
+    "bearing_deg": 100.94859961754514,
+    "distance_to_stop_m": 844,
+    "stops_away": 2,
     "next_stop": {
-      "stop_id": "700",
-      "name": "Cid - Hospital General"
+      "stop_id": "506",
+      "name": "Cid - Josep Maestre"
     }
   }
 }

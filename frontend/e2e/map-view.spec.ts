@@ -49,7 +49,7 @@ const TEXTS = {
     zoomOut: 'Alejar',
     attribution: '© colaboradores de OpenStreetMap',
     enRoute:
-      'El autobús está a 3,4 km de tu parada, a 3 paradas. Próxima parada: Cid - Hospital General. Llega en 5 minutos.',
+      'El autobús está a 844 m de tu parada, a 2 paradas. Próxima parada: Cid - Josep Maestre. Llega en 5 minutos.',
   },
   ca: {
     title: `Línia 93 cap a ${DESTINATION}`,
@@ -63,7 +63,7 @@ const TEXTS = {
     zoomOut: 'Allunya',
     attribution: "© col·laboradors d'OpenStreetMap",
     enRoute:
-      "L'autobús està a 3,4 km de la teua parada, a 3 parades. Pròxima parada: Cid - Hospital General. Arriba en 5 minuts.",
+      "L'autobús està a 844 m de la teua parada, a 2 parades. Pròxima parada: Cid - Josep Maestre. Arriba en 5 minuts.",
   },
 } as const;
 
@@ -229,7 +229,10 @@ for (const [lang, locale] of [
       await expect(map.locator('.leaflet-route-pane path')).toHaveAttribute('stroke', '#e50000');
       await expect(map.getByText(texts.yourStop, { exact: true })).toBeVisible();
       await expect(map.getByText(texts.bus, { exact: true })).toBeVisible();
-      await expect(map.locator('[data-bus-arrow]')).toHaveAttribute('style', /rotate\(90\.9deg\)/);
+      await expect(map.locator('[data-bus-arrow]')).toHaveAttribute(
+        'style',
+        /rotate\(100\.94859961754514deg\)/,
+      );
 
       const attribution = map.getByRole('link', { name: texts.attribution });
       await expect(attribution).toBeVisible();
@@ -263,7 +266,7 @@ test.describe('map view states', () => {
 
     const summary = page.getByRole('region', { name: 'Dónde está el autobús' });
     await expect(summary).toContainText(
-      'El autobús aún no ha salido de Avinguda del Cid. Llega a las 08:58.',
+      'El autobús aún no ha salido de Avinguda del Cid. Llega a las 05:57.',
     );
     await expect(summary.getByText('Posición según horario')).toBeVisible();
     await expectMapDrawn(page, 'es');

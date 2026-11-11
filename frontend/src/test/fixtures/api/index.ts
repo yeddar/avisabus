@@ -3,10 +3,13 @@
  * if the OpenAPI document changes, `tsc` reports the fixtures that no longer match. Data from
  * the examples of specs/stop_arrivals_api/design.md §3 (stop 508).
  *
- * Position and shape (passenger_map_view): answers of the real backend over `gtfs_mini` and the
- * `stop_508_peak` replay (line 93, direction 0, shape 994_488_2271), with the dates moved to
- * 2026-11-04 08:40 in València. `position-not-started` (scheduled, clock time, bus at the first
- * stop) and `position-no-arrival` are derived from `position-en-route`.
+ * Position and shape (passenger_map_view): answers of the real backend, verbatim (line 93,
+ * direction 0, shape 994_488_2271). The shape comes from `gtfs_mini`; the positions (v1.3, T-09,
+ * `distance_to_stop_m` in real metres) from the local database with the SAE replayed and the clock
+ * fixed on Wednesday 2026-11-04: `position-en-route` at 08:40 in València with offset 1300 s of
+ * `stop_508_peak` ("5 min."), `position-not-started` at 05:40 with no SAE recording (timetable,
+ * first trip not started) and `position-no-arrival` at 08:40 with `derived_no_arrivals`. How to
+ * regenerate them: progress/impl_passenger_map_view.md (v1.3).
  */
 import type {
   PositionResponse,
