@@ -4,20 +4,27 @@
 
 **Fecha:** 2026-11-11
 **Fase:** Ajustes del bloque 4 y bloque 5 (`deployment_rpi`)
-**Feature en curso:** `driver_ui` v1.2 — `in_review` (T-08, rama `feat/driver_ui-v1.2`); antes, `driver_session` T-10 con la spec 1.5
+**Feature en curso:** `driver_ui` v1.2 — `in_review` (T-08, rama `feat/driver_ui-v1.2`, apilada sobre `feat/driver_session-v1.4`, PR #63)
 
 ## Último paso
-`driver_ui` T-08 implementada; `CI=1 ./init.sh verify --e2e` en verde. PR #61 y #62 (`driver_session` 1.5, 200 m) fusionadas.
+`driver_session` v1.5 APPROVED, PR #63. `feat/driver_ui-v1.2` actualizada con esa rama.
 
 ## Siguiente paso
 Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
-1. ~~`driver_codes_cli` T-05~~ (PR #61) · 2. `driver_session` T-10 (CP-3 P-04: espera la spec con 200 m; la rama
-   `feat/driver_session-v1.4` tiene el test y el registro) · 3. `driver_ui` T-08 · 4. `passenger_map_view` T-09.
-5. `deployment_rpi` (sin exploración). `verify-deploy` con Docker en el Mac; `ship.sh`, `gtfs-update.sh` y `smoke.sh`
+1. `driver_ui` T-08: revisión (ciclo 1 de la v1.2) y PR.
+2. `passenger_map_view` T-09.
+3. `deployment_rpi` (sin exploración). `verify-deploy` con Docker en el Mac; `ship.sh`, `gtfs-update.sh` y `smoke.sh`
    **nunca** contra la Raspberry (los prueba la persona en el CP-6).
-6. `nfr_validation`: no empezar; su spec la prepara la persona.
+4. `nfr_validation`: no empezar; su spec la prepara la persona.
+Hechas: `driver_codes_cli` T-05 (#61, fusionada), `driver_session` T-10 (#63).
 
 ## Pendiente para specs futuras
+- **driver_ui v1.2 (persona):** `gps = WAITING` y primer socket sin texto propio en la cabecera (salen "GPS desactualizado"
+  y "Sin conexión"); "más tiempo" y "visión" sin plural en design §3; errores de la carga de `/driver/shift` y del acceso
+  siguen con `stop.error.body` (¿"en cualquier paso" de AC-02 los incluye?). Valenciano de los textos nuevos sin revisar.
+- **driver_session v1.5:** N-15 ningún test unitario fija que la primera posición a 40–150 m del trazado reciba progreso
+  (`driver_sessions.py:502`) → test a ~100 m (progreso) y ~160 m (`off_route`). N-07 (spec menor) design §6 (`:177`) dice
+  informe "por trazado"; requirements y tasks, "por semilla". Abiertos N-01, N-03, N-04, N-06, N-08, N-11…N-14.
 - **driver_gps_simulator v1.0:** N-01 `simulate.py:34,155` crea `SqliteNetworkRepository` en vez de usar `CliContainer`.
   N-02 `uncancel()` sin test; Ctrl+C con `POST /sessions` en vuelo deja el turno abierto hasta el reaper (10 min). N-03
   AC-05 no distingue estados de GPS (sobrevive "GPS OK" fijo). N-04 (docs, persona) uso del simulador, regla de
@@ -160,10 +167,7 @@ Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-**CP-3 de `driver_session` v1.4 (P-04): decidido por la persona** (aceptar y subir a 200 m el máximo por delante de
-AC-09). Falta la spec corregida, que hace la persona (sin spec-writer).
+Ninguno. CP-3 de `driver_session` (P-04) resuelto en la PR #62.
 
 ## Bloqueos
-`driver_session` T-10 espera la spec. Rotonda de la línea 25 (`1026_2253_2186`, puntos 461–466 = 477–482, vuelta de
-139,3 m): semilla 16 independiente, 157,1 m por delante; se recupera en ~20 s. Detalle en la rama `feat/driver_session-v1.4`
-(`progress/impl_driver_session.md`).
+Ninguno.

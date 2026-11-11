@@ -1,5 +1,5 @@
 # Implementación: driver_session
-Spec: specs/driver_session/ (v1.3, APPROVED) · Ciclo de revisión: 0 de la v1.3 (T-09; antes, ciclo 2 de la v1.2: F-01 y T-08) · Agente: implementer · Fecha: 2026-11-11
+Spec: specs/driver_session/ (v1.5, APPROVED) · Ciclo de revisión: 1 de la v1.5 (B-01; antes, ciclo 0 de la v1.5: T-10; ciclo 0 de la v1.4: T-10 bloqueada por P-04; ciclo 0 de la v1.3: T-09; ciclo 2 de la v1.2: F-01 y T-08) · Agente: implementer · Fecha: 2026-11-11
 
 ## Tareas
 - [x] T-01 Modelos, puertos, errores, `SqliteDriverSessionRepository` y consulta de turno abierto para `driver-codes list/revoke` (AC-14) (commit cd4d2e0)
@@ -70,6 +70,233 @@ axe 126 passed; formato, lint, tipos, arquitectura (2 contratos), build, `featur
 trazabilidad en verde. `uv run pytest -m slow`: 12 passed (el aviso de cobertura < 80 % es el umbral
 global aplicado a ese subconjunto, igual que en la v1.2).
 
+### v1.4 · Ciclo de revisión 0 de la v1.4 · 2026-11-11 · BLOQUEADA (CP-3, P-04) → resuelta con la v1.5 (ver más abajo)
+- [ ] T-10 (AC-09): test con trazados reales y ruido, semillas 1–20, criterio por percentil y máximos
+  de AC-09 v1.4, informe por semilla. El test está escrito y fija lo que dice la spec (commit fea106a),
+  pero **está en rojo** con el código actual en `sigma10_independent`: la semilla 16 deja una posición
+  157,1 m por delante (AC-09 v1.4: "NINGUNA … más de 150 m por delante"). No se ha relajado el test ni
+  se ha tocado el código de producción (T-10 solo lista el fichero de test). Ver P-04 en "Bloqueos de
+  la v1.4".
+- [ ] T-07 (repetida): sin hacer, por el bloqueo.
+
+#### Qué fija el test (`backend/tests/integration/test_upcoming_stops_real_shapes.py`)
+- Dos modelos de ruido σ 10 m (correlado ρ 0,95 e independiente), cada uno con las semillas 1 a 20
+  sobre los 94 trazados (18 714 posiciones por semilla, 374 280 por modelo). Generador por trazado:
+  `random.Random(f"{seed}:{shape_id}:{noise}")`, el mismo esquema que la semilla fija de la v1.2 y que
+  el barrido 1–20 del aviso de la v1.2 (mismas cifras).
+- Para cada modelo, sobre las posiciones de las 20 semillas: `|progreso − real| < 150 m` en al menos el
+  99,5 %; ninguna con `progreso − real > 150 m`; ninguna con `real − progreso > 500 m`. Una posición sin
+  progreso cuenta como "no a menos de 150 m".
+- Control sin ruido: todas a menos de 150 m (error de la simulación, no del ruido).
+- Informe: una línea por semilla (posiciones, % a menos de 150 m, máximo adelanto y retraso, cuentas
+  fuera de los máximos y trazados con posiciones a 150 m o más, con su peor error) y una línea total por
+  modelo. Se imprime con `capsys.disabled()`, así que sale aunque el test pase y sin `-s`, y es también
+  el mensaje de las aserciones.
+- Comprobado que detecta fallos reales con dos mutantes temporales de `upcoming_stops.py`, revertidos
+  (`git diff` vacío en producción):
+  - `MAX_SPEED_MPS = 200.0` (ventana demasiado ancha): rojo en `sigma10_correlated`, con 1 232 posiciones
+    a más de 150 m por delante y un máximo de 1 018,6 m.
+  - `MAX_SPEED_MPS = 7.0` (ventana más lenta que el autobús): rojo por el percentil (98,182 % < 99,5 %),
+    con 6 464 posiciones a más de 500 m por detrás.
+
+#### Informe por semilla (código actual, `uv run pytest tests/integration/test_upcoming_stops_real_shapes.py -m slow`)
+
+| Semilla | Correlado: % < 150 m | máx. delante / detrás (m) | trazados ≥ 150 m | Independiente: % < 150 m | máx. delante / detrás (m) | trazados ≥ 150 m |
+|---|---|---|---|---|---|---|
+| 1 | 100,000 | 102,4 / 144,4 | — | 100,000 | 111,0 / 99,0 | — |
+| 2 | 99,973 | 110,5 / 341,7 | 1027_2105_2014 ×5 | 100,000 | 120,6 / 90,1 | — |
+| 3 | 100,000 | 91,0 / 98,9 | — | 100,000 | 105,6 / 54,7 | — |
+| 4 | 99,973 | 119,6 / 350,5 | 1027_2014_2105 ×5 | 100,000 | 126,2 / 81,1 | — |
+| 5 | 100,000 | 116,9 / 85,3 | — | 100,000 | 107,8 / 65,5 | — |
+| 6 | 99,973 | 108,0 / 353,4 | 1027_2014_2105 ×5 | 100,000 | 112,6 / 51,5 | — |
+| 7 | 100,000 | 115,0 / 84,8 | — | 100,000 | 95,8 / 67,2 | — |
+| 8 | 100,000 | 110,3 / 126,1 | — | 100,000 | 109,9 / 89,3 | — |
+| 9 | 100,000 | 106,6 / 92,0 | — | 100,000 | 91,9 / 102,3 | — |
+| 10 | 100,000 | 104,9 / 133,7 | — | 100,000 | 107,2 / 80,0 | — |
+| 11 | 100,000 | 107,0 / 99,2 | — | 100,000 | 85,0 / 57,9 | — |
+| 12 | 100,000 | 127,9 / 124,2 | — | 100,000 | 116,0 / 93,7 | — |
+| 13 | 100,000 | 105,4 / 118,6 | — | 100,000 | 118,0 / 87,9 | — |
+| 14 | 100,000 | 101,7 / 100,0 | — | 100,000 | 115,0 / 90,8 | — |
+| 15 | 100,000 | 124,0 / 149,1 | — | 100,000 | 96,8 / 112,2 | — |
+| 16 | 100,000 | 130,8 / 109,8 | — | 99,995 | **157,1** / 83,4 | 1026_2253_2186 ×1 (157,1 por delante) |
+| 17 | 99,963 | 116,7 / 422,2 | 1040_2172_2253 ×7 | 100,000 | 101,9 / 84,0 | — |
+| 18 | 99,968 | 92,3 / 342,4 | 1027_2105_2014 ×5, 1076_1946_1824 ×1 | 100,000 | 106,1 / 76,8 | — |
+| 19 | 100,000 | 112,4 / 126,8 | — | 100,000 | 126,1 / 121,9 | — |
+| 20 | 100,000 | 99,5 / 133,2 | — | 100,000 | 110,4 / 52,1 | — |
+| **1–20** | **99,993** (28 de 374 280 fuera) | 130,8 / 422,2 | 0 > 150 delante, 0 > 500 detrás → **cumple** | **99,9997** (1 fuera) | 157,1 / 121,9 | **1 > 150 delante → no cumple** |
+
+Control sin ruido: 100 %, 0,0 m por delante y 41,7 m por detrás. Duración: unos 40 s los tres tests.
+
+#### Decisiones locales de la v1.4
+- **Agregación del percentil:** por modelo de ruido, sobre todas las posiciones de las 20 semillas
+  (lectura literal: "con las semillas 1 a 20 … AL MENOS el 99,5 % de las posiciones"). También se cumple
+  semilla a semilla: el peor caso es la 17 correlada, con el 99,963 %. Los máximos se exigen en todas
+  las posiciones de todas las semillas.
+- **Fronteras:** "a menos de 150 m" es `< 150`; "más de 150 m por delante" es `> 150`; "más de 500 m
+  por detrás" es `> 500`.
+- **Niveles σ 3 y σ 5 retirados:** eran una decisión local de la v1.2, con la semilla fija y el
+  máximo estricto de 150 m. AC-09 v1.4 solo fija σ 10 m, y mantener aquellos niveles con el criterio
+  antiguo contradiría la limitación aceptada de los giros en U. Se conserva el control sin ruido.
+- **Informe por semilla, no por trazado:** el design §6 dice "informa del máximo adelanto y retraso por
+  trazado" y T-10 y AC-09 v1.4 dicen "por semilla". Cada línea por semilla lista los trazados con
+  posiciones a 150 m o más y su peor error. Imprimir los 94 trazados × 20 semillas × 2 modelos serían
+  3 760 líneas. Cubre en parte N-07 de la revisión.
+
+#### Bloqueos de la v1.4
+- **P-04 (CP-3) · AC-09 v1.4 frente al feed real: una posición a 157,1 m por delante con la semilla 16
+  (ruido independiente).**
+  - *Hecho.* Trazado `1026_2253_2186` (trips `25_1026_602_2253_2186_4_*`), paso 521 de 629: real
+    21 708,3 m, progreso 21 865,4 m (+157,1 m). Los pasos 519–525 dan +22,3, +129,2, +157,1, +115,4,
+    +73,8, +32,1 y −9,6 m, así que se recupera solo en unos 20 s, cuando el autobús alcanza el progreso.
+    El progreso nunca retrocede.
+  - *Causa.* Es geometría, no un fallo del código. El trazado da algo más de una vuelta a una rotonda:
+    los puntos de `shape_pt_sequence` 461–466 se repiten **con las mismas coordenadas** en 477–482.
+    La misma posición física está, sobre el trazado, en 21 705,2 m y en 21 844,5 m (una vuelta =
+    139,3 m reales). Las dos pasadas quedan dentro de la ventana (`20 m/s × 5 s + 50 m = 150 m` por
+    delante), y con σ 10 m independiente la proyección más cercana cae en la segunda. El adelanto
+    máximo posible es aproximadamente la vuelta más el ruido, unos 140 m + 10–20 m. Es el caso "dos
+    pasadas a pocos metros" de AC-09, pero con solo 139 m de recorrido entre ellas, menos que la
+    ventana.
+  - *Contradicción.* La v1.4 exige "NINGUNA … más de 150 m por delante" con las semillas 1 a 20. La
+    cifra ya estaba en el aviso de la v1.2 de este fichero (independiente: 1 de 20 semillas, 1
+    posición, 157,1 m por delante), pero el historial de la v1.4 solo recoge los casos por detrás
+    (342–422 m). Con el código actual no se cumple, y T-10 no permite tocar producción.
+  - *Probado y descartado (scratchpad, sin cambios en el repositorio).* Elegir también con progreso
+    previo el tramo más temprano entre los que están a 30 m o menos de la mínima (como en la primera
+    posición) quita el adelanto (máx. 39,5 / 44,5 m), pero empeora el retraso: 13 y 7 posiciones a más
+    de 500 m por detrás (máx. 636,2 m), con el percentil en el 99,545 % y el 99,585 %. No es una
+    solución.
+  - *Propuestas para la persona* (decide la spec; yo no elijo):
+    1. **Aceptar la limitación en AC-09** igual que la de los giros en U: "en las rotondas o bucles que
+       el trazado recorre más de una vez, el progreso puede adelantarse hasta la longitud de la vuelta
+       más el ruido". El máximo por delante pasaría, por ejemplo, a 200 m. Basta con cambiar la
+       constante del test. Margen observado: 157,1 m frente a 200 m.
+    2. Mantener 150 m y cambiar la regla de proyección en una tarea nueva con código de producción, por
+       ejemplo con preferencia por el tramo contiguo al progreso anterior en empates cercanos. No la he
+       diseñado ni probado, salvo la variante descartada arriba.
+    3. Excluir del criterio "por delante" las posiciones cuyo punto real está a pocos metros de otra
+       pasada del trazado dentro de la ventana. Complica el test y no lo recomiendo.
+
+#### Verificación de la v1.4
+No ejecutada la verificación final (`CI=1 ./init.sh verify --e2e` y `uv run pytest -m slow`), porque
+T-10 está bloqueada: `-m slow` da 2 passed y 1 failed (`sigma10_independent`). Del fichero tocado,
+`ruff format --check`, `ruff check` y `mypy` (150 ficheros) están en verde. La suite por defecto excluye
+`slow`, así que el cambio no la afecta.
+
+`./init.sh verify` (sin `--e2e`, con el test de T-10 ya en el commit), salida 0, "verify: todo en
+verde": backend 1915 passed, 9 deselected (los `slow`), cobertura 99,66 %; Vitest 660 passed y 2
+skipped; bundle 5 passed; formato, lint, tipos, arquitectura, build, `feature_list.json` y
+trazabilidad en verde. `uv run pytest tests/integration/test_upcoming_stops_real_shapes.py -m slow`:
+2 passed y 1 failed (`sigma10_independent`, P-04).
+
+### v1.5 · Ciclo de revisión 0 de la v1.5 · 2026-11-11
+- [x] T-10 (AC-09 v1.5): máximo por delante del test con trazados reales, de 150 m a 200 m
+  (`MAX_AHEAD_M = 200.0`) y docstring con la limitación aceptada de las rotondas recorridas dos veces
+  (línea 25, vueltas de 139 m). Nada más cambia: semillas 1–20, σ 10 m correlado e independiente,
+  percentil ≥ 99,5 % a < 150 m, máximo por detrás de 500 m, control sin ruido e informe por semilla
+  siguen como en la v1.4. Sin cambios en producción (`git diff` vacío en `src/`). El test se escribió en
+  la v1.4 (commit fea106a); el cambio de la v1.5 está en el commit 97c4377.
+- [x] T-07 (repetida): `npm run gen:api` no cambia `openapi.json` ni `schema.d.ts` (el contrato HTTP
+  no varía); verificación completa en verde (sin commit: no hay cambios).
+
+#### Informe por semilla (v1.5, `uv run pytest tests/integration/test_upcoming_stops_real_shapes.py -m slow`)
+Mismas cifras que en la v1.4 (el código y el ruido no cambian); solo cambia el criterio por delante.
+En todas las semillas y en los dos modelos: `ahead>200 = 0`, `behind>500 = 0`, `no_progress = 0`.
+
+| Semilla | Correlado: % < 150 m | máx. delante / detrás (m) | Independiente: % < 150 m | máx. delante / detrás (m) |
+|---|---|---|---|---|
+| 1 | 100,000 | 102,4 / 144,4 | 100,000 | 111,0 / 99,0 |
+| 2 | 99,973 | 110,5 / 341,7 | 100,000 | 120,6 / 90,1 |
+| 3 | 100,000 | 91,0 / 98,9 | 100,000 | 105,6 / 54,7 |
+| 4 | 99,973 | 119,6 / 350,5 | 100,000 | 126,2 / 81,1 |
+| 5 | 100,000 | 116,9 / 85,3 | 100,000 | 107,8 / 65,5 |
+| 6 | 99,973 | 108,0 / 353,4 | 100,000 | 112,6 / 51,5 |
+| 7 | 100,000 | 115,0 / 84,8 | 100,000 | 95,8 / 67,2 |
+| 8 | 100,000 | 110,3 / 126,1 | 100,000 | 109,9 / 89,3 |
+| 9 | 100,000 | 106,6 / 92,0 | 100,000 | 91,9 / 102,3 |
+| 10 | 100,000 | 104,9 / 133,7 | 100,000 | 107,2 / 80,0 |
+| 11 | 100,000 | 107,0 / 99,2 | 100,000 | 85,0 / 57,9 |
+| 12 | 100,000 | 127,9 / 124,2 | 100,000 | 116,0 / 93,7 |
+| 13 | 100,000 | 105,4 / 118,6 | 100,000 | 118,0 / 87,9 |
+| 14 | 100,000 | 101,7 / 100,0 | 100,000 | 115,0 / 90,8 |
+| 15 | 100,000 | 124,0 / 149,1 | 100,000 | 96,8 / 112,2 |
+| 16 | 100,000 | 130,8 / 109,8 | 99,995 | 157,1 / 83,4 (rotonda de `1026_2253_2186`) |
+| 17 | 99,963 | 116,7 / 422,2 | 100,000 | 101,9 / 84,0 |
+| 18 | 99,968 | 92,3 / 342,4 | 100,000 | 106,1 / 76,8 |
+| 19 | 100,000 | 112,4 / 126,8 | 100,000 | 126,1 / 121,9 |
+| 20 | 100,000 | 99,5 / 133,2 | 100,000 | 110,4 / 52,1 |
+| **1–20** | **99,993** (28 de 374 280 fuera) | 130,8 / 422,2 → **cumple** | **99,9997** (1 fuera) | 157,1 / 121,9 → **cumple** |
+
+Control sin ruido: 100 %, 0,0 m por delante y 41,7 m por detrás. Resultado: 3 passed en 40,6 s.
+Margen por delante: 157,1 m frente a 200 m (independiente) y 130,8 m (correlado).
+
+#### Mutantes (temporales en `domain/services/upcoming_stops.py`, revertidos con `git checkout`)
+- `MAX_SPEED_MPS = 200.0` (ventana demasiado ancha): 2 failed, 1 passed (el control). Correlado:
+  1 019 posiciones a más de 200 m por delante, máx. 1 018,6 m. Independiente: 1 336, máx. 1 051,3 m.
+  Con el máximo de 200 m el test sigue detectando el salto a pasadas posteriores en los dos modelos.
+- `MAX_SPEED_MPS = 7.0` (ventana más lenta que el autobús): 2 failed, 1 passed. Correlado: 98,182 %
+  (< 99,5 %) y 6 464 posiciones a más de 500 m por detrás; independiente: 99,619 % y 1 294 posiciones a
+  más de 500 m por detrás.
+
+#### Decisiones locales de la v1.5
+Ninguna nueva. Se mantienen las de la v1.4 (agregación del percentil, fronteras con `>`/`<`, informe
+por semilla).
+
+#### Bloqueos de la v1.5
+Ninguno. P-04 queda cerrado por la v1.5.
+
+#### Verificación de la v1.5
+- `CI=1 ./init.sh verify --e2e` (puerto 4173 libre), salida 0, "verify: todo en verde": backend
+  formato, lint, tipos y arquitectura (2 contratos) en verde; `pytest` 1915 passed, 9 deselected (los
+  `slow`), cobertura 99,66 %; Vitest 660 passed y 2 skipped (68 ficheros); build + bundle 5 passed;
+  Playwright + axe 132 passed y 12 skipped; `feature_list.json` y trazabilidad AC → test en verde.
+- `cd backend && uv run pytest -m slow`: 9 passed, 0 failed, 1915 deselected (186 s), pero **salida 1**
+  por "Required test coverage of 80% not reached. Total coverage: 69.51%": el `--cov-fail-under=80`
+  de `addopts` (`pyproject.toml`) se aplica también a este subconjunto. Es el aviso de cobertura ya
+  anotado en la v1.2 y la v1.3, no un fallo de test. Con `--no-cov`: 9 passed, salida 0 (57 s).
+  (Desde la v1.4 son 9 `slow` y no 12, porque T-10 retiró los niveles σ 3 y σ 5.)
+
+### v1.5 · Ciclo de revisión 1 de la v1.5 · 2026-11-11
+Revisión: `progress/review_driver_session.md` (CHANGES_REQUESTED). Solo se corrige el bloqueante B-01;
+los no bloqueantes quedan fuera de este ciclo.
+
+- [x] B-01 (AC-09 v1.5, T-10): restaurada la aserción `no_progress == 0` que la reescritura de la v1.4
+  (fea106a) había sustituido por "una posición sin progreso cuenta como no a menos de 150 m"
+  (commit 744bb37). Solo cambia `backend/tests/integration/test_upcoming_stops_real_shapes.py`:
+  - En el test con ruido (σ 10 m correlado e independiente, semillas 1–20):
+    `assert all(figures.no_progress == 0 for figures in per_seed), report`.
+  - En el control sin ruido, `assert figures.no_progress == 0, report` explícito (antes solo implícito
+    en `near == positions`).
+  - La línea total por modelo del informe muestra también `no_progress=<total>`, y el docstring
+    explica por qué se exige: con σ 10 m ninguna posición está a más de 150 m del trazado, el único
+    caso en que AC-09 deja al autobús sin progreso.
+  - Sin cambios en producción (`git diff` vacío en `backend/src`).
+
+#### Mutante `firstoff15` (temporal en `application/driver_sessions.py:502`, revertido con `git checkout`)
+`if distance > (15.0 if session.progress_m is None else OFF_ROUTE_M):`. Sin progreso previo, marca
+fuera de ruta la primera posición a más de 15 m del trazado, cuando AC-09 solo lo permite a más de 150 m.
+- Con el test corregido: **2 failed** (los dos modelos con ruido) y 1 passed (el control). Falla la
+  aserción `assert all(figures.no_progress == 0 for figures in per_seed)`. Correlado: `no_progress=971`
+  y percentil del 99,733 %. Independiente: `no_progress=449` y percentil del 99,880 %. Ninguna posición
+  supera los máximos, así que sin esta aserción el test pasaba, como vio el reviewer.
+- Tras revertir: `git status` solo muestra el fichero de test (y `?? qr/`, que ya estaba).
+
+#### Decisiones locales del ciclo 1 de la v1.5
+Ninguna nueva. Se retira la de la v1.4 "una posición sin progreso cuenta como no a menos de 150 m"
+(ver "Qué fija el test" de la v1.4): no la autorizaba la spec (B-01).
+
+#### Bloqueos del ciclo 1 de la v1.5
+Ninguno.
+
+#### Verificación del ciclo 1 de la v1.5
+- `CI=1 ./init.sh verify --e2e` (puerto 4173 libre), salida 0, "verify: todo en verde": backend
+  formato, lint, tipos y arquitectura en verde; `pytest` 1915 passed, 9 deselected (los `slow`),
+  cobertura 99,66 %; Vitest 660 passed y 2 skipped (68 ficheros); build + bundle 5 passed;
+  Playwright + axe 132 passed y 12 skipped; `feature_list.json` y trazabilidad AC → test en verde.
+- `cd backend && uv run pytest -m slow --no-cov`: 9 passed, 1915 deselected, salida 0 (56 s). Cifras del
+  test real iguales a las del ciclo 0: correlado 99,993 %, 130,8 / 422,2 m; independiente 99,9997 %,
+  157,1 / 121,9 m; control 100 %, 0,0 / 41,7 m; `no_progress=0` en todos.
+
 ## Decisiones locales
 
 `design.md` §7 permite dos: la caché de distancias de paradas y la estructura de `LineDirectionsView`
@@ -129,7 +356,7 @@ reviewer pueden pedir otra cosa sin rehacer nada más.
 
 ## Bloqueos
 
-Ninguno abierto. El CP-3 de T-08 se resolvió con la spec v1.2 (PR #51), apoyada en `position_estimation`
+**P-04 (CP-3, v1.4, T-10): cerrado** con la spec v1.5 (PR #62; máximo por delante de 200 m en el test real). Ver "Bloqueos de la v1.4" y la sección de la v1.5. El CP-3 de T-08 se resolvió con la spec v1.2 (PR #51), apoyada en `position_estimation`
 v1.4 (T-11):
 - **P-02 (resuelto):** `shape_dist_traveled` no son metros (longitud del feed 1,66–4,25 veces la real).
   v1.2 mide el progreso, la ventana y los márgenes en metros reales.
