@@ -4,10 +4,10 @@
 
 **Fecha:** 2026-11-11
 **Fase:** Ajustes del bloque 4 y bloque 5 (`deployment_rpi`)
-**Feature en curso:** `driver_ui` v1.2 — `in_review` (T-08, rama `feat/driver_ui-v1.2`, apilada sobre `feat/driver_session-v1.4`, PR #63)
+**Feature en curso:** `driver_ui` v1.2 — `implementing`, ciclo de revisión 1 (T-08, rama `feat/driver_ui-v1.2`, apilada sobre la PR #63)
 
 ## Último paso
-`driver_session` v1.5 APPROVED, PR #63. `feat/driver_ui-v1.2` actualizada con esa rama.
+`driver_ui` v1.2: revisión ciclo 1 CHANGES_REQUESTED (B-01: test intermitente en `ShiftPage.test.tsx:238`, mismo patrón en `:168` y `:224`; viene de la v1.1). T-08 cumple la v1.2.
 
 ## Siguiente paso
 Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
@@ -19,9 +19,11 @@ Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
 Hechas: `driver_codes_cli` T-05 (#61, fusionada), `driver_session` T-10 (#63).
 
 ## Pendiente para specs futuras
-- **driver_ui v1.2 (persona):** `gps = WAITING` y primer socket sin texto propio en la cabecera (salen "GPS desactualizado"
-  y "Sin conexión"); "más tiempo" y "visión" sin plural en design §3; errores de la carga de `/driver/shift` y del acceso
-  siguen con `stop.error.body` (¿"en cualquier paso" de AC-02 los incluye?). Valenciano de los textos nuevos sin revisar.
+- **driver_ui v1.2 (persona):** P-06 con `gps = WAITING` y mientras se abre el primer socket, la cabecera dice en rojo
+  "GPS desactualizado" y "Sin conexión" sin fallo (y contradice a la caja de estado): A texto neutro en AC-08; B dejar
+  escrita la lectura binaria. P-07 "2 más tiempo" y "2 visión" sin plural (design §3). N-12 errores de `/driver/shift` y
+  del acceso con `stop.error.body` (fuera de T-08). N-13 design §3: claves de frases con dos cifras son plantillas. N-14
+  errores y lista vacía del selector sin anuncio; foco al `body` tras "Reintentar"/"Actualizar". Valenciano sin revisar.
 - **driver_session v1.5:** N-15 ningún test unitario fija que la primera posición a 40–150 m del trazado reciba progreso
   (`driver_sessions.py:502`) → test a ~100 m (progreso) y ~160 m (`off_route`). N-07 (spec menor) design §6 (`:177`) dice
   informe "por trazado"; requirements y tasks, "por semilla". Abiertos N-01, N-03, N-04, N-06, N-08, N-11…N-14.

@@ -585,3 +585,6 @@
 ## 2026-11-11 · driver_session v1.5 · implementing → in_review → done
 - T-10: 20 semillas, percentil ≥ 99,5 % a < 150 m, máx. 200 m delante y 500 m detrás, `no_progress == 0`. Ciclo 2
   APPROVED (`firstoff15` detectado). Peor caso: 157,1 m delante en la rotonda de la línea 25 (aceptado en la v1.5).
+
+## 2026-11-11 · driver_ui v1.2 · in_review → changes_requested → implementing
+- T-08 cumple la v1.2. B-01: test intermitente de la v1.1 (`ShiftPage.test.tsx`, el socket se usa antes de crearse).

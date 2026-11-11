@@ -1,172 +1,188 @@
 # Revisión: driver_ui
-Ciclo: 2 · Fecha: 2026-11-11 · Agente: reviewer · Commit revisado: eeb1f12 (spec v1.1; base `origin/feat/driver_session` v1.3, a7634a9, ya fusionada)
+Ciclo: 1 de la v1.2 · Fecha: 2026-11-11 · Agente: reviewer · Commit revisado: 9327ee6 (spec v1.2, T-08 y T-07;
+diff `origin/feat/driver_session-v1.4...HEAD`)
 
-## Veredicto: APPROVED
+## Veredicto: CHANGES_REQUESTED
 
-B-01, B-02 y P-01 (ciclo 1) están resueltos, en tests y en navegador real, también contra el backend
-real de la v1.3. Sin hallazgos bloqueantes ni regresiones. Queda un problema de spec nuevo, P-05, que
-no bloquea: CU-08 pide la ubicación después de elegir la salida y la v1.1 la pide antes. Lo decide la
-persona (CP-4). Siguen abiertos los no bloqueantes P-02 a P-04 y N-01 a N-09. Hay dos nuevos, N-10 y
-N-11.
+T-08 cumple la v1.2. Los textos de AC-02 y AC-08 son exactamente los de la spec. Los plurales de AC-05 y
+AC-06 son correctos en es y ca-valencia. La cabecera muestra el estado con icono y texto, y no lo anuncia
+dos veces. Las capturas se ajustan a `docs/design.md` §5.9.
+
+El único bloqueante es **B-01**: la primera ejecución de `CI=1 ./init.sh verify --e2e` **falló** por un
+test intermitente de `ShiftPage.test.tsx`. Ese test no se ha tocado en la v1.2, pero es de esta feature, y
+la regla del proceso es clara: si `verify` falla, el veredicto es `CHANGES_REQUESTED`. La segunda ejecución
+salió en verde. El arreglo es de una línea por test.
+
+Para la persona quedan dos problemas de spec nuevos que no bloquean: P-06 (estado de la cabecera en
+`WAITING` y mientras conecta) y P-07 (plural de "más tiempo" y "visión"). P-05 sigue pendiente en CP-4.
 
 ## Matriz AC → evidencia
 
-Tests en `frontend/src/features/driver/__tests__/` salvo los de `e2e/driver.spec.ts`. Todos se han leído.
+Los tests están en `frontend/src/features/driver/__tests__/`, salvo los de `e2e/driver.spec.ts`. He leído
+todos los tests nuevos de la v1.2. Los ACs que la v1.2 no cambia mantienen la evidencia del ciclo 2 de la
+v1.1: su código y sus tests no han cambiado y vuelven a pasar.
 
 | AC | Test(s) | Resultado | Nota |
 |---|---|---|---|
-| AC-01 | `LoginPage.test.tsx:40,51,59,77,89,107`; `session.test.ts:23,36,52` | OK | Sin cambios desde el ciclo 1. |
-| AC-02 | `ServicePicker.test.tsx:58,67,80,98,114,144`; `ShiftPage.test.tsx:66,98` | OK | |
-| AC-03 | `ShiftPage.test.tsx:49,57,78,232`; `session.test.ts:62,75`; `useDriverSocket.test.tsx:201`; `useDriverPosition.test.tsx:285` | OK | |
-| AC-04 | `useDriverPosition.test.tsx:117,135,157,181,190,220,232,246,266,276,295,319`; `ShiftPage.test.tsx:134,153`; `DriverStatus.test.tsx:82`; `e2e/driver.spec.ts:240` (tramo `:328-338`) | OK | v1.1 cubierta: el reenvío repetido cada 5 s (`:157`), `getCurrentPosition` con las opciones exactas a los 10 s y repetido mientras dure el silencio (`:190`), nada mientras `watchPosition` entrega (`:220`), parada con permiso denegado (`:266`), el selector de la primera salida (`ShiftPage:134`) y el de la siguiente (`ShiftPage:153`). Comprobado con el backend real (ver abajo). P-05 sobre el orden del permiso. |
-| AC-05 | `DemandView.test.tsx:64,74,85,113,126`; `ShiftPage.test.tsx:89` | OK | N-02 sigue abierto. |
-| AC-06 | `CapacityBanner.test.tsx:13,20,32,40,58,74`; `DemandView.test.tsx:136,145` | OK | |
-| AC-07 | `newAlerts.test.ts:14,21,31`; `tone.test.ts:68,79,91`; `DemandView.tone.test.tsx:79-174` (incluye `:136`, primera vista pedida al elegir salida, sin tono); `useDriverSocket.test.tsx:92` | OK | N-03 y N-10. |
-| AC-08 | `DriverStatus.test.tsx:39,45,64,70,76,95`; `DemandView.test.tsx:151,160`; `ServicePicker.test.tsx:159`; `ShiftPage.test.tsx:118,153` | OK | `ShiftPage:153` fija la parte v1.1: `clearWatch` y `release` no se llaman, el socket es el mismo y las vistas de la salida anterior se descartan. |
-| AC-09 | `useDriverSocket.test.tsx:56,65,77,110,136,152,172,215,232`; `ShiftPage.test.tsx:134,153`; `DemandView.tone.test.tsx:136`; `e2e/driver.spec.ts:240` (`hellos === 1` tras la siguiente salida) | OK | N-04 sigue abierto. |
-| AC-10 | `DemandView.test.tsx:168,184,196`; `EndShiftDialog.test.tsx:8,17,28`; `LoginPage.test.tsx:101`; `ShiftPage.test.tsx:217`; `useDriverSocket.test.tsx:188`; `e2e/driver.spec.ts:358` | OK | B-02 resuelto: la parte v1.1 (foco con "Seguir" y con Escape) se comprueba en jsdom y en el e2e tablet (WebKit), y yo la he comprobado en Chromium y WebKit. |
-| AC-11 | `e2e/driver.spec.ts:240,389` (es y ca, `tablet-landscape`) | OK | Sin peticiones externas (`external`, `unexpected`). N-08 sigue abierto. |
-| AC-12 | 14 capturas en `frontend/test-results/driver_ui/tablet-landscape/` | OK con reserva | Revisadas `solicitud-nueva-es`, `eleccion-salida-ca`, `gps-desactualizado-es` y `fin-recorrido-ca` contra §5.9: sin cambios de maquetación respecto al ciclo 1. La reserva es la misma: P-02 (estado en la cabecera). Valida la persona en CP-6. |
+| AC-01 | `LoginPage.test.tsx`, `session.test.ts` | OK | Sin cambios. |
+| AC-02 | `ServicePicker.test.tsx:81,90,103,121,137,167` y, de la v1.2, `:182,203,218,232,252`; `ShiftPage.test.tsx:66,98` | OK | Parte v1.2. `:182`: lista vacía con el texto exacto, "Volver" y "Actualizar"; "Actualizar" vuelve a pedir las salidas (2 llamadas) y el aviso desaparece. `:203`: 5xx al cargar las líneas. `:218`: error de red al cargar las salidas. `:232`: 5xx y error de red en `PUT …/service`. Los tres comprueban el texto exacto, "Reintentar" y la recarga, y `:203` comprueba que ya no sale "Comprueba la conexión". `:252`: los mismos textos en valenciano. El paso "sentido" no hace petición propia (usa los datos de las líneas), así que el error de `:203` también lo cubre. |
+| AC-03 | `ShiftPage.test.tsx:49,57,78,232`; `session.test.ts`; `useDriverSocket.test.tsx`; `useDriverPosition.test.tsx` | OK, con B-01 | `ShiftPage.test.tsx:232` es intermitente (B-01). |
+| AC-04 | `useDriverPosition.test.tsx`; `ShiftPage.test.tsx:134,153`; `DriverStatus.test.tsx`; `e2e/driver.spec.ts` | OK | Sin cambios. |
+| AC-05 | `DemandView.test.tsx:71,81,92,120,133` y, de la v1.2, `:172`; `ShiftPage.test.tsx:89` | OK | `:172` comprueba, por tarjeta y en es y ca, "1 persona esperando" / "2 personas esperando", "1 rampa" / "2 rampas" y "1 asiento" / "2 asientos". Ver P-07 para "más tiempo" y "visión". |
+| AC-06 | `CapacityBanner.test.tsx:13–74` y, de la v1.2, `:89,105,120`; `DemandView.test.tsx:143,210` y, de la v1.2, `:152,162`; `e2e/driver.spec.ts:39-41,64-66` | OK | Comprueban las frases enteras con `getByText` exacto: "Espera 1 persona y quedan 0 plazas", "Esperan 2 personas y queda 1 plaza", "Pide asiento 1 persona y quedan 0 asientos", "Piden asiento 5 personas y queda 1 asiento", "1 plaza libre · 1 asiento", "2 plazas libres · 0 asientos" y sus equivalentes en ca. El caso plural del e2e ("Esperan 35 personas y quedan 30 plazas", "30 plazas libres · 4 asientos") coincide letra por letra con AC-06. El anuncio único (`:58`) sigue pasando con el texto compuesto. |
+| AC-07 | `newAlerts.test.ts`, `tone.test.ts`, `DemandView.tone.test.tsx`, `useDriverSocket.test.tsx` | OK | Sin cambios. |
+| AC-08 | `DriverStatus.test.tsx:39–95`; `DemandView.test.tsx:282,291` y, de la v1.2, `:216,240,250,270`; `ServicePicker.test.tsx:270`; `ShiftPage.test.tsx:118,153` | OK | `:216`: "GPS correcto" y "Conectado" con icono; con `STALE`, "GPS desactualizado"; con el socket cerrado, "Sin conexión" con icono. `:240`: con `WAITING` y antes de conectar, "GPS desactualizado" y "Sin conexión" (P-06). `:250`: con el permiso denegado, "GPS desactualizado". `:270`: los textos en valenciano. Los tests comprueban que hay icono, pero no que sea distinto en cada estado. Lo he visto en las capturas: comprobación en el estado correcto y aviso en el incorrecto. |
+| AC-09 | `useDriverSocket.test.tsx`; `ShiftPage.test.tsx:134,153`; `DemandView.tone.test.tsx`; `e2e/driver.spec.ts` | OK, con B-01 | El patrón de B-01 también está en `ShiftPage.test.tsx:168` (AC-09). |
+| AC-10 | `DemandView.test.tsx`, `EndShiftDialog.test.tsx`, `LoginPage.test.tsx`, `ShiftPage.test.tsx:217`, `e2e/driver.spec.ts` | OK, con B-01 | El patrón de B-01 también está en `ShiftPage.test.tsx:224`. |
+| AC-11 | `e2e/driver.spec.ts` (es y ca, `tablet-landscape`) | OK | 132 e2e en verde las dos veces, con axe y sin peticiones externas. |
+| AC-12 | 14 capturas en `frontend/test-results/driver_ui/tablet-landscape/` | OK con reserva | He revisado `alerta-capacidad-es`, `gps-desactualizado-ca` y `fin-recorrido-es`. Cumplen §5.9: GPS y conexión a la derecha, junto a "Silenciar tono", con icono y texto, y la parte correcta en verde con una comprobación y la incorrecta en rojo con un aviso. Las franjas y las plazas usan el plural correcto. La cabecera se parte en dos filas a 1080 px de ancho, con el estado alineado a la derecha; lo permite la decisión local de maquetación (design §5). Valida la persona en CP-6. |
 
-### Comprobación de los hallazgos del ciclo 1
+### Interpretaciones de `progress/impl_driver_ui.md` (v1.2)
 
-| Hallazgo | Estado | Evidencia |
-|---|---|---|
-| **B-01** Posición, `wakeLock` y socket cortados tras "Fin del recorrido" | **Resuelto** | `ShiftPage.tsx:47-51` mantiene `useDriverShift` activo en las fases `picker` y `demand`. `DemandView` ya no abre hooks propios. Tests: `ShiftPage.test.tsx:153` y el e2e `:328-338`. Lo he visto en el navegador contra el backend real: un único socket durante todo el turno y `PUT position` = 204 en el selector. |
-| **B-02** Foco perdido con "Seguir" | **Resuelto** | `EndShiftDialog.tsx:43` cierra con `close()` y `DemandView.tsx:157-160` enfoca "Finalizar turno". En navegador: "Seguir" lleva el foco a `BUTTON: Finalizar turno` y Escape también, en Chromium y en WebKit. En el ciclo 1 se quedaba en `BODY`/`MAIN`. Shift+Tab sigue el orden normal. |
-| **P-01** (CP-3) Reenvío frente a `STALE` | **Resuelto en spec** (v1.1 + `driver_session` v1.3) y **cumplido** | `useDriverPosition.ts:75-85` reenvía cada 5 s. `:58-74` pide `getCurrentPosition` tras 10 s de silencio. El backend separa `last_seen_at` (señal de vida, cierre por `IDLE`) de `last_fix_at` (`STALE`) (`driver_sessions.py:380-383,478-487`; `reap_driver_sessions.py:56`). |
-
-### Decisiones del ciclo 1 en `progress/impl_driver_ui.md`
-
-| Decisión | Juicio |
+| Interpretación | Juicio |
 |---|---|
-| Fichero nuevo `useDriverShift.ts`, fuera de design §1 | **Válida.** Design §2 dice "El hook vive en ShiftPage", y `useDriverShift` es solo una composición de `useDriverPosition` y `useDriverSocket` que llama `ShiftPage`. Pasa lo mismo que con `DriverLayout.tsx`, `types.ts` e `icons/`, aceptados en el ciclo 1. No cambia ningún contrato. Hay que añadirlo a la lista en la próxima versión de la spec (N-11). |
-| Posición y socket desde el primer selector, con el permiso pedido antes de lo que dice CU-08 | **Válida frente a la spec**: AC-04 v1.1 ("también en la elección de salida") y AC-09 v1.1 ("con `service = null`", que solo se da antes de la primera salida) la piden de forma explícita. **Contradice el orden de `docs/use_cases.md` CU-08**, donde el permiso es el paso 4, después de elegir salida en el paso 3. Ver P-05: lo decide la persona. |
-| El aviso de permiso denegado solo aparece en la vista de demanda | **Aceptable**, pero entra en P-05. Lo he comprobado en el navegador: si se deniega en el selector, no se muestra nada. En la vista de demanda sale "Sin permiso de ubicación…" con "Reintentar", y "Reintentar" funciona: el aviso desaparece y se envía la posición. AC-02 fija el contenido del selector y el texto de AC-04 habla de "próximas paradas", que solo existen en la vista. Aun así, CU-08 4a pide que se indique. |
-| Retirada de dos tests de `DemandView.test.tsx` | **Válida.** "follows the position while the view is open" ya no es de la vista, y lo cubren `ShiftPage.test.tsx:134,153` y `useDriverPosition.test.tsx:117`. "when session.closed arrives…" lo cubren `ShiftPage.test.tsx:217` (token borrado y motivo), `useDriverSocket.test.tsx:188` y `LoginPage.test.tsx:101` (texto del motivo). No se pierde cobertura de ningún AC. |
-| `useDriverSocket({ enabled })` | Válida y probada (`useDriverSocket.test.tsx:215`). |
-| `DemandView` pide `GET …/view` una vez al montarse sin vista inicial y descarta las vistas de otra salida o anteriores | Válida (`DemandView.tone.test.tsx:136`, `ShiftPage.test.tsx:153`). Riesgo menor: N-10. |
-| Foco explícito a "Finalizar turno" además de `close()` | Válida. WebKit no enfoca un botón al pulsarlo, así que hace falta. |
-| `getCurrentPosition` deja de pedirse con permiso denegado hasta "Reintentar" | Válida (`useDriverPosition.test.tsx:266`). |
+| Cabecera con dos valores por indicador: `WAITING`, el permiso denegado y la falta de vista se muestran como "GPS desactualizado"; el socket que conecta por primera vez, como "Sin conexión" | **Compatible con la spec, pero la spec no permite decidirlo (P-06).** AC-08 da cuatro textos sin decir a qué estado corresponde cada uno. La lectura binaria no inventa texto y es prudente: solo dice "correcto" cuando lo es. Sin embargo, al empezar el turno el conductor ve en rojo "GPS desactualizado" y "Sin conexión", aunque todavía no ha fallado nada. Además, choca con la intención de la v1.0: `useDriverSocket.ts:66-67` y `DriverStatus.test.tsx:76` evitan precisamente mostrar "Sin conexión" mientras se conecta, y ahora la caja calla pero la cabecera lo dice. |
+| "Más tiempo" y "visión" no tienen plural ("2 más tiempo", "2 visión") | **Correcto no redactar.** Design §3 solo da el singular y la v1.2 no fija otro texto. Inventar "visiones" habría ido contra la regla de no improvisar textos. Si el resultado cumple "plural correcto" lo decide la persona (P-07). |
+| No se han tocado los errores de `ShiftPage` ni del acceso | **Válida.** "En cualquier paso" de AC-02 se refiere a los tres pasos que el mismo AC enumera: línea, sentido y salida. La carga inicial de `ShiftPage` (`ShiftPage.tsx:80-96`) es anterior a esos pasos, y el acceso está en AC-01. Además, ninguno de los dos ficheros está en la lista de T-08. Aun así, la misma ruta muestra ahora dos versiones del error (N-12). |
+| Frases con dos cifras compuestas de dos mitades con claves nuevas | **Válida.** i18next solo admite un `count` por clave, y cada cifra concuerda con sus propias palabras ("Esperan 2 personas y queda 1 plaza"). En plural, el resultado coincide letra por letra con el texto de AC-06 y de design §3. Las formas en singular se derivan gramaticalmente de esas frases o vienen del ejemplo de AC-05 ("Espera 1 persona"): las exige "plural correcto" y no son textos nuevos. Las claves de design §3 (`driver.capacity`, `driver.seats` y `driver.places`) se mantienen, pero ahora contienen una plantilla. Habría que reflejarlo en design §3 (N-13, documental). |
+| El ejemplo de AC-05 ("Espera 1 persona" / "Esperan 2 personas") se aplica a la franja; las tarjetas mantienen "N persona(s) esperando" | **Válida.** El ejemplo empieza por "p. ej." y sale de P-03, que hablaba de la franja ("Esperan 1 personas"). Las tarjetas siguen design §3 y §5.9 ("esperando"), ya con plural correcto. |
+| Valenciano propio | Aceptable. Las traducciones son correctas y coherentes con las de la v1.0. Se revisan en CP-6. |
 
 ## Verificación ejecutada
 
-`CI=1 ./init.sh verify --e2e` con el puerto 4173 libre: **salida 0**.
+`CI=1 ./init.sh verify --e2e`, con el puerto 4173 libre, sobre 9327ee6. No he hecho peticiones externas.
 
-| Paso | Resultado |
-|---|---|
-| backend: format, lint, types, architecture | OK |
-| backend: tests | 1857 passed, 12 deselected |
-| frontend: format, lint, types | OK |
-| frontend: tests | 660 passed, 2 skipped (68 ficheros) |
-| frontend: build + bundle | OK (5 tests) |
-| frontend: e2e + a11y | 132 passed, 12 skipped (perfiles no tablet), sin reintentos |
-| harness: `feature_list.json`, trazabilidad AC→test | OK |
+| Paso | 1.ª ejecución | 2.ª ejecución |
+|---|---|---|
+| backend: format, lint, types, architecture | OK | OK |
+| backend: tests | 1915 passed, 9 deselected | 1915 passed, 9 deselected |
+| frontend: format, lint, types | OK | OK |
+| frontend: tests | **FAIL**: 674 passed, **1 failed**, 2 skipped: `ShiftPage.test.tsx > [driver_ui.AC-03] the close 4401 of the socket returns to /driver`, con `Error: no WebSocket has been created` en `FakeWebSocket.last` (`ShiftPage.test.tsx:238`) | 675 passed, 2 skipped (68 ficheros) |
+| frontend: build + bundle | OK (5 tests) | OK (5 tests) |
+| frontend: e2e + a11y | 132 passed | 132 passed |
+| harness: feature_list.json y trazabilidad AC→test | OK | OK |
+| **Resultado** | **salida 1** | salida 0 |
 
-**Navegador real contra el backend real v1.3.** Script fuera del repo. El backend usaba una copia de
-la base de datos en el directorio temporal, con `AVISABUS_ARRIVALS_SOURCE=replay`,
-`AVISABUS_DRIVER_IDLE_TIMEOUT_MIN=1` y `AVISABUS_DRIVER_REAPER_INTERVAL_S=5`. El `dist/` se servía
-con `vite preview` y su proxy. La geolocalización estaba simulada en la página con tres modos:
-"en marcha", "parado" (`watchPosition` calla y `getCurrentPosition` da un fijo nuevo) y "GPS perdido"
-(nada; `getCurrentPosition` termina en `TIMEOUT`). Hubo 0 peticiones externas. En el log del backend
-no aparecen coordenadas, tokens ni códigos.
+Para caracterizar el fallo, repetí después el fichero aislado 8 veces, la suite completa 6 veces, la suite
+completa 3 veces con otra suite en paralelo y el fichero 24 veces en tandas de 4 en paralelo. En total
+fueron 41 ejecuciones y ninguna falló. Es un fallo poco frecuente, pero real.
 
-| Comprobación | Resultado |
-|---|---|
-| Selector de la primera salida (`service = null`), 12 s | 1 socket, `hello` enviado, 2 `PUT position` → 204, vista `gps` de `WAITING` a `OK` |
-| Elegir salida | Mismo socket (1 en total durante el turno) |
-| Autobús parado, 45 s | 9 envíos con 5 `recorded_at` distintos. `getCurrentPosition` con `{enableHighAccuracy: true, maximumAge: 0, timeout: 10000}`. `gps = OK`, sin "Posición desactualizada" |
-| GPS perdido, 80 s (más que el `IDLE` de 60 s) | "Posición desactualizada" a los 40 s (30 s de umbral más el refresco del servidor). 16 reenvíos con un único `recorded_at`. Turno abierto: `GET view` = 200 con `gps = STALE`, sin `session.closed` y la página sigue en `/driver/shift` |
-| GPS recuperado | El aviso desaparece en menos de 12 s |
-| Control: página cerrada, sin reenvío | El servidor cierra con `IDLE` (`driver.session_closed reason=IDLE`), y `GET view` = 401 a los 65 s |
-| Foco: "Seguir" / Escape (Chromium y WebKit) | `Finalizar turno` / `Finalizar turno` en los dos navegadores |
-| Confirmar fin | `/driver` con "Turno finalizado" y socket cerrado |
-| Permiso denegado en el selector | El selector no muestra aviso. La vista de demanda muestra "Sin permiso de ubicación…" y "Reintentar". Tras "Reintentar" con el permiso concedido, el aviso desaparece y se envía la posición |
+Otras comprobaciones:
+
+- `git diff --stat origin/feat/driver_session-v1.4...HEAD`: solo cambian `features/driver/{ServicePicker,
+  DemandView,CapacityBanner}.tsx`, sus tests, los dos `translation.json`, `progress/` y `feature_list.json`.
+  `StopCard.tsx` y `DriverStatus.tsx` están en la lista de T-08, pero no ha hecho falta tocarlos.
+- Los commits siguen Conventional Commits con el ámbito `driver_ui` y la referencia a T-08.
+- Los dos idiomas tienen las mismas claves en `driver.*` (volcado de los dos JSON).
+- `i18n.ts:72` tiene `escapeValue: false`, así que la composición por mitades no escapa nada.
 
 ## Hallazgos
 
 ### Bloqueantes
 
-Ninguno.
+**B-01 · `ShiftPage.test.tsx:236-238`: test intermitente que hizo fallar `verify`** (AGENTS.md §6
+"Verificación"; `docs/verification.md` §3: `verify` en verde; T-07)
 
-### Problemas de spec
+- `await screen.findByText('Salida a las 08:40')` termina en cuanto React confirma `DemandView`. El socket,
+  en cambio, se abre en un efecto pasivo: `useDriverShift` → `useDriverSocket.ts:90-131`, con
+  `enabled = true` desde la fase `demand`.
+- React puede retrasar los efectos pasivos de un render que no viene de un evento discreto (aquí, la
+  resolución de una promesa). Si `findByText` gana la carrera, `FakeWebSocket.last()` lanza
+  `no WebSocket has been created`.
+- El patrón viene de a944032 (v1.1, ciclo 1) y no lo ha introducido T-08. Pero el test es de esta feature
+  y hace que `verify` no sea determinista.
+- Hay el mismo patrón en `ShiftPage.test.tsx:167-168` (AC-04/AC-08/AC-09) y en `:221-225` (AC-10).
+- Arreglo: esperar al socket antes de usarlo en los tres sitios, p. ej.
+  `await waitFor(() => expect(FakeWebSocket.instances).toHaveLength(1))`, o usar un `findSocket()`
+  auxiliar. No hay que tocar código de producción.
 
-**P-05 · Nuevo, no bloqueante, para la persona (CP-4).** La v1.1 de `driver_ui` no sigue el orden de
-`docs/use_cases.md` CU-08.
-- CU-08 pide el permiso de geolocalización en el paso 4, después de elegir la salida en el paso 3.
-  AC-04 y AC-09 v1.1 siguen la posición desde que se abre el turno, también antes de la primera salida
-  (`service = null`). Por eso el navegador pide el permiso al entrar al selector
-  (`ShiftPage.tsx:47-48`).
-- CU-08 4a ("lo indica; se ofrece reintentar") no tiene reflejo en el selector: si el conductor
-  deniega el permiso ahí, no lo ve hasta llegar a la vista de demanda.
-- El código cumple la spec aprobada, y la persona aprobó la v1.1 con este texto (PR #55). Por eso no
-  bloquea, pero `docs/` y la spec quedan desalineados.
+### Problemas de spec (para la persona; no bloquean)
+
+**P-05 · Sigue abierto** (CP-4, sin cambios). CU-08 pide la ubicación después de elegir la salida, y la
+v1.1 la pide desde el selector.
+
+**P-06 · Estado de la cabecera sin correspondencia con los estados** (AC-08 v1.2)
+
+- AC-08 fija "GPS correcto", "GPS desactualizado", "Conectado" y "Sin conexión", pero no dice qué texto
+  corresponde a `gps = WAITING`, al permiso denegado ni al socket que conecta por primera vez.
+- La implementación usa "GPS desactualizado" y "Sin conexión", en rojo y con icono de aviso. Por eso, al
+  empezar cada turno, la cabecera indica un fallo que todavía no existe. Además contradice a la caja, que
+  calla mientras se conecta (`DriverStatus.test.tsx:76`).
 - Propuestas:
-  - **A (recomendada):** actualizar CU-08 para que el permiso y el envío empiecen al abrir el turno,
-    antes del paso 3 (motivo: señal de vida de `driver_session.AC-13`). Si la persona quiere que el
-    selector avise del permiso denegado, añadirlo a AC-02 o AC-04 en una v1.2.
-  - **B:** limitar la v1.1 a la *siguiente* salida y mantener el orden de CU-08 en la primera. Obliga
-    a cambiar AC-04/AC-09 y el código, y deja la primera elección sin señal de vida, aunque el
-    servidor no la necesita: `IDLE` cuenta desde `started_at`.
+  - **A:** añadir a AC-08 un texto neutro para "todavía no" ("Esperando GPS", "Conectando…").
+  - **B:** dar por buena la lectura binaria y dejarla escrita en AC-08.
 
-**P-02, P-03, P-04 · Siguen abiertos, no bloqueantes** (sin cambios desde el ciclo 1): estado en la
-cabecera de §5.9 sin texto definido, plurales fijos ("Esperan 1 personas…", "1 plazas libres") y textos
-sin definir para la lista vacía y los errores.
+**P-07 · Plural de "más tiempo" y "visión"** (AC-05 v1.2: "todos los textos con número usan el plural
+correcto")
+
+- Salen "2 más tiempo" y "2 visión", en ca "2 més temps" y "2 visió", porque design §3 solo da un texto.
+- Como etiqueta de categoría se puede defender, pero no concuerda con "2 rampas" ni con "2 asientos".
+- Hay que fijar en la spec si se quedan invariables o qué plural llevan. Una opción es reformularlas como
+  categoría: "Más tiempo: 2".
 
 ### No bloqueantes
 
-Siguen abiertos los del ciclo 1, con las líneas actualizadas:
+**Resueltos por la v1.2:**
 
-- **N-01** `DemandView.tsx:28-33`: `isFor` acepta vistas con `service: null`, y una vista en vivo así
-  (la salida desaparece al cambiar el feed) no lleva al selector.
-- **N-02** `DemandView.tsx:220,228` y `newAlerts.ts:21`: la clave y el resalte van por `stop_id`. Una
-  parada que aparece dos veces en el viaje duplica la clave; conviene usar `stop_sequence`.
-- **N-03** `tone.ts:21-22`: el `AudioContext` se crea fuera de un gesto del usuario. Hay que probarlo en
+- P-02: estado de la cabecera sin texto.
+- P-03: plurales fijos.
+- P-04: lista vacía y errores sin texto.
+- N-06: el fallo de carga del selector no ofrecía "Reintentar". Resuelto en `ServicePicker.tsx:144-154`.
+
+**Siguen abiertos** (con las líneas actuales):
+
+- **N-01** `DemandView.tsx:30-35,109`: `isFor` acepta vistas con `service: null`. Una vista en vivo así no
+  lleva al selector.
+- **N-02** `DemandView.tsx:245,253` y `newAlerts.ts:21`: la clave y el resalte usan `stop_id`. Una parada
+  que aparece dos veces en el viaje duplica la clave; conviene usar `stop_sequence`.
+- **N-03** `tone.ts:19-22`: el `AudioContext` se crea fuera de un gesto del usuario. Hay que probarlo en
   Safari/iPadOS en CP-6.
-- **N-04** `useDriverSocket.ts:143`: al volver la red, `connected` se mantiene hasta que el socket nuevo
-  se resuelve.
-- **N-05** `DemandView.tsx:8-9`, `StopCard.tsx:5`, `ServicePicker.tsx:13`: importan de
+- **N-04** `useDriverSocket.ts:143`: al volver la red, `connected` se mantiene hasta que el socket nuevo se
+  resuelve. Desde la v1.2 también afecta a la cabecera.
+- **N-05** `DemandView.tsx:9-10`, `StopCard.tsx:5` y `ServicePicker.tsx:14` importan de
   `features/passenger` (`docs/conventions.md` §4).
-- **N-06** `ServicePicker.tsx:141`: un fallo de carga no ofrece "Reintentar".
 - **N-07** `ShiftPage.tsx:78-96`: las fases `loading` y `failed` no tienen `h1`.
-- **N-08** `e2e/driver.spec.ts:314`, `:343`: axe no se ejecuta con el GPS desactualizado ni con el
-  diálogo abierto.
+- **N-08** `e2e/driver.spec.ts:306-313` y `:341-345`: axe no se ejecuta con el GPS desactualizado ni con el
+  diálogo abierto. Con la v1.2 tiene más interés: es la única captura con la cabecera en rojo.
 - **N-09** `frontend/src/shared/device/storage.ts:2`: el comentario "The only keys" no incluye
   `avisabus.driverMute`.
+- **N-10** `DemandView.tsx:30-35,107-118`: al elegir la primera salida, una vista con `service: null` que
+  llegue tarde podría contar como primera vista.
+- **N-11** `useDriverShift.ts` no está en design §1 (documental).
 
-Nuevos:
+**Nuevos:**
 
-- **N-10** `DemandView.tsx:28-33,93-99`: riesgo bajo, deducido de leer el código y no reproducido. Al
-  elegir la *primera* salida, una vista con `service: null` en vuelo (generada antes del `PUT …/service`)
-  que llegue por el socket después de montar `DemandView` contaría como la "primera vista". La
-  siguiente, con las solicitudes que ya existían, sonaría y las marcaría como "Nueva" (AC-07: "la primera
-  vista tras entrar marca sus solicitudes como vistas sin tono"). Propuesta, junto con N-01: no tomar
-  como primera vista una con `service: null` cuando la vista ya tiene salida.
-- **N-11** `frontend/src/features/driver/useDriverShift.ts`: no está en la lista de design §1. Hay que
-  añadirlo en la próxima versión de la spec. Es documental.
+- **N-12** `ShiftPage.tsx:94` frente a `ServicePicker.tsx:152`: en la misma ruta conviven dos versiones del
+  error. La carga inicial muestra "**No se han podido cargar los datos.** Comprueba la conexión y vuelve a
+  intentarlo." y el selector muestra "No se han podido cargar los datos". La interpretación cumple la spec
+  (ver la tabla). Si la persona quiere un único texto, que lo añada a AC-02 o AC-03.
+- **N-13** `translation.json` (`driver.capacity`, `driver.seats` y `driver.places`): las claves de design §3
+  ahora contienen una plantilla ("{{waiting}} y {{places}}"), y la frase se compone con seis claves nuevas
+  (`capacityWaiting_*`, `capacityPlaces_*`, `seatRequests_*`, `seatsLeft_*`, `freePlaces_*` y
+  `freeSeats_*`). Hay que reflejarlo en design §3 en la próxima versión. Es documental.
+- **N-14** `ServicePicker.tsx:144-154,200-210`: los avisos de error y de lista vacía no se anuncian (no
+  tienen `role="status"` ni `announce`). Además, cuando "Reintentar" o "Actualizar" funcionan, el botón
+  desaparece con el aviso y el foco cae al `body`. AC-02 solo pide anunciar el 409, así que no incumple
+  ningún AC. Propuesta: `role="status"` en el error y el foco al `h1` del paso tras recargar, como ya se
+  hace al cambiar de paso (`:75-80`).
 
 ### Lista de comprobación (§4)
 
-- **Contrato:** comportamiento según AC-01–AC-12 v1.1. Endpoints y mensajes iguales que en el
-  ciclo 1, y además comprobados contra el backend real (`PUT position` con `service = null` → 204,
-  `hello`, `driver.view`, `session.closed`, 401/4401).
-- **Arquitectura:** el diff de la feature no toca el backend; los cambios de backend del rango vienen
-  de la fusión de `feat/driver_session` v1.3.
-- **Tests:** temporizadores falsos, `FakeWebSocket`, geolocalización y `wakeLock` simulados, sin red.
-  No son tautológicos: los de v1.1 se vieron en rojo según `impl_driver_ui.md`, y el e2e del flujo
-  falla con el `dist/` anterior (1 envío).
-- **Privacidad:** el token solo está en `sessionStorage`, en la cabecera y en el `hello`; no hay
-  `console.*` ni `device_id` en `features/driver`. El backend no registra posiciones ni tokens.
-- **Accesibilidad:** axe sin violaciones en el perfil tablet, es y ca. Foco correcto al cerrar el
-  diálogo (B-02 resuelto). Estados con icono y texto.
-- **i18n:** no hay claves nuevas en este ciclo; la paridad es/ca-valencia sigue completa.
-- **Alcance:** `git diff origin/feat/driver_session...HEAD` solo toca `frontend/src/features/driver/`,
-  `routes.tsx`, locales, e2e y fixtures, `progress/` y `feature_list.json`. No hay variables nuevas.
-  Los commits siguen Conventional Commits con el ámbito `driver_ui`.
-
-### Fuera del alcance de esta feature (para el orquestador)
-
-- `.env.example:158-161` todavía describe `AVISABUS_DRIVER_IDLE_TIMEOUT_MIN` y
-  `AVISABUS_DRIVER_GPS_STALE_S` como "sin recibir posición". Desde `driver_session` v1.3 son "sin señal
-  de vida" y "sin un fijo nuevo". Le corresponde a `driver_session`; conviene añadirlo a su lista de
-  pendientes, junto a N-10/N-11 de esa feature.
+- **Contrato:** AC-02, AC-05, AC-06 y AC-08 cumplen la v1.2 con los textos exactos. Los endpoints no
+  cambian.
+- **Arquitectura:** el diff no toca el backend. En el frontend no hay ficheros nuevos.
+- **Tests:** sin red ni reloj real (`mockApi`, `NetworkFailure` y `FakeWebSocket`). Los tests nuevos no son
+  tautológicos: comprueban la frase exacta en singular y en plural, y el implementer los vio en rojo, salvo
+  el de AC-05, que fija un comportamiento que ya existía. Hay una carrera en `ShiftPage.test.tsx` (B-01).
+- **Privacidad:** sin cambios. Nada nuevo se registra ni se guarda.
+- **Accesibilidad:**
+  - El estado de la cabecera no depende solo del color: lleva texto y un icono de forma distinta, y los dos
+    colores superan 7:1 sobre blanco.
+  - El estado de la cabecera es texto plano y no es región viva. Los anuncios siguen en las cajas
+    `role="status"` de `DriverStatus` y en el `Announcer` de las franjas, así que no se duplican.
+  - axe no da violaciones en el perfil tablet, en es ni en ca.
+  - Los botones nuevos usan `Button` (mínimo 44 px).
+  - Pendientes: N-14 (anuncio y foco en el selector) y N-08.
+- **i18n:** no hay literales (pasa el lint). Todas las claves nuevas están en es y ca-valencia y se añadieron
+  en el mismo commit.
+- **Alcance:** solo los ficheros de T-08, `progress/` y `feature_list.json`. No hay variables nuevas.

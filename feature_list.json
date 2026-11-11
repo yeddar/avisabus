@@ -453,7 +453,7 @@
       "order": 19,
       "block": 4,
       "title": "UI del conductor en tablet: acceso, línea/sentido y vista de demanda",
-      "status": "in_review",
+      "status": "implementing",
       "depends_on": [
         "frontend_i18n",
         "driver_demand"
@@ -476,7 +476,7 @@
       ],
       "spec": "specs/driver_ui/",
       "needs_exploration": false,
-      "review_cycles": 1,
+      "review_cycles": 2,
       "passes": false
     },
     {
