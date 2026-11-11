@@ -379,7 +379,7 @@
       "order": 16,
       "block": 4,
       "title": "CLI de códigos de conductor: crear, listar, revocar",
-      "status": "implementing",
+      "status": "in_review",
       "depends_on": [
         "project_scaffold"
       ],

@@ -4,12 +4,10 @@
 
 **Fecha:** 2026-11-11
 **Fase:** Ajustes del bloque 4 y bloque 5 (`deployment_rpi`)
-**Feature en curso:** `driver_codes_cli` v1.1 — `implementing` (T-05, rama `feat/driver_codes_cli-v1.1`)
+**Feature en curso:** `driver_codes_cli` v1.1 — `in_review` (T-05, rama `feat/driver_codes_cli-v1.1`)
 
 ## Último paso
-PR #59 (CP-6 del bloque 4) y #60 fusionadas: `deployment_rpi` v1.0 aprobada (CP-1) y pendientes del bloque 4 resueltos
-en spec (`driver_codes_cli` 1.1, `driver_session` 1.4, `driver_ui` 1.2, `passenger_map_view` 1.3, CU-08, IP en logs →
-`deployment_rpi` AC-09).
+`driver_codes_cli` T-05 implementada (`show_locals=False` explícito); `CI=1 ./init.sh verify --e2e` en verde.
 
 ## Siguiente paso
 Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
