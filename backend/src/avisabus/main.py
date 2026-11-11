@@ -21,6 +21,7 @@ from avisabus.adapters.inbound.http.container import (
     build_alert_use_cases,
     build_driver_demand,
     build_driver_use_cases,
+    build_gtfs_status,
     build_position_use_cases,
     build_realtime,
     build_stop_use_cases,
@@ -39,6 +40,7 @@ from avisabus.background.driver_tasks import (
     start_demand_tasks,
     start_driver_tasks,
 )
+from avisabus.background.gtfs_tasks import GtfsExpiryWatcher, start_gtfs_tasks
 from avisabus.background.sae_stats import run_sae_stats
 from avisabus.config import (
     Settings,
@@ -101,13 +103,22 @@ alert_expiry = build_alert_expiry(
 )
 # Shifts of the drivers (driver_session), listened to by `driver_demand`.
 driver_use_cases = build_driver_use_cases(settings, engine, clock, driver_demand.listener)
+# State of the active GTFS feed in `/health` and its daily expiry warning (deployment_rpi).
+gtfs_status = build_gtfs_status(engine, clock)
+gtfs_expiry_watcher = GtfsExpiryWatcher(
+    network=gtfs_status.network,
+    clock=clock,
+    warning_days=settings.gtfs_expiry_warning_days,
+    logger=structlog.get_logger(BACKGROUND_LOGGER),
+)
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     """Runs the `sae.stats` task (sae_arrivals_source AC-13), the alert expiry tasks (alert_expiry
-    AC-10), the driver session reaper (driver_session AC-13) and the refresh of the driver views
-    (driver_demand AC-09), and closes the SAE HTTP client."""
+    AC-10), the driver session reaper (driver_session AC-13), the refresh of the driver views
+    (driver_demand AC-09) and the GTFS expiry warning (deployment_rpi AC-11), and closes the SAE
+    HTTP client."""
     stats_task = asyncio.create_task(run_sae_stats(arrivals_source), name="sae.stats")
     expiry_tasks = start_alert_tasks(
         watch_tick=alert_expiry.watch_passages.tick,
@@ -126,10 +137,13 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         interval=VIEW_REFRESH_INTERVAL,
         logger=structlog.get_logger(BACKGROUND_LOGGER),
     )
+    gtfs_tasks = start_gtfs_tasks(
+        tick=gtfs_expiry_watcher.tick, logger=structlog.get_logger(BACKGROUND_LOGGER)
+    )
     try:
         yield
     finally:
-        await stop_tasks([*expiry_tasks, *driver_tasks, *demand_tasks])
+        await stop_tasks([*expiry_tasks, *driver_tasks, *demand_tasks, *gtfs_tasks])
         await driver_demand.views.aclose()
         stats_task.cancel()
         with suppress(asyncio.CancelledError):
@@ -146,4 +160,5 @@ app = create_app(
     alerts=alert_use_cases,
     drivers=driver_use_cases,
     demand=driver_demand,
+    gtfs=gtfs_status,
 )

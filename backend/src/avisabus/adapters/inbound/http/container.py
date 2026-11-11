@@ -83,6 +83,7 @@ from avisabus.domain.ports.clock import Clock
 from avisabus.domain.ports.device import DeviceHasher
 from avisabus.domain.ports.driver import DriverSessionListener
 from avisabus.domain.ports.events import EventPublisher
+from avisabus.domain.ports.network import NetworkRepository
 from avisabus.domain.ports.occupancy import OccupancySensor
 from avisabus.domain.services.direction_resolver import DEFAULT_ALIASES
 
@@ -92,6 +93,18 @@ WS_LOGGER = "avisabus.ws"
 ALERTS_LOGGER = "avisabus.alerts"
 BACKGROUND_LOGGER = "avisabus.background"
 DRIVER_LOGGER = "avisabus.driver"
+
+
+@dataclass(frozen=True, slots=True)
+class GtfsStatus:
+    """What `GET /api/v1/health` reads to report the active feed (deployment_rpi AC-10)."""
+
+    network: NetworkRepository
+    clock: Clock
+
+
+def build_gtfs_status(engine: Engine, clock: Clock) -> GtfsStatus:
+    return GtfsStatus(network=SqliteNetworkRepository(engine), clock=clock)
 
 
 @dataclass(frozen=True, slots=True)

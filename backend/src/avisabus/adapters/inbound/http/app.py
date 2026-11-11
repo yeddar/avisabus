@@ -13,6 +13,7 @@ from avisabus.adapters.inbound.http.container import (
     AlertUseCases,
     DriverDemand,
     DriverUseCases,
+    GtfsStatus,
     PositionUseCases,
     Realtime,
     StopUseCases,
@@ -48,6 +49,7 @@ def create_app(
     alerts: AlertUseCases | None = None,
     drivers: DriverUseCases | None = None,
     demand: DriverDemand | None = None,
+    gtfs: GtfsStatus | None = None,
     *,
     schema_only: bool = False,
 ) -> FastAPI:
@@ -60,7 +62,8 @@ def create_app(
     for the device header and the events, and answers them with `Cache-Control: no-store`;
     `drivers` adds the driver endpoints (driver_session), also with `no-store`; `demand` adds
     `/ws/driver` and `GET /driver/sessions/current/view` (driver_demand), which need `realtime` and
-    `drivers`.
+    `drivers`; `gtfs` lets `/health` report the active feed (deployment_rpi AC-10): without it,
+    there is no feed to report and the status is `degraded`.
 
     With `schema_only`, every router is registered without its dependencies, so the app can only
     describe itself (`openapi_document`); its endpoints must not be called."""
@@ -75,6 +78,7 @@ def create_app(
     if drivers is not None:
         app.add_middleware(NoStoreMiddleware, path=f"{API_PREFIX}/driver")
     register_error_handlers(app)
+    app.state.gtfs_status = gtfs
     app.include_router(health.router, prefix=API_PREFIX)
     if stops is not None:
         app.state.stop_use_cases = stops
