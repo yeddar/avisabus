@@ -9,6 +9,7 @@ import { DemandView } from '../DemandView';
 import { setDriverToken } from '../session';
 import { playTone } from '../tone';
 import type { DriverView } from '../types';
+import { useDriverShift } from '../useDriverShift';
 import { driverView, SERVICE, stopDemand } from './fixtures';
 
 vi.mock('../tone', () => ({ playTone: vi.fn(), resetToneForTests: vi.fn() }));
@@ -23,15 +24,23 @@ function viewWith(alertIds: string[], overrides: Partial<DriverView> = {}): Driv
   });
 }
 
+function Demand({ initialView }: { initialView: DriverView | null }) {
+  const shift = useDriverShift(true, vi.fn());
+  return (
+    <DemandView
+      service={SERVICE}
+      initialView={initialView}
+      shift={shift}
+      onNextDeparture={vi.fn()}
+      onSessionEnd={vi.fn()}
+    />
+  );
+}
+
 function renderDemand(initialView: DriverView | null = null) {
   return renderWithProviders(
     <MemoryRouter>
-      <DemandView
-        service={SERVICE}
-        initialView={initialView}
-        onNextDeparture={vi.fn()}
-        onSessionEnd={vi.fn()}
-      />
+      <Demand initialView={initialView} />
     </MemoryRouter>,
   );
 }
@@ -122,6 +131,20 @@ describe('DemandView tone and highlight', () => {
     receiveView(viewWith(['a', 'b', 'c']));
 
     expect(playTone).toHaveBeenCalledTimes(1);
+  });
+
+  it('[driver_ui.AC-07] [driver_ui.AC-09] right after choosing the departure it asks for the view once and marks it as seen', async () => {
+    const api = mockApi(() => ({ status: 200, body: viewWith(['a']) }));
+    renderDemand();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    expect(api.calls('/current/view')).toBe(1);
+    expect(screen.getByText('Parada A')).toBeInTheDocument();
+    expect(playTone).not.toHaveBeenCalled();
+    expect(screen.queryByText(NEW_LABEL)).not.toBeInTheDocument();
   });
 
   it('[driver_ui.AC-07] an initial view from the first load also counts as seen', () => {

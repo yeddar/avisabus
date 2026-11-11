@@ -7,7 +7,7 @@ import { mockApi, ok, problem } from '../../../test/mockApi';
 import { renderWithProviders } from '../../../test/render';
 import { setDriverToken } from '../session';
 import { ShiftPage } from '../ShiftPage';
-import { DEPARTURE_FREE, driverView, LINE_93 } from './fixtures';
+import { DEPARTURE_FREE, driverView, LINE_93, SERVICE, stopDemand } from './fixtures';
 
 function LoginProbe() {
   const { pathname, state } = useLocation();
@@ -43,6 +43,7 @@ describe('ShiftPage', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     Object.defineProperty(navigator, 'geolocation', { configurable: true, value: undefined });
+    Object.defineProperty(navigator, 'wakeLock', { configurable: true, value: undefined });
   });
 
   it('[driver_ui.AC-03] without a token it goes back to /driver without calling the API', async () => {
@@ -128,6 +129,89 @@ describe('ShiftPage', () => {
 
     await screen.findByRole('heading', { level: 1, name: 'Elige la salida' });
     expect(await screen.findByRole('button', { name: /08:40/ })).toBeInTheDocument();
+  });
+
+  it('[driver_ui.AC-04] [driver_ui.AC-09] while choosing the first departure (service null) it follows the position and keeps /ws/driver', async () => {
+    setDriverToken('token-1');
+    mockApi((url) => {
+      if (url.pathname.endsWith('/current/view')) return ok(driverView({ service: null }));
+      if (url.pathname.endsWith('/driver/lines')) return ok({ lines: [LINE_93] });
+      return problem(500, 'unexpected');
+    });
+    renderShift();
+
+    await screen.findByRole('heading', { level: 1, name: 'Elige la línea' });
+
+    expect(navigator.geolocation.watchPosition).toHaveBeenCalledTimes(1);
+    expect(FakeWebSocket.instances).toHaveLength(1);
+    act(() => FakeWebSocket.last().open());
+    expect(FakeWebSocket.last().sentMessages()).toEqual([
+      { type: 'hello', session_token: 'token-1' },
+    ]);
+  });
+
+  it('[driver_ui.AC-04] [driver_ui.AC-08] [driver_ui.AC-09] "Elegir la siguiente salida" keeps the position, the wake lock and /ws/driver', async () => {
+    setDriverToken('token-1');
+    const release = vi.fn(() => Promise.resolve());
+    const request = vi.fn(() => Promise.resolve({ release }));
+    Object.defineProperty(navigator, 'wakeLock', { configurable: true, value: { request } });
+    const next = { ...DEPARTURE_FREE, trip_id: '12347', departure_at: '2026-11-09T08:10:00Z' };
+    mockApi((url) => {
+      if (url.pathname.endsWith('/current/view')) return ok(driverView({ finished: true }));
+      if (url.pathname.endsWith('/driver/lines')) return ok({ lines: [LINE_93] });
+      if (url.pathname.endsWith('/driver/departures')) return ok({ departures: [next] });
+      if (url.pathname.endsWith('/current/service')) return ok({});
+      return { status: 204, body: null };
+    });
+    renderShift();
+    await screen.findByText('Salida a las 08:40');
+    const socket = FakeWebSocket.last();
+    act(() => socket.open());
+    await waitFor(() => expect(request).toHaveBeenCalledTimes(1));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Elegir la siguiente salida' }));
+    await screen.findByRole('heading', { level: 1, name: 'Elige la salida' });
+
+    expect(navigator.geolocation.clearWatch).not.toHaveBeenCalled();
+    expect(release).not.toHaveBeenCalled();
+    expect(socket.closedByClient).toBeNull();
+    expect(FakeWebSocket.instances).toHaveLength(1);
+
+    fireEvent.click(await screen.findByRole('button', { name: /09:10/ }));
+    await screen.findByText('Salida a las 09:10');
+
+    expect(navigator.geolocation.watchPosition).toHaveBeenCalledTimes(1);
+    expect(navigator.geolocation.clearWatch).not.toHaveBeenCalled();
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(release).not.toHaveBeenCalled();
+    expect(FakeWebSocket.instances).toHaveLength(1);
+
+    // The same socket brings the views of the new departure; a late one of the old one is ignored.
+    const nextService = { ...SERVICE, trip_id: '12347', departure_at: next.departure_at };
+    act(() =>
+      socket.receive({
+        type: 'driver.view',
+        ...driverView({
+          generated_at: '2026-11-09T08:00:00Z',
+          service: nextService,
+          stops: [stopDemand({ name: 'Parada nueva' })],
+        }),
+      }),
+    );
+    expect(await screen.findByText('Parada nueva')).toBeInTheDocument();
+
+    act(() =>
+      socket.receive({
+        type: 'driver.view',
+        ...driverView({
+          generated_at: '2026-11-09T08:00:01Z',
+          finished: true,
+          stops: [stopDemand({ name: 'Parada vieja' })],
+        }),
+      }),
+    );
+    expect(screen.queryByText('Parada vieja')).not.toBeInTheDocument();
+    expect(screen.getByText('Parada nueva')).toBeInTheDocument();
   });
 
   it('[driver_ui.AC-10] when the server closes the shift it returns to /driver with the reason', async () => {

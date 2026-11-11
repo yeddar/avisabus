@@ -212,6 +212,23 @@ describe('useDriverSocket', () => {
     unsubscribe();
   });
 
+  it('[driver_ui.AC-09] opens nothing and asks for nothing while the shift is not open on the page', async () => {
+    const api = mockApi(() => ok(driverView()));
+    const { rerender } = renderHook(
+      ({ enabled }) => useDriverSocket({ enabled, onView: vi.fn(), onClosed: vi.fn() }),
+      { initialProps: { enabled: false } },
+    );
+
+    await advance(30_000);
+
+    expect(FakeWebSocket.instances).toHaveLength(0);
+    expect(api.calls('/current/view')).toBe(0);
+
+    rerender({ enabled: true });
+
+    expect(FakeWebSocket.instances).toHaveLength(1);
+  });
+
   it('[driver_ui.AC-09] closes the socket when unmounted and ignores malformed frames', () => {
     const { onView, unmount } = hook();
     const socket = FakeWebSocket.last();

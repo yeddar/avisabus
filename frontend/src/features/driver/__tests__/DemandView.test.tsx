@@ -5,18 +5,23 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FakeWebSocket } from '../../../test/FakeWebSocket';
 import { mockApi } from '../../../test/mockApi';
 import { renderWithProviders } from '../../../test/render';
-import { DemandView } from '../DemandView';
+import { DemandView, type DemandViewProps } from '../DemandView';
 import { getDriverToken, setDriverToken } from '../session';
 import type { DriverView } from '../types';
+import { useDriverShift } from '../useDriverShift';
 import { driverView, SERVICE, stopDemand } from './fixtures';
+
+function Demand(props: Omit<DemandViewProps, 'service' | 'shift'>) {
+  const shift = useDriverShift(true, vi.fn());
+  return <DemandView service={SERVICE} shift={shift} {...props} />;
+}
 
 function renderDemand(initialView: DriverView | null = driverView()) {
   const onNextDeparture = vi.fn();
   const onSessionEnd = vi.fn();
   const result = renderWithProviders(
     <MemoryRouter>
-      <DemandView
-        service={SERVICE}
+      <Demand
         initialView={initialView}
         onNextDeparture={onNextDeparture}
         onSessionEnd={onSessionEnd}
@@ -160,12 +165,6 @@ describe('DemandView', () => {
     expect(onNextDeparture).toHaveBeenCalledTimes(1);
   });
 
-  it('[driver_ui.AC-04] follows the position while the view is open', () => {
-    renderDemand();
-
-    expect(navigator.geolocation.watchPosition).toHaveBeenCalledTimes(1);
-  });
-
   it('[driver_ui.AC-10] after confirming it calls DELETE, forgets the token and ends with ENDED', async () => {
     const api = mockApi(() => ({ status: 204, body: null }));
     const { onSessionEnd } = renderDemand();
@@ -190,17 +189,5 @@ describe('DemandView', () => {
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(onSessionEnd).not.toHaveBeenCalled();
-  });
-
-  it('[driver_ui.AC-10] when session.closed arrives it forgets the token and ends with its reason', () => {
-    const { onSessionEnd } = renderDemand();
-
-    act(() => {
-      FakeWebSocket.last().open();
-      FakeWebSocket.last().receive({ type: 'session.closed', reason: 'REPLACED' });
-    });
-
-    expect(getDriverToken()).toBeNull();
-    expect(onSessionEnd).toHaveBeenCalledWith('REPLACED');
   });
 });

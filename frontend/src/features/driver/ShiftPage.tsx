@@ -7,8 +7,15 @@ import { StatusNotice } from '../../shared/ui/StatusNotice';
 import { usePageTitle } from '../../shared/ui/usePageTitle';
 import { DemandView } from './DemandView';
 import { ServicePicker } from './ServicePicker';
-import { DriverAuthError, driverApi, getDriverToken, subscribeDriverAuthLost } from './session';
+import {
+  clearDriverToken,
+  DriverAuthError,
+  driverApi,
+  getDriverToken,
+  subscribeDriverAuthLost,
+} from './session';
 import type { DriverService, DriverView } from './types';
+import { useDriverShift } from './useDriverShift';
 
 const OK = 200;
 
@@ -18,7 +25,11 @@ type Phase =
   | { kind: 'picker'; initialChoice?: { line: string; directionId: number } }
   | { kind: 'demand'; service: DriverService; initialView: DriverView | null };
 
-/** /driver/shift: the picker without a departure, the demand view with one (driver_ui.AC-02, AC-03). */
+/**
+ * /driver/shift: the picker without a departure, the demand view with one (driver_ui.AC-02, AC-03).
+ * The position, the wake lock and /ws/driver live here, not in the view, so they last as long as
+ * the shift, also while choosing a departure (AC-04, AC-08, AC-09 v1.1).
+ */
 export function ShiftPage() {
   const { t } = useTranslation();
   usePageTitle(t('driver.shift.title'));
@@ -32,6 +43,12 @@ export function ShiftPage() {
   }, [navigate]);
 
   useEffect(() => subscribeDriverAuthLost(toLogin), [toLogin]);
+
+  const shiftOpen = hasToken && (phase.kind === 'picker' || phase.kind === 'demand');
+  const shift = useDriverShift(shiftOpen, (reason) => {
+    clearDriverToken();
+    void navigate('/driver', { replace: true, state: { closedReason: reason } });
+  });
 
   useEffect(() => {
     if (!hasToken) return;
@@ -91,6 +108,7 @@ export function ShiftPage() {
           key={`${phase.service.trip_id}-${phase.service.service_date}`}
           service={phase.service}
           initialView={phase.initialView}
+          shift={shift}
           onNextDeparture={() =>
             setPhase({
               kind: 'picker',

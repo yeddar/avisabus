@@ -52,19 +52,22 @@ function parseMessage(raw: unknown): DriverMessage | null {
 }
 
 export interface DriverSocketOptions {
+  /** Whether the shift is open on this page (default true); nothing is opened while false. */
+  enabled?: boolean;
   /** A view from the socket or the polling; `initial`: first one after entering or reconnecting. */
   onView: (view: DriverView, meta: { initial: boolean }) => void;
   onClosed: (reason: SessionCloseReason) => void;
 }
 
 /**
- * Keeps /ws/driver open while mounted (driver_ui.AC-09, as passenger_alert_ui.AC-10): sends the
+ * Keeps /ws/driver open while mounted and enabled (driver_ui.AC-09, as passenger_alert_ui.AC-10): sends the
  * `hello` with the token (only in that message), answers `ping`, and reconnects after 1, 2, 4,
  * 8, 16, 30 s (±20 %), never while the browser is offline. While it is not connected it asks for
  * GET …/view every 10 s. `status` is `connected` from the first view until the close; `connecting`
  * only before the first close, so the view does not show "Sin conexión" while starting.
  */
 export function useDriverSocket(options: DriverSocketOptions): { status: DriverSocketStatus } {
+  const enabled = options.enabled ?? true;
   const online = useOnline();
   const [socketStatus, setSocketStatus] = useState<DriverSocketStatus>('connecting');
   const handlers = useRef(options);
@@ -85,7 +88,7 @@ export function useDriverSocket(options: DriverSocketOptions): { status: DriverS
   }, []);
 
   useEffect(() => {
-    if (!online) return;
+    if (!online || !enabled) return;
     let socket: WebSocket | null = null;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let attempt = 0;
@@ -135,12 +138,12 @@ export function useDriverSocket(options: DriverSocketOptions): { status: DriverS
         socket.close(1000);
       }
     };
-  }, [online, deliver]);
+  }, [online, enabled, deliver]);
 
   const status: DriverSocketStatus = online ? socketStatus : 'disconnected';
 
   useEffect(() => {
-    if (status === 'connected') return;
+    if (!enabled || status === 'connected') return;
     const timer = setInterval(() => {
       if (closed.current) return;
       void driverApi<DriverView>('GET', '/driver/sessions/current/view')
@@ -153,7 +156,7 @@ export function useDriverSocket(options: DriverSocketOptions): { status: DriverS
         });
     }, POLL_INTERVAL_MS);
     return () => clearInterval(timer);
-  }, [status, deliver]);
+  }, [enabled, status, deliver]);
 
   return { status };
 }

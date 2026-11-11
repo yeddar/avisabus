@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { safeStorage } from '../../shared/device/storage';
@@ -16,18 +16,30 @@ import { clearDriverToken, driverApi } from './session';
 import { StopCard } from './StopCard';
 import { playTone } from './tone';
 import type { DriverService, DriverView } from './types';
-import { useDriverPosition } from './useDriverPosition';
-import { type SessionCloseReason, useDriverSocket } from './useDriverSocket';
+import type { SessionCloseReason } from './useDriverSocket';
+import type { DriverShift, DriverViewListener } from './useDriverShift';
 
 const MUTE_KEY = 'avisabus.driverMute';
 const HIGHLIGHT_MS = 10_000;
 const LARGE_CARDS = 3;
+const OK = 200;
+
+/** A view of another departure (a late one of the previous trip) is not for this view. */
+function isFor(service: DriverService, view: DriverView): boolean {
+  return (
+    view.service === null ||
+    (view.service.trip_id === service.trip_id && view.service.service_date === service.service_date)
+  );
+}
 
 export interface DemandViewProps {
   service: DriverService;
   /** View already known when the page was loaded; null right after choosing the departure. */
   initialView: DriverView | null;
+  /** Position, wake lock and views of the open shift, owned by ShiftPage (AC-04, AC-09). */
+  shift: DriverShift;
   onNextDeparture: () => void;
+  /** After confirming the end of the shift; a close by the server is handled by ShiftPage. */
   onSessionEnd: (reason: SessionCloseReason) => void;
 }
 
@@ -35,6 +47,7 @@ export interface DemandViewProps {
 export function DemandView({
   service,
   initialView,
+  shift,
   onNextDeparture,
   onSessionEnd,
 }: DemandViewProps) {
@@ -50,7 +63,11 @@ export function DemandView({
   );
   const highlightTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const ending = useRef(false);
-  const { permission, retry } = useDriverPosition(true);
+  const received = useRef(initialView !== null);
+  const lastGeneratedAt = useRef(
+    initialView === null ? Number.NEGATIVE_INFINITY : Date.parse(initialView.generated_at),
+  );
+  const { permission, retryPermission, socketStatus, subscribeViews } = shift;
 
   function highlightStop(stopId: string) {
     const timers = highlightTimers.current;
@@ -70,20 +87,48 @@ export function DemandView({
     );
   }
 
-  const { status: socketStatus } = useDriverSocket({
-    onView(next, { initial }) {
-      const diff = diffAlerts(seen.current, next, initial);
-      seen.current = diff.seen;
-      setView(next);
-      if (diff.fresh.length === 0) return;
-      if (!muted) playTone();
-      diff.fresh.forEach(({ stopId }) => highlightStop(stopId));
-    },
-    onClosed(reason) {
-      clearDriverToken();
-      onSessionEnd(reason);
-    },
+  // The first view this departure receives marks its requests as seen without a tone (AC-07),
+  // as does the first one after reconnecting.
+  function applyView(next: DriverView, initial: boolean) {
+    const generatedAt = Date.parse(next.generated_at);
+    if (!isFor(service, next) || generatedAt < lastGeneratedAt.current) return;
+    lastGeneratedAt.current = generatedAt;
+    const first = !received.current;
+    received.current = true;
+    const diff = diffAlerts(seen.current, next, initial || first);
+    seen.current = diff.seen;
+    setView(next);
+    if (diff.fresh.length === 0) return;
+    if (!muted) playTone();
+    diff.fresh.forEach(({ stopId }) => highlightStop(stopId));
+  }
+
+  const onView = useRef<DriverViewListener>(() => undefined);
+  useLayoutEffect(() => {
+    onView.current = (next, meta) => applyView(next, meta.initial);
   });
+
+  useEffect(() => subscribeViews((next, meta) => onView.current(next, meta)), [subscribeViews]);
+
+  // Right after choosing the departure the socket is already open, so its next view may take a
+  // while: the current one is asked for once.
+  useEffect(() => {
+    if (initialView !== null) return;
+    let active = true;
+    driverApi<DriverView>('GET', '/driver/sessions/current/view')
+      .then((result) => {
+        if (active && result.status === OK && result.data !== null) {
+          onView.current(result.data, { initial: false });
+        }
+      })
+      // A 401 is reported through loseDriverAuth; anything else waits for the socket.
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+    // Only when the view is mounted.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const element = heading.current;
@@ -153,7 +198,7 @@ export function DemandView({
         view={view}
         permission={permission}
         socketStatus={socketStatus}
-        onRetryPermission={retry}
+        onRetryPermission={retryPermission}
         onNextDeparture={onNextDeparture}
       />
       {view !== null && <CapacityBanner view={view} />}
