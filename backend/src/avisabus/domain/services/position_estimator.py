@@ -7,14 +7,16 @@ by time between two consecutive stops (AC-01, AC-02).
 
 from collections.abc import Mapping, Sequence
 from datetime import datetime, timedelta
+from itertools import accumulate
 
 from avisabus.domain.errors import PositionNotEstimableError
 from avisabus.domain.models.network import ShapePoint, TripStopTime
 from avisabus.domain.models.position import PositionEstimate, PositionStatus, StopRef
 from avisabus.domain.services.geometry import (
+    cumulative_distances,
+    feed_to_metres,
     point_at_distance,
     project_onto_shape,
-    shape_distances,
 )
 
 
@@ -32,9 +34,10 @@ def estimate_position(
 
     `service_day_start` is the start of the trip's service day (local noon − 12 h); `arrival_at`
     and `now` are timezone-aware. `stop_coordinates` (`(lat, lon)` by stop) are only needed when
-    the stop times lack `shape_dist_traveled` (AC-06). Returns `None` if the trip does not call
-    at the target stop; raises `PositionNotEstimableError` if the shape is empty or a stop has
-    neither distance nor coordinates.
+    the stop times or the shape lack `shape_dist_traveled` (AC-06). Every distance of the estimate
+    is in real metres along the shape. Returns `None` if the trip does not call at the target
+    stop; raises `PositionNotEstimableError` if the shape is empty or a stop can be placed neither
+    by distance nor by coordinates.
     """
     ordered = sorted(stop_times, key=lambda stop_time: stop_time.stop_sequence)
     occurrences = [n for n, st in enumerate(ordered) if st.stop_id == target_stop_id]
@@ -42,7 +45,7 @@ def estimate_position(
         return None
     if not shape:
         raise PositionNotEstimableError("empty_shape")
-    along_shape = shape_distances(shape)
+    along_shape = cumulative_distances(shape)
     along_stops = _stop_distances(ordered, shape, along_shape, stop_coordinates)
 
     def scheduled(n: int) -> datetime:
@@ -106,12 +109,18 @@ def _stop_distances(
     along_shape: Sequence[float],
     stop_coordinates: Mapping[str, tuple[float, float]] | None,
 ) -> list[float]:
-    """`shape_dist_traveled` of the stop times, or their projection onto the shape (AC-06)."""
-    feed = [stop_time.shape_dist_traveled for stop_time in ordered]
-    if all(d is not None for d in feed):
-        return [float(d) for d in feed if d is not None]
-    if stop_coordinates is None or any(st.stop_id not in stop_coordinates for st in ordered):
-        # Stop times without shape_dist_traveled need the coordinates of every stop.
+    """Metres along the shape of each stop, never decreasing along the trip (AC-06).
+
+    The stops are placed with their `shape_dist_traveled` if the shape has it too (its values are
+    only comparable with those of the shape), and projected onto the shape otherwise.
+    """
+    feed = [st.shape_dist_traveled for st in ordered if st.shape_dist_traveled is not None]
+    if len(feed) == len(ordered) and all(point.dist_traveled is not None for point in shape):
+        metres = feed_to_metres(shape, feed)
+    elif stop_coordinates is None or any(st.stop_id not in stop_coordinates for st in ordered):
+        # Without usable shape_dist_traveled, the coordinates of every stop are needed.
         raise PositionNotEstimableError("missing_stop_coordinates")
-    points = [stop_coordinates[stop_time.stop_id] for stop_time in ordered]
-    return project_onto_shape(points, shape, along_shape)
+    else:
+        points = [stop_coordinates[stop_time.stop_id] for stop_time in ordered]
+        metres = project_onto_shape(points, shape, along_shape)
+    return list(accumulate(metres, max))

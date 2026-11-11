@@ -4,7 +4,7 @@
 
 **Fecha:** 2026-11-09
 **Fase:** Implementación — Bloque 4 (conductor)
-**Feature en curso:** `driver_codes_cli` v1.0 — `done`, PR abierta. Siguiente: `driver_session`.
+**Feature en curso:** `position_estimation` v1.4 — `done`, PR abierta. Siguiente: T-08 de `driver_session` (v1.2).
 
 ## Último paso
 Bloque 3 fusionado (PR #40…#44). PR #45 (cierre del bloque 3, CP-6) y PR #46 (specs del bloque 4, CP-1)
@@ -19,6 +19,11 @@ Cada una con reviewer nuevo y PR contra `develop` sin fusionar:
    `driver_ui`, `driver_gps_simulator`.
 
 ## Pendiente para specs futuras
+- **position_estimation v1.4:** N-01 fixtures del frontend con distancias infladas (3403 m frente a ~1242 m
+  reales; las capturas `map-*` muestran "3,4 km") → regenerar antes del CP-6 del bloque 4. N-02 texto residual
+  en requirements (`:13-14`, AC-05). N-03 aclarar AC-06 (la 1282 difiere 339 m de la proyección). N-04/N-05
+  huecos de test (horarios parciales; valores iguales del feed, D-25). N-06 `_stop_distances` es privada:
+  `driver_session` no debe duplicar esa lógica.
 - **driver_codes_cli:** N-07 que la traza de Typer no muestre variables locales depende del valor por
   defecto (`show_locals`): con `True` imprimiría `plain_code` → fijarlo a `False` y testearlo. N-08 un
   `OperationalError` sale como traza (sin valores). N-09 `hide_parameters` no oculta filas con
@@ -128,7 +133,8 @@ Cada una con reviewer nuevo y PR contra `develop` sin fusionar:
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Ninguno. CP-6 del bloque 3 aprobado; CP-1 del bloque 4 aprobado (PR #45 y #46).
+Ninguno. CP-3 de `driver_session` (P-02, P-03) resuelto en la PR #51: `position_estimation` 1.4, `driver_session` 1.2
+(umbral 150 m), `gtfs_import` 1.4 (solo docs).
 
 ## Bloqueos
 Ninguno. 

@@ -1,5 +1,5 @@
 # Implementación: position_estimation
-Spec: specs/position_estimation/ (v1.3, APPROVED; T-01…T-06 hechas con la v1.0, T-07 con la v1.1, T-09 con la v1.2, T-10 con la v1.3) · Ciclo de revisión: 0 (de la v1.3) · Agente: implementer · Fecha: 2026-11-04 (v1.2 y v1.3; antes 2026-11-03)
+Spec: specs/position_estimation/ (v1.4, APPROVED; T-01…T-06 hechas con la v1.0, T-07 con la v1.1, T-09 con la v1.2, T-10 con la v1.3, T-11 con la v1.4) · Ciclo de revisión: 0 (de la v1.4) · Agente: implementer · Fecha: 2026-11-09 (v1.4; antes 2026-11-04 y 2026-11-03)
 
 ## Tareas
 - [x] T-01 Geometría: `haversine_m`, `cumulative_distances`, `shape_distances`, `point_at_distance`,
@@ -32,9 +32,14 @@ Spec: specs/position_estimation/ (v1.3, APPROVED; T-01…T-06 hechas con la v1.0
       `target_not_in_trip`: el log lleva `shape_93_trip`, el del viaje, y la respuesta
       `shape_93`, el representativo). Pasan a la primera con el código actual (comportamiento ya
       implementado en T-09); ver "Mutaciones de T-10".
-- [x] T-08 Contrato del frontend (`npm run gen:api`: sin cambios respecto a T-06; en la v1.2
-      y en la v1.3 tampoco cambia) y verificación completa `CI=1 ./init.sh verify --e2e` en verde (commit de
-      este fichero; v1.3: re-ejecutada tras T-10)
+- [x] T-11 (v1.4) Distancias en metros reales (AC-06) (commit 1ca3b69): `feed_to_metres(shape,
+      feed_values)` en `geometry.py`, forma siempre con `cumulative_distances`, proyección también
+      si la forma no trae `shape_dist_traveled`, `max` acumulado y retirada de `shape_distances`.
+      Tests con el feed escalado ×3 y con escala distinta por tramo, e integración sobre
+      `gtfs_mini` frente a la medida directa sobre la forma. Ver "Pruebas de T-11".
+- [x] T-08 Contrato del frontend (`npm run gen:api`: sin cambios respecto a T-06; en la v1.2,
+      la v1.3 y la v1.4 tampoco cambia) y verificación completa `CI=1 ./init.sh verify --e2e` en
+      verde (commit de este fichero; v1.3: re-ejecutada tras T-10; v1.4: re-ejecutada tras T-11)
 
 ## Decisiones locales
 
@@ -158,6 +163,21 @@ Spec: specs/position_estimation/ (v1.3, APPROVED; T-01…T-06 hechas con la v1.0
   línea y sentido. `trip_id` y `shape_id` son datos de la red, no personales. La respuesta
   (`NO_VEHICLE`, `position = null`, `vehicle` y `arrival` tal como vienen de `GetStopArrivals`)
   es la misma que la de D-10.
+- **D-23 (T-11) Dónde se aplica el `max` acumulado:** el design §3 paso 2 lo describe como un
+  paso posterior a `feed_to_metres` o `project_onto_shape`, así que `feed_to_metres` convierte
+  cada valor de forma independiente y `_stop_distances` aplica `accumulate(metres, max)` a
+  ambos resultados. **Aviso para `driver_session`:** al reutilizar `feed_to_metres` tiene que
+  aplicar también el `max` acumulado (en el feed real y en `gtfs_mini` ninguna secuencia decrece).
+- **D-24 (T-11) `feed_to_metres` con datos incompletos:** el design no fija qué hacer si algún
+  punto de la forma no trae `dist_traveled`; lanza `ValueError` en ese caso y con la forma vacía.
+  `estimate_position` no llega a ese error: comprueba antes los datos y proyecta, o lanza
+  `PositionNotEstimableError` (D-20). Un cambio observable que pide el paso 2 del design: si los
+  horarios traen `shape_dist_traveled` pero la forma no, ahora se proyecta y hacen falta las
+  coordenadas de las paradas (`missing_stop_coordinates` si faltan).
+- **D-25 (T-11) Valores iguales en la escala del feed:** un valor que coincide con un tramo de
+  longitud 0 en el feed se resuelve con el último punto de esos iguales (`bisect_right`). El feed
+  real y `gtfs_mini` no tienen tramos así; se prueba con una forma sintética.
+- **D-02 (actualización v1.4):** `shape_distances` deja de existir (T-11); `PointOnShape` sigue.
 - **D-22 (T-09) Test de AC-07 ajustado a la v1.2:**
   `test_a_repeated_target_uses_the_occurrence_closest_to_the_arrival` comprobaba `NOT_STARTED`
   para la **primera** aparición de la parada repetida (la primera parada del viaje). Con AC-04
@@ -174,9 +194,63 @@ Aplicadas a mano de una en una sobre el código de producción, suite completa d
 | M02 (H-02 de la revisión v1.2) | `position_estimator.py:57`: `if k == 0 or …` → `if k <= 1 or …` | **Muerto**: 6 failed, 992 passed. Fallan solo los 6 casos del test nuevo de T-10 (antes sobrevivía a toda la suite). |
 | Log con la forma representativa | `get_vehicle_position.py:115` (solo la llamada a `warning`): `shape_id=shape_id` → `shape_id=direction.shape_id` | **Muerto**: 7 failed, 991 passed. Fallan los 4 casos del test nuevo y 3 tests anteriores de AC-11 (que ya fijaban el `shape_id` del viaje en el log). |
 
+### Pruebas de T-11 (v1.4)
+
+**Tests en rojo antes del cambio** (commit 5c8a7f5, código sin tocar):
+
+- `test_geometry.py`: error de recogida, `ImportError` de `feed_to_metres`.
+- `test_position_estimator.py`: 7 fallos por aserción (p. ej. `assert 6000.0 == 2000` en el test
+  de no decrecer).
+- `test_position_api.py::test_distance_to_the_stop_matches_the_length_measured_on_the_shape`:
+  `distance_to_stop_m` 5158 frente a 1700,3 m medidos sobre la forma (viaje
+  `70_1058_601_500_2030_3_070`).
+
+**Mutaciones** (a mano, una a una, con `-k "geometry or position"`, restauradas después):
+
+| Mutante | Resultado |
+|---|---|
+| `feed_to_metres` devuelve el valor del feed | Muerto: 9 failed |
+| Sin acotar el extremo final de la forma | Muerto: 2 failed |
+| Sin `max` acumulado | Muerto: 1 failed |
+| Se usa el feed de las paradas aunque la forma no lo traiga | Muerto: 2 failed |
+| Forma con `dist_traveled` en vez de `cumulative_distances` | Muerto: 8 failed |
+
+**Efecto en AC-17:** se cumple sin cambios en sus cifras: 139 pares comprobados y 5 excluidos, los
+mismos. Esos recuentos dependen de `trip_id` y de los minutos del SAE, no de la escala. Sí bajan
+las distancias de los 5 pares excluidos: 0→1496 (antes 0→4765), 0→458 (antes 0→1288), 0→485
+(antes 0→1380), 0→981 (antes 0→2752) y 967→1447 (antes 2707→4729).
+
+**Comprobación con el feed real** (`data/gtfs/emt`, script local, sin red): 94 patrones de
+parada, 2281 paradas; ninguna secuencia decrece. La distancia con `feed_to_metres` y la proyección
+de las coordenadas difieren en mediana 0,59 m, p95 7,2 m, p99 18,7 m y máximo 337,9 m. Ver las
+observaciones de "Bloqueos".
+
 ## Bloqueos
 
-v1.2 y v1.3: ninguno.
+v1.2, v1.3 y v1.4: ninguno que impida continuar.
+
+### Observaciones de la v1.4 (no bloquean; para la persona o el spec-writer)
+
+- **O-01 Fixtures del frontend con distancias antiguas.** Son respuestas del backend anterior a la
+  v1.4 y quedan incoherentes. Ninguna tarea pide cambiarlas, así que no se han tocado:
+  `position-en-route.json` dice 3403 m y la longitud sobre la forma es de unos 1248 m;
+  `position-not-started.json` dice 4251 m y son unos 1839 m (medidas aproximadas, al vértice más
+  cercano). Están en `frontend/e2e/fixtures/` y `frontend/src/test/fixtures/api/`. Los textos
+  "3,4 km" de los tests del mapa dependen de esas fixtures, y siguen pasando porque son datos
+  simulados. La aplicación real mostrará las distancias correctas.
+- **O-02 Redacción residual de la spec.** `requirements.md` conserva "`shape_dist_traveled`, en
+  metros en el feed de EMT" (Contexto) y AC-05 habla de los puntos "cuyo `shape_dist_traveled`"
+  contienen `d`. AC-06 v1.4 y el design §3 (pasos 1 y 6) fijan la interpretación, que es la
+  implementada; conviene corregir el texto.
+- **O-03 Alcance de la tolerancia de AC-06.** El test de integración cubre la parada 508 (la de
+  la sesión grabada), y mide la parada proyectando sus coordenadas. En otras paradas, la posición
+  que da el feed (y por tanto AC-06) puede alejarse de esa proyección: hasta 39,5 m en `gtfs_mini`
+  (parada 2372, forma `994_488_2271`). Con un autobús a menos de ~2 km de esa parada se superaría
+  el 2 % si la referencia fuese la proyección; AC-06 define la distancia de la parada por
+  interpolación del feed, de modo que la diferencia viene de los datos. En el feed real, el máximo
+  (337,9 m, parada 1282, forma `1030_2278_1282`) corresponde a la cabecera final, donde el feed y
+  el final de la forma coinciden y la proyección elige un tramo anterior; no afecta al código
+  (solo se proyecta si falta `shape_dist_traveled`).
 
 ### B-01 (CP-3) — RESUELTO (spec v1.1, PR #25, opción 1 elegida por la persona)
 
@@ -243,6 +317,23 @@ minutos menores, avanza.
 pares.)
 
 ## Verificación
+
+`CI=1 ./init.sh verify --e2e` (2026-11-09, spec v1.4, tras T-11; puerto 4173 libre; salida
+"verify: todo en verde", código 0):
+
+- backend: format OK · lint OK · types OK (mypy, 129 ficheros) · architecture OK · tests OK
+  (1426 passed, 6 deselected; cobertura 99,56 %). AC-17: "139 pairs checked, 5 excluded because
+  the SAE minutes increased".
+- frontend: format OK · lint OK · types OK · tests OK (55 ficheros, 563 passed y 2 skipped) ·
+  build + bundle OK (5 tests) · e2e + a11y OK (126 passed)
+- harness: `feature_list.json` OK · trazabilidad AC→test OK
+- `cd backend && uv run pytest -m slow --no-cov`: 6 passed (ninguno es de esta feature).
+- T-11 por separado: `cd backend && uv run pytest -k "geometry or position"`: 140 passed, pero el
+  comando sale con error por cobertura (78,75 % < 80 %) al ejecutar solo ese subconjunto; con la
+  suite completa la cobertura es 99,56 %.
+- `npm run gen:api`: `openapi.json` y `schema.d.ts` sin cambios (git limpio).
+
+Ejecución anterior (v1.3, tras T-10):
 
 `CI=1 ./init.sh verify --e2e` (2026-11-04, spec v1.3, tras T-10; antes `npm run build` en
 `frontend/`; puerto 4173 libre; salida "verify: todo en verde", código 0):

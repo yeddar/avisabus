@@ -1,7 +1,8 @@
 """Geometry on the shape of a trip (position_estimation design §3).
 
-Distances are in metres on a sphere (haversine). Distances along a shape (`shape_dist_traveled`)
-are taken from the feed when present (metres in EMT's feed) and computed otherwise (AC-06).
+Distances are in real metres on a sphere (haversine). `shape_dist_traveled` is not in metres in
+EMT's feed (its scale changes from shape to shape and along a shape, gtfs_import v1.4): it only
+locates a value along the shape (AC-06).
 """
 
 import math
@@ -53,13 +54,34 @@ def cumulative_distances(shape: Sequence[ShapePoint]) -> list[float]:
     return distances
 
 
-def shape_distances(shape: Sequence[ShapePoint]) -> list[float]:
-    """`shape_dist_traveled` of the feed if every point has it, otherwise `cumulative_distances`
-    (AC-06)."""
-    feed = [point.dist_traveled for point in shape]
-    if all(d is not None for d in feed):
-        return [float(d) for d in feed if d is not None]
-    return cumulative_distances(shape)
+def feed_to_metres(shape: Sequence[ShapePoint], feed_values: Sequence[float]) -> list[float]:
+    """Distance in metres along the shape of each `shape_dist_traveled` value (AC-06).
+
+    Each value is located, independently of the others, in the segment whose `dist_traveled`
+    contains it and interpolated linearly in the length in metres of that segment; values beyond
+    the ends of the shape are clamped to them. Every point of the shape must have `dist_traveled`.
+    """
+    if not shape:
+        raise ValueError("an empty shape has no points")
+    feed = [point.dist_traveled for point in shape if point.dist_traveled is not None]
+    if len(feed) != len(shape):
+        raise ValueError("every point of the shape needs its shape_dist_traveled")
+    metres = cumulative_distances(shape)
+    if len(shape) == 1:
+        return [metres[0]] * len(feed_values)
+    last = len(shape) - 1
+    result: list[float] = []
+    for value in feed_values:
+        if value <= feed[0]:
+            result.append(metres[0])
+        elif value >= feed[last]:
+            result.append(metres[last])
+        else:
+            segment = min(bisect_right(feed, value) - 1, last - 1)
+            length = feed[segment + 1] - feed[segment]
+            fraction = 0.0 if length <= 0 else (value - feed[segment]) / length
+            result.append(metres[segment] + fraction * (metres[segment + 1] - metres[segment]))
+    return result
 
 
 def point_at_distance(
