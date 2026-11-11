@@ -516,3 +516,7 @@
 ## 2026-11-10 · driver_demand · implementing → in_review → done
 - Ciclo 1 CHANGES_REQUESTED (B-01: AC-08 sin tests de cierre `4429` y `1001` en `/ws/driver`); ciclo 2 APPROVED.
 - `CI=1 ./init.sh verify --e2e` en verde: 1846 backend, 563 Vitest, 126 e2e. Abiertos N-01…N-08.
+
+## 2026-11-11 · CP-3 driver_ui resuelto (PR #55) · driver_session · done → implementing (v1.3, T-09)
+- `driver_session` 1.3: `last_seen_at` (señal de vida, `IDLE`) y `last_fix_at` (fijo nuevo, `STALE`). `driver_ui` 1.1:
+  reenvío cada 5 s y `getCurrentPosition` si `watchPosition` calla 10 s. `driver_ui` sigue `spec_blocked` hasta su ciclo 2.

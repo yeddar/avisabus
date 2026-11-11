@@ -2,18 +2,19 @@
 
 > Fichero vivo: lo reescribe el orquestador al final de cada sesión.
 
-**Fecha:** 2026-11-10
+**Fecha:** 2026-11-11
 **Fase:** Implementación — Bloque 4 (conductor)
-**Feature en curso:** `driver_ui` — siguiente (`driver_demand` v1.0 `done`, rama `feat/driver_demand`)
+**Feature en curso:** `driver_session` v1.3 — `implementing` (T-09, rama `feat/driver_session` actualizada con `develop`)
 
 ## Último paso
-`driver_demand`: revisión ciclo 2 APPROVED; rama subida y PR contra `develop` sin fusionar.
+CP-3 de `driver_ui` (P-01) resuelto en la PR #55 (`driver_session` 1.3, `driver_ui` 1.1). PR #52, #53 y #54 fusionadas.
+`feat/driver_ui` subida como copia (sin PR).
 
 ## Siguiente paso
-Por orden, cada una con reviewer nuevo y PR contra `develop` sin fusionar:
-1. `driver_ui`.
-2. `driver_gps_simulator`.
-Después, CP-6 del bloque 4 (persona). Orden de fusión: #52, #53, `driver_demand` y luego las siguientes `driver_*`.
+1. `driver_session` T-09 (`last_seen_at` / `last_fix_at`), revisión nueva y PR.
+2. `driver_ui` ciclo 2: AC-04 v1.1, B-01 y B-02, revisión nueva y PR.
+3. `driver_gps_simulator`, revisión nueva y PR.
+Después, CP-6 del bloque 4 (persona).
 
 ## Pendiente para specs futuras
 - **driver_demand v1.0:** N-01 tests y `http/access_log.py:9` citan AC-12 para la IP; la regla es `driver_session.AC-15`.
@@ -141,8 +142,7 @@ Después, CP-6 del bloque 4 (persona). Orden de fusión: #52, #53, `driver_deman
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Ninguno. CP-3 de `driver_session` (P-02, P-03) resuelto en la PR #51: `position_estimation` 1.4, `driver_session` 1.2
-(umbral 150 m), `gtfs_import` 1.4 (solo docs).
+Ninguno. CP-3 de `driver_ui` (P-01) resuelto en la PR #55.
 
 ## Bloqueos
-Ninguno. 
+Ninguno.
