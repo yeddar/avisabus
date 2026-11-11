@@ -4,10 +4,10 @@
 
 **Fecha:** 2026-11-11
 **Fase:** Ajustes del bloque 4 y bloque 5 (`deployment_rpi`)
-**Feature en curso:** `driver_ui` v1.2 — `implementing` (T-08, rama `feat/driver_ui-v1.2`, apilada sobre `feat/driver_codes_cli-v1.1`, PR #61)
+**Feature en curso:** `driver_ui` v1.2 — `in_review` (T-08, rama `feat/driver_ui-v1.2`); antes, `driver_session` T-10 con la spec 1.5
 
 ## Último paso
-`driver_session` T-10 bloqueada por CP-3 P-04 (rama `feat/driver_session-v1.4`, solo local). La persona elige aceptar la limitación y subir a 200 m el máximo por delante de AC-09; corrige la spec ella.
+`driver_ui` T-08 implementada; `CI=1 ./init.sh verify --e2e` en verde. PR #61 y #62 (`driver_session` 1.5, 200 m) fusionadas.
 
 ## Siguiente paso
 Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
