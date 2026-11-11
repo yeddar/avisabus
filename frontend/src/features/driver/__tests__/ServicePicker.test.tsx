@@ -2,7 +2,7 @@ import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { mockApi, ok, problem } from '../../../test/mockApi';
+import { mockApi, NetworkFailure, ok, problem } from '../../../test/mockApi';
 import { renderWithProviders } from '../../../test/render';
 import { ServicePicker } from '../ServicePicker';
 import { setDriverToken } from '../session';
@@ -20,14 +20,37 @@ function apiWith(put: () => Reply = () => ok({})) {
   });
 }
 
-function renderPicker(onExit = vi.fn(), onSelected = vi.fn()) {
+function renderPicker(onExit = vi.fn(), onSelected = vi.fn(), language: 'es' | 'ca' = 'es') {
   renderWithProviders(
     <MemoryRouter>
       <ServicePicker onSelected={onSelected} onExit={onExit} />
     </MemoryRouter>,
+    { language },
   );
   return { onExit, onSelected };
 }
+
+/** Lines and departures in sequence: each call takes the next reply (the last one repeats). */
+function apiReplying(lines: (() => Reply)[], departures: (() => Reply)[], put = () => ok({})) {
+  const next = (replies: (() => Reply)[]) => {
+    const reply = replies.length > 1 ? replies.shift() : replies[0];
+    return (reply as () => Reply)();
+  };
+  return mockApi((url) => {
+    if (url.pathname === '/api/v1/driver/lines') return next(lines);
+    if (url.pathname === '/api/v1/driver/departures') return next(departures);
+    if (url.pathname === '/api/v1/driver/sessions/current/service') return put();
+    return problem(500, 'unexpected');
+  });
+}
+
+const LINES = () => ok({ lines: [LINE_93] });
+const DEPARTURES = () => ok({ departures: [DEPARTURE_FREE, DEPARTURE_TAKEN] });
+const NO_DEPARTURES = () => ok({ departures: [] });
+const SERVER_ERROR = () => problem(503, 'unavailable');
+const NETWORK_ERROR = (): Reply => {
+  throw new NetworkFailure();
+};
 
 async function pickLine() {
   fireEvent.click(await screen.findByRole('button', { name: 'Línea 93' }));
@@ -154,6 +177,94 @@ describe('ServicePicker', () => {
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(/ya la lleva/));
     await waitFor(() => expect(api.calls('/driver/departures')).toBeGreaterThanOrEqual(2));
     expect(onSelected).not.toHaveBeenCalled();
+  });
+
+  it('[driver_ui.AC-02] without departures in the window says so, with "Volver" and "Actualizar"', async () => {
+    const api = apiReplying([LINES], [NO_DEPARTURES, DEPARTURES]);
+    renderPicker();
+    await departures();
+
+    expect(
+      await screen.findByText('No hay salidas de esta línea y sentido en la próxima hora'),
+    ).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Volver' })).toBeInTheDocument();
+    expect(api.calls('/driver/departures')).toBe(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Actualizar' }));
+
+    expect(await screen.findByRole('button', { name: /08:40/ })).toBeEnabled();
+    expect(api.calls('/driver/departures')).toBe(2);
+    expect(
+      screen.queryByText('No hay salidas de esta línea y sentido en la próxima hora'),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Actualizar' })).not.toBeInTheDocument();
+  });
+
+  it('[driver_ui.AC-02] a 5xx loading the lines says "No se han podido cargar los datos" and "Reintentar" loads them', async () => {
+    const api = apiReplying([SERVER_ERROR, LINES], [DEPARTURES]);
+    renderPicker();
+
+    expect(await screen.findByText('No se han podido cargar los datos')).toBeVisible();
+    expect(screen.queryByText(/Comprueba la conexión/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Volver' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+
+    expect(await screen.findByRole('button', { name: 'Línea 93' })).toBeInTheDocument();
+    expect(api.calls('/driver/lines')).toBe(2);
+    expect(screen.queryByText('No se han podido cargar los datos')).not.toBeInTheDocument();
+  });
+
+  it('[driver_ui.AC-02] a network error loading the departures says "No se han podido cargar los datos" and "Reintentar" loads them', async () => {
+    const api = apiReplying([LINES], [NETWORK_ERROR, DEPARTURES]);
+    renderPicker();
+    await departures();
+
+    expect(await screen.findByText('No se han podido cargar los datos')).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+
+    expect(await screen.findByRole('button', { name: /08:40/ })).toBeEnabled();
+    expect(api.calls('/driver/departures')).toBe(2);
+    expect(screen.queryByText('No se han podido cargar los datos')).not.toBeInTheDocument();
+  });
+
+  it('[driver_ui.AC-02] a 5xx or a network error choosing the departure says "No se han podido cargar los datos" with "Reintentar"', async () => {
+    const replies: (() => Reply)[] = [SERVER_ERROR, NETWORK_ERROR];
+    const api = apiReplying([LINES], [DEPARTURES], () => (replies.shift() ?? SERVER_ERROR)());
+    const { onSelected } = renderPicker();
+    await departures();
+
+    fireEvent.click(await screen.findByRole('button', { name: /08:40/ }));
+    expect(await screen.findByText('No se han podido cargar los datos')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+    await waitFor(() =>
+      expect(screen.queryByText('No se han podido cargar los datos')).not.toBeInTheDocument(),
+    );
+    await waitFor(() => expect(api.calls('/driver/departures')).toBeGreaterThanOrEqual(3));
+
+    fireEvent.click(await screen.findByRole('button', { name: /08:40/ }));
+    expect(await screen.findByText('No se han podido cargar los datos')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
+    expect(onSelected).not.toHaveBeenCalled();
+  });
+
+  it('[driver_ui.AC-02] shows the texts without departures and of error in Valencian', async () => {
+    apiReplying([SERVER_ERROR, LINES], [NO_DEPARTURES]);
+    renderPicker(vi.fn(), vi.fn(), 'ca');
+
+    expect(await screen.findByText("No s'han pogut carregar les dades")).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Reintenta' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Línia 93' }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Passeig Marítim - Hospital Malva-rosa' }),
+    );
+
+    expect(
+      await screen.findByText("No hi ha eixides d'esta línia i sentit en la pròxima hora"),
+    ).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Actualitza' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Torna' })).toBeInTheDocument();
   });
 
   it('[driver_ui.AC-08] starts in the departures step with the same line and direction', async () => {

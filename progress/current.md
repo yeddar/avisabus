@@ -4,19 +4,26 @@
 
 **Fecha:** 2026-11-11
 **Fase:** Ajustes del bloque 4 y bloque 5 (`deployment_rpi`)
-**Feature en curso:** `driver_ui` v1.2 — `in_review` (T-08); `driver_session` v1.5 `done` (rama `feat/driver_session-v1.4`)
+**Feature en curso:** `passenger_map_view` v1.3 — siguiente (T-09). `driver_ui` v1.2 `done` (rama `feat/driver_ui-v1.2`)
 
 ## Último paso
-`driver_session` v1.5 (T-10): revisión ciclo 2 APPROVED; rama subida y PR contra `develop`.
+`driver_ui` v1.2 (T-08): revisión ciclo 2 APPROVED; rama subida y PR contra `develop` (apilada sobre la #63).
 
 ## Siguiente paso
 Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
-1. `driver_codes_cli` T-05 · 2. `driver_session` T-10 · 3. `driver_ui` T-08 · 4. `passenger_map_view` T-09.
-5. `deployment_rpi` (sin exploración). `verify-deploy` con Docker en el Mac; `ship.sh`, `gtfs-update.sh` y `smoke.sh`
+1. `passenger_map_view` T-09.
+3. `deployment_rpi` (sin exploración). `verify-deploy` con Docker en el Mac; `ship.sh`, `gtfs-update.sh` y `smoke.sh`
    **nunca** contra la Raspberry (los prueba la persona en el CP-6).
-6. `nfr_validation`: no empezar; su spec la prepara la persona.
+4. `nfr_validation`: no empezar; su spec la prepara la persona.
+Hechas: `driver_codes_cli` T-05 (#61, fusionada), `driver_session` T-10 (#63), `driver_ui` T-08 (apilada sobre la #63).
 
 ## Pendiente para specs futuras
+- **driver_ui v1.2 (persona):** P-06 con `gps = WAITING` y mientras se abre el primer socket, la cabecera dice en rojo
+  "GPS desactualizado" y "Sin conexión" sin fallo (y contradice a la caja de estado): A texto neutro en AC-08; B dejar
+  escrita la lectura binaria. P-07 "2 más tiempo" y "2 visión" sin plural (design §3). N-12 errores de `/driver/shift` y
+  del acceso con `stop.error.body` (fuera de T-08). N-13 design §3: claves de frases con dos cifras son plantillas. N-14
+  errores y lista vacía del selector sin anuncio; foco al `body` tras "Reintentar"/"Actualizar". Valenciano sin revisar.
+  P-05 cerrado (CU-08 v1.6). N-15 (docs) CU-08 conservó las etiquetas 3a/4a/4b tras reordenar los pasos 3 y 4.
 - **driver_session v1.5:** N-15 ningún test unitario fija que la primera posición a 40–150 m del trazado reciba progreso
   (`driver_sessions.py:502`) → test a ~100 m (progreso) y ~160 m (`off_route`). N-07 (spec menor) design §6 (`:177`) dice
   informe "por trazado"; requirements y tasks, "por semilla". Abiertos N-01, N-03, N-04, N-06, N-08, N-11…N-14.

@@ -85,4 +85,71 @@ describe('CapacityBanner', () => {
 
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Esperan 40'));
   });
+
+  it('[driver_ui.AC-06] the capacity strip uses the singular and the plural correctly (v1.2)', () => {
+    const { rerender } = renderWithProviders(
+      <CapacityBanner
+        view={driverView({ capacity_alert: true, total_waiting: 1, free_places: 0 })}
+      />,
+    );
+    expect(screen.getByText('Espera 1 persona y quedan 0 plazas')).toBeVisible();
+
+    rerender(
+      <CapacityBanner
+        view={driverView({ capacity_alert: true, total_waiting: 2, free_places: 1 })}
+      />,
+    );
+    expect(screen.getByText('Esperan 2 personas y queda 1 plaza')).toBeVisible();
+  });
+
+  it('[driver_ui.AC-06] the seats strip uses the singular and the plural correctly (v1.2)', () => {
+    const oneRequest = [
+      stopDemand({ waiting: 1, needs: { RAMP: 0, EXTRA_TIME: 0, SEAT: 1, VISUAL: 0 } }),
+    ];
+    const { rerender } = renderWithProviders(
+      <CapacityBanner view={driverView({ seat_alert: true, free_seats: 0, stops: oneRequest })} />,
+    );
+    expect(screen.getByText('Pide asiento 1 persona y quedan 0 asientos')).toBeVisible();
+
+    rerender(
+      <CapacityBanner view={driverView({ seat_alert: true, free_seats: 1, stops: seatStops })} />,
+    );
+    expect(screen.getByText('Piden asiento 5 personas y queda 1 asiento')).toBeVisible();
+  });
+
+  it('[driver_ui.AC-06] the strips use the singular and the plural correctly in Valencian (v1.2)', () => {
+    const oneRequest = [
+      stopDemand({ waiting: 1, needs: { RAMP: 0, EXTRA_TIME: 0, SEAT: 1, VISUAL: 0 } }),
+    ];
+    const { rerender } = renderWithProviders(
+      <CapacityBanner
+        view={driverView({
+          capacity_alert: true,
+          seat_alert: true,
+          total_waiting: 1,
+          free_places: 0,
+          free_seats: 0,
+          stops: oneRequest,
+        })}
+      />,
+      { language: 'ca' },
+    );
+    expect(screen.getByText('Espera 1 persona i queden 0 places')).toBeVisible();
+    expect(screen.getByText('Demana seient 1 persona i queden 0 seients')).toBeVisible();
+
+    rerender(
+      <CapacityBanner
+        view={driverView({
+          capacity_alert: true,
+          seat_alert: true,
+          total_waiting: 35,
+          free_places: 1,
+          free_seats: 1,
+          stops: seatStops,
+        })}
+      />,
+    );
+    expect(screen.getByText('Esperen 35 persones i queda 1 plaça')).toBeVisible();
+    expect(screen.getByText('Demanen seient 5 persones i queda 1 seient')).toBeVisible();
+  });
 });

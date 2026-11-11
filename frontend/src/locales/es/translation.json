@@ -191,7 +191,10 @@
       "taken": "Ya en servicio",
       "back": "Volver",
       "takenNow": "Esa salida ya la lleva otro conductor",
-      "empty": "No hay salidas en este momento"
+      "empty": "No hay salidas de esta línea y sentido en la próxima hora",
+      "refresh": "Actualizar",
+      "error": "No se han podido cargar los datos",
+      "retry": "Reintentar"
     },
     "shift": {
       "title": "Turno del conductor"
@@ -213,10 +216,28 @@
       "VISUAL_one": "{{count}} visión",
       "VISUAL_other": "{{count}} visión"
     },
-    "places": "{{places}} plazas libres · {{seats}} asientos",
+    "places": "{{places}} · {{seats}}",
+    "freePlaces_one": "{{count}} plaza libre",
+    "freePlaces_other": "{{count}} plazas libres",
+    "freeSeats_one": "{{count}} asiento",
+    "freeSeats_other": "{{count}} asientos",
     "places.unknown": "Ocupación no disponible",
-    "capacity": "Esperan {{waiting}} personas y quedan {{places}} plazas",
-    "seats": "Piden asiento {{requests}} personas y quedan {{seats}} asientos",
+    "capacity": "{{waiting}} y {{places}}",
+    "capacityWaiting_one": "Espera {{count}} persona",
+    "capacityWaiting_other": "Esperan {{count}} personas",
+    "capacityPlaces_one": "queda {{count}} plaza",
+    "capacityPlaces_other": "quedan {{count}} plazas",
+    "seats": "{{requests}} y {{seats}}",
+    "seatRequests_one": "Pide asiento {{count}} persona",
+    "seatRequests_other": "Piden asiento {{count}} personas",
+    "seatsLeft_one": "queda {{count}} asiento",
+    "seatsLeft_other": "quedan {{count}} asientos",
+    "status": {
+      "gpsOk": "GPS correcto",
+      "gpsStale": "GPS desactualizado",
+      "connected": "Conectado",
+      "offline": "Sin conexión"
+    },
     "gps": {
       "waiting": "Esperando ubicación…",
       "stale": "Posición desactualizada",

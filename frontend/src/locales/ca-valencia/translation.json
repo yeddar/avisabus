@@ -191,7 +191,10 @@
       "taken": "Ja en servei",
       "back": "Torna",
       "takenNow": "Eixa eixida ja la porta un altre conductor",
-      "empty": "No hi ha eixides en este moment"
+      "empty": "No hi ha eixides d'esta línia i sentit en la pròxima hora",
+      "refresh": "Actualitza",
+      "error": "No s'han pogut carregar les dades",
+      "retry": "Reintenta"
     },
     "shift": {
       "title": "Torn del conductor"
@@ -213,10 +216,28 @@
       "VISUAL_one": "{{count}} visió",
       "VISUAL_other": "{{count}} visió"
     },
-    "places": "{{places}} places lliures · {{seats}} seients",
+    "places": "{{places}} · {{seats}}",
+    "freePlaces_one": "{{count}} plaça lliure",
+    "freePlaces_other": "{{count}} places lliures",
+    "freeSeats_one": "{{count}} seient",
+    "freeSeats_other": "{{count}} seients",
     "places.unknown": "Ocupació no disponible",
-    "capacity": "Esperen {{waiting}} persones i queden {{places}} places",
-    "seats": "Demanen seient {{requests}} persones i queden {{seats}} seients",
+    "capacity": "{{waiting}} i {{places}}",
+    "capacityWaiting_one": "Espera {{count}} persona",
+    "capacityWaiting_other": "Esperen {{count}} persones",
+    "capacityPlaces_one": "queda {{count}} plaça",
+    "capacityPlaces_other": "queden {{count}} places",
+    "seats": "{{requests}} i {{seats}}",
+    "seatRequests_one": "Demana seient {{count}} persona",
+    "seatRequests_other": "Demanen seient {{count}} persones",
+    "seatsLeft_one": "queda {{count}} seient",
+    "seatsLeft_other": "queden {{count}} seients",
+    "status": {
+      "gpsOk": "GPS correcte",
+      "gpsStale": "GPS desactualitzat",
+      "connected": "Connectat",
+      "offline": "Sense connexió"
+    },
     "gps": {
       "waiting": "Esperant ubicació…",
       "stale": "Posició desactualitzada",

@@ -16,7 +16,7 @@ function Demand(props: Omit<DemandViewProps, 'service' | 'shift'>) {
   return <DemandView service={SERVICE} shift={shift} {...props} />;
 }
 
-function renderDemand(initialView: DriverView | null = driverView()) {
+function renderDemand(initialView: DriverView | null = driverView(), language: 'es' | 'ca' = 'es') {
   const onNextDeparture = vi.fn();
   const onSessionEnd = vi.fn();
   const result = renderWithProviders(
@@ -27,6 +27,7 @@ function renderDemand(initialView: DriverView | null = driverView()) {
         onSessionEnd={onSessionEnd}
       />
     </MemoryRouter>,
+    { language },
   );
   return { onNextDeparture, onSessionEnd, ...result };
 }
@@ -37,6 +38,12 @@ function receiveView(view: DriverView) {
     if (socket.readyState === FakeWebSocket.CONNECTING) socket.open();
     socket.receive({ type: 'driver.view', ...view });
   });
+}
+
+/** The GPS and connection state next to "Silenciar tono" in the header (docs/design.md §5.9). */
+function headerStatus() {
+  const mute = screen.getByRole('button', { name: /tono|to$/ });
+  return mute.parentElement as HTMLElement;
 }
 
 const FIVE_STOPS = ['A', 'B', 'C', 'D', 'E'].map((name, index) =>
@@ -142,10 +149,134 @@ describe('DemandView', () => {
     expect(screen.getByText('Ocupación no disponible')).toBeInTheDocument();
   });
 
+  it('[driver_ui.AC-06] the free places and seats use the singular and the plural correctly (v1.2)', () => {
+    renderDemand(driverView({ free_places: 1, free_seats: 1 }));
+    expect(screen.getByText('1 plaza libre · 1 asiento')).toBeInTheDocument();
+
+    receiveView(
+      driverView({ generated_at: '2026-11-09T07:41:05Z', free_places: 2, free_seats: 0 }),
+    );
+    expect(screen.getByText('2 plazas libres · 0 asientos')).toBeInTheDocument();
+  });
+
+  it('[driver_ui.AC-06] the free places and seats use the singular and the plural in Valencian (v1.2)', () => {
+    renderDemand(driverView({ free_places: 1, free_seats: 1 }), 'ca');
+    expect(screen.getByText('1 plaça lliure · 1 seient')).toBeInTheDocument();
+
+    receiveView(
+      driverView({ generated_at: '2026-11-09T07:41:05Z', free_places: 30, free_seats: 4 }),
+    );
+    expect(screen.getByText('30 places lliures · 4 seients')).toBeInTheDocument();
+  });
+
+  it('[driver_ui.AC-05] the people waiting and the needs use the singular and the plural in both languages (v1.2)', () => {
+    const stops = [
+      stopDemand({
+        stop_id: '1',
+        name: 'Parada A',
+        waiting: 1,
+        needs: { RAMP: 1, EXTRA_TIME: 1, SEAT: 1, VISUAL: 1 },
+        alert_ids: ['a1'],
+      }),
+      stopDemand({
+        stop_id: '2',
+        name: 'Parada B',
+        waiting: 2,
+        needs: { RAMP: 2, EXTRA_TIME: 0, SEAT: 2, VISUAL: 0 },
+        alert_ids: ['a2', 'a3'],
+      }),
+    ];
+    const card = (name: string) => screen.getByText(name).closest('li') as HTMLElement;
+    const { unmount } = renderDemand(driverView({ total_waiting: 3, stops }));
+    let [one, two] = [card('Parada A'), card('Parada B')];
+    expect(one).toHaveTextContent('1 persona esperando');
+    expect(one).toHaveTextContent('1 rampa');
+    expect(one).toHaveTextContent('1 asiento');
+    expect(two).toHaveTextContent('2 personas esperando');
+    expect(two).toHaveTextContent('2 rampas');
+    expect(two).toHaveTextContent('2 asientos');
+    unmount();
+
+    renderDemand(driverView({ total_waiting: 3, stops }), 'ca');
+    [one, two] = [card('Parada A'), card('Parada B')];
+    expect(one).toHaveTextContent('1 persona esperant');
+    expect(one).toHaveTextContent('1 rampa');
+    expect(one).toHaveTextContent('1 seient');
+    expect(two).toHaveTextContent('2 persones esperant');
+    expect(two).toHaveTextContent('2 rampes');
+    expect(two).toHaveTextContent('2 seients');
+  });
+
   it('[driver_ui.AC-06] shows the capacity strip when the view has capacity_alert', () => {
     renderDemand(driverView({ capacity_alert: true, total_waiting: 35, free_places: 30 }));
 
     expect(screen.getByText('Esperan 35 personas y quedan 30 plazas')).toBeInTheDocument();
+  });
+
+  it('[driver_ui.AC-08] the header shows the GPS and connection state with visible text and icon (v1.2)', () => {
+    renderDemand(driverView());
+    receiveView(driverView({ generated_at: '2026-11-09T07:41:05Z' }));
+
+    const header = headerStatus();
+    expect(header).toHaveTextContent('GPS correcto');
+    expect(header).toHaveTextContent('Conectado');
+    expect(
+      within(header).getByText('GPS correcto').closest('p')?.querySelector('svg'),
+    ).not.toBeNull();
+    expect(within(header).getByText('Conectado').closest('p')?.querySelector('svg')).not.toBeNull();
+
+    receiveView(driverView({ generated_at: '2026-11-09T07:41:10Z', gps: 'STALE' }));
+    expect(headerStatus()).toHaveTextContent('GPS desactualizado');
+    expect(headerStatus()).not.toHaveTextContent('GPS correcto');
+
+    act(() => FakeWebSocket.last().serverClose());
+    expect(headerStatus()).toHaveTextContent('Sin conexión');
+    expect(headerStatus()).not.toHaveTextContent('Conectado');
+    expect(
+      within(headerStatus()).getByText('Sin conexión').closest('p')?.querySelector('svg'),
+    ).not.toBeNull();
+  });
+
+  it('[driver_ui.AC-08] the header GPS is only "GPS correcto" once the server has a fresh fix (v1.2)', () => {
+    renderDemand(driverView({ gps: 'WAITING' }));
+
+    expect(headerStatus()).toHaveTextContent('GPS desactualizado');
+    expect(headerStatus()).toHaveTextContent('Sin conexión');
+
+    receiveView(driverView({ generated_at: '2026-11-09T07:41:05Z' }));
+    expect(headerStatus()).toHaveTextContent('GPS correcto');
+  });
+
+  it('[driver_ui.AC-08] without the location permission the header GPS is not "GPS correcto" (v1.2)', () => {
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        watchPosition: vi.fn((_success: unknown, error: (failure: { code: number }) => void) => {
+          error({ code: 1 });
+          return 1;
+        }),
+        clearWatch: vi.fn(),
+        getCurrentPosition: vi.fn(),
+      },
+    });
+    renderDemand(driverView());
+    receiveView(driverView({ generated_at: '2026-11-09T07:41:05Z' }));
+
+    expect(screen.getByText(/Sin permiso de ubicación/)).toBeInTheDocument();
+    expect(headerStatus()).toHaveTextContent('GPS desactualizado');
+    expect(headerStatus()).not.toHaveTextContent('GPS correcto');
+  });
+
+  it('[driver_ui.AC-08] the header state has visible text in Valencian (v1.2)', () => {
+    renderDemand(driverView(), 'ca');
+    receiveView(driverView({ generated_at: '2026-11-09T07:41:05Z' }));
+    expect(headerStatus()).toHaveTextContent('GPS correcte');
+    expect(headerStatus()).toHaveTextContent('Connectat');
+
+    receiveView(driverView({ generated_at: '2026-11-09T07:41:10Z', gps: 'STALE' }));
+    act(() => FakeWebSocket.last().serverClose());
+    expect(headerStatus()).toHaveTextContent('GPS desactualitzat');
+    expect(headerStatus()).toHaveTextContent('Sense connexió');
   });
 
   it('[driver_ui.AC-08] keeps the last list while the position is stale', () => {

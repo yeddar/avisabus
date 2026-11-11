@@ -30,6 +30,15 @@ function renderShift() {
   );
 }
 
+/**
+ * The position and /ws/driver start in passive effects of ShiftPage, which React may run after
+ * the text a test waits for is already on screen; wait for them before using them.
+ */
+async function findSocket(): Promise<FakeWebSocket> {
+  await waitFor(() => expect(FakeWebSocket.instances).toHaveLength(1));
+  return FakeWebSocket.last();
+}
+
 describe('ShiftPage', () => {
   beforeEach(() => {
     sessionStorage.clear();
@@ -142,12 +151,10 @@ describe('ShiftPage', () => {
 
     await screen.findByRole('heading', { level: 1, name: 'Elige la línea' });
 
-    expect(navigator.geolocation.watchPosition).toHaveBeenCalledTimes(1);
-    expect(FakeWebSocket.instances).toHaveLength(1);
-    act(() => FakeWebSocket.last().open());
-    expect(FakeWebSocket.last().sentMessages()).toEqual([
-      { type: 'hello', session_token: 'token-1' },
-    ]);
+    await waitFor(() => expect(navigator.geolocation.watchPosition).toHaveBeenCalledTimes(1));
+    const socket = await findSocket();
+    act(() => socket.open());
+    expect(socket.sentMessages()).toEqual([{ type: 'hello', session_token: 'token-1' }]);
   });
 
   it('[driver_ui.AC-04] [driver_ui.AC-08] [driver_ui.AC-09] "Elegir la siguiente salida" keeps the position, the wake lock and /ws/driver', async () => {
@@ -165,7 +172,7 @@ describe('ShiftPage', () => {
     });
     renderShift();
     await screen.findByText('Salida a las 08:40');
-    const socket = FakeWebSocket.last();
+    const socket = await findSocket();
     act(() => socket.open());
     await waitFor(() => expect(request).toHaveBeenCalledTimes(1));
 
@@ -219,10 +226,11 @@ describe('ShiftPage', () => {
     mockApi(() => ok(driverView()));
     renderShift();
     await screen.findByText('Salida a las 08:40');
+    const socket = await findSocket();
 
     act(() => {
-      FakeWebSocket.last().open();
-      FakeWebSocket.last().receive({ type: 'session.closed', reason: 'IDLE' });
+      socket.open();
+      socket.receive({ type: 'session.closed', reason: 'IDLE' });
     });
 
     expect(await screen.findByText('at /driver (IDLE)')).toBeInTheDocument();
@@ -234,8 +242,9 @@ describe('ShiftPage', () => {
     mockApi(() => ok(driverView()));
     renderShift();
     await screen.findByText('Salida a las 08:40');
+    const socket = await findSocket();
 
-    act(() => FakeWebSocket.last().serverClose(4401));
+    act(() => socket.serverClose(4401));
 
     expect(await screen.findByText(/^at \/driver /)).toBeInTheDocument();
   });
