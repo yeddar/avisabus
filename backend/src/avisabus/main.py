@@ -19,6 +19,7 @@ from avisabus.adapters.inbound.http.container import (
     build_alert_expiry,
     build_alert_snapshots,
     build_alert_use_cases,
+    build_driver_use_cases,
     build_position_use_cases,
     build_realtime,
     build_stop_use_cases,
@@ -32,6 +33,7 @@ from avisabus.adapters.outbound.persistence.sqlite_occupancy_override import (
 )
 from avisabus.adapters.outbound.sae.compose import build_arrivals_source
 from avisabus.background.alert_tasks import start_alert_tasks, stop_tasks
+from avisabus.background.driver_tasks import start_driver_tasks
 from avisabus.background.sae_stats import run_sae_stats
 from avisabus.config import (
     Settings,
@@ -85,12 +87,14 @@ alert_use_cases = build_alert_use_cases(settings, engine, clock, stop_use_cases,
 # Expiry of the alerts (alert_expiry): the passage watcher reads the stops through the same
 # `GetStopArrivals` (and SAE cache); `alert.expired` goes through the real-time publisher.
 alert_expiry = build_alert_expiry(settings, engine, clock, stop_use_cases, realtime.publisher)
+# Shifts of the drivers (driver_session); nobody listens to them until `driver_demand`.
+driver_use_cases = build_driver_use_cases(settings, engine, clock)
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    """Runs the `sae.stats` task (sae_arrivals_source AC-13) and the alert expiry tasks
-    (alert_expiry AC-10), and closes the SAE HTTP client."""
+    """Runs the `sae.stats` task (sae_arrivals_source AC-13), the alert expiry tasks (alert_expiry
+    AC-10) and the driver session reaper (driver_session AC-13), and closes the SAE HTTP client."""
     stats_task = asyncio.create_task(run_sae_stats(arrivals_source), name="sae.stats")
     expiry_tasks = start_alert_tasks(
         watch_tick=alert_expiry.watch_passages.tick,
@@ -99,10 +103,15 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         expiry_interval=alert_expiry.expiry_interval,
         logger=structlog.get_logger(BACKGROUND_LOGGER),
     )
+    driver_tasks = start_driver_tasks(
+        reap_tick=driver_use_cases.reap.tick,
+        interval=driver_use_cases.reaper_interval,
+        logger=structlog.get_logger(BACKGROUND_LOGGER),
+    )
     try:
         yield
     finally:
-        await stop_tasks(expiry_tasks)
+        await stop_tasks([*expiry_tasks, *driver_tasks])
         stats_task.cancel()
         with suppress(asyncio.CancelledError):
             await stats_task
@@ -116,4 +125,5 @@ app = create_app(
     positions=position_use_cases,
     realtime=realtime,
     alerts=alert_use_cases,
+    drivers=driver_use_cases,
 )

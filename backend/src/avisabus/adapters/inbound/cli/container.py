@@ -8,6 +8,9 @@ from sqlalchemy import Engine
 from avisabus.adapters.outbound.gtfs.reader import CsvGtfsFeedReader
 from avisabus.adapters.outbound.persistence.db import create_engine, init_db
 from avisabus.adapters.outbound.persistence.sqlite_driver_codes import SqliteDriverCodeRepository
+from avisabus.adapters.outbound.persistence.sqlite_driver_sessions import (
+    SqliteDriverSessionRepository,
+)
 from avisabus.adapters.outbound.persistence.sqlite_network import (
     SqliteGtfsFeedWriter,
     SqliteNetworkRepository,
@@ -32,11 +35,6 @@ from avisabus.config import Settings, log_dev_stop_token_secret_warning
 from avisabus.domain.ports.clock import Clock
 
 DRIVER_CODES_LOGGER = "avisabus.driver_codes"
-
-
-def _no_open_session(_code_id: str) -> bool:
-    """Until `driver_session` exists no code can have a shift open (design §2)."""
-    return False
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,6 +62,11 @@ def build_cli_container(settings: Settings, clock: Clock) -> CliContainer:
     network = SqliteNetworkRepository(engine)
     overrides = SqliteOccupancyOverrideRepository(engine)
     driver_codes = SqliteDriverCodeRepository(engine)
+    driver_sessions = SqliteDriverSessionRepository(engine)
+
+    def has_open_session(code_id: str) -> bool:
+        return driver_sessions.by_code(code_id) is not None
+
     logger = structlog.get_logger(DRIVER_CODES_LOGGER)
     return CliContainer(
         engine=engine,
@@ -99,12 +102,12 @@ def build_cli_container(settings: Settings, clock: Clock) -> CliContainer:
             logger=logger,
         ),
         list_driver_codes=ListDriverCodes(
-            repository=driver_codes, has_open_session=_no_open_session
+            repository=driver_codes, has_open_session=has_open_session
         ),
         revoke_driver_code=RevokeDriverCode(
             repository=driver_codes,
             clock=clock,
-            has_open_session=_no_open_session,
+            has_open_session=has_open_session,
             logger=logger,
         ),
     )

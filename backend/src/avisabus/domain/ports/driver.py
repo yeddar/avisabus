@@ -1,9 +1,15 @@
-"""Ports of the driver access codes (driver_codes_cli design §2)."""
+"""Ports of the driver access codes (driver_codes_cli design §2) and shifts (driver_session
+design §3)."""
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Protocol
 
-from avisabus.domain.models.driver import DriverCode
+from avisabus.domain.models.driver import (
+    DriverCode,
+    DriverService,
+    DriverSession,
+    SessionCloseReason,
+)
 
 
 class DriverCodeHasher(Protocol):
@@ -39,3 +45,39 @@ class DriverCodeRepository(Protocol):
         """Mark the code as revoked at `at` and return it; `None` if it does not exist. A code
         that was already revoked keeps its original date."""
         ...
+
+
+class SessionTokenHasher(Protocol):
+    def hash(self, token: str) -> str:
+        """SHA-256 (hexadecimal) of a session token."""
+        ...
+
+
+class DriverSessionRepository(Protocol):
+    def add(self, session: DriverSession) -> None: ...
+
+    def by_token_hash(self, token_hash: str) -> DriverSession | None: ...
+
+    def by_code(self, code_id: str) -> DriverSession | None: ...
+
+    def by_trip(self, trip_id: str, service_date: date) -> DriverSession | None: ...
+
+    def list_all(self) -> list[DriverSession]: ...
+
+    def save(self, session: DriverSession) -> None:
+        """Store the changes. Raises `DepartureTakenError` if another shift holds its departure."""
+        ...
+
+    def delete(self, session_id: str) -> bool:
+        """Delete the session with its position; `False` if it no longer exists."""
+        ...
+
+
+class DriverSessionListener(Protocol):
+    """Implemented by `driver_demand`."""
+
+    def service_selected(self, session: DriverSession, previous: DriverService | None) -> None: ...
+
+    def position_updated(self, session: DriverSession) -> None: ...
+
+    def session_closed(self, session_id: str, reason: SessionCloseReason) -> None: ...

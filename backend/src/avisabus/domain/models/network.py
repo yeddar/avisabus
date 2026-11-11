@@ -99,3 +99,31 @@ class CalendarException:
     service_id: str
     date: date
     exception_type: int
+
+
+@dataclass(frozen=True, slots=True)
+class DirectionHeadsign:
+    direction_id: int
+    headsign: str
+
+
+@dataclass(frozen=True, slots=True)
+class LineDirectionsView:
+    """A line with its directions, for the driver to choose (driver_session AC-05)."""
+
+    line: str
+    color: str
+    text_color: str
+    directions: tuple[DirectionHeadsign, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class Departure:
+    """A trip of a service day seen from its first stop (driver_session AC-06)."""
+
+    trip_id: str
+    service_date: date
+    departure_s: int
+    """Seconds since the start of `service_date` (may be >= 86400)."""
+    first_stop_name: str
+    headsign: str

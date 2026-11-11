@@ -71,6 +71,11 @@ class Settings(BaseSettings):
     ws_ping_interval_s: float = Field(default=25, gt=0)
     ws_hello_timeout_s: float = Field(default=5, gt=0)
     event_queue_size: int = Field(default=100, ge=1)
+    driver_idle_timeout_min: float = Field(default=10, gt=0)
+    driver_gps_stale_s: float = Field(default=30, gt=0)
+    driver_login_max_failures: int = Field(default=5, ge=2)
+    driver_login_block_min: float = Field(default=15, gt=0)
+    driver_reaper_interval_s: float = Field(default=60, gt=0)
 
     @model_validator(mode="after")
     def _check_occupancy(self) -> Self:

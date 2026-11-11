@@ -12,7 +12,12 @@ from fastapi.responses import JSONResponse
 from avisabus.domain.errors import (
     AlertNotFoundError,
     BusNotRequestableError,
+    DepartureTakenError,
+    InvalidDepartureError,
     InvalidDeviceIdError,
+    InvalidDriverCodeError,
+    InvalidPositionError,
+    InvalidSessionError,
     LineNotAtStopError,
     NoActiveFeedError,
     RateLimitedError,
@@ -30,6 +35,10 @@ INVALID_DEVICE_ID_TYPE = "https://avisabus/problems/invalid-device-id"
 BUS_NOT_REQUESTABLE_TYPE = "https://avisabus/problems/bus-not-requestable"
 RATE_LIMITED_TYPE = "https://avisabus/problems/rate-limited"
 ALERT_NOT_FOUND_TYPE = "https://avisabus/problems/alert-not-found"
+INVALID_DRIVER_CODE_TYPE = "https://avisabus/problems/invalid-driver-code"
+INVALID_SESSION_TYPE = "https://avisabus/problems/invalid-session"
+INVALID_DEPARTURE_TYPE = "https://avisabus/problems/invalid-departure"
+DEPARTURE_TAKEN_TYPE = "https://avisabus/problems/departure-taken"
 
 _logger = structlog.get_logger(__name__)
 
@@ -103,6 +112,37 @@ async def handle_alert_not_found(_request: Request, _exc: Exception) -> JSONResp
     return problem_response(HTTPStatus.NOT_FOUND, ALERT_NOT_FOUND_TYPE, {"Cache-Control": NO_STORE})
 
 
+async def handle_invalid_driver_code(_request: Request, _exc: Exception) -> JSONResponse:
+    """driver_session AC-02: same body for an unknown and a revoked code."""
+    return problem_response(
+        HTTPStatus.UNAUTHORIZED, INVALID_DRIVER_CODE_TYPE, {"Cache-Control": NO_STORE}
+    )
+
+
+async def handle_invalid_session(_request: Request, _exc: Exception) -> JSONResponse:
+    """driver_session AC-04."""
+    return problem_response(
+        HTTPStatus.UNAUTHORIZED, INVALID_SESSION_TYPE, {"Cache-Control": NO_STORE}
+    )
+
+
+async def handle_invalid_departure(_request: Request, _exc: Exception) -> JSONResponse:
+    """driver_session AC-07."""
+    return problem_response(
+        HTTPStatus.UNPROCESSABLE_ENTITY, INVALID_DEPARTURE_TYPE, {"Cache-Control": NO_STORE}
+    )
+
+
+async def handle_departure_taken(_request: Request, _exc: Exception) -> JSONResponse:
+    """driver_session AC-07."""
+    return problem_response(HTTPStatus.CONFLICT, DEPARTURE_TAKEN_TYPE, {"Cache-Control": NO_STORE})
+
+
+async def handle_invalid_position(_request: Request, _exc: Exception) -> JSONResponse:
+    """driver_session AC-08: `recorded_at` too far in the future."""
+    return problem_response(HTTPStatus.UNPROCESSABLE_ENTITY, headers={"Cache-Control": NO_STORE})
+
+
 def register_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(InvalidDeviceIdError, handle_invalid_device_id)
     app.add_exception_handler(StopNotFoundError, handle_stop_not_found)
@@ -112,4 +152,9 @@ def register_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(BusNotRequestableError, handle_bus_not_requestable)
     app.add_exception_handler(RateLimitedError, handle_rate_limited)
     app.add_exception_handler(AlertNotFoundError, handle_alert_not_found)
+    app.add_exception_handler(InvalidDriverCodeError, handle_invalid_driver_code)
+    app.add_exception_handler(InvalidSessionError, handle_invalid_session)
+    app.add_exception_handler(InvalidDepartureError, handle_invalid_departure)
+    app.add_exception_handler(DepartureTakenError, handle_departure_taken)
+    app.add_exception_handler(InvalidPositionError, handle_invalid_position)
     app.add_exception_handler(Exception, handle_unexpected_error)

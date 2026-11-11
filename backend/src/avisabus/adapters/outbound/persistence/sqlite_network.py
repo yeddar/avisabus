@@ -8,6 +8,7 @@ import json
 import math
 from collections import defaultdict
 from collections.abc import Callable, Sequence
+from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -29,10 +30,13 @@ from sqlalchemy import (
 from avisabus.adapters.outbound.persistence import network_tables as t
 from avisabus.domain.models.network import (
     CalendarException,
+    Departure,
+    DirectionHeadsign,
     FeedVersion,
     HeadsignAtStop,
     Line,
     LineDirection,
+    LineDirectionsView,
     ScheduledStopTime,
     ServiceCalendar,
     ShapePoint,
@@ -654,6 +658,72 @@ class SqliteNetworkRepository:
                 .limit(1)
             ).scalar()
         return None if line is None else self.get_line(line)
+
+    def list_lines(self) -> list[LineDirectionsView]:
+        views: dict[str, LineDirectionsView] = {}
+        for direction in self._line_directions(_line_direction_query()):
+            view = views.get(direction.line)
+            if view is None:
+                view = LineDirectionsView(direction.line, direction.color, direction.text_color, ())
+            views[direction.line] = replace(
+                view,
+                directions=(
+                    *view.directions,
+                    DirectionHeadsign(direction.direction_id, direction.headsign),
+                ),
+            )
+        return list(views.values())
+
+    def departures(
+        self, line: str, direction_id: int, service_date: date, from_s: int, to_s: int
+    ) -> list[Departure]:
+        tr, st, s = t.gtfs_trip, t.gtfs_stop_time, t.gtfs_stop
+        first_call = st.alias("first_call")
+        first_sequence = (
+            select(func.min(first_call.c.stop_sequence))
+            .where(
+                first_call.c.feed_version_id == st.c.feed_version_id,
+                first_call.c.trip_id == st.c.trip_id,
+            )
+            .correlate(st)
+            .scalar_subquery()
+        )
+        with self._engine.connect() as conn:
+            services = _active_service_ids(conn, service_date)
+            if not services:
+                return []
+            # Trips first, then their stop times by primary key: joining both tables makes
+            # SQLite scan every stop time of the version (as in `shape_stops`).
+            headsigns = {
+                r.trip_id: r.headsign
+                for r in conn.execute(
+                    select(tr.c.trip_id, tr.c.headsign).where(
+                        tr.c.feed_version_id == _ACTIVE,
+                        tr.c.line == line,
+                        tr.c.direction_id == direction_id,
+                        tr.c.service_id.in_(sorted(services)),
+                    )
+                )
+            }
+            if not headsigns:
+                return []
+            rows = conn.execute(
+                select(st.c.trip_id, st.c.departure_s, s.c.name)
+                .join(
+                    s, (s.c.feed_version_id == st.c.feed_version_id) & (s.c.stop_id == st.c.stop_id)
+                )
+                .where(
+                    st.c.feed_version_id == _ACTIVE,
+                    st.c.trip_id.in_(sorted(headsigns)),
+                    st.c.stop_sequence == first_sequence,
+                    st.c.departure_s.between(from_s, to_s),
+                )
+                .order_by(st.c.departure_s, st.c.trip_id)
+            )
+            return [
+                Departure(r.trip_id, service_date, r.departure_s, r.name, headsigns[r.trip_id])
+                for r in rows
+            ]
 
     def active_timezone(self) -> str | None:
         with self._engine.connect() as conn:

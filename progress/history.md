@@ -474,6 +474,23 @@
 ## 2026-11-09 · driver_codes_cli · in_review → done
 - Revisión ciclo 2: APPROVED (F-01 corregido y reproducido con el binario real; 21/22 mutantes).
 
+## 2026-11-09 · driver_codes_cli PR abierta · driver_session · spec_approved → implementing
+
+## 2026-11-09 · driver_session · implementing → in_review
+- T-01…T-07; `list_lines`/`departures` añadidos a la red (autorizado). Verify --e2e en verde (1667 backend).
+  Avisos: destinos de C2/C3 según la spec, IP en el log de acceso fuera de `/driver`, riesgo de AC-09 con GPS real.
+
+## 2026-11-09 · driver_session · in_review → changes_requested → spec_blocked (CP-3)
+- Revisión ciclo 1: CHANGES_REQUESTED. F-01 (AC-08, fechas extremas → 500) y P-01 (AC-09: la regla falla
+  con trazados reales, saltos > 300 m con ruido GPS sintético en la mayoría de los 94 trazados).
+
+## 2026-11-09 · driver_session · spec_blocked → spec_approved (v1.1, PR #50) → implementing (ciclo 2)
+- AC-09 con ventana limitada por `20 m/s × Δt + 50 m`. Pendiente: F-01 (AC-08) y T-08. Rama actualizada con `develop`.
+
+## 2026-11-09 · driver_session · implementing → spec_blocked (CP-3, T-08)
+- F-01 corregido y N-02 cubierto. T-08 sin commit: `shape_dist_traveled` no son metros (factor 1,64–4,25,
+  mediana 2,97) y, en metros reales, σ 10 m supera el umbral de AC-09. Afecta también a `position_estimation`.
+
 ## 2026-11-09 · CP-3 driver_session resuelto (PR #51) · position_estimation · done → implementing (v1.4, T-11)
 - Distancias en metros reales (`feed_to_metres`). Después, T-08 de `driver_session` con la v1.2 (umbral 150 m).
 
@@ -483,3 +500,13 @@
 
 ## 2026-11-09 · position_estimation v1.4 · in_review → done
 - Revisión ciclo 1 de la v1.4: APPROVED (feed real: 8070 estimaciones coherentes; 15/19 mutantes). PR sin fusionar.
+
+## 2026-11-09 · position_estimation v1.4 PR #52 abierta · driver_session · spec_blocked → implementing (v1.2)
+- `feat/driver_session` actualizada con `develop` y con la rama de T-11 (PR #52 sin fusionar). Se remata T-08.
+
+## 2026-11-09 · driver_session v1.2 · implementing → in_review (ciclo 2)
+- F-01 y T-08 en metros reales; trazados reales dentro de 150 m con la semilla del test. Aviso: con otras semillas
+  a σ 10 m correlado hay casos fuera (hasta 422 m por detrás). Verify --e2e y `slow` en verde (1711 backend).
+
+## 2026-11-09 · driver_session · in_review → done
+- Revisión ciclo 2 (v1.2): APPROVED (25/26 mutantes); N-05: el umbral de 150 m depende de la semilla.

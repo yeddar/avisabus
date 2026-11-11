@@ -158,3 +158,40 @@ class DriverCodeAlreadyRevokedError(DomainError):
         self.code_id = code_id
         self.revoked_at = revoked_at
         super().__init__("driver code already revoked")
+
+
+class InvalidDriverCodeError(DomainError):
+    """The driver code does not exist or is revoked (driver_session AC-02). Both cases are
+    deliberately the same error, without the code."""
+
+    def __init__(self) -> None:
+        super().__init__("invalid driver code")
+
+
+class InvalidSessionError(DomainError):
+    """The session token is missing or does not belong to an open shift (driver_session AC-04)."""
+
+    def __init__(self) -> None:
+        super().__init__("invalid session")
+
+
+class InvalidDepartureError(DomainError):
+    """The departure is not one of those offered to the driver now (driver_session AC-07)."""
+
+    def __init__(self) -> None:
+        super().__init__("invalid departure")
+
+
+class DepartureTakenError(DomainError):
+    """Another open shift already holds the departure (driver_session AC-07)."""
+
+    def __init__(self) -> None:
+        super().__init__("departure taken")
+
+
+class InvalidPositionError(DomainError):
+    """The position was recorded too far in the future (driver_session AC-08). The coordinates
+    are deliberately not kept."""
+
+    def __init__(self) -> None:
+        super().__init__("invalid position")

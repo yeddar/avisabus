@@ -400,7 +400,7 @@
       "order": 17,
       "block": 4,
       "title": "Turno del conductor: inicio, posición, próximas paradas, fin y expiración",
-      "status": "spec_approved",
+      "status": "done",
       "depends_on": [
         "gtfs_import",
         "driver_codes_cli"
@@ -419,8 +419,8 @@
       ],
       "spec": "specs/driver_session/",
       "needs_exploration": false,
-      "review_cycles": 0,
-      "passes": false
+      "review_cycles": 1,
+      "passes": true
     },
     {
       "id": "driver_demand",

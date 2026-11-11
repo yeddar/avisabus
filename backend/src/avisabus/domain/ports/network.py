@@ -4,10 +4,12 @@ from datetime import date, datetime, timedelta
 from typing import Protocol
 
 from avisabus.domain.models.network import (
+    Departure,
     FeedVersion,
     HeadsignAtStop,
     Line,
     LineDirection,
+    LineDirectionsView,
     ScheduledStopTime,
     ShapePoint,
     Stop,
@@ -83,4 +85,22 @@ class NetworkRepository(Protocol):
     def shape_line(self, shape_id: str) -> Line | None:
         """Commercial line of the trips with that shape (the one with most trips, then the
         smallest name); `None` if no trip uses it (position_estimation design §3)."""
+        ...
+
+    def list_lines(self) -> list[LineDirectionsView]:
+        """Lines of the active network in natural order, with their directions.
+
+        Port extension defined by driver_session design §3.
+        """
+        ...
+
+    def departures(
+        self, line: str, direction_id: int, service_date: date, from_s: int, to_s: int
+    ) -> list[Departure]:
+        """Trips of `line` and `direction_id` with active service on `service_date` whose
+        departure from the first stop (minimum `stop_sequence`) is in `[from_s, to_s]`, by time
+        and then trip.
+
+        Port extension defined by driver_session design §3.
+        """
         ...
