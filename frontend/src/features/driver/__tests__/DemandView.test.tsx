@@ -181,13 +181,29 @@ describe('DemandView', () => {
     expect(getDriverToken()).toBeNull();
   });
 
-  it('[driver_ui.AC-10] "Seguir" keeps the shift open', () => {
+  it('[driver_ui.AC-10] "Seguir" keeps the shift open and returns the focus to "Finalizar turno"', async () => {
     const { onSessionEnd } = renderDemand();
+    const end = screen.getByRole('button', { name: 'Finalizar turno' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Finalizar turno' }));
+    fireEvent.click(end);
     fireEvent.click(screen.getByRole('button', { name: 'Seguir' }));
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(end).toHaveFocus();
+    expect(onSessionEnd).not.toHaveBeenCalled();
+  });
+
+  it('[driver_ui.AC-10] Escape closes the dialog and returns the focus to "Finalizar turno"', async () => {
+    const { onSessionEnd } = renderDemand();
+    const end = screen.getByRole('button', { name: 'Finalizar turno' });
+
+    fireEvent.click(end);
+    fireEvent.keyDown(screen.getByRole('heading', { name: '¿Finalizar el turno?' }), {
+      key: 'Escape',
+    });
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(end).toHaveFocus();
     expect(onSessionEnd).not.toHaveBeenCalled();
   });
 });

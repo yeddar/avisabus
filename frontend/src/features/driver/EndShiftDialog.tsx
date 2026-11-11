@@ -10,7 +10,9 @@ export interface EndShiftDialogProps {
 
 /**
  * Confirmation of the end of the shift (driver_ui.AC-10): a modal <dialog> (the browser traps the
- * focus and handles Escape, which counts as "Seguir"). The focus starts on the title.
+ * focus and handles Escape, which counts as "Seguir"). The focus starts on the title. "Seguir"
+ * closes the <dialog> with close(), like Escape, and both reach `onCancel` through its `close`
+ * event; the caller puts the focus back on the button that opened it (v1.1).
  */
 export function EndShiftDialog({ onConfirm, onCancel }: EndShiftDialogProps) {
   const { t } = useTranslation();
@@ -38,7 +40,7 @@ export function EndShiftDialog({ onConfirm, onCancel }: EndShiftDialogProps) {
           <Button variant="primary" className="min-h-12 w-full" onClick={onConfirm}>
             {t('driver.end.yes')}
           </Button>
-          <Button className="min-h-12 w-full" onClick={onCancel}>
+          <Button className="min-h-12 w-full" onClick={() => dialog.current?.close()}>
             {t('driver.end.no')}
           </Button>
         </div>

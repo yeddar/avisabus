@@ -45,6 +45,7 @@ const TEXTS = {
     end: 'Finalizar turno',
     confirm: '¿Finalizar el turno?',
     yes: 'Finalizar',
+    keep: 'Seguir',
     ended: 'Turno finalizado',
   },
   ca: {
@@ -69,6 +70,7 @@ const TEXTS = {
     end: 'Finalitza el torn',
     confirm: 'Vols finalitzar el torn?',
     yes: 'Finalitza',
+    keep: 'Continua',
     ended: 'Torn finalitzat',
   },
 } as const;
@@ -78,6 +80,7 @@ type Lang = keyof typeof TEXTS;
 interface DriverBackend {
   socket: WebSocketRoute | null;
   helloToken: string | null;
+  hellos: number;
   serviceBodies: unknown[];
   positions: { lat: number; lon: number }[];
   deletes: number;
@@ -130,6 +133,7 @@ async function mockDriver(page: Page): Promise<DriverBackend> {
   const backend: DriverBackend = {
     socket: null,
     helloToken: null,
+    hellos: 0,
     serviceBodies: [],
     positions: [],
     deletes: 0,
@@ -143,6 +147,7 @@ async function mockDriver(page: Page): Promise<DriverBackend> {
       const message = JSON.parse(String(frame)) as { type: string; session_token?: string };
       if (message.type !== 'hello') return;
       backend.helloToken = message.session_token ?? null;
+      backend.hellos += 1;
       ws.send(JSON.stringify({ type: 'driver.view', ...DRIVER_VIEW }));
     });
   });
@@ -232,7 +237,7 @@ for (const [lang, locale] of [
       await context.setGeolocation(POSITION);
     });
 
-    test(`[driver_ui.AC-11] [driver_ui.AC-12] full flow: code, departure, demand, new request, capacity alert and end (${lang})`, async ({
+    test(`[driver_ui.AC-04] [driver_ui.AC-09] [driver_ui.AC-11] [driver_ui.AC-12] full flow: code, departure, demand, new request, capacity alert, next departure and end (${lang})`, async ({
       page,
     }, testInfo) => {
       const backend = await mockDriver(page);
@@ -321,6 +326,18 @@ for (const [lang, locale] of [
       await expectNoAxeViolations(page);
       await capture(page, testInfo, 'fin-recorrido', lang);
 
+      // Choosing the next departure keeps sending the position on the same socket (AC-04, AC-09).
+      await page.getByRole('button', { name: texts.nextDeparture }).click();
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText(texts.pickDeparture);
+      const sentBefore = backend.positions.length;
+      await expect
+        .poll(() => backend.positions.length, { timeout: 15_000 })
+        .toBeGreaterThan(sentBefore);
+      expect(backend.hellos).toBe(1);
+      await page.getByRole('button', { name: /08:40/ }).click();
+      await expect(page.getByText(texts.departure)).toBeVisible();
+      expect(backend.hellos).toBe(1);
+
       // End of the shift.
       await page.getByRole('button', { name: texts.end }).click();
       const dialog = page.getByRole('dialog', { name: texts.confirm });
@@ -336,6 +353,37 @@ for (const [lang, locale] of [
       ).toBeNull();
       expect(backend.unexpected).toEqual([]);
       expect(external).toEqual([]);
+    });
+
+    test(`[driver_ui.AC-10] "Seguir" and Escape close the confirmation and return the focus to "Finalizar turno" (${lang})`, async ({
+      page,
+    }) => {
+      const backend = await mockDriver(page);
+      await page.goto('/driver');
+      await page.getByLabel(texts.code).fill(CODE);
+      await page.getByRole('button', { name: texts.enter, exact: true }).click();
+      await page.getByRole('button', { name: texts.line }).click();
+      await page.getByRole('button', { name: HEADSIGN }).click();
+      await page.getByRole('button', { name: /08:40/ }).click();
+      await expect(page.getByText(texts.departure)).toBeVisible();
+
+      const end = page.getByRole('button', { name: texts.end });
+      const dialog = page.getByRole('dialog', { name: texts.confirm });
+
+      await end.click();
+      await expect(dialog).toBeVisible();
+      await dialog.getByRole('button', { name: texts.keep, exact: true }).click();
+      await expect(dialog).toBeHidden();
+      await expect(end).toBeFocused();
+
+      await end.click();
+      await expect(dialog).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(dialog).toBeHidden();
+      await expect(end).toBeFocused();
+
+      expect(backend.deletes).toBe(0);
+      expect(backend.unexpected).toEqual([]);
     });
 
     test(`[driver_ui.AC-11] rejects a wrong code and keeps the driver at /driver (${lang})`, async ({

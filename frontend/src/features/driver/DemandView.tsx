@@ -63,6 +63,7 @@ export function DemandView({
   );
   const highlightTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const ending = useRef(false);
+  const endButton = useRef<HTMLButtonElement>(null);
   const received = useRef(initialView !== null);
   const lastGeneratedAt = useRef(
     initialView === null ? Number.NEGATIVE_INFINITY : Date.parse(initialView.generated_at),
@@ -151,6 +152,13 @@ export function DemandView({
     safeStorage.set(MUTE_KEY, String(next));
   }
 
+  // "Seguir" or Escape: back to "Finalizar turno" (AC-10 v1.1). Explicitly, because WebKit does
+  // not focus a button when it is clicked, so it has nothing to restore when the dialog closes.
+  function cancelEnd() {
+    setConfirming(false);
+    endButton.current?.focus();
+  }
+
   async function endShift() {
     if (ending.current) return;
     ending.current = true;
@@ -233,14 +241,12 @@ export function DemandView({
               ? t('driver.places', { places: view.free_places, seats: view.free_seats })
               : t('driver.places.unknown'))}
         </p>
-        <Button className="min-h-12" onClick={() => setConfirming(true)}>
+        <Button ref={endButton} className="min-h-12" onClick={() => setConfirming(true)}>
           {t('driver.end')}
         </Button>
       </div>
 
-      {confirming && (
-        <EndShiftDialog onConfirm={() => void endShift()} onCancel={() => setConfirming(false)} />
-      )}
+      {confirming && <EndShiftDialog onConfirm={() => void endShift()} onCancel={cancelEnd} />}
     </div>
   );
 }
