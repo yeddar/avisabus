@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 
 import { ApiError } from '../../shared/api/client';
 import { accessibleLineColors } from '../../shared/color/contrast';
@@ -8,6 +8,7 @@ import { formatClockTime } from '../../shared/i18n/format';
 import { GtfsText } from '../../shared/i18n/GtfsText';
 import { useAnnounce } from '../../shared/ui/Announcer';
 import { ArrowLeftIcon } from '../../shared/ui/icons/ArrowLeftIcon';
+import { RefreshIcon } from '../../shared/ui/icons/RefreshIcon';
 import { Button } from '../../shared/ui/Button';
 import { StatusNotice } from '../../shared/ui/StatusNotice';
 import { useUiLanguage } from '../passenger/stop/useUiLanguage';
@@ -39,10 +40,6 @@ function queryDriver<T>(path: string): () => Promise<T> {
     if (result.status !== OK || result.data === null) throw new ApiError(result.status, null);
     return result.data;
   };
-}
-
-function failureNotice() {
-  return <Trans i18nKey="stop.error.body" components={{ strong: <strong /> }} />;
 }
 
 /** /driver/shift without a departure: line → direction → departure (driver_ui.AC-02). */
@@ -129,6 +126,12 @@ export function ServicePicker({ initialChoice, onSelected, onExit }: ServicePick
     (step !== 'departure' && lines.isError && !(lines.error instanceof DriverAuthError)) ||
     (step === 'departure' && departures.isError && !(departures.error instanceof DriverAuthError));
 
+  // Loads again what the current step shows; after a failed choice, the departures (AC-02 v1.2).
+  function reload() {
+    setNotice(null);
+    void (step === 'departure' ? departures.refetch() : lines.refetch());
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-[560px] flex-col gap-5">
       <h1 ref={heading} className="text-[1.75rem] leading-[1.15] font-bold">
@@ -138,7 +141,17 @@ export function ServicePicker({ initialChoice, onSelected, onExit }: ServicePick
       </h1>
 
       {notice === 'taken' && <StatusNotice>{t('driver.pick.takenNow')}</StatusNotice>}
-      {(notice === 'failed' || failed) && <StatusNotice>{failureNotice()}</StatusNotice>}
+      {(notice === 'failed' || failed) && (
+        <StatusNotice
+          action={
+            <Button icon={<RefreshIcon className="size-[18px]" />} onClick={reload}>
+              {t('driver.pick.retry')}
+            </Button>
+          }
+        >
+          <strong>{t('driver.pick.error')}</strong>
+        </StatusNotice>
+      )}
 
       {step === 'line' && lines.data !== undefined && (
         <ul className="flex flex-wrap gap-3">
@@ -185,7 +198,15 @@ export function ServicePicker({ initialChoice, onSelected, onExit }: ServicePick
       {step === 'departure' && departures.data !== undefined && (
         <>
           {departures.data.departures.length === 0 && (
-            <StatusNotice>{t('driver.pick.empty')}</StatusNotice>
+            <StatusNotice
+              action={
+                <Button icon={<RefreshIcon className="size-[18px]" />} onClick={reload}>
+                  {t('driver.pick.refresh')}
+                </Button>
+              }
+            >
+              <strong>{t('driver.pick.empty')}</strong>
+            </StatusNotice>
           )}
           <ul className="flex flex-col gap-3">
             {departures.data.departures.map((departure) => (

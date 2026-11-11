@@ -191,7 +191,10 @@
       "taken": "Ya en servicio",
       "back": "Volver",
       "takenNow": "Esa salida ya la lleva otro conductor",
-      "empty": "No hay salidas en este momento"
+      "empty": "No hay salidas de esta línea y sentido en la próxima hora",
+      "refresh": "Actualizar",
+      "error": "No se han podido cargar los datos",
+      "retry": "Reintentar"
     },
     "shift": {
       "title": "Turno del conductor"

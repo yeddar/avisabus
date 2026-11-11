@@ -191,7 +191,10 @@
       "taken": "Ja en servei",
       "back": "Torna",
       "takenNow": "Eixa eixida ja la porta un altre conductor",
-      "empty": "No hi ha eixides en este moment"
+      "empty": "No hi ha eixides d'esta línia i sentit en la pròxima hora",
+      "refresh": "Actualitza",
+      "error": "No s'han pogut carregar les dades",
+      "retry": "Reintenta"
     },
     "shift": {
       "title": "Torn del conductor"
