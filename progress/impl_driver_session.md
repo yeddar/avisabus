@@ -1,5 +1,5 @@
 # Implementación: driver_session
-Spec: specs/driver_session/ (v1.4, APPROVED) · Ciclo de revisión: 0 de la v1.4 (T-10; antes, ciclo 0 de la v1.3: T-09; ciclo 2 de la v1.2: F-01 y T-08) · Agente: implementer · Fecha: 2026-11-11
+Spec: specs/driver_session/ (v1.5, APPROVED) · Ciclo de revisión: 0 de la v1.5 (T-10; antes, ciclo 0 de la v1.4: T-10 bloqueada por P-04; ciclo 0 de la v1.3: T-09; ciclo 2 de la v1.2: F-01 y T-08) · Agente: implementer · Fecha: 2026-11-11
 
 ## Tareas
 - [x] T-01 Modelos, puertos, errores, `SqliteDriverSessionRepository` y consulta de turno abierto para `driver-codes list/revoke` (AC-14) (commit cd4d2e0)
@@ -70,7 +70,7 @@ axe 126 passed; formato, lint, tipos, arquitectura (2 contratos), build, `featur
 trazabilidad en verde. `uv run pytest -m slow`: 12 passed (el aviso de cobertura < 80 % es el umbral
 global aplicado a ese subconjunto, igual que en la v1.2).
 
-### v1.4 · Ciclo de revisión 0 de la v1.4 · 2026-11-11 · **BLOQUEADA (CP-3, P-04)**
+### v1.4 · Ciclo de revisión 0 de la v1.4 · 2026-11-11 · BLOQUEADA (CP-3, P-04) → resuelta con la v1.5 (ver más abajo)
 - [ ] T-10 (AC-09): test con trazados reales y ruido, semillas 1–20, criterio por percentil y máximos
   de AC-09 v1.4, informe por semilla. El test está escrito y fija lo que dice la spec (commit fea106a),
   pero **está en rojo** con el código actual en `sigma10_independent`: la semilla 16 deja una posición
@@ -189,6 +189,73 @@ skipped; bundle 5 passed; formato, lint, tipos, arquitectura, build, `feature_li
 trazabilidad en verde. `uv run pytest tests/integration/test_upcoming_stops_real_shapes.py -m slow`:
 2 passed y 1 failed (`sigma10_independent`, P-04).
 
+### v1.5 · Ciclo de revisión 0 de la v1.5 · 2026-11-11
+- [x] T-10 (AC-09 v1.5): máximo por delante del test con trazados reales, de 150 m a 200 m
+  (`MAX_AHEAD_M = 200.0`) y docstring con la limitación aceptada de las rotondas recorridas dos veces
+  (línea 25, vueltas de 139 m). Nada más cambia: semillas 1–20, σ 10 m correlado e independiente,
+  percentil ≥ 99,5 % a < 150 m, máximo por detrás de 500 m, control sin ruido e informe por semilla
+  siguen como en la v1.4. Sin cambios en producción (`git diff` vacío en `src/`). El test se escribió en
+  la v1.4 (commit fea106a); el cambio de la v1.5 está en el commit 97c4377.
+- [x] T-07 (repetida): `npm run gen:api` no cambia `openapi.json` ni `schema.d.ts` (el contrato HTTP
+  no varía); verificación completa en verde (sin commit: no hay cambios).
+
+#### Informe por semilla (v1.5, `uv run pytest tests/integration/test_upcoming_stops_real_shapes.py -m slow`)
+Mismas cifras que en la v1.4 (el código y el ruido no cambian); solo cambia el criterio por delante.
+En todas las semillas y en los dos modelos: `ahead>200 = 0`, `behind>500 = 0`, `no_progress = 0`.
+
+| Semilla | Correlado: % < 150 m | máx. delante / detrás (m) | Independiente: % < 150 m | máx. delante / detrás (m) |
+|---|---|---|---|---|
+| 1 | 100,000 | 102,4 / 144,4 | 100,000 | 111,0 / 99,0 |
+| 2 | 99,973 | 110,5 / 341,7 | 100,000 | 120,6 / 90,1 |
+| 3 | 100,000 | 91,0 / 98,9 | 100,000 | 105,6 / 54,7 |
+| 4 | 99,973 | 119,6 / 350,5 | 100,000 | 126,2 / 81,1 |
+| 5 | 100,000 | 116,9 / 85,3 | 100,000 | 107,8 / 65,5 |
+| 6 | 99,973 | 108,0 / 353,4 | 100,000 | 112,6 / 51,5 |
+| 7 | 100,000 | 115,0 / 84,8 | 100,000 | 95,8 / 67,2 |
+| 8 | 100,000 | 110,3 / 126,1 | 100,000 | 109,9 / 89,3 |
+| 9 | 100,000 | 106,6 / 92,0 | 100,000 | 91,9 / 102,3 |
+| 10 | 100,000 | 104,9 / 133,7 | 100,000 | 107,2 / 80,0 |
+| 11 | 100,000 | 107,0 / 99,2 | 100,000 | 85,0 / 57,9 |
+| 12 | 100,000 | 127,9 / 124,2 | 100,000 | 116,0 / 93,7 |
+| 13 | 100,000 | 105,4 / 118,6 | 100,000 | 118,0 / 87,9 |
+| 14 | 100,000 | 101,7 / 100,0 | 100,000 | 115,0 / 90,8 |
+| 15 | 100,000 | 124,0 / 149,1 | 100,000 | 96,8 / 112,2 |
+| 16 | 100,000 | 130,8 / 109,8 | 99,995 | 157,1 / 83,4 (rotonda de `1026_2253_2186`) |
+| 17 | 99,963 | 116,7 / 422,2 | 100,000 | 101,9 / 84,0 |
+| 18 | 99,968 | 92,3 / 342,4 | 100,000 | 106,1 / 76,8 |
+| 19 | 100,000 | 112,4 / 126,8 | 100,000 | 126,1 / 121,9 |
+| 20 | 100,000 | 99,5 / 133,2 | 100,000 | 110,4 / 52,1 |
+| **1–20** | **99,993** (28 de 374 280 fuera) | 130,8 / 422,2 → **cumple** | **99,9997** (1 fuera) | 157,1 / 121,9 → **cumple** |
+
+Control sin ruido: 100 %, 0,0 m por delante y 41,7 m por detrás. Resultado: 3 passed en 40,6 s.
+Margen por delante: 157,1 m frente a 200 m (independiente) y 130,8 m (correlado).
+
+#### Mutantes (temporales en `domain/services/upcoming_stops.py`, revertidos con `git checkout`)
+- `MAX_SPEED_MPS = 200.0` (ventana demasiado ancha): 2 failed, 1 passed (el control). Correlado:
+  1 019 posiciones a más de 200 m por delante, máx. 1 018,6 m. Independiente: 1 336, máx. 1 051,3 m.
+  Con el máximo de 200 m el test sigue detectando el salto a pasadas posteriores en los dos modelos.
+- `MAX_SPEED_MPS = 7.0` (ventana más lenta que el autobús): 2 failed, 1 passed. Correlado: 98,182 %
+  (< 99,5 %) y 6 464 posiciones a más de 500 m por detrás; independiente: 99,619 % y 1 294 posiciones a
+  más de 500 m por detrás.
+
+#### Decisiones locales de la v1.5
+Ninguna nueva. Se mantienen las de la v1.4 (agregación del percentil, fronteras con `>`/`<`, informe
+por semilla).
+
+#### Bloqueos de la v1.5
+Ninguno. P-04 queda cerrado por la v1.5.
+
+#### Verificación de la v1.5
+- `CI=1 ./init.sh verify --e2e` (puerto 4173 libre), salida 0, "verify: todo en verde": backend
+  formato, lint, tipos y arquitectura (2 contratos) en verde; `pytest` 1915 passed, 9 deselected (los
+  `slow`), cobertura 99,66 %; Vitest 660 passed y 2 skipped (68 ficheros); build + bundle 5 passed;
+  Playwright + axe 132 passed y 12 skipped; `feature_list.json` y trazabilidad AC → test en verde.
+- `cd backend && uv run pytest -m slow`: 9 passed, 0 failed, 1915 deselected (186 s), pero **salida 1**
+  por "Required test coverage of 80% not reached. Total coverage: 69.51%": el `--cov-fail-under=80`
+  de `addopts` (`pyproject.toml`) se aplica también a este subconjunto. Es el aviso de cobertura ya
+  anotado en la v1.2 y la v1.3, no un fallo de test. Con `--no-cov`: 9 passed, salida 0 (57 s).
+  (Desde la v1.4 son 9 `slow` y no 12, porque T-10 retiró los niveles σ 3 y σ 5.)
+
 ## Decisiones locales
 
 `design.md` §7 permite dos: la caché de distancias de paradas y la estructura de `LineDirectionsView`
@@ -248,7 +315,7 @@ reviewer pueden pedir otra cosa sin rehacer nada más.
 
 ## Bloqueos
 
-**Abierto: P-04 (CP-3, v1.4, T-10)**, ver "Bloqueos de la v1.4". El CP-3 de T-08 se resolvió con la spec v1.2 (PR #51), apoyada en `position_estimation`
+**P-04 (CP-3, v1.4, T-10): cerrado** con la spec v1.5 (PR #62; máximo por delante de 200 m en el test real). Ver "Bloqueos de la v1.4" y la sección de la v1.5. El CP-3 de T-08 se resolvió con la spec v1.2 (PR #51), apoyada en `position_estimation`
 v1.4 (T-11):
 - **P-02 (resuelto):** `shape_dist_traveled` no son metros (longitud del feed 1,66–4,25 veces la real).
   v1.2 mide el progreso, la ventana y los márgenes en metros reales.
