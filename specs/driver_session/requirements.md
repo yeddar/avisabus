@@ -1,6 +1,6 @@
 # Turno del conductor — requirements
 
-> Feature: `driver_session` · Versión: 1.4 · Estado: APPROVED
+> Feature: `driver_session` · Versión: 1.5 · Estado: APPROVED
 > Requisitos: RF-24, RF-25, RF-26, RF-30, RNF-06, RNF-07, RNF-13 · Casos de uso: CU-08, CU-09 (posición), CU-10, CU-13 (revocación) · Depende de: gtfs_import, driver_codes_cli
 
 ## Contexto
@@ -105,9 +105,11 @@ capacidad) y el WebSocket del conductor son de `driver_demand`.
   `slow` con los trazados del feed real: recorriendo cada trazado a 30 km/h con una posición cada
   5 s y ruido gaussiano σ = 10 m (correlado ρ = 0,95 e independiente) con las semillas 1 a 20
   (v1.4), AL MENOS el 99,5 % de las posiciones DEBERÁ tener el progreso a menos de 150 m del real,
-  y NINGUNA DEBERÁ quedar más de 150 m por delante ni más de 500 m por detrás. (v1.4) Limitación
+  y NINGUNA DEBERÁ quedar más de 200 m por delante (v1.5) ni más de 500 m por detrás. (v1.4) Limitación
   aceptada: en los giros en U el progreso puede quedarse atrás hasta unos 450 m y se recupera solo
-  al salir del giro; el resultado por semilla se informa en la salida del test. (v1.2) El progreso, las
+  al salir del giro; (v1.5) en un trazado que recorre dos veces una rotonda (p. ej. la línea 25,
+  vueltas de 139 m), el ruido puede adelantar el progreso una vuelta; el resultado por semilla se
+  informa en la salida del test. (v1.2) El progreso, las
   ventanas y los márgenes de AC-09 y AC-10 se miden en **metros reales** sobre la forma, con las
   mismas distancias que `position_estimation.AC-06` v1.4.
 - **driver_session.AC-10** — EL SISTEMA DEBERÁ calcular las próximas paradas del viaje como las
@@ -170,3 +172,4 @@ capacidad) y el WebSocket del conductor son de `driver_demand`.
 | 1.2 | 2026-11-09 | AC-09 y AC-10 en metros reales (las distancias de `shape_dist_traveled` no son metros); umbral del test con trazados reales y ruido σ 10 m: 150 m (máximo observado: 108 m por delante y 139 m por detrás). | CP-3 de `driver_session` en T-08: P-02 y P-03. Aprobada por la persona (PR #51). |
 | 1.3 | 2026-11-11 | AC-08: un reenvío de la misma posición es señal de vida, no fijo de GPS; AC-11: `STALE` por la hora del servidor del último fijo nuevo (`last_fix_at`); AC-13: `IDLE` por la última señal de vida (`last_seen_at`). Así un autobús parado en cabecera no pierde el turno y un GPS perdido se detecta sin depender del reloj de la tablet. T-09. | CP-3 de `driver_ui` (P-01): con "enviar la última cada 5 s", el reenvío ocultaba la pérdida de GPS; sin reenvío, un autobús parado perdía el turno. Aprobada por la persona (PR #55). |
 | 1.4 | 2026-11-11 | AC-09: el test con trazados reales se evalúa con 20 semillas por percentil (≥ 99,5 % a < 150 m; nada > 150 m por delante ni > 500 m por detrás) y se acepta el retraso en los giros en U, que se recupera solo. T-10. | N-05 de la revisión de `driver_session` (decisión de la persona en el cierre del bloque 4): con σ 10 m, 5 de 20 semillas dejaban posiciones a 342–422 m por detrás en giros en U. Aprobada por la persona (PR #60). |
+| 1.5 | 2026-11-11 | AC-09: máximo por delante del test con trazados reales, de 150 m a 200 m; se documenta el adelanto de una vuelta en rotondas recorridas dos veces. | T-10 de `driver_session` v1.4: la línea 25 recorre dos veces una rotonda de 139 m (seis puntos idénticos en el trazado), menos que la ventana de 150 m. Aprobada por la persona (PR #62). |
