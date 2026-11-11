@@ -1,5 +1,5 @@
 # Implementación: driver_session
-Spec: specs/driver_session/ (v1.5, APPROVED) · Ciclo de revisión: 0 de la v1.5 (T-10; antes, ciclo 0 de la v1.4: T-10 bloqueada por P-04; ciclo 0 de la v1.3: T-09; ciclo 2 de la v1.2: F-01 y T-08) · Agente: implementer · Fecha: 2026-11-11
+Spec: specs/driver_session/ (v1.5, APPROVED) · Ciclo de revisión: 1 de la v1.5 (B-01; antes, ciclo 0 de la v1.5: T-10; ciclo 0 de la v1.4: T-10 bloqueada por P-04; ciclo 0 de la v1.3: T-09; ciclo 2 de la v1.2: F-01 y T-08) · Agente: implementer · Fecha: 2026-11-11
 
 ## Tareas
 - [x] T-01 Modelos, puertos, errores, `SqliteDriverSessionRepository` y consulta de turno abierto para `driver-codes list/revoke` (AC-14) (commit cd4d2e0)
@@ -255,6 +255,47 @@ Ninguno. P-04 queda cerrado por la v1.5.
   de `addopts` (`pyproject.toml`) se aplica también a este subconjunto. Es el aviso de cobertura ya
   anotado en la v1.2 y la v1.3, no un fallo de test. Con `--no-cov`: 9 passed, salida 0 (57 s).
   (Desde la v1.4 son 9 `slow` y no 12, porque T-10 retiró los niveles σ 3 y σ 5.)
+
+### v1.5 · Ciclo de revisión 1 de la v1.5 · 2026-11-11
+Revisión: `progress/review_driver_session.md` (CHANGES_REQUESTED). Solo se corrige el bloqueante B-01;
+los no bloqueantes quedan fuera de este ciclo.
+
+- [x] B-01 (AC-09 v1.5, T-10): restaurada la aserción `no_progress == 0` que la reescritura de la v1.4
+  (fea106a) había sustituido por "una posición sin progreso cuenta como no a menos de 150 m"
+  (commit 744bb37). Solo cambia `backend/tests/integration/test_upcoming_stops_real_shapes.py`:
+  - En el test con ruido (σ 10 m correlado e independiente, semillas 1–20):
+    `assert all(figures.no_progress == 0 for figures in per_seed), report`.
+  - En el control sin ruido, `assert figures.no_progress == 0, report` explícito (antes solo implícito
+    en `near == positions`).
+  - La línea total por modelo del informe muestra también `no_progress=<total>`, y el docstring
+    explica por qué se exige: con σ 10 m ninguna posición está a más de 150 m del trazado, el único
+    caso en que AC-09 deja al autobús sin progreso.
+  - Sin cambios en producción (`git diff` vacío en `backend/src`).
+
+#### Mutante `firstoff15` (temporal en `application/driver_sessions.py:502`, revertido con `git checkout`)
+`if distance > (15.0 if session.progress_m is None else OFF_ROUTE_M):`. Sin progreso previo, marca
+fuera de ruta la primera posición a más de 15 m del trazado, cuando AC-09 solo lo permite a más de 150 m.
+- Con el test corregido: **2 failed** (los dos modelos con ruido) y 1 passed (el control). Falla la
+  aserción `assert all(figures.no_progress == 0 for figures in per_seed)`. Correlado: `no_progress=971`
+  y percentil del 99,733 %. Independiente: `no_progress=449` y percentil del 99,880 %. Ninguna posición
+  supera los máximos, así que sin esta aserción el test pasaba, como vio el reviewer.
+- Tras revertir: `git status` solo muestra el fichero de test (y `?? qr/`, que ya estaba).
+
+#### Decisiones locales del ciclo 1 de la v1.5
+Ninguna nueva. Se retira la de la v1.4 "una posición sin progreso cuenta como no a menos de 150 m"
+(ver "Qué fija el test" de la v1.4): no la autorizaba la spec (B-01).
+
+#### Bloqueos del ciclo 1 de la v1.5
+Ninguno.
+
+#### Verificación del ciclo 1 de la v1.5
+- `CI=1 ./init.sh verify --e2e` (puerto 4173 libre), salida 0, "verify: todo en verde": backend
+  formato, lint, tipos y arquitectura en verde; `pytest` 1915 passed, 9 deselected (los `slow`),
+  cobertura 99,66 %; Vitest 660 passed y 2 skipped (68 ficheros); build + bundle 5 passed;
+  Playwright + axe 132 passed y 12 skipped; `feature_list.json` y trazabilidad AC → test en verde.
+- `cd backend && uv run pytest -m slow --no-cov`: 9 passed, 1915 deselected, salida 0 (56 s). Cifras del
+  test real iguales a las del ciclo 0: correlado 99,993 %, 130,8 / 422,2 m; independiente 99,9997 %,
+  157,1 / 121,9 m; control 100 %, 0,0 / 41,7 m; `no_progress=0` en todos.
 
 ## Decisiones locales
 
