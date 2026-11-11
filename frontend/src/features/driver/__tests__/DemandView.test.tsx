@@ -46,7 +46,7 @@ describe('DemandView', () => {
     FakeWebSocket.reset();
     Object.defineProperty(navigator, 'geolocation', {
       configurable: true,
-      value: { watchPosition: vi.fn(() => 1), clearWatch: vi.fn() },
+      value: { watchPosition: vi.fn(() => 1), clearWatch: vi.fn(), getCurrentPosition: vi.fn() },
     });
     mockApi(() => ({ status: 204, body: null }));
   });

@@ -55,7 +55,7 @@ describe('DemandView tone and highlight', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.5);
     Object.defineProperty(navigator, 'geolocation', {
       configurable: true,
-      value: { watchPosition: vi.fn(() => 1), clearWatch: vi.fn() },
+      value: { watchPosition: vi.fn(() => 1), clearWatch: vi.fn(), getCurrentPosition: vi.fn() },
     });
     mockApi(() => ({ status: 204, body: null }));
   });

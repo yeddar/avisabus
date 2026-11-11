@@ -3,6 +3,13 @@ import { useEffect, useRef, useState } from 'react';
 import { driverApi } from './session';
 
 const SEND_INTERVAL_MS = 5_000;
+/** Silence of watchPosition after which a fresh fix is requested explicitly (AC-04 v1.1). */
+const SILENCE_MS = 10_000;
+const CURRENT_POSITION_OPTIONS: PositionOptions = {
+  enableHighAccuracy: true,
+  maximumAge: 0,
+  timeout: SILENCE_MS,
+};
 const PERMISSION_DENIED = 1;
 
 export type LocationPermission = 'prompt' | 'granted' | 'denied';
@@ -12,11 +19,14 @@ function supported(): boolean {
 }
 
 /**
- * Follows the device position while `enabled` (driver_ui.AC-04): watchPosition with high accuracy,
- * the latest fix sent every 5 s with PUT position. A fix is sent once: the server decides that
- * the GPS is lost from the arrival of positions (driver_session.AC-11, CU-09 1a), so repeating
- * an old one would hide it. Also keeps the screen awake with the Wake Lock API, requesting it
- * again when the page becomes visible; without that API or its permission nothing fails.
+ * Follows the device position while `enabled` (driver_ui.AC-04 v1.1): watchPosition with high
+ * accuracy, and every 5 s the latest fix through PUT position, even if it repeats: the resend is
+ * the sign of life of the shift, and only a fix with a newer `recorded_at` counts as GPS for the
+ * server (driver_session.AC-08, AC-11). If watchPosition delivers nothing for 10 s (a bus standing
+ * still may get no updates), it asks for a fresh fix with getCurrentPosition, again every 10 s
+ * while the silence lasts, so only a lost GPS ends in "Posición desactualizada". Also keeps the
+ * screen awake with the Wake Lock API, requesting it again when the page becomes visible; without
+ * that API or its permission nothing fails.
  */
 export function useDriverPosition(enabled: boolean): {
   permission: LocationPermission;
@@ -31,21 +41,41 @@ export function useDriverPosition(enabled: boolean): {
   useEffect(() => {
     if (!enabled || !supported()) return;
     const { geolocation } = navigator;
+    let silence: ReturnType<typeof setTimeout> | undefined;
+
+    function onPosition(position: GeolocationPosition) {
+      latest.current = position;
+      setPermission('granted');
+    }
+
+    function onError(error: GeolocationPositionError) {
+      if (error.code !== PERMISSION_DENIED) return;
+      setPermission('denied');
+      // Nothing to ask for until "Reintentar" restarts the watch.
+      clearTimeout(silence);
+    }
+
+    function watchSilence() {
+      clearTimeout(silence);
+      silence = setTimeout(() => {
+        geolocation.getCurrentPosition(onPosition, onError, CURRENT_POSITION_OPTIONS);
+        watchSilence();
+      }, SILENCE_MS);
+    }
+
     const watchId = geolocation.watchPosition(
       (position) => {
-        latest.current = position;
-        setPermission('granted');
+        onPosition(position);
+        watchSilence();
       },
-      (error) => {
-        if (error.code === PERMISSION_DENIED) setPermission('denied');
-      },
+      onError,
       { enableHighAccuracy: true },
     );
+    watchSilence();
     const timer = setInterval(() => {
       const position = latest.current;
       if (position === null) return;
-      latest.current = null;
-      // A failed send is dropped: the next tick has a newer fix. A 401 ends the session.
+      // A failed send is dropped: the next tick sends again. A 401 ends the session.
       void driverApi('PUT', '/driver/sessions/current/position', {
         lat: position.coords.latitude,
         lon: position.coords.longitude,
@@ -56,6 +86,7 @@ export function useDriverPosition(enabled: boolean): {
     return () => {
       geolocation.clearWatch(watchId);
       clearInterval(timer);
+      clearTimeout(silence);
     };
   }, [enabled, attempt]);
 

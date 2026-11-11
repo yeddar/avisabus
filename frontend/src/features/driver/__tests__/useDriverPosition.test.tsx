@@ -36,6 +36,25 @@ class FakeGeolocation {
     this.cleared += 1;
   });
 
+  current: ((position: Fix) => void) | null = null;
+  currentOptions: PositionOptions | undefined;
+
+  getCurrentPosition = vi.fn(
+    (
+      success: (position: Fix) => void,
+      _failure: (error: { code: number; PERMISSION_DENIED: number }) => void,
+      options?: PositionOptions,
+    ) => {
+      this.current = success;
+      this.currentOptions = options;
+    },
+  );
+
+  /** Answers the pending getCurrentPosition() request. */
+  answerCurrent(position: Fix) {
+    act(() => this.current?.(position));
+  }
+
   emit(position: Fix) {
     act(() => this.success?.(position));
   }
@@ -135,19 +154,93 @@ describe('useDriverPosition', () => {
     ]);
   });
 
-  it('[driver_ui.AC-04] does not repeat a fix already sent, so the server can detect the lost GPS', async () => {
+  it('[driver_ui.AC-04] sends the latest fix again every 5 s even if it repeats: it is the sign of life', async () => {
     const api = mockApi(() => ({ status: 204, body: null }));
     renderHook(() => useDriverPosition(true));
     geolocation.emit(fix(39.46, Date.UTC(2026, 10, 9, 7, 41, 0)));
 
     await advance(15_000);
 
-    expect(positionCalls(api)).toHaveLength(1);
+    const repeated = {
+      lat: 39.46,
+      lon: -0.37,
+      accuracy_m: 12,
+      recorded_at: '2026-11-09T07:41:00.000Z',
+    };
+    expect(positionCalls(api)).toEqual([repeated, repeated, repeated]);
 
     geolocation.emit(fix(39.47, Date.UTC(2026, 10, 9, 7, 41, 20)));
     await advance(5_000);
 
-    expect(positionCalls(api)).toHaveLength(2);
+    expect(positionCalls(api).at(-1)).toMatchObject({
+      lat: 39.47,
+      recorded_at: '2026-11-09T07:41:20.000Z',
+    });
+  });
+
+  it('[driver_ui.AC-04] sends nothing until there is a first fix', async () => {
+    const api = mockApi(() => ({ status: 204, body: null }));
+    renderHook(() => useDriverPosition(true));
+
+    await advance(9_000);
+
+    expect(positionCalls(api)).toHaveLength(0);
+  });
+
+  it('[driver_ui.AC-04] asks getCurrentPosition when watchPosition delivers nothing in 10 s', async () => {
+    const api = mockApi(() => ({ status: 204, body: null }));
+    renderHook(() => useDriverPosition(true));
+    geolocation.emit(fix(39.46, Date.UTC(2026, 10, 9, 7, 41, 0)));
+
+    await advance(9_999);
+    expect(geolocation.getCurrentPosition).not.toHaveBeenCalled();
+
+    await advance(1);
+
+    expect(geolocation.getCurrentPosition).toHaveBeenCalledTimes(1);
+    expect(geolocation.currentOptions).toEqual({
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: 10_000,
+    });
+
+    geolocation.answerCurrent(fix(39.48, Date.UTC(2026, 10, 9, 7, 41, 12)));
+    await advance(5_000);
+
+    expect(positionCalls(api).at(-1)).toMatchObject({
+      lat: 39.48,
+      recorded_at: '2026-11-09T07:41:12.000Z',
+    });
+
+    // Still silent: it keeps asking every 10 s.
+    await advance(5_000);
+    expect(geolocation.getCurrentPosition).toHaveBeenCalledTimes(2);
+  });
+
+  it('[driver_ui.AC-04] does not ask getCurrentPosition while watchPosition keeps delivering', async () => {
+    mockApi(() => ({ status: 204, body: null }));
+    renderHook(() => useDriverPosition(true));
+
+    for (let second = 0; second < 30; second += 6) {
+      geolocation.emit(fix(39.46, Date.UTC(2026, 10, 9, 7, 41, second)));
+      await advance(6_000);
+    }
+
+    expect(geolocation.getCurrentPosition).not.toHaveBeenCalled();
+  });
+
+  it('[driver_ui.AC-04] also asks getCurrentPosition when watchPosition never delivers', async () => {
+    mockApi(() => ({ status: 204, body: null }));
+    const { unmount } = renderHook(() => useDriverPosition(true));
+
+    await advance(10_000);
+
+    expect(geolocation.getCurrentPosition).toHaveBeenCalledTimes(1);
+
+    unmount();
+    await advance(30_000);
+
+    expect(geolocation.getCurrentPosition).toHaveBeenCalledTimes(1);
   });
 
   it('[driver_ui.AC-04] reports a denied permission and "Reintentar" watches again', () => {
@@ -168,6 +261,16 @@ describe('useDriverPosition', () => {
     geolocation.emit(fix(39.46, 1));
 
     expect(result.current.permission).toBe('granted');
+  });
+
+  it('[driver_ui.AC-04] with the permission denied it stops asking getCurrentPosition', async () => {
+    mockApi(() => ok(null));
+    renderHook(() => useDriverPosition(true));
+
+    geolocation.deny();
+    await advance(30_000);
+
+    expect(geolocation.getCurrentPosition).not.toHaveBeenCalled();
   });
 
   it('[driver_ui.AC-04] without geolocation it reports denied and does not fail', () => {
