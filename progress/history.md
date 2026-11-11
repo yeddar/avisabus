@@ -588,3 +588,7 @@
 
 ## 2026-11-11 · driver_ui v1.2 · in_review → changes_requested → implementing
 - T-08 cumple la v1.2. B-01: test intermitente de la v1.1 (`ShiftPage.test.tsx`, el socket se usa antes de crearse).
+
+## 2026-11-11 · driver_ui v1.2 · implementing → in_review → done
+- T-08: textos del selector, plurales con `count` y estado visible en la cabecera. Ciclo 2 APPROVED (B-01 test
+  intermitente corregido con `findSocket()`). Abiertos para la persona: P-06 (cabecera al empezar) y P-07 (plurales).
