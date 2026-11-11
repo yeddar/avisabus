@@ -4,11 +4,10 @@
 
 **Fecha:** 2026-11-11
 **Fase:** Implementación — Bloque 4 (conductor)
-**Feature en curso:** `driver_session` v1.3 — `implementing` (T-09, rama `feat/driver_session` actualizada con `develop`)
+**Feature en curso:** `driver_session` v1.3 — `in_review` (T-09, rama `feat/driver_session` actualizada con `develop`)
 
 ## Último paso
-CP-3 de `driver_ui` (P-01) resuelto en la PR #55 (`driver_session` 1.3, `driver_ui` 1.1). PR #52, #53 y #54 fusionadas.
-`feat/driver_ui` subida como copia (sin PR).
+`driver_session` T-09 implementada (contrato HTTP sin cambios); `CI=1 ./init.sh verify --e2e` y `pytest -m slow` en verde.
 
 ## Siguiente paso
 1. `driver_session` T-09 (`last_seen_at` / `last_fix_at`), revisión nueva y PR.
