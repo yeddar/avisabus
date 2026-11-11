@@ -544,6 +544,10 @@
 - Revisión ciclo 1 APPROVED (15/17 mutantes; ejecución real contra backend local: cierre siempre, sin filtrar código
   ni token). Verify --e2e en verde (1913 backend). N-05 de `driver_session` re-medido: fallan semillas 2 y 4. CP-6 pendiente.
 
+## 2026-11-11 · PR #56, #57 y #58 fusionadas · bloque 4 · CP-6 aprobado (cierre del bloque)
+- Demo de la persona en el Mac (Chrome DevTools, SAE real, línea 93): acceso, salida, próximas paradas, solicitud y
+  entrega, fin de recorrido y siguiente salida, GPS perdido, fin de turno y simulador. Bloque 5 solo con la persona.
+
 ## 2026-11-11 · bloque 5 · deployment_rpi pending → spec_draft (y cierre de pendientes del bloque 4)
 - Spec de `deployment_rpi` v1.0 en borrador. Decisiones de la persona: imágenes construidas en el
   Mac (Apple Silicon) y llevadas por SSH; Raspberry con Docker y NPM con dominio; SAE real con poco
