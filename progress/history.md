@@ -598,3 +598,6 @@
 ## 2026-11-11 · passenger_map_view v1.3 · implementing → in_review → done
 - T-09: fixtures de posición regeneradas desde la API (en ruta 844 m, sin empezar 1839 m; antes 3403/4251). Revisión
   ciclo 1 APPROVED (regeneradas byte a byte; distancias a ≤ 4 m de la medida independiente).
+
+## 2026-11-11 · passenger_map_view PR #65 abierta · deployment_rpi · spec_approved → implementing
+- Sin exploración (tasks.md). T-01…T-04 primero; T-05 y T-08 esperan a Docker en el Mac (Colima parado, sin `compose`/`buildx`).

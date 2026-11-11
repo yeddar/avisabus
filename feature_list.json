@@ -504,7 +504,7 @@
       "order": 21,
       "block": 5,
       "title": "Despliegue en Raspberry Pi: compose, contenedor web, imágenes multiarquitectura",
-      "status": "spec_approved",
+      "status": "implementing",
       "depends_on": [
         "project_scaffold"
       ],

@@ -4,10 +4,10 @@
 
 **Fecha:** 2026-11-11
 **Fase:** Ajustes del bloque 4 y bloque 5 (`deployment_rpi`)
-**Feature en curso:** `deployment_rpi` v1.0 — siguiente. `passenger_map_view` v1.3 `done` (rama `feat/passenger_map_view-v1.3`)
+**Feature en curso:** `deployment_rpi` v1.0 — `implementing` (T-01…T-04 primero; rama `feat/deployment_rpi`, apilada sobre `feat/passenger_map_view-v1.3`, PR #65)
 
 ## Último paso
-`passenger_map_view` v1.3 (T-09): revisión ciclo 1 APPROVED; rama subida y PR contra `develop` (apilada sobre la #64).
+`passenger_map_view` v1.3 APPROVED; PR #65 (apilada sobre la #64). Docker en el Mac no disponible: Colima parado y sin plugins `compose`/`buildx` (lo prepara la persona).
 
 ## Siguiente paso
 Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
