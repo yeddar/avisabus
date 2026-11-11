@@ -10,7 +10,8 @@ from avisabus.adapters.inbound.cli.qr import qr_app
 from avisabus.adapters.inbound.cli.sae import sae_app
 from avisabus.adapters.inbound.cli.simulate import sim_app
 
-app = typer.Typer(name="avisabus", no_args_is_help=True)
+# Explicit, not Typer's default: a trace with locals would print the plain driver code (AC-03).
+app = typer.Typer(name="avisabus", no_args_is_help=True, pretty_exceptions_show_locals=False)
 app.add_typer(driver_codes_app, name="driver-codes")
 app.add_typer(gtfs_app, name="gtfs")
 app.add_typer(occupancy_app, name="occupancy")
