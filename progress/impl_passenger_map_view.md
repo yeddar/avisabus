@@ -1,14 +1,158 @@
 # Implementación: passenger_map_view
-Spec: specs/passenger_map_view/ (v1.2, APPROVED, PR #33) · Ciclo de revisión: 0 (v1.2) · Rama: `feat/passenger_map_view-v1.2`
-Versiones anteriores: v1.1 (PR #29), ciclo de revisión 2, rama `feat/passenger_map_view`.
+Spec: specs/passenger_map_view/ (v1.3, APPROVED, PR #60) · Ciclo de revisión: 0 (v1.3) · Rama: `feat/passenger_map_view-v1.3`
+Versiones anteriores: v1.2 (PR #33), ciclo 0, rama `feat/passenger_map_view-v1.2`; v1.1 (PR #29),
+ciclo de revisión 2, rama `feat/passenger_map_view`.
 Exploración: `progress/explore_map.md` (E-01), que no se repite.
 
 ## Estado
+v1.3: T-09 terminada (commit 0c897c7). `CI=1 ./init.sh verify --e2e` en verde (ver "Verificación").
 v1.2: T-08 terminada (commit 4fef5c7). `CI=1 ./init.sh verify --e2e` en verde (ver "Verificación").
 v1.1: T-01 a T-07 terminadas.
 El CP-3 (B-01, B-02, O-1…O-4) quedó resuelto en la spec v1.1 (ver "Bloqueos").
 Ciclo 2: corregido el hallazgo bloqueante B-01 (AC-10) de `progress/review_passenger_map_view.md`
 (ciclo 1) y el no bloqueante N-01 (ver "Ciclo 2").
+
+## v1.3: T-09 (fixtures de posición en metros reales)
+Corrige N-01 de la revisión de `position_estimation` v1.4: las fixtures de posición del frontend
+tenían `distance_to_stop_m` inflado por `shape_dist_traveled` (3403 m y 4251 m), y las capturas
+mostraban "3,4 km". No cambia código de producción.
+
+- **Ficheros regenerados** (idénticos en las dos carpetas): `position-en-route.json`,
+  `position-not-started.json` y `position-no-arrival.json` de `frontend/src/test/fixtures/api/` y
+  de `frontend/e2e/fixtures/`. Son las respuestas de la API **tal cual**, sin retoques a mano
+  (formato JSON con 2 espacios, que Prettier acepta). `shape-93.json` no cambia: la API devuelve
+  exactamente el mismo trazado (comprobado con el mismo script; T-09 no lo incluye).
+- **Valores nuevos:**
+
+| Fixture | `generated_at` (València) | Respuesta |
+|---|---|---|
+| `position-en-route` | 2026-11-04 08:40 | `REALTIME`, `EN_ROUTE`, 5 min (07:45Z), viaje `…_2_023`; **844 m**, a 2 paradas, próxima "Cid - Josep Maestre", rumbo 100,95° |
+| `position-not-started` | 2026-11-04 05:40 | `SCHEDULED`, `NOT_STARTED`, `CLOCK_TIME` 04:57:40Z (05:57), viaje `…_2_002` en la cabecera; **1839 m**, a 5 paradas, próxima "Cid - Marconi", rumbo 257,36° |
+| `position-no-arrival` | 2026-11-04 08:40 | `REALTIME`, `NO_ARRIVAL`, sin posición (como antes) |
+
+  Antes: 3403 m / 3 paradas / "Cid - Hospital General" / 90,9° (viaje del lunes por la tarde con
+  las fechas movidas a mano) y 4251 m / 08:58. Además, `stop.lat`/`stop.lon` salen ahora con todos
+  sus decimales (`39.4679406744483`, `-0.395681359902679`), que es lo que devuelve la API.
+- **Textos esperados actualizados (tests primero, vistos en rojo):**
+  - `summary.test.ts` (es/ca, negritas `844 m`/`a 2 paradas`, nombre "Cid - Josep Maestre",
+    "Llega a las 05:57"/"Arriba a les 05:57"), `MapPage.test.tsx` (resumen, `NOT_STARTED` y las
+    tres expresiones `/^El autobús está a 844 m/`), `BusMap.test.tsx` (`rotate(100.94859961754514deg)`)
+    y `e2e/map-view.spec.ts` (`EN_ROUTE` es/ca, rumbo y `NOT_STARTED`).
+  - `PositionSummary.test.tsx` usa un `Summary` literal y no lee fixtures: lo actualicé igual para
+    que no quede la frase con la distancia inflada.
+  - Con las fixtures antiguas fallaban 10 tests unitarios de `passenger/map` y, en e2e (iphone),
+    `EN_ROUTE` es/ca y `NOT_STARTED` (3/3). Con las nuevas: 105/105 y 27/27.
+  - Comentarios de origen en `src/test/fixtures/api/index.ts` y `e2e/fixtures/index.ts`.
+- **Coherencia con `position_estimation` v1.4 (metros reales),** comprobada sin usar el código del
+  backend: haversine a lo largo de las coordenadas de `shape-93.json`, desde la proyección de la
+  posición hasta la de la parada 508:
+
+| Fixture | API | Medido | Diferencia | Margen de AC-06 (2 % o 10 m) |
+|---|---|---|---|---|
+| `position-en-route` | 844 m | 840,5 m | +3,5 m | OK |
+| `position-not-started` | 1839 m | 1835,3 m | +3,7 m | OK |
+| (antiguas) | 3403 / 4251 m | 1242,0 / 1835,3 m | +2161 / +2416 m | fallan |
+
+  La posición está sobre el trazado (0,0 m) y la parada 508, a 4,4 m. Control: con el reloj en el
+  instante real de la grabación (lunes 2026-11-02, desfase 1300 s), la API da 1243 m para el viaje
+  `…_2_124`: es la "~1,24 km" de N-01, que antes salía como 3403 m.
+- **Capturas revisadas** (`frontend/test-results/passenger_map_view/`, no versionadas):
+  `iphone/map-en-route-es`, `pixel/map-en-route-ca` y `tablet-landscape/map-not-started-es`. Los
+  resúmenes dicen "844 m … a 2 paradas … Cid - Josep Maestre" (y en ca, "844 m … a 2 parades"),
+  y "Avinguda del Cid. Llega a las 05:57". En el mapa del EN_ROUTE quedan dos paradas entre el
+  autobús y "Tu parada". En el NOT_STARTED, el autobús "Según horario" está en la cabecera.
+
+### Cómo se generaron (para repetirlo)
+- **Base de datos:** copia de solo lectura de la base local, `data/avisabus.sqlite`, con el feed
+  completo de EMT importado: `feed_version` 2, "23-10-2026", válido del 2026-10-16 al 2026-11-22.
+  La copia se hizo con `sqlite3 -readonly data/avisabus.sqlite ".backup <copia>"`, para no tocar
+  la base local.
+- **Composición real:** `tests.support.position.position_client`, el mismo cableado que
+  `avisabus.main` (`build_stop_use_cases` + `build_position_use_cases` + `create_app`), detrás de
+  la caché del SAE. Peticiones en proceso con `httpx.ASGITransport`, sin red ni servidor.
+- **SAE en modo `replay`** (`SaeReplayArrivalsSource`), con `FakeClock` fijo. Así no depende de
+  la hora real:
+  - `en-route`: reloj a 2026-11-04 07:40Z y `stop_508_peak` con `start` 1300 s antes. Es la
+    respuesta del desfase 1300 s, "93 Pass. Marítim - 5 min.", la misma de la fixture anterior.
+  - `not-started`: reloj a 2026-11-04 04:40Z, antes de que salga el viaje `…_2_002`. El replay
+    empieza 1 h después, así que no hay grabación (`no_recording`, el backend registra
+    `arrivals.fallback`) y la llegada sale del horario (RF-09). A las 08:40 no hay ningún
+    `NOT_STARTED` por horario: probé minuto a minuto de 06:30Z a 08:30Z y todo es `EN_ROUTE`,
+    porque la frecuencia es de ~7 min y el recorrido desde la cabecera es de ~7 min. Por eso este
+    caso tiene otra hora. Es `NOT_STARTED` de 03:07Z a 04:28Z y de 04:37Z en adelante.
+  - `no-arrival`: reloj a 2026-11-04 07:40Z y la grabación derivada `samples/derived_no_arrivals`
+    (la 508 sin llegadas).
+- **Petición:** `GET /api/v1/stops/508/lines/93/position?direction_id=0&t=<token de la 508>`.
+- **Comando** (desde `backend/`, con el script de abajo guardado fuera del repositorio):
+  `PYTHONPATH=. uv run python gen.py <copia.sqlite> <carpeta de salida>`. Después se copian los
+  tres `position-*.json` a `frontend/src/test/fixtures/api/` y a `frontend/e2e/fixtures/`.
+  Reimportar otro feed puede cambiar los viajes y los valores: hay que volver a revisar los
+  textos esperados.
+
+```python
+"""Regenerate the position fixtures of the frontend (passenger_map_view T-09, v1.3).
+
+Real backend composition (`tests.support.position.position_client`, the same wiring as
+`avisabus.main`) over a copy of the local database, with the SAE in replay mode and a fixed
+clock (FakeClock). The JSON bodies are written verbatim, as the API returns them.
+
+Usage, from backend/:
+    PYTHONPATH=. uv run python gen.py <copy of data/avisabus.sqlite> <out dir>
+"""
+import asyncio, json, sys
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+
+from avisabus.adapters.outbound.persistence.db import create_engine
+from tests.support.fake_clock import FakeClock
+from tests.support.position import position_client
+from tests.support.sae import DERIVED_NO_ARRIVALS, STOP_508_PEAK
+from tests.support.stops import API, replay, stops_settings, token
+
+AT = datetime(2026, 11, 4, 7, 40, tzinfo=UTC)  # Wednesday, 08:40 in València
+BEFORE_SERVICE = datetime(2026, 11, 4, 4, 40, tzinfo=UTC)  # 05:40: trip _002 not started yet
+EN_ROUTE_OFFSET_S = 1300  # stop_508_peak at 508, offset 1300 s: "93 Pass. Marítim - 5 min."
+CASES = {
+    # REALTIME: the replay is at offset 1300 s of stop_508_peak at AT.
+    "position-en-route.json": (AT, STOP_508_PEAK, AT - timedelta(seconds=EN_ROUTE_OFFSET_S)),
+    # The replay starts 1 h after the clock: no recording yet (`no_recording`), so the arrivals
+    # come from the timetable (RF-09) and the first trip of the line is still at its first stop.
+    "position-not-started.json": (BEFORE_SERVICE, STOP_508_PEAK, BEFORE_SERVICE + timedelta(hours=1)),
+    # REALTIME without arrivals at 508 (recording `samples/derived_no_arrivals`).
+    "position-no-arrival.json": (AT, DERIVED_NO_ARRIVALS, AT),
+}
+
+
+async def get(engine, now: datetime, session: Path, start: datetime, path: str, **params) -> dict:
+    clock = FakeClock(now)
+    source, _ = replay(session, clock, start=start)
+    async with position_client(engine, clock, source) as (client, _):
+        response = await client.get(f"{API}{path}", params=params)
+        assert response.status_code == 200, response.text
+        return response.json()
+
+
+def write(path: Path, body: dict) -> None:
+    path.write_text(json.dumps(body, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+async def main() -> None:
+    engine = create_engine(stops_settings(database_url=f"sqlite:///{sys.argv[1]}"))
+    out = Path(sys.argv[2])
+    out.mkdir(parents=True, exist_ok=True)
+    for name, (now, session, start) in CASES.items():
+        body = await get(engine, now, session, start, "/stops/508/lines/93/position",
+                         direction_id=0, t=token("508"))
+        write(out / name, body)
+        print(name, json.dumps({k: body[k] for k in ("source", "status", "generated_at", "arrival",
+                                                     "vehicle", "shape_id", "position")},
+                               ensure_ascii=False))
+    # Only to compare with the committed shape-93.json (not part of T-09).
+    write(out / "shape-93.json", await get(engine, AT, STOP_508_PEAK, AT, "/shapes/994_488_2271"))
+
+
+asyncio.run(main())
+```
 
 ## v1.2 (CP-6 del bloque 2): T-08
 - **AC-05: sin insignia si no hay posición** (N-03, decisión de la persona en el CP-6).
@@ -85,6 +229,8 @@ Ciclo 2: corregido el hallazgo bloqueante B-01 (AC-10) de `progress/review_passe
 - [x] T-06 Presupuesto de bundle ampliado y `e2e/map-view.spec.ts` con capturas (commit 9a9a9dd)
 - [x] T-07 Verificación completa: `CI=1 ./init.sh verify --e2e` en verde
 - [x] T-08 (v1.2) Sin insignia "Posición estimada" sin posición (AC-05) y sin la espera fija en `e2e/map-view.spec.ts` (commit 4fef5c7)
+- [x] T-09 (v1.3) Fixtures de posición (unitarias y e2e) regeneradas con la API actual (`distance_to_stop_m` en metros reales) y textos esperados actualizados (commit 0c897c7)
+- [x] T-07 (v1.3) Verificación completa: `CI=1 ./init.sh verify --e2e` en verde
 
 En cada tarea escribí los tests primero y los vi en rojo: fallo de importación (módulo
 inexistente) o de aserción, como los 4 de T-01. Para comprobar que los tests fallan si se rompe
@@ -228,12 +374,12 @@ v1.1 deja al implementer y de detalles internos no contractuales.
     'arrival_at'>` para usarlo con la llegada de la posición.
   - Iconos nuevos `shared/ui/icons/ArrowLeftIcon.tsx` y `MapIcon.tsx`.
 - **Fixtures:**
-  - `position-en-route.json` y `shape-93.json` (`src/test/fixtures/api/` y `e2e/fixtures/`) son
-    respuestas del backend real sobre `gtfs_mini` con la reproducción `stop_508_peak`, generadas
-    en local con `tests.support` (línea 93, sentido 0, forma `994_488_2271`, 294 puntos y 28
-    paradas). Las fechas se movieron al 2026-11-04 08:40.
-  - `position-not-started.json` (horario programado, `CLOCK_TIME`, autobús en la cabecera) y
-    `position-no-arrival.json` se derivan de la anterior.
+  - `shape-93.json` (`src/test/fixtures/api/` y `e2e/fixtures/`) es la respuesta del backend real
+    sobre `gtfs_mini` (línea 93, sentido 0, forma `994_488_2271`, 294 puntos y 28 paradas). Con la
+    base local completa sale idéntica.
+  - (v1.3) Las tres `position-*.json` son respuestas del backend real sin retoques, con la base
+    local, el SAE en `replay` y el reloj fijo (ver "v1.3"). En la v1.1 se derivaban a mano de una
+    respuesta con las fechas movidas y la distancia inflada.
   - `line-not-at-stop.json` es el problema 404 del design de `position_estimation`.
 - **E2E sin red (AC-14):**
   - Un único `page.route('**/*')`: la API sale de las fixtures, cada tesela de
@@ -254,6 +400,23 @@ Ninguno abierto.
 - Detalle del bloqueo original: commit cff0e84, versión anterior de este fichero.
 
 ## Verificación
+### v1.3 (T-09), ciclo 0
+`CI=1 ./init.sh verify --e2e` con el puerto 4173 libre, tras el commit 0c897c7: **"verify: todo
+en verde"** (salida de 0).
+
+| Paso | Resultado |
+|---|---|
+| backend: format, lint, types, architecture | OK |
+| backend: tests | OK: 1915 passed, 9 deselected; cobertura 99,66 % |
+| frontend: format, lint, types | OK |
+| frontend: tests | OK: 68 ficheros, 675 passed, 2 skipped |
+| frontend: build + bundle | OK (`bundle-budget` 5/5) |
+| frontend: e2e + a11y | OK: 132 passed (27 de `map-view.spec.ts`) |
+| harness: feature_list.json, trazabilidad AC→test | OK |
+
+Antes, por separado: `npm run test -- passenger/map` 105/105, y `npx playwright test
+e2e/map-view.spec.ts --retries=0` 27/27 dos veces, la segunda para regenerar las capturas.
+
 ### v1.2 (T-08), ciclo 0
 `npm run build` en `frontend/` y después `CI=1 ./init.sh verify --e2e` con el puerto 4173 libre,
 tras el commit 4fef5c7: **"verify: todo en verde"**.
