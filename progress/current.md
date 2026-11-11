@@ -4,14 +4,16 @@
 
 **Fecha:** 2026-11-11
 **Fase:** Implementación — Bloque 4 (conductor)
-**Feature en curso:** `driver_gps_simulator` v1.0 — `implementing` (rama `feat/driver_gps_simulator`, apilada sobre `feat/driver_ui`, PR #57, y esta sobre la #56)
+**Feature en curso:** `driver_gps_simulator` v1.0 — `in_review`, ciclo de revisión 1 (rama `feat/driver_gps_simulator`, apilada sobre `feat/driver_ui`, PR #57, y esta sobre la #56)
 
 ## Último paso
-`driver_ui` v1.1: revisión ciclo 2 APPROVED; PR #57 contra `develop` (apilada sobre la #56), sin fusionar.
+`driver_gps_simulator` T-01…T-03 implementadas; `CI=1 ./init.sh verify --e2e` y `pytest -m slow` en verde.
 
 ## Siguiente paso
-1. `driver_gps_simulator`, revisión nueva y PR.
-Después, CP-6 del bloque 4 (persona). Orden de fusión: #56, #57 y la de `driver_gps_simulator`.
+1. `driver_gps_simulator`: revisión (ciclo 1) y PR.
+Después, CP-6 del bloque 4 (persona).
+**Bloque 5:** la spec de `deployment_rpi` la escribe la persona (no lanzar spec-writer); implementer y reviewer solo con su
+spec aprobada y si lo pide. Incluir la IP real del cliente tras NPM + nginx (limitador por IP). Orden de fusión: #56, #57 y la de `driver_gps_simulator`.
 
 ## Pendiente para specs futuras
 - **driver_ui v1.1:** P-05 (CP-4, persona) el permiso de ubicación se pide ya en el primer selector (AC-04/AC-09 v1.1)
