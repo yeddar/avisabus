@@ -4,10 +4,10 @@
 
 **Fecha:** 2026-11-11
 **Fase:** Ajustes del bloque 4 y bloque 5 (`deployment_rpi`)
-**Feature en curso:** `driver_session` v1.4 — siguiente (T-10). `driver_codes_cli` v1.1 `done`
+**Feature en curso:** `driver_session` v1.4 — `implementing` (T-10, rama `feat/driver_session-v1.4`, apilada sobre `feat/driver_codes_cli-v1.1`, PR #61)
 
 ## Último paso
-`driver_codes_cli` v1.1 (T-05): revisión ciclo 1 APPROVED; rama subida y PR contra `develop`.
+`driver_codes_cli` v1.1 APPROVED; PR #61 contra `develop`, sin fusionar.
 
 ## Siguiente paso
 Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
