@@ -21,7 +21,7 @@ from structlog.testing import capture_logs
 
 from avisabus.adapters.inbound.http.access_log import (
     SERVER_LOGGER,
-    DriverSocketAddressFilter,
+    SocketAddressFilter,
 )
 from avisabus.adapters.inbound.http.app import create_app
 from avisabus.adapters.inbound.http.container import (
@@ -739,10 +739,13 @@ def test_a_status_after_the_path_is_kept(app: Demand) -> None:
     assert written == f'- - "WebSocket {ENDPOINT}" 500'
 
 
-def test_other_server_logs_are_left_as_they_were(app: Demand) -> None:
+@pytest.mark.spec("deployment_rpi.AC-09")
+def test_other_sockets_are_masked_too_and_other_server_logs_left_as_they_were(
+    app: Demand,
+) -> None:
     assert (
         _emit(UVICORN_FORMATS[0], "203.0.113.7:50000", PASSENGER)
-        == f'203.0.113.7:50000 - "WebSocket {PASSENGER}" [accepted]'
+        == f'- - "WebSocket {PASSENGER}" [accepted]'
     )
     assert _emit("Started server process [%d]", 12) == "Started server process [12]"
 
@@ -751,7 +754,7 @@ def test_the_filter_is_installed_only_once(app: Demand) -> None:
     create_app(stops_settings(), demand=app.demand, drivers=None)
     logger = logging.getLogger(SERVER_LOGGER)
 
-    assert sum(isinstance(f, DriverSocketAddressFilter) for f in logger.filters) == 1
+    assert sum(isinstance(f, SocketAddressFilter) for f in logger.filters) == 1
 
 
 def test_two_devices_and_one_shift_share_the_demand_of_the_stop(app: Demand) -> None:

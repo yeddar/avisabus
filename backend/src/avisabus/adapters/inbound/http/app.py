@@ -8,10 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
 
 import avisabus
-from avisabus.adapters.inbound.http.access_log import (
-    mask_driver_addresses,
-    mask_driver_socket_addresses,
-)
+from avisabus.adapters.inbound.http.access_log import mask_client_addresses
 from avisabus.adapters.inbound.http.container import (
     AlertUseCases,
     DriverDemand,
@@ -71,12 +68,12 @@ def create_app(
         lifespan = _with_connections(lifespan, realtime.registry)
     app = FastAPI(title="AvisaBus", version=avisabus.__version__, lifespan=lifespan)
     app.state.settings = settings
+    mask_client_addresses()  # deployment_rpi AC-09: no address nor query in access logs
     app.add_middleware(GZipMiddleware, minimum_size=GZIP_MINIMUM_SIZE)
     if alerts is not None:
         app.add_middleware(NoStoreMiddleware, path=f"{API_PREFIX}/alerts")
     if drivers is not None:
         app.add_middleware(NoStoreMiddleware, path=f"{API_PREFIX}/driver")
-        mask_driver_addresses(f"{API_PREFIX}/driver")
     register_error_handlers(app)
     app.include_router(health.router, prefix=API_PREFIX)
     if stops is not None:
@@ -104,7 +101,6 @@ def create_app(
         app.state.driver_demand = demand
         app.state.driver_socket = demand.socket
         app.include_router(driver_socket.router)  # no /api/v1 (docs/architecture.md §7)
-        mask_driver_socket_addresses(driver_socket.DRIVER_ENDPOINT)
     if demand is not None or schema_only:
         app.include_router(driver_routes.view_router, prefix=API_PREFIX)
     return app

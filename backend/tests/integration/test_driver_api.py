@@ -16,7 +16,7 @@ import pytest
 from sqlalchemy import Engine, text
 from structlog.testing import capture_logs
 
-from avisabus.adapters.inbound.http.access_log import ACCESS_LOGGER, DriverAddressFilter
+from avisabus.adapters.inbound.http.access_log import ACCESS_LOGGER, ClientAddressFilter
 from avisabus.adapters.inbound.http.app import create_app
 from avisabus.adapters.inbound.http.container import DriverUseCases
 from avisabus.adapters.outbound.persistence.sqlite_driver_sessions import (
@@ -869,19 +869,20 @@ async def test_the_access_log_hides_the_address_on_driver_requests(
         logging.getLogger(ACCESS_LOGGER).info(
             _ACCESS_FORMAT, "203.0.113.7:50000", "POST", path, "1.1", 201
         )
-    assert caplog.messages == [f'- - "POST {path} HTTP/1.1" 201']
+    # deployment_rpi AC-09: the query string is dropped too.
+    assert caplog.messages == [f'- - "POST {path.split("?")[0]} HTTP/1.1" 201']
 
 
-@pytest.mark.spec("driver_session.AC-15")
+@pytest.mark.spec("deployment_rpi.AC-09")
 @pytest.mark.parametrize("path", ["/api/v1/stops/508", "/api/v1/drivers", "/api/v1/driverless"])
-async def test_the_access_log_of_other_paths_is_unchanged(
+async def test_the_access_log_hides_the_address_on_other_paths_too(
     client: httpx.AsyncClient, caplog: pytest.LogCaptureFixture, path: str
 ) -> None:
     with caplog.at_level(logging.INFO, logger=ACCESS_LOGGER):
         logging.getLogger(ACCESS_LOGGER).info(
             _ACCESS_FORMAT, "203.0.113.7:50000", "GET", path, "1.1", 200
         )
-    assert caplog.messages == [f'203.0.113.7:50000 - "GET {path} HTTP/1.1" 200']
+    assert caplog.messages == [f'- - "GET {path} HTTP/1.1" 200']
 
 
 @pytest.mark.spec("driver_session.AC-15")
@@ -889,4 +890,4 @@ def test_the_address_filter_is_installed_once(engine: Engine, clock: FakeClock) 
     logger = logging.getLogger(ACCESS_LOGGER)
     for _ in range(2):
         create_app(stops_settings(), drivers=driver_use_cases(engine, clock))
-    assert sum(isinstance(f, DriverAddressFilter) for f in logger.filters) == 1
+    assert sum(isinstance(f, ClientAddressFilter) for f in logger.filters) == 1
