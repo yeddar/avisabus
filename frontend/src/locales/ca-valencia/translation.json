@@ -232,6 +232,12 @@
     "seatRequests_other": "Demanen seient {{count}} persones",
     "seatsLeft_one": "queda {{count}} seient",
     "seatsLeft_other": "queden {{count}} seients",
+    "status": {
+      "gpsOk": "GPS correcte",
+      "gpsStale": "GPS desactualitzat",
+      "connected": "Connectat",
+      "offline": "Sense connexió"
+    },
     "gps": {
       "waiting": "Esperant ubicació…",
       "stale": "Posició desactualitzada",

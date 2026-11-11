@@ -232,6 +232,12 @@
     "seatRequests_other": "Piden asiento {{count}} personas",
     "seatsLeft_one": "queda {{count}} asiento",
     "seatsLeft_other": "quedan {{count}} asientos",
+    "status": {
+      "gpsOk": "GPS correcto",
+      "gpsStale": "GPS desactualizado",
+      "connected": "Conectado",
+      "offline": "Sin conexión"
+    },
     "gps": {
       "waiting": "Esperando ubicación…",
       "stale": "Posición desactualizada",

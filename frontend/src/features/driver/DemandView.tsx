@@ -5,12 +5,14 @@ import { safeStorage } from '../../shared/device/storage';
 import { formatClockTime } from '../../shared/i18n/format';
 import { GtfsText } from '../../shared/i18n/GtfsText';
 import { Button } from '../../shared/ui/Button';
+import { CheckIcon } from '../../shared/ui/icons/CheckIcon';
 import { LineBadge } from '../passenger/stop/LineBadge';
 import { useUiLanguage } from '../passenger/stop/useUiLanguage';
 import { CapacityBanner } from './CapacityBanner';
 import { DriverStatus } from './DriverStatus';
 import { EndShiftDialog } from './EndShiftDialog';
 import { BellIcon } from './icons/BellIcon';
+import { WarningIcon } from './icons/WarningIcon';
 import { diffAlerts } from './newAlerts';
 import { clearDriverToken, driverApi } from './session';
 import { StopCard } from './StopCard';
@@ -29,6 +31,18 @@ function isFor(service: DriverService, view: DriverView): boolean {
   return (
     view.service === null ||
     (view.service.trip_id === service.trip_id && view.service.service_date === service.service_date)
+  );
+}
+
+/** One state of the header: icon and short visible text, never colour alone (AC-08 v1.2). */
+function headerState(ok: boolean, text: string) {
+  return (
+    <p
+      className={`flex items-center gap-1.5 text-lg leading-tight font-bold ${ok ? 'text-occ-free-fg' : 'text-occ-full-fg'}`}
+    >
+      {ok ? <CheckIcon className="size-6 shrink-0" /> : <WarningIcon className="size-6 shrink-0" />}
+      <span>{text}</span>
+    </p>
   );
 }
 
@@ -173,6 +187,10 @@ export function DemandView({
   const large = stops.slice(0, LARGE_CARDS);
   const compact = stops.slice(LARGE_CARDS);
   const placesKnown = view !== null && view.free_places !== null && view.free_seats !== null;
+  // Header state (AC-08 v1.2): two-valued, with the four texts of the spec. Anything but a fresh
+  // fix with the permission granted is not a correct GPS; anything but an open socket is offline.
+  const gpsOk = permission !== 'denied' && view?.gps === 'OK';
+  const connected = socketStatus === 'connected';
 
   return (
     <div className="flex flex-col gap-4">
@@ -193,13 +211,20 @@ export function DemandView({
             })}
           </p>
         </div>
-        <Button
-          icon={<BellIcon muted={muted} className="size-[18px]" />}
-          className="min-h-12"
-          onClick={toggleMute}
-        >
-          {t(muted ? 'driver.unmute' : 'driver.mute')}
-        </Button>
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          {headerState(gpsOk, t(gpsOk ? 'driver.status.gpsOk' : 'driver.status.gpsStale'))}
+          {headerState(
+            connected,
+            t(connected ? 'driver.status.connected' : 'driver.status.offline'),
+          )}
+          <Button
+            icon={<BellIcon muted={muted} className="size-[18px]" />}
+            className="min-h-12"
+            onClick={toggleMute}
+          >
+            {t(muted ? 'driver.unmute' : 'driver.mute')}
+          </Button>
+        </div>
       </div>
 
       <DriverStatus

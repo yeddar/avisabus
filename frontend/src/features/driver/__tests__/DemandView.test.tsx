@@ -40,6 +40,12 @@ function receiveView(view: DriverView) {
   });
 }
 
+/** The GPS and connection state next to "Silenciar tono" in the header (docs/design.md §5.9). */
+function headerStatus() {
+  const mute = screen.getByRole('button', { name: /tono|to$/ });
+  return mute.parentElement as HTMLElement;
+}
+
 const FIVE_STOPS = ['A', 'B', 'C', 'D', 'E'].map((name, index) =>
   stopDemand({ stop_id: String(index), name: `Parada ${name}`, distance_m: 100 * (index + 1) }),
 );
@@ -205,6 +211,72 @@ describe('DemandView', () => {
     renderDemand(driverView({ capacity_alert: true, total_waiting: 35, free_places: 30 }));
 
     expect(screen.getByText('Esperan 35 personas y quedan 30 plazas')).toBeInTheDocument();
+  });
+
+  it('[driver_ui.AC-08] the header shows the GPS and connection state with visible text and icon (v1.2)', () => {
+    renderDemand(driverView());
+    receiveView(driverView({ generated_at: '2026-11-09T07:41:05Z' }));
+
+    const header = headerStatus();
+    expect(header).toHaveTextContent('GPS correcto');
+    expect(header).toHaveTextContent('Conectado');
+    expect(
+      within(header).getByText('GPS correcto').closest('p')?.querySelector('svg'),
+    ).not.toBeNull();
+    expect(within(header).getByText('Conectado').closest('p')?.querySelector('svg')).not.toBeNull();
+
+    receiveView(driverView({ generated_at: '2026-11-09T07:41:10Z', gps: 'STALE' }));
+    expect(headerStatus()).toHaveTextContent('GPS desactualizado');
+    expect(headerStatus()).not.toHaveTextContent('GPS correcto');
+
+    act(() => FakeWebSocket.last().serverClose());
+    expect(headerStatus()).toHaveTextContent('Sin conexión');
+    expect(headerStatus()).not.toHaveTextContent('Conectado');
+    expect(
+      within(headerStatus()).getByText('Sin conexión').closest('p')?.querySelector('svg'),
+    ).not.toBeNull();
+  });
+
+  it('[driver_ui.AC-08] the header GPS is only "GPS correcto" once the server has a fresh fix (v1.2)', () => {
+    renderDemand(driverView({ gps: 'WAITING' }));
+
+    expect(headerStatus()).toHaveTextContent('GPS desactualizado');
+    expect(headerStatus()).toHaveTextContent('Sin conexión');
+
+    receiveView(driverView({ generated_at: '2026-11-09T07:41:05Z' }));
+    expect(headerStatus()).toHaveTextContent('GPS correcto');
+  });
+
+  it('[driver_ui.AC-08] without the location permission the header GPS is not "GPS correcto" (v1.2)', () => {
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        watchPosition: vi.fn((_success: unknown, error: (failure: { code: number }) => void) => {
+          error({ code: 1 });
+          return 1;
+        }),
+        clearWatch: vi.fn(),
+        getCurrentPosition: vi.fn(),
+      },
+    });
+    renderDemand(driverView());
+    receiveView(driverView({ generated_at: '2026-11-09T07:41:05Z' }));
+
+    expect(screen.getByText(/Sin permiso de ubicación/)).toBeInTheDocument();
+    expect(headerStatus()).toHaveTextContent('GPS desactualizado');
+    expect(headerStatus()).not.toHaveTextContent('GPS correcto');
+  });
+
+  it('[driver_ui.AC-08] the header state has visible text in Valencian (v1.2)', () => {
+    renderDemand(driverView(), 'ca');
+    receiveView(driverView({ generated_at: '2026-11-09T07:41:05Z' }));
+    expect(headerStatus()).toHaveTextContent('GPS correcte');
+    expect(headerStatus()).toHaveTextContent('Connectat');
+
+    receiveView(driverView({ generated_at: '2026-11-09T07:41:10Z', gps: 'STALE' }));
+    act(() => FakeWebSocket.last().serverClose());
+    expect(headerStatus()).toHaveTextContent('GPS desactualitzat');
+    expect(headerStatus()).toHaveTextContent('Sense connexió');
   });
 
   it('[driver_ui.AC-08] keeps the last list while the position is stale', () => {
