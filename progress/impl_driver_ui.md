@@ -1,6 +1,106 @@
 # Implementación: driver_ui
-Spec: specs/driver_ui/ (v1.1, APPROVED, PR #55) · Ciclo de revisión: 1 · Rama: `feat/driver_ui` (con
-`feat/driver_session` v1.3 fusionada, PR #56). Exploración: no necesaria (tasks.md).
+Spec: specs/driver_ui/ (v1.2, APPROVED, PR #60) · Ciclo de revisión: 0 de la v1.2 · Rama:
+`feat/driver_ui-v1.2` (apilada sobre `feat/driver_codes_cli-v1.1`, PR #61). Exploración: no necesaria
+(tasks.md). Las secciones "Ciclo 1" y "Ciclo 0" de abajo son de la v1.1 y la v1.0.
+
+## v1.2 · Ciclo 0 (T-08 y T-07)
+
+### Tareas
+- [x] T-08 (AC-02) Textos sin salidas y de error en `ServicePicker`: lista vacía "No hay salidas de esta
+  línea y sentido en la próxima hora" con "Actualizar" (y el "Volver" de siempre); error de red o 5xx en
+  cualquier paso (líneas, salidas o `PUT …/service`) "No se han podido cargar los datos" con "Reintentar"
+  (commit 5f3ea75)
+- [x] T-08 (AC-05, AC-06) Plurales con `count` en todos los textos con número, es y ca-valencia: franjas de
+  capacidad y de asientos y plazas libres (commit fe29745)
+- [x] T-08 (AC-08) Estado de la cabecera con texto visible e icono: "GPS correcto" / "GPS desactualizado" y
+  "Conectado" / "Sin conexión", junto a "Silenciar tono" (commit 22d5e2e); alineado a la derecha cuando la
+  cabecera se parte en dos líneas, según `docs/design.md` §5.9, visto en las capturas (commit 505d200)
+- [x] T-07 Verificación completa (este fichero)
+
+Tests en rojo antes del código: los 5 nuevos de `ServicePicker.test.tsx` (AC-02), los 3 nuevos de
+`CapacityBanner.test.tsx` (AC-06), los 2 de plazas libres de `DemandView.test.tsx` (AC-06) y los 4 de la
+cabecera de `DemandView.test.tsx` (AC-08). El nuevo de AC-05 en `DemandView.test.tsx` (personas esperando,
+rampas y asientos en singular y plural, es y ca) pasó a la primera: esos textos ya tenían `_one`/`_other`
+desde la v1.0; el test fija el comportamiento de la v1.2 en los dos idiomas.
+
+Tests nuevos por AC (`frontend/src/features/driver/__tests__/`):
+- AC-02 `ServicePicker.test.tsx`: sin salidas con "Volver" y "Actualizar"; 5xx en las líneas, error de red
+  en las salidas y 5xx/error de red al elegir, con "Reintentar"; textos en valenciano.
+- AC-05 `DemandView.test.tsx`: plurales de las tarjetas en es y ca.
+- AC-06 `CapacityBanner.test.tsx` (singular y plural de las dos franjas, es y ca) y `DemandView.test.tsx`
+  (plazas libres, es y ca).
+- AC-08 `DemandView.test.tsx`: textos e iconos de la cabecera y sus cambios (STALE, socket cerrado),
+  `WAITING`, permiso denegado y valenciano.
+
+### Decisiones locales e interpretaciones
+- **Plurales por mitades:** cada frase con dos cifras se compone de dos mitades pluralizadas con `count`,
+  porque cada cifra concuerda con sus palabras ("Esperan 2 personas y queda 1 plaza"). `driver.capacity`,
+  `driver.seats` y `driver.places` (nombres de design §3) quedan como plantilla de la frase
+  ("{{waiting}} y {{places}}"); las mitades son claves nuevas: `driver.capacityWaiting_*`,
+  `driver.capacityPlaces_*`, `driver.seatRequests_*`, `driver.seatsLeft_*`, `driver.freePlaces_*`,
+  `driver.freeSeats_*`. Con alerta, `free_places`/`free_seats` nunca son `null`
+  (`domain/services/demand.py:44-53`); el `?? 0` de `CapacityBanner` solo estrecha el tipo.
+- **El ejemplo de AC-05** ("Espera 1 persona" / "Esperan 2 personas") se lee como la franja de capacidad,
+  que es lo que dice P-03. Las tarjetas mantienen el texto de design §3, que la v1.2 no cambia
+  ("1 persona esperando" / "2 personas esperando", ya con plural correcto).
+- **"más tiempo" y "visión" no cambian en plural** ("2 más tiempo", "2 visión"): design §3 les da un único
+  texto y la v1.2 no fija otro. No he redactado uno nuevo; ver Bloqueos.
+- **Estado de la cabecera con dos valores por indicador:** la v1.2 da cuatro textos para dos indicadores.
+  GPS: "GPS correcto" solo con `gps = OK` y el permiso concedido; en cualquier otro caso (`STALE`,
+  `WAITING`, permiso denegado, sin vista aún) "GPS desactualizado". Conexión: "Conectado" solo con el
+  socket conectado; si no (también mientras conecta la primera vez), "Sin conexión". El detalle sigue en
+  las cajas de AC-08 ("Esperando ubicación…", "Sin permiso de ubicación…", "Sin conexión,
+  reconectando…"). Ver Bloqueos para `WAITING`.
+- **Maquetación de la cabecera** (decisión permitida en design §5): cada estado lleva icono de 24 px y
+  texto de 18 px en negrita. El correcto va con el icono de comprobación en `occ-free-fg` y el incorrecto
+  con el de aviso en `occ-full-fg`, así que no depende solo del color. Va a la derecha, junto a "Silenciar
+  tono", y es texto plano: el anuncio lo hacen las cajas `role="status"`, así que no se anuncia dos veces.
+  Lo pinta una función auxiliar dentro de `DemandView.tsx`, no un componente nuevo, por la regla de un
+  componente por fichero y para no añadir ficheros fuera de la lista de T-08.
+- **Avisos del selector:** el texto se pone entero en negrita, porque es una sola frase (§5.6). "Reintentar"
+  vuelve a cargar lo que muestra el paso: líneas o salidas. Tras un fallo al elegir salida, recarga las
+  salidas y el conductor vuelve a elegir. "Actualizar" y "Reintentar" llevan el icono de actualizar, como en
+  la vista de parada. El `422` al elegir sigue con el aviso de error y la lista recargada (como en v1.0).
+- **Valenciano:** las traducciones nuevas son mías, igual que en la v1.0: "No hi ha eixides d'esta línia i
+  sentit en la pròxima hora", "Actualitza", "No s'han pogut carregar les dades", "Reintenta", "GPS
+  correcte", "GPS desactualitzat", "Connectat", "Sense connexió", "Espera 1 persona" / "Esperen …
+  persones", "queda 1 plaça" / "queden … places", "Demana seient 1 persona" / "Demanen seient … persones",
+  "queda 1 seient" / "queden … seients", "1 plaça lliure" / "… places lliures". Conviene revisarlas en CP-6.
+- **`driver.pick.empty`** cambia de texto: era redacción propia de la v1.0 y ahora es el de la spec.
+
+### Bloqueos
+Ninguno impide la revisión. Quedan anotados para que los decida la persona; propuesta entre paréntesis:
+1. **`gps = WAITING` en la cabecera:** la v1.2 no da texto para "aún sin posición". Aplico "GPS
+   desactualizado", porque no es un GPS correcto, y la caja dice "Esperando ubicación…". (Si se quiere un
+   tercer texto, por ejemplo "Esperando GPS", añadirlo a AC-08.) Pasa lo mismo con la conexión mientras se
+   abre el primer socket: sale "Sin conexión", pero sin la caja "Sin conexión, reconectando…".
+2. **Plural de "más tiempo" y "visión":** "2 más tiempo" y "2 visión" salen tal cual de design §3. Si la
+   persona no los da por correctos, hay que fijar el texto del plural en la spec.
+3. **Fuera de la lista de ficheros de T-08:** el error de la carga inicial de `/driver/shift`
+   (`ShiftPage.tsx`, antes de saber si hay salida) y el del acceso siguen con `stop.error.body` ("No se
+   han podido cargar los datos. Comprueba la conexión…"). No los he tocado. (Aclarar si "en cualquier
+   paso" los incluye.)
+
+### Verificación
+`CI=1 ./init.sh verify --e2e`, puerto 4173 libre: **todo en verde** (salida 0, sobre el commit 505d200).
+
+| Paso | Resultado |
+|---|---|
+| backend: format, lint, types, architecture | OK |
+| backend: tests | 1915 passed, 12 deselected |
+| frontend: format, lint, types | OK |
+| frontend: tests | 675 passed, 2 skipped (68 ficheros) |
+| frontend: build + bundle | OK (5 tests) |
+| frontend: e2e + a11y | 132 passed, 12 skipped (perfiles no tablet), sin reintentos |
+| harness: feature_list.json, trazabilidad AC→test | OK |
+
+He regenerado las capturas de AC-12 en `frontend/test-results/driver_ui/tablet-landscape/`: 14 ficheros con
+los mismos nombres, sin versionar. Las he revisado: `sin-solicitudes-es`, `gps-desactualizado-es/ca` y
+`fin-recorrido-ca`. La cabecera muestra los dos estados con icono y texto, a la derecha y junto a
+"Silenciar tono". En la primera tanda el grupo se quedaba a la izquierda al partirse la cabecera; está
+corregido en 505d200. Las franjas y las plazas libres mantienen su texto con las cifras del e2e (35/30,
+5/2). El e2e no tiene capturas de la lista vacía ni de los errores del selector; los cubren los tests
+unitarios.
 
 ## Ciclo 1 (correcciones de `progress/review_driver_ui.md`)
 
