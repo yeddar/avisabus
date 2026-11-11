@@ -533,3 +533,7 @@
 
 ## 2026-11-11 · driver_session v1.3 PR #56 abierta · driver_ui · spec_blocked → implementing (v1.1, ciclo 2)
 - `feat/driver_ui` actualizada con `feat/driver_session` (T-09 y specs v1.1). AC-04 v1.1, B-01 y B-02.
+
+## 2026-11-11 · driver_ui v1.1 · implementing → in_review → done
+- Ciclo 2 APPROVED: AC-04 v1.1 (reenvío 5 s, `getCurrentPosition` tras 10 s), B-01 (`useDriverShift`), B-02 (foco).
+  Probado contra el backend real v1.3. Verify --e2e en verde (1857 backend, 660 Vitest, 132 e2e). P-05 → CP-4 (CU-08).
