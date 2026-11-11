@@ -3,28 +3,20 @@
 > Fichero vivo: lo reescribe el orquestador al final de cada sesión.
 
 **Fecha:** 2026-11-11
-**Fase:** Bloque 4 cerrado (CP-6 aprobado). Bloque 5 pendiente de la persona
-**Feature en curso:** ninguna.
+**Fase:** Ajustes del bloque 4 y bloque 5 (`deployment_rpi`)
+**Feature en curso:** `driver_codes_cli` v1.1 — `implementing` (T-05, rama `feat/driver_codes_cli-v1.1`)
 
 ## Último paso
-PR #56, #57 y #58 fusionadas. CP-6 del bloque 4 aprobado por la persona (2026-11-11) tras la demo en el Mac con
-Chrome DevTools (ubicación simulada en Sensors), con el SAE real y la línea 93.
+PR #59 (CP-6 del bloque 4) y #60 fusionadas: `deployment_rpi` v1.0 aprobada (CP-1) y pendientes del bloque 4 resueltos
+en spec (`driver_codes_cli` 1.1, `driver_session` 1.4, `driver_ui` 1.2, `passenger_map_view` 1.3, CU-08, IP en logs →
+`deployment_rpi` AC-09).
 
 ## Siguiente paso
-Bloque 5, solo con la persona:
-1. `deployment_rpi`: la spec la escribe la persona (no lanzar spec-writer); implementer y reviewer solo con su spec
-   aprobada y si lo pide. Incluir la IP real del cliente tras NPM + nginx (limitador por IP) y valorar la renovación del
-   GTFS (el activo caduca el 2026-11-22; hoy es manual).
-2. `nfr_validation`: depende de `deployment_rpi`; preguntar antes cómo marcar esta en `feature_list.json`.
-
-## Decisiones abiertas de la persona (tras el CP-6 del bloque 4)
-- `driver_session` N-05: umbral de 150 m (semillas 2 y 4 dejan posiciones a 342–350 m por detrás).
-- `driver_ui` P-05 (CP-4): CU-08 frente al permiso pedido ya en el primer selector.
-- IP en los logs de `/alerts` y `/ws/passenger`: en `deployment_rpi` o tarea propia.
-- Fixtures del frontend con distancias infladas (capturas e2e): regenerar ahora o más adelante.
-- Pendiente de dispositivo real (con HTTPS, tras `deployment_rpi`): tablet parada (GPS `OK` sin moverse) y salto de
-  "fuera del recorrido" en tramos largos. En la demo, un "fuera del recorrido" se debió a una longitud sin signo menos;
-  la hipótesis de horas repetidas en Chrome no se confirmó (el servidor guardó horas nuevas).
+Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
+1. `driver_codes_cli` T-05 · 2. `driver_session` T-10 · 3. `driver_ui` T-08 · 4. `passenger_map_view` T-09.
+5. `deployment_rpi` (sin exploración). `verify-deploy` con Docker en el Mac; `ship.sh`, `gtfs-update.sh` y `smoke.sh`
+   **nunca** contra la Raspberry (los prueba la persona en el CP-6).
+6. `nfr_validation`: no empezar; su spec la prepara la persona.
 
 ## Pendiente para specs futuras
 - **driver_gps_simulator v1.0:** N-01 `simulate.py:34,155` crea `SqliteNetworkRepository` en vez de usar `CliContainer`.
