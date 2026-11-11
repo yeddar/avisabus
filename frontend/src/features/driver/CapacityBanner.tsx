@@ -20,12 +20,20 @@ export function CapacityBanner({ view }: { view: DriverView }) {
   const announce = useAnnounce();
   const announced = useRef({ capacity: false, seat: false });
 
+  // Each number agrees with its own words, so each half of a strip is pluralised apart (v1.2).
+  // With the alert its figure is always known (driver_demand.AC-06); `?? 0` only narrows the type.
   const capacityText = view.capacity_alert
-    ? t('driver.capacity', { waiting: view.total_waiting, places: view.free_places })
+    ? t('driver.capacity', {
+        waiting: t('driver.capacityWaiting', { count: view.total_waiting }),
+        places: t('driver.capacityPlaces', { count: view.free_places ?? 0 }),
+      })
     : null;
   const seatRequests = view.stops.reduce((total, stop) => total + stop.needs.SEAT, 0);
   const seatText = view.seat_alert
-    ? t('driver.seats', { requests: seatRequests, seats: view.free_seats })
+    ? t('driver.seats', {
+        requests: t('driver.seatRequests', { count: seatRequests }),
+        seats: t('driver.seatsLeft', { count: view.free_seats ?? 0 }),
+      })
     : null;
 
   useEffect(() => {

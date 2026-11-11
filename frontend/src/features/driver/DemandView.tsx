@@ -238,7 +238,10 @@ export function DemandView({
         <p className="text-[1.375rem] font-bold">
           {view !== null &&
             (placesKnown
-              ? t('driver.places', { places: view.free_places, seats: view.free_seats })
+              ? t('driver.places', {
+                  places: t('driver.freePlaces', { count: view.free_places }),
+                  seats: t('driver.freeSeats', { count: view.free_seats }),
+                })
               : t('driver.places.unknown'))}
         </p>
         <Button ref={endButton} className="min-h-12" onClick={() => setConfirming(true)}>
