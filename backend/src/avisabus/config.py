@@ -144,6 +144,27 @@ class Settings(BaseSettings):
             )
         return self
 
+    @model_validator(mode="after")
+    def _check_production(self) -> Self:
+        """deployment_rpi AC-07: in `prod` the SAE needs a contact for its User-Agent when the
+        source is `http`, and the public URL (base of the printed QR codes) must be `https://`.
+        The message names the variables only, never their values."""
+        if self.env != "prod":
+            return self
+        problems: list[str] = []
+        if self.resolved_arrivals_source() == "http" and not self.sae_contact.strip():
+            problems.append(
+                "AVISABUS_SAE_CONTACT must be set when the arrivals source is http "
+                "(or set AVISABUS_ARRIVALS_SOURCE=replay)"
+            )
+        if not _is_https_url(self.public_base_url):
+            problems.append("AVISABUS_PUBLIC_BASE_URL must be an https:// URL")
+        if problems:
+            raise ConfigurationError(
+                "invalid production configuration (AVISABUS_ENV=prod): " + "; ".join(problems)
+            )
+        return self
+
     @property
     def uses_dev_stop_token_secret(self) -> bool:
         """True in dev/test when no secret is configured, so the fixed dev secret signs tokens."""
@@ -187,6 +208,12 @@ def log_dev_stop_token_secret_warning(settings: Settings) -> None:
     """stop_tokens_qr AC-05: warn, in the configured JSON log, that the dev secret is in use."""
     if settings.uses_dev_stop_token_secret:
         log.warning("security.dev_stop_token_secret", env=settings.env)
+
+
+def _is_https_url(url: str) -> bool:
+    """`https://` followed by a host (the scheme is case-insensitive)."""
+    scheme, separator, rest = url.strip().partition("://")
+    return bool(separator) and scheme.lower() == "https" and bool(rest.split("/", 1)[0])
 
 
 def _secret_length(secret: SecretStr | None) -> int:
