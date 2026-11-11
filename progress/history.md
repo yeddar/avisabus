@@ -520,3 +520,7 @@
 ## 2026-11-11 · CP-3 driver_ui resuelto (PR #55) · driver_session · done → implementing (v1.3, T-09)
 - `driver_session` 1.3: `last_seen_at` (señal de vida, `IDLE`) y `last_fix_at` (fijo nuevo, `STALE`). `driver_ui` 1.1:
   reenvío cada 5 s y `getCurrentPosition` si `watchPosition` calla 10 s. `driver_ui` sigue `spec_blocked` hasta su ciclo 2.
+
+## 2026-11-11 · driver_session v1.3 · implementing → in_review → done
+- T-09: `last_seen_at` (`IDLE`) y `last_fix_at` (`STALE`); reenvíos sin proyección ni aviso. Contrato HTTP sin cambios.
+- Revisión ciclo 1 de la v1.3: APPROVED (12/12 mutantes). Verify --e2e y `slow` en verde (1857 backend).
