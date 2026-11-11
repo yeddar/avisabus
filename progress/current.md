@@ -4,10 +4,10 @@
 
 **Fecha:** 2026-11-11
 **Fase:** Ajustes del bloque 4 y bloque 5 (`deployment_rpi`)
-**Feature en curso:** `driver_codes_cli` v1.1 — `in_review` (T-05, rama `feat/driver_codes_cli-v1.1`)
+**Feature en curso:** `driver_session` v1.4 — siguiente (T-10). `driver_codes_cli` v1.1 `done`
 
 ## Último paso
-`driver_codes_cli` T-05 implementada (`show_locals=False` explícito); `CI=1 ./init.sh verify --e2e` en verde.
+`driver_codes_cli` v1.1 (T-05): revisión ciclo 1 APPROVED; rama subida y PR contra `develop`.
 
 ## Siguiente paso
 Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
@@ -48,7 +48,9 @@ Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
   en requirements (`:13-14`, AC-05). N-03 aclarar AC-06 (la 1282 difiere 339 m de la proyección). N-04/N-05
   huecos de test (horarios parciales; valores iguales del feed, D-25). N-06 `_stop_distances` es privada:
   `driver_session` no debe duplicar esa lógica.
-- **driver_codes_cli:** N-07 que la traza de Typer no muestre variables locales depende del valor por
+- **driver_codes_cli v1.1:** N-10 el test de `show_locals` (`test_cli_driver_codes.py:386`) acepta el texto en un
+  comentario → comprobar la llamada con el AST. N-07 cerrado (T-05).
+- **driver_codes_cli:** ~~N-07~~ que la traza de Typer no muestre variables locales depende del valor por
   defecto (`show_locals`): con `True` imprimiría `plain_code` → fijarlo a `False` y testearlo. N-08 un
   `OperationalError` sale como traza (sin valores). N-09 `hide_parameters` no oculta filas con
   `sqlalchemy.engine` en DEBUG (nada lo activa). N-03/N-04 abiertos. N-06 (spec): design §2 cita
