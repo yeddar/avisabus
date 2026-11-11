@@ -97,7 +97,8 @@ async def test_a_valid_code_starts_a_session() -> None:
     assert stored.position is None
     assert stored.progress_m is None
     assert stored.off_route is False
-    assert stored.last_position_at is None
+    assert stored.last_fix_at is None
+    assert stored.last_seen_at is None
 
 
 @pytest.mark.spec("driver_session.AC-01")

@@ -1,6 +1,6 @@
 # Interfaz del conductor — tasks
 
-> Feature: `driver_ui` · Versión: 1.0 · Estado: APPROVED
+> Feature: `driver_ui` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-24, RF-25, RF-26, RF-27, RF-28, RF-29, RF-30, RF-31, RNF-03, RNF-05 · Casos de uso: CU-08, CU-09, CU-10 · Depende de: frontend_i18n, driver_demand
 
 ## Exploración

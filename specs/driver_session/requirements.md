@@ -1,6 +1,6 @@
 # Turno del conductor — requirements
 
-> Feature: `driver_session` · Versión: 1.2 · Estado: APPROVED
+> Feature: `driver_session` · Versión: 1.3 · Estado: APPROVED
 > Requisitos: RF-24, RF-25, RF-26, RF-30, RNF-06, RNF-07, RNF-13 · Casos de uso: CU-08, CU-09 (posición), CU-10, CU-13 (revocación) · Depende de: gtfs_import, driver_codes_cli
 
 ## Contexto
@@ -82,7 +82,11 @@ capacidad) y el WebSocket del conductor son de `driver_demand`.
 
 - **driver_session.AC-08** — CUANDO se hace `PUT /api/v1/driver/sessions/current/position` con
   `{lat, lon, accuracy_m, recorded_at}`, EL SISTEMA DEBERÁ guardar solo la última posición
-  (descartando las que tengan `recorded_at` anterior a la guardada) y responder `204`; SI los
+  (descartando las que tengan `recorded_at` anterior a la guardada) y responder `204`. (v1.3) Toda
+  petición válida cuenta como **señal de vida** del turno (`last_seen_at`, AC-13); solo una
+  posición **nueva** (`recorded_at` posterior a la guardada) cuenta como **fijo de GPS**
+  (`last_fix_at`, instante del servidor al recibirla, AC-11) y se proyecta (AC-09); un reenvío
+  con el mismo `recorded_at` solo renueva la señal de vida. SI los
   valores están fuera de rango (lat/lon, `accuracy_m` < 0, `recorded_at` más de 30 s en el
   futuro), ENTONCES `422`.
   *Verificación:* integration
@@ -110,8 +114,10 @@ capacidad) y el WebSocket del conductor son de `driver_demand`.
   DEBERÁ marcar el recorrido como terminado (`finished = true`, sin próximas paradas).
   *Verificación:* unit
 - **driver_session.AC-11** — CUANDO se hace `GET /api/v1/driver/sessions/current`, LA API DEBERÁ
-  devolver la salida elegida, `gps` (`WAITING` sin posición; `OK`; `STALE` si la última tiene más
-  de 30 s, CU-09 1a), `off_route`, `finished` y las próximas paradas.
+  devolver la salida elegida, `gps` (`WAITING` sin posición; `OK`; `STALE` si el último fijo de GPS
+  se recibió hace más de 30 s según el reloj del servidor —`last_fix_at`, v1.3—, CU-09 1a),
+  `off_route`, `finished` y las próximas paradas. Los reenvíos de la misma posición no renuevan
+  `last_fix_at`.
   *Verificación:* integration
 
 ### Fin del turno
@@ -121,7 +127,8 @@ capacidad) y el WebSocket del conductor son de `driver_demand`.
   `DriverSessionListener` con el motivo `ENDED`.
   *Verificación:* integration
 - **driver_session.AC-13** — `DriverSessionReaper`, cada 60 s, DEBERÁ cerrar con el mismo efecto
-  las sesiones sin posición en los últimos 10 min (contando desde el inicio si nunca la hubo;
+  las sesiones sin **señal de vida** (`last_seen_at`, v1.3: cualquier `PUT …/position` válido,
+  aunque repita la posición) en los últimos 10 min (contando desde el inicio si nunca la hubo;
   motivo `IDLE`) y las de códigos revocados (motivo `REVOKED`); DEBERÁ exponer `tick()` y seguir
   tras una excepción (solo el tipo en el log).
   *Verificación:* unit (`FakeClock`) + integration (`lifespan`)
@@ -159,3 +166,4 @@ capacidad) y el WebSocket del conductor son de `driver_demand`.
 | 1.0 | 2026-11-09 | Versión inicial aprobada (PR #46). | CP-1 del bloque 4. Aprobada por la persona. |
 | 1.1 | 2026-11-09 | AC-09: ventana de búsqueda limitada por la distancia que el autobús ha podido recorrer (`20 m/s × Δt + 50 m`) y, sin progreso anterior, tramo más temprano entre los casi mínimos; verificación con los trazados reales y ruido. CU-08 4b alineado (trazado del viaje elegido). | CP-3 de `driver_session` (P-01): con la ventana fija de 3 km, el ruido GPS hacía saltar el progreso a la pasada posterior en 56–91 de 94 trazados reales. Aprobada por la persona (PR #50). |
 | 1.2 | 2026-11-09 | AC-09 y AC-10 en metros reales (las distancias de `shape_dist_traveled` no son metros); umbral del test con trazados reales y ruido σ 10 m: 150 m (máximo observado: 108 m por delante y 139 m por detrás). | CP-3 de `driver_session` en T-08: P-02 y P-03. Aprobada por la persona (PR #51). |
+| 1.3 | 2026-11-11 | AC-08: un reenvío de la misma posición es señal de vida, no fijo de GPS; AC-11: `STALE` por la hora del servidor del último fijo nuevo (`last_fix_at`); AC-13: `IDLE` por la última señal de vida (`last_seen_at`). Así un autobús parado en cabecera no pierde el turno y un GPS perdido se detecta sin depender del reloj de la tablet. T-09. | CP-3 de `driver_ui` (P-01): con "enviar la última cada 5 s", el reenvío ocultaba la pérdida de GPS; sin reenvío, un autobús parado perdía el turno. Aprobada por la persona (PR #55). |

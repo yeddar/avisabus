@@ -1,5 +1,6 @@
-"""Closes the shifts that lost their driver (driver_session AC-13): no position for the idle
-timeout, or a code that was revoked. Runs every minute (`background.driver_tasks`)."""
+"""Closes the shifts that lost their driver (driver_session AC-13): no sign of life (any valid
+`PUT …/position`, even a resend, v1.3) for the idle timeout, or a code that was revoked. Runs every
+minute (`background.driver_tasks`)."""
 
 from datetime import datetime, timedelta
 from typing import Any, Protocol
@@ -52,7 +53,7 @@ class ReapDriverSessions:
         code = self._codes.get(session.code_id)
         if code is None or code.revoked:
             return SessionCloseReason.REVOKED
-        last_seen = session.last_position_at or session.started_at
+        last_seen = session.last_seen_at or session.started_at
         if now - last_seen >= self._idle_timeout:
             return SessionCloseReason.IDLE
         return None

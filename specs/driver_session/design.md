@@ -1,6 +1,6 @@
 # Turno del conductor — design
 
-> Feature: `driver_session` · Versión: 1.2 · Estado: APPROVED
+> Feature: `driver_session` · Versión: 1.3 · Estado: APPROVED
 > Requisitos: RF-24, RF-25, RF-26, RF-30, RNF-06, RNF-07, RNF-13 · Casos de uso: CU-08, CU-09 (posición), CU-10, CU-13 (revocación) · Depende de: gtfs_import, driver_codes_cli
 
 ## 1. Resumen
@@ -58,7 +58,8 @@ class DriverSession:
     position: DriverPosition | None
     progress_m: float | None     # sobre el trazado del viaje
     off_route: bool
-    last_position_at: datetime | None   # instante de servidor de la última posición aceptada
+    last_position_at: datetime | None   # v1.3: renombrado a last_fix_at — instante de servidor del último fijo NUEVO (AC-11)
+    last_seen_at: datetime | None       # v1.3: instante de servidor de la última petición de posición válida (AC-13)
 
 @dataclass(frozen=True, slots=True)
 class UpcomingStop:
@@ -153,7 +154,8 @@ Errores: `401 …/invalid-driver-code`, `401 …/invalid-session`, `409 …/depa
 Tabla `driver_session`: `session_id` PK, `token_hash` UNIQUE, `code_id` UNIQUE, `started_at`,
 `line`, `direction_id`, `trip_id`, `service_date` (NULL hasta elegir salida), índice único
 parcial `(trip_id, service_date)` donde `trip_id` no es NULL, `lat`, `lon`, `accuracy_m`,
-`recorded_at`, `last_position_at`, `progress_m`, `off_route`.
+`recorded_at`, `last_fix_at` (v1.3, antes `last_position_at`), `last_seen_at` (v1.3), `progress_m`,
+`off_route`.
 
 ## 5. Configuración
 

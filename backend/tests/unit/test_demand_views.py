@@ -526,7 +526,7 @@ def _running(progress_m: float = 200.0, **values: Any) -> DriverSession:
         1,
         service=SERVICE,
         progress_m=progress_m,
-        last_position_at=NOW,
+        last_fix_at=NOW,
         position=_position(),
         **values,
     )
@@ -587,7 +587,7 @@ def test_a_finished_trip_that_is_already_shown_does_not_touch_again() -> None:
 @pytest.mark.spec("driver_demand.AC-09")
 def test_a_shift_without_a_departure_only_touches_when_the_gps_changes() -> None:
     harness = ListenerHarness(FakeViews(last=_view()))
-    session = session_of(1, last_position_at=NOW, position=_position())
+    session = session_of(1, last_fix_at=NOW, position=_position())
 
     harness.listener.position_updated(session)
     assert harness.views.touched == []

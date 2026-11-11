@@ -1,6 +1,6 @@
 # Turno del conductor — tasks
 
-> Feature: `driver_session` · Versión: 1.2 · Estado: APPROVED
+> Feature: `driver_session` · Versión: 1.3 · Estado: APPROVED
 > Requisitos: RF-24, RF-25, RF-26, RF-30, RNF-06, RNF-07, RNF-13 · Casos de uso: CU-08, CU-09 (posición), CU-10, CU-13 (revocación) · Depende de: gtfs_import, driver_codes_cli
 
 ## Exploración
@@ -49,6 +49,14 @@ No necesaria.
   - Ficheros: `domain/services/upcoming_stops.py`, `domain/models/driver.py`, `application/driver_sessions.py`, `adapters/outbound/persistence/sqlite_driver_sessions.py`, `tests/unit/test_upcoming_stops.py`, `tests/unit/test_driver_sessions.py`, `tests/integration/test_upcoming_stops_real_shapes.py`
   - Verificación: `cd backend && uv run pytest -k upcoming_stops -m "slow or not slow"`
   - (v1.2) Requiere `position_estimation` T-11 (distancias en metros); umbral del test real: 150 m.
+
+- [ ] **T-09** — (v1.3) Señal de vida y fijo de GPS: `last_seen_at` en cada `PUT …/position`
+  válido; `last_fix_at` solo con `recorded_at` nuevo; `STALE` por `last_fix_at` e `IDLE` por
+  `last_seen_at`; columna nueva en la tabla (`create_all`; sin migración: la tabla se crea de cero
+  en una BD sin turnos abiertos).
+  - AC: driver_session.AC-08, AC-11, AC-13
+  - Ficheros: `domain/models/driver.py`, `application/{driver_sessions,reap_driver_sessions}.py`, `adapters/outbound/persistence/sqlite_driver_sessions.py`, `tests/unit/test_driver_sessions.py`, `tests/unit/test_reap_driver_sessions.py`, `tests/integration/test_driver_api.py`
+  - Verificación: `cd backend && uv run pytest -k "driver_sessions or reap_driver or driver_api"`
 
 - [ ] **T-07** — Regenerar el contrato del frontend (`npm run gen:api`) y verificación completa.
   - Verificación: `./init.sh verify`

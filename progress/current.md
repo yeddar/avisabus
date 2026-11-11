@@ -2,22 +2,24 @@
 
 > Fichero vivo: lo reescribe el orquestador al final de cada sesión.
 
-**Fecha:** 2026-11-10
+**Fecha:** 2026-11-11
 **Fase:** Implementación — Bloque 4 (conductor)
-**Feature en curso:** `driver_ui` v1.0 — `spec_blocked` (CP-3), ciclo de revisión 1 (rama `feat/driver_ui`, apilada sobre `feat/driver_demand`, PR #54)
+**Feature en curso:** `driver_ui` v1.1 — `implementing`, ciclo de revisión 1 (rama `feat/driver_ui`, apilada sobre `feat/driver_session`, PR #56)
 
 ## Último paso
-`driver_ui`: revisión ciclo 1 CHANGES_REQUESTED (B-01, B-02) y CP-3 (P-01); ver `progress/review_driver_ui.md`.
+`driver_session` v1.3 APPROVED, PR #56. `feat/driver_ui` actualizada con `feat/driver_session` (T-09 y specs v1.1).
 
 ## Siguiente paso
-1. La persona decide P-01. Con la spec corregida y aprobada: `implementing`, B-01, B-02 y P-01; revisión nueva (ciclo 2) y PR.
-2. `driver_gps_simulator`, con reviewer nuevo y PR contra `develop` sin fusionar.
-Después, CP-6 del bloque 4 (persona). Orden de fusión: #52, #53, #54 y luego las siguientes `driver_*`.
+1. `driver_ui` ciclo 2: AC-04 v1.1, B-01 y B-02, revisión nueva y PR.
+2. `driver_gps_simulator`, revisión nueva y PR.
+Después, CP-6 del bloque 4 (persona).
 
 ## Pendiente para specs futuras
 - **driver_ui v1.0:** P-02 estado en cabecera (§5.9) sin texto en la spec; decidir en CP-6. P-03 plurales fijos
   ("Esperan 1 personas"). P-04 textos sin definir (salidas vacías, errores). N-01…N-09 en `progress/review_driver_ui.md`.
   Valenciano sin revisión de persona hablante y comportamiento de una tablet real parada: comprobar en CP-6.
+- **driver_session v1.3:** N-10 (CP-4, persona) `docs/architecture.md:119` sigue con `last_position_at`. N-11 design §2
+  (`:61`) declara aún `last_position_at` "renombrado a `last_fix_at`". Siguen N-01, N-03…N-08 de la v1.2.
 - **driver_demand v1.0:** N-01 tests y `http/access_log.py:9` citan AC-12 para la IP; la regla es `driver_session.AC-15`.
   N-02 (spec) salida que desaparece de la red da `service = null`, sin contemplar en ninguna spec. N-03 sin test de
   que la suscripción de `/ws/driver` ocurre antes de la vista inicial (`ws/driver.py:111`). N-04 AC-11 con `FakeClock`:
@@ -143,10 +145,7 @@ Después, CP-6 del bloque 4 (persona). Orden de fusión: #52, #53, #54 y luego l
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-**CP-3 de `driver_ui` (P-01), pendiente de la persona.** AC-04 pide reenviar la última posición cada 5 s, pero el backend
-renueva `last_position_at` en cada envío y de ahí calcula `STALE`.
+Ninguno. CP-3 de `driver_ui` (P-01) resuelto en la PR #55.
 
 ## Bloqueos
-`driver_ui` P-01 (CP-3). Opción A: reenviar cada 5 s y calcular `STALE` con la antigüedad de `recorded_at` (toca
-`driver_session`). Opción B: AC-04 "cada 5 s, si hay una posición nueva". Con A, una tablet parada que no emita no cierra
-el turno por `IDLE`, pero sigue mostrando "Posición desactualizada" a los 30 s.
+Ninguno.

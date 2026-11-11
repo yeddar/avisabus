@@ -537,7 +537,8 @@ def _open_shift(db_path: Path, code_id: str) -> None:
                 position=None,
                 progress_m=None,
                 off_route=False,
-                last_position_at=None,
+                last_fix_at=None,
+                last_seen_at=None,
             )
         )
     finally:
