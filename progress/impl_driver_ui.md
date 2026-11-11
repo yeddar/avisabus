@@ -1,8 +1,86 @@
 # Implementación: driver_ui
-Spec: specs/driver_ui/ (v1.0, APPROVED, PR #46) · Ciclo de revisión: 0 · Rama: `feat/driver_ui` (apilada
-sobre `feat/driver_demand`). Exploración: no necesaria (tasks.md).
+Spec: specs/driver_ui/ (v1.1, APPROVED, PR #55) · Ciclo de revisión: 1 · Rama: `feat/driver_ui` (con
+`feat/driver_session` v1.3 fusionada, PR #56). Exploración: no necesaria (tasks.md).
 
-## Tareas
+## Ciclo 1 (correcciones de `progress/review_driver_ui.md`)
+
+### Tareas
+- [x] T-03 AC-04 v1.1 (P-01 resuelto en la spec): reenvío de la última posición cada 5 s aunque se
+  repita y `getCurrentPosition` (`enableHighAccuracy`, `maximumAge: 0`, `timeout: 10 s`) si
+  `watchPosition` calla 10 s, repetido cada 10 s mientras dure el silencio. Sustituido el test que
+  fijaba el envío único (`useDriverPosition.test.tsx:138` del ciclo 0) (commit 3a54162)
+- [x] T-02, T-05 B-01: posición, `wakeLock` y `/ws/driver` viven en `ShiftPage` (`useDriverShift`), no en
+  `DemandView`; "Elegir la siguiente salida" ya no los corta, y también funcionan en la elección de la
+  primera salida (AC-04, AC-08, AC-09 v1.1) (commit a944032)
+- [x] T-05, T-06 B-02: "Seguir" cierra el `<dialog>` con `close()` y el foco vuelve a "Finalizar turno"
+  (también con Escape); e2e nuevo del foco y comprobación en el flujo completo de que la posición se
+  sigue enviando por el mismo socket al elegir la siguiente salida (commit c186b39)
+- [x] T-07 Verificación completa (este fichero)
+
+Tests vistos en rojo antes del código: los de AC-04 v1.1 de `useDriverPosition.test.tsx`; los dos nuevos
+de `ShiftPage.test.tsx` (primera salida y siguiente salida); el de `enabled` de `useDriverSocket.test.tsx`;
+el de la vista pedida al elegir salida (`DemandView.tone.test.tsx`); los de foco de `DemandView.test.tsx`
+y `EndShiftDialog.test.tsx`; el e2e de foco y la parte nueva del flujo completo (este último, contra un
+`dist/` construido con el código anterior: se quedaba en 1 envío de posición).
+
+Tests nuevos o cambiados por AC: AC-04 `useDriverPosition.test.tsx` (reenvío, `getCurrentPosition`,
+silencio con permiso denegado), `ShiftPage.test.tsx` (posición y socket en el selector);
+AC-08/AC-09 `ShiftPage.test.tsx`, `useDriverSocket.test.tsx`, `DemandView.tone.test.tsx`;
+AC-10 `DemandView.test.tsx`, `EndShiftDialog.test.tsx`, `e2e/driver.spec.ts` (test nuevo `[driver_ui.AC-10]`).
+Retirados de `DemandView.test.tsx` (ya no son de la vista): "follows the position while the view is open"
+(cubierto en `ShiftPage.test.tsx`) y "when session.closed arrives…" (cubierto por el test AC-10 de
+`ShiftPage.test.tsx`, que ya comprobaba token borrado y motivo).
+
+### Decisiones locales e interpretaciones
+- **`useDriverShift.ts`** (fichero nuevo, no está en design §1): reúne `useDriverPosition(enabled)` y
+  `useDriverSocket` y reparte las vistas a quien escuche. Lo llama `ShiftPage` (design §2: "El hook vive en
+  ShiftPage"), con `enabled` mientras la fase es selector o vista de demanda. `DemandView` recibe la
+  prop `shift` en lugar de abrir sus propios hooks; el cierre por el servidor (`session.closed`) lo
+  gestiona ahora `ShiftPage`.
+- **`useDriverSocket`** acepta `enabled` (por defecto `true`): sin turno abierto en la página no abre
+  socket ni consulta.
+- **También en la elección de la primera salida:** AC-04 y AC-09 v1.1 dicen "también en la elección de
+  salida, con `service = null`", así que la posición, el `wakeLock` y el socket empiezan en el selector,
+  antes de elegir la primera salida. El permiso de ubicación se pide por tanto al entrar al selector
+  (CU-08 lo pone en el paso 4, tras elegir salida). El aviso "Sin permiso de ubicación…" con "Reintentar"
+  sigue mostrándose solo en la vista de demanda: el selector no muestra estados de GPS.
+- **Vista tras elegir salida:** con el socket ya abierto no llega una vista "de entrada", así que
+  `DemandView` pide `GET …/view` una vez al montarse sin vista inicial. La primera vista que recibe una
+  salida marca sus solicitudes como vistas sin tono (como antes, cuando el socket se reabría al elegir).
+  Se descartan las vistas de otra salida (una tardía del viaje anterior) y las más antiguas que la última
+  aplicada; las de `service = null` se siguen mostrando como antes (N-01 queda fuera de este ciclo).
+- **Foco al cerrar el diálogo:** además de `close()`, `DemandView` enfoca "Finalizar turno"
+  explícitamente al cerrarse el diálogo: WebKit no enfoca un botón al pulsarlo, así que no tiene nada que
+  restaurar (el reviewer lo vio en WebKit: `BODY`/`MAIN`), y el perfil tablet de los e2e es WebKit.
+- **`getCurrentPosition` con permiso denegado:** deja de pedirse hasta "Reintentar".
+
+### Bloqueos
+Ninguno. Los no bloqueantes P-02 a P-04 y N-01 a N-09 quedan fuera de este ciclo (la v1.1 no los
+resuelve en la spec); siguen anotados abajo y en `progress/review_driver_ui.md`.
+
+### Verificación
+`CI=1 ./init.sh verify --e2e`, puerto 4173 libre: **todo en verde** (salida 0, sobre el commit c186b39).
+
+| Paso | Resultado |
+|---|---|
+| backend: format, lint, types, architecture | OK |
+| backend: tests | 1857 passed, 12 deselected |
+| frontend: format, lint, types | OK |
+| frontend: tests | 660 passed, 2 skipped (68 ficheros) |
+| frontend: build + bundle | OK (5 tests) |
+| frontend: e2e + a11y | 132 passed, 12 skipped (perfiles no tablet), sin reintentos |
+| harness: feature_list.json, trazabilidad AC→test | OK |
+
+Capturas de AC-12 regeneradas en `frontend/test-results/driver_ui/tablet-landscape/` (14 ficheros, mismos
+nombres; no versionadas). No cambia la maquetación: el flujo nuevo del e2e no añade capturas.
+
+## Ciclo 0
+
+Spec v1.0 (PR #46), rama apilada sobre `feat/driver_demand`. Superado en el ciclo 1: la interpretación
+"posición solo en la vista de demanda" (B-01) y el bloqueo 2 "autobús parado y GPS" (resuelto en la spec
+v1.1 / `driver_session` v1.3).
+
+### Tareas
 - [x] T-01 `session.ts`, `driverApi`, `LoginPage`, rutas diferidas y textos (commit 876f585)
 - [x] T-02 `ServicePicker` y `ShiftPage` (commit 5c7ae41)
 - [x] T-03 `useDriverPosition`: posición, permiso y `wakeLock` (commit e377203)
@@ -26,7 +104,7 @@ eleccion-salida, sin-solicitudes, solicitud-nueva, alerta-capacidad, gps-desactu
 Revisadas contra `docs/design.md` §5.9; de ahí salió un fallo ya corregido: los iconos de "Silenciar tono"
 y "Volver" no tenían tamaño y no se pintaban.
 
-## Decisiones locales
+### Decisiones locales
 Dentro de design §5 (maquetación no fijada y envolvente del tono):
 - **Envolvente del tono:** ataque lineal de 20 ms hasta 0,3 de ganancia y caída lineal hasta los 300 ms.
 - **`DriverLayout.tsx`** (no está en la lista de design §1): mismos landmarks que `Layout`, con columna de
@@ -59,7 +137,7 @@ Interpretaciones de la spec, fuera de esa lista, para que las valide el reviewer
 - **`DELETE` fallido al finalizar:** se borra el token y se vuelve a `/driver` igualmente; el servidor cierra
   el turno por inactividad.
 
-## Bloqueos
+### Bloqueos
 Ninguno impide la revisión. Huecos de spec que quedan para decidir aparte (propuesta entre paréntesis):
 1. **Errores y lista vacía sin texto en la spec.** Fallo de red o 5xx en el acceso y el selector reutiliza
    `stop.error.body`; un `422` al elegir salida refresca la lista con ese mismo aviso. La lista sin salidas usa
@@ -78,7 +156,7 @@ Ninguno impide la revisión. Huecos de spec que quedan para decidir aparte (prop
    tareas. (Añadirla en una tarea futura.)
 5. **Valenciano:** las traducciones son propias, sin revisión de una persona hablante. (Revisarlas en CP-6.)
 
-## Verificación
+### Verificación
 `CI=1 ./init.sh verify --e2e`, puerto 4173 libre: **todo en verde** (salida 0, sobre el commit 472a763).
 
 | Paso | Resultado |
