@@ -211,7 +211,7 @@ export function DemandView({
             })}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-x-5 gap-y-2">
           {headerState(gpsOk, t(gpsOk ? 'driver.status.gpsOk' : 'driver.status.gpsStale'))}
           {headerState(
             connected,
