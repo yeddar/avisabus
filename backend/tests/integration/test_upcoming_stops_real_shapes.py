@@ -1,4 +1,4 @@
-"""AC-09 (v1.4) with every shape of the real feed (`data/gtfs/emt/`, not versioned). Slow and
+"""AC-09 (v1.5) with every shape of the real feed (`data/gtfs/emt/`, not versioned). Slow and
 manual:
 
     cd backend && uv run pytest -m slow tests/integration/test_upcoming_stops_real_shapes.py
@@ -8,10 +8,12 @@ through the real `UpdateDriverPosition` and `TripRoutes`, with a `FakeClock` and
 σ = 10 m (correlated, ρ = 0.95, and independent) with the seeds 1 to 20. The bus moves and the
 errors are measured in real metres (the `shape_dist_traveled` of EMT's feed is not in metres).
 
-AC-09 v1.4, for each noise model over the positions of the 20 seeds: at least 99.5 % with the
-progress less than 150 m from the real one, and none more than 150 m ahead nor more than 500 m
-behind (the U-turn lag is accepted). The result of every seed is printed even when the test
-passes, and is part of the failure message.
+AC-09 v1.4 and v1.5, for each noise model over the positions of the 20 seeds: at least 99.5 %
+with the progress less than 150 m from the real one, and none more than 200 m ahead (v1.5) nor
+more than 500 m behind (v1.4). Accepted: the U-turn lag (v1.4) and, on a shape that goes twice
+round a roundabout (line 25, laps of 139 m), a lap ahead with the noise (v1.5).
+The result of every seed is printed even when the test passes, and is part of the failure
+message.
 """
 
 import csv
@@ -46,7 +48,7 @@ STEP_S = 5
 SEEDS = range(1, 21)
 NEAR_M = 150.0  # "a menos de 150 m del real"
 MIN_NEAR_SHARE = 0.995  # "AL MENOS el 99,5 % de las posiciones"
-MAX_AHEAD_M = 150.0  # "NINGUNA … más de 150 m por delante"
+MAX_AHEAD_M = 200.0  # "NINGUNA … más de 200 m por delante" (v1.5)
 MAX_BEHIND_M = 500.0  # "… ni más de 500 m por detrás"
 START = datetime(2026, 11, 9, 8, 0, tzinfo=UTC)
 TRIP_ID = "trip"
