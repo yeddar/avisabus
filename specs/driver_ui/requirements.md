@@ -1,6 +1,6 @@
 # Interfaz del conductor — requirements
 
-> Feature: `driver_ui` · Versión: 1.0 · Estado: APPROVED
+> Feature: `driver_ui` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-24, RF-25, RF-26, RF-27, RF-28, RF-29, RF-30, RF-31, RNF-03, RNF-05 · Casos de uso: CU-08, CU-09, CU-10 · Depende de: frontend_i18n, driver_demand
 
 ## Contexto
@@ -49,8 +49,13 @@ posición sale del GPS de la tablet (`watchPosition`) o del simulador (`driver_g
 
 ### Posición
 
-- **driver_ui.AC-04** — MIENTRAS haya turno abierto, LA VISTA DEBERÁ seguir la posición con
-  `watchPosition` (alta precisión) y enviar la última cada 5 s (`PUT …/position`); SI el permiso
+- **driver_ui.AC-04** — MIENTRAS haya turno abierto (también en la elección de salida, v1.1), LA
+  VISTA DEBERÁ seguir la posición con `watchPosition` (alta precisión) y enviar cada 5 s la
+  última disponible (`PUT …/position`), **aunque se repita**, porque el reenvío es la señal de
+  vida del turno (`driver_session.AC-08` v1.3); (v1.1) SI `watchPosition` no entrega ninguna
+  posición en 10 s, ENTONCES DEBERÁ pedir una con `getCurrentPosition` (`maximumAge: 0`,
+  `timeout: 10 s`), para que un autobús parado siga dando fijos nuevos y solo un GPS perdido
+  acabe en "Posición desactualizada"; SI el permiso
   se deniega, ENTONCES DEBERÁ mostrar "Sin permiso de ubicación: no se pueden calcular las
   próximas paradas" con "Reintentar" (CU-08 4a). DEBERÁ pedir `navigator.wakeLock` de pantalla
   (y volver a pedirlo al recuperar la visibilidad), sin error si no está disponible.
@@ -81,17 +86,21 @@ posición sale del GPS de la tablet (`watchPosition`) o del simulador (`driver_g
   ubicación…", `STALE` "Posición desactualizada" (manteniendo la última lista, CU-09 1a),
   `off_route` "No estás en el recorrido de esta línea" (CU-08 4b), sin conexión con el servidor
   "Sin conexión, reconectando…" (CU-09 4a) y `finished` "Fin del recorrido" con el botón "Elegir
-  la siguiente salida" (vuelve al paso de salida con la misma línea y sentido).
+  la siguiente salida" (vuelve al paso de salida con la misma línea y sentido). (v1.1) Elegir la
+  siguiente salida NO DEBERÁ interrumpir el envío de posición, el `wakeLock` ni `/ws/driver`: el
+  turno sigue abierto mientras el conductor espera en cabecera.
   *Verificación:* unit
 
 ### Tiempo real y fin
 
-- **driver_ui.AC-09** — MIENTRAS haya salida elegida, LA VISTA DEBERÁ mantener `/ws/driver` con
+- **driver_ui.AC-09** — MIENTRAS haya turno abierto (v1.1: también en la elección de salida, con
+  `service = null`), LA VISTA DEBERÁ mantener `/ws/driver` con
   `hello` y reconexión como `passenger_alert_ui.AC-10`, y MIENTRAS esté desconectada DEBERÁ pedir
   `GET …/view` cada 10 s.
   *Verificación:* unit (WebSocket simulado)
 - **driver_ui.AC-10** — CUANDO se pulsa "Finalizar turno", LA VISTA DEBERÁ pedir confirmación en
-  un diálogo ("¿Finalizar el turno?", "Finalizar" / "Seguir"); al confirmar DEBERÁ llamar a
+  un diálogo ("¿Finalizar el turno?", "Finalizar" / "Seguir"); (v1.1) con "Seguir" o Escape, el
+  diálogo se cierra y el foco DEBERÁ volver al botón "Finalizar turno"; al confirmar DEBERÁ llamar a
   `DELETE …/current`, borrar el token y volver a `/driver` con el mensaje "Turno finalizado".
   CUANDO llega `session.closed`, DEBERÁ hacer lo mismo con el motivo ("Turno cerrado por
   inactividad", "Código revocado", "Has iniciado otro turno con este código").
@@ -127,3 +136,4 @@ posición sale del GPS de la tablet (`watchPosition`) o del simulador (`driver_g
 | Versión | Fecha | Cambio | Motivo |
 |---|---|---|---|
 | 1.0 | 2026-11-09 | Versión inicial aprobada (PR #46). | CP-1 del bloque 4. Aprobada por la persona. |
+| 1.1 | 2026-11-11 | AC-04: reenvío cada 5 s como señal de vida y `getCurrentPosition` si `watchPosition` calla 10 s; AC-08/AC-09: elegir la siguiente salida no corta posición, `wakeLock` ni socket; AC-10: foco a "Finalizar turno" al pulsar "Seguir". | CP-3 de `driver_ui` (P-01, decisión de la persona) y B-01/B-02 de la revisión del ciclo 1. Pendiente de aprobación. |
