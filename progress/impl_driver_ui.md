@@ -1,7 +1,58 @@
 # Implementación: driver_ui
-Spec: specs/driver_ui/ (v1.2, APPROVED, PR #60) · Ciclo de revisión: 0 de la v1.2 · Rama:
+Spec: specs/driver_ui/ (v1.2, APPROVED, PR #60) · Ciclo de revisión: 1 de la v1.2 · Rama:
 `feat/driver_ui-v1.2` (apilada sobre `feat/driver_codes_cli-v1.1`, PR #61). Exploración: no necesaria
 (tasks.md). Las secciones "Ciclo 1" y "Ciclo 0" de abajo son de la v1.1 y la v1.0.
+
+## v1.2 · Ciclo 1 (corrección de B-01 de `progress/review_driver_ui.md`)
+
+### Tareas
+- [x] T-07 B-01: los tests de `ShiftPage.test.tsx` esperan a que exista `/ws/driver` (y a
+  `watchPosition`) antes de usarlo. Ya no lo dan por hecho al aparecer un texto. Se añade el auxiliar
+  `findSocket()` (`waitFor` hasta que haya un socket y lo devuelve). Se corrigen los tres sitios
+  señalados (`[AC-04][AC-08][AC-09]` "Elegir la siguiente salida…", `[AC-10]` cierre por el servidor y
+  `[AC-03]` cierre 4401) y un cuarto con el mismo patrón: `[AC-04][AC-09]` "while choosing the first
+  departure…", que comprobaba `watchPosition` y el socket justo después de encontrar el título "Elige la
+  línea". Ese título se pinta en el mismo render que el selector, antes de los efectos pasivos
+  (commit d819fab)
+- [x] T-07 Verificación completa (este fichero)
+
+Solo cambian los tests; el código de producción no tiene el fallo. El socket y la posición se abren en
+efectos pasivos de `ShiftPage` (`useDriverShift` → `useDriverSocket`, `useDriverPosition`) después de un
+render que viene de resolver una promesa. React puede confirmar el DOM antes de ejecutar esos efectos,
+así que `findBy…` podía terminar antes. En la app no pasa nada: el socket se abre unos milisegundos
+después de pintar la vista.
+
+**Carrera forzada.** Cambio temporal, ya revertido con `git checkout`: `useDriverSocket` llamaba a
+`connect()` con `setTimeout(…, 0)` y `useDriverPosition` llamaba a `watchPosition` igual.
+- Con los tests antiguos fallan los 4 tests: 3 con `no WebSocket has been created` y el de
+  `watchPosition` con "called 0 times".
+- Con los tests nuevos, `ShiftPage.test.tsx` pasa 11/11.
+
+**Otros tests de `driver` que usan `FakeWebSocket`.** Son `DemandView.test.tsx`,
+`DemandView.tone.test.tsx` y `useDriverSocket.test.tsx`, y no tienen este patrón. Montan con
+`render`/`renderHook`, que van dentro de `act` y ejecutan los efectos pasivos antes de volver, y usan el
+socket creado en el montaje. Con el retraso temporal fallan, pero es lo esperado: el retraso rompe a
+propósito la apertura síncrona en el efecto. Sin él son deterministas. No los he tocado.
+
+**Repetición.** Después de revertir, he ejecutado 30 veces `npx vitest run src/features/driver`: las 30
+salieron con 112 passed.
+
+### Bloqueos
+Ninguno. P-05, P-06 y P-07 (problemas de spec) y los no bloqueantes N-12 a N-14 quedan fuera de este
+ciclo, como se indicó.
+
+### Verificación
+`CI=1 ./init.sh verify --e2e`, con el puerto 4173 libre: **todo en verde** (salida 0, sobre d819fab).
+
+| Paso | Resultado |
+|---|---|
+| backend: format, lint, types, architecture | OK |
+| backend: tests | 1915 passed, 9 deselected |
+| frontend: format, lint, types | OK |
+| frontend: tests | 675 passed, 2 skipped (68 ficheros) |
+| frontend: build + bundle | OK (5 tests) |
+| frontend: e2e + a11y | 132 passed, 12 skipped (perfiles no tablet) |
+| harness: feature_list.json, trazabilidad AC→test | OK |
 
 ## v1.2 · Ciclo 0 (T-08 y T-07)
 
