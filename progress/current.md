@@ -4,10 +4,10 @@
 
 **Fecha:** 2026-11-11
 **Fase:** Ajustes del bloque 4 y bloque 5 (`deployment_rpi`)
-**Feature en curso:** `passenger_map_view` v1.3 — siguiente (T-09). `driver_ui` v1.2 `done` (rama `feat/driver_ui-v1.2`)
+**Feature en curso:** `passenger_map_view` v1.3 — `implementing` (T-09, rama `feat/passenger_map_view-v1.3`, apilada sobre `feat/driver_ui-v1.2`, PR #64, y esta sobre la #63)
 
 ## Último paso
-`driver_ui` v1.2 (T-08): revisión ciclo 2 APPROVED; rama subida y PR contra `develop` (apilada sobre la #63).
+`driver_ui` v1.2 APPROVED; PR #64 contra `develop` (apilada sobre la #63), sin fusionar.
 
 ## Siguiente paso
 Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:

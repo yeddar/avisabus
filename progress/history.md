@@ -592,3 +592,5 @@
 ## 2026-11-11 · driver_ui v1.2 · implementing → in_review → done
 - T-08: textos del selector, plurales con `count` y estado visible en la cabecera. Ciclo 2 APPROVED (B-01 test
   intermitente corregido con `findSocket()`). Abiertos para la persona: P-06 (cabecera al empezar) y P-07 (plurales).
+
+## 2026-11-11 · driver_ui PR #64 abierta · passenger_map_view · done → implementing (v1.3, T-09)
