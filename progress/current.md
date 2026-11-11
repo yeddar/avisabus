@@ -4,10 +4,10 @@
 
 **Fecha:** 2026-11-11
 **Fase:** Ajustes del bloque 4 y bloque 5 (`deployment_rpi`)
-**Feature en curso:** `driver_session` v1.4 — `implementing` (T-10, rama `feat/driver_session-v1.4`, apilada sobre `feat/driver_codes_cli-v1.1`, PR #61)
+**Feature en curso:** `driver_session` v1.4 — `spec_blocked` (CP-3 P-04, T-10; rama `feat/driver_session-v1.4`, apilada sobre la PR #61)
 
 ## Último paso
-`driver_codes_cli` v1.1 APPROVED; PR #61 contra `develop`, sin fusionar.
+`driver_session` T-10: test de 20 semillas escrito; con ruido independiente, semilla 16, una posición queda 157,1 m por delante (AC-09 v1.4: máximo 150 m). CP-3 P-04.
 
 ## Siguiente paso
 Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
@@ -159,7 +159,13 @@ Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Ninguno. CP-6 del bloque 4 aprobado (2026-11-11).
+**CP-3 de `driver_session` v1.4 (P-04), pendiente de la persona.**
 
 ## Bloqueos
-Ninguno.
+`driver_session` P-04: AC-09 v1.4 exige que ninguna posición quede a más de 150 m por delante. Con ruido independiente
+σ 10 m, semilla 16, una posición queda a 157,1 m por delante en el trazado `1026_2253_2186` (línea 25): el trazado da más
+de una vuelta a una rotonda (puntos 461–466 = 477–482, vuelta de 139,3 m) y el ruido lleva la proyección a la segunda
+pasada; se recupera en ~20 s. Correlado cumple (máx. 130,8 m delante, 422,2 m detrás). Opciones: (1) aceptar la
+limitación y subir el máximo por delante (p. ej. 200 m; solo cambia el test); (2) mantener 150 m y tarea nueva que cambie
+la proyección (la variante "tramo más temprano" deja hasta 13 posiciones > 500 m por detrás); (3) excluir tramos
+recorridos dos veces (no recomendada). Detalle en `progress/impl_driver_session.md`.

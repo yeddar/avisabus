@@ -567,3 +567,7 @@
   ciclo 1 APPROVED (mutante `True` detectado; N-10 el test del fuente acepta un comentario). Verify --e2e en verde.
 
 ## 2026-11-11 · driver_codes_cli PR #61 abierta · driver_session · done → implementing (v1.4, T-10)
+
+## 2026-11-11 · driver_session v1.4 · implementing → spec_blocked (CP-3 P-04, T-10)
+- Test de 20 semillas: correlado cumple; independiente, semilla 16, 157,1 m por delante en una rotonda de la línea 25
+  que el trazado recorre dos veces (vuelta de 139,3 m < ventana de 150 m).
