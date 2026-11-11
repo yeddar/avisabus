@@ -1,5 +1,167 @@
 # Revisión: passenger_map_view
 
+## v1.3 · Ciclo 1
+Ciclo: 1 (v1.3) · Fecha: 2026-11-11 · Agente: reviewer
+Spec: `specs/passenger_map_view/` v1.3 (APPROVED, PR #60) · Rama: `feat/passenger_map_view-v1.3`
+(HEAD 5ab1a11; tests y fixtures en 0c897c7) · Base: `origin/feat/driver_ui-v1.2` (PR #64),
+diff `git diff origin/feat/driver_ui-v1.2...HEAD`
+
+## Veredicto: APPROVED
+
+T-09 cumple lo que pide. Las tres `position-*.json`, unitarias y e2e, son respuestas de la API
+actual sin retoques. Las regeneré con el procedimiento documentado y salen **idénticas byte a
+byte**. Una medición independiente sobre el trazado da distancias en metros reales, dentro del
+margen de `position_estimation.AC-06` v1.4. Los tres cambios de escenario se justifican con el
+horario del feed y ningún test se ha debilitado: con las fixtures antiguas fallan 10 tests y con
+las nuevas pasan todos. No cambia código de producción. `CI=1 ./init.sh verify --e2e` está en
+verde. No hay hallazgos bloqueantes. Hay un no bloqueante nuevo (N-10) y siguen abiertos N-02,
+N-04, N-06, N-07, N-08 y N-09.
+
+## Matriz AC → evidencia
+
+La v1.3 solo cambia datos de prueba (T-09) y no modifica ningún AC. La matriz recoge los tests
+que leen las fixtures regeneradas o cuyos textos esperados cambian. El resto sigue como en la
+v1.2 y vuelve a pasar en este ciclo.
+
+| AC | Test(s) | Resultado | Nota |
+|---|---|---|---|
+| AC-01 | Sin cambios: `ArrivalRow.test.tsx`, E2E `map-view.spec.ts:344` | OK | |
+| AC-02 | Sin cambios: `bundle-budget.test.ts` (5/5), E2E `:344` | OK | `index-*.js` 85,80 KB gzip; `MapPage-*.js` 50,15 KB gzip, en un fragmento aparte |
+| AC-03 | Sin cambios | OK | |
+| AC-04 | `summary.test.ts:33` (es) y `:39` (ca): "844 m … a 2 paradas … Cid - Josep Maestre". `:97`: NOT_STARTED con "Llega a las 05:57" / "Arriba a les 05:57". `:151`: negritas `844 m` / `a 2 paradas`. `MapPage.test.tsx:144`, `:172`, `:333`, `:352` y `:385` (texto completo o `/^El autobús está a 844 m/`). `PositionSummary.test.tsx` (`Summary` literal). E2E `:211` (es/ca) y `:259` | **OK** | Los textos esperados salen de la API real. Con las fixtures antiguas fallan 10 tests (ver "Verificación") |
+| AC-05 | Sin cambios en las aserciones (`summary.test.ts`, `MapPage.test.tsx:144,158`, `BusMap.test.tsx:110,118`, E2E `:259` "Posición según horario", `:280` sin insignia) | OK | `position-no-arrival` solo cambia `stop.lat`/`lon` (todos los decimales) |
+| AC-06 | Sin cambios (`useProximityAnnouncements.test.tsx`, a partir de `POSITION_EN_ROUTE` con `stops_away` modificado) | OK | |
+| AC-07 | `BusMap.test.tsx:94` y E2E `:211`: `rotate(100.94859961754514deg)` | **OK** | El rumbo es el que devuelve la API. Medí el rumbo del segmento 61 del trazado y da 100,9486°. La aserción es igual de estricta que antes (`90.9`, redondeado a mano) |
+| AC-08 | Sin cambios (`useInitialFit.test.ts`, `mapModel.test.ts`) | OK | |
+| AC-09 | Sin cambios: E2E `:211` y `:383` | OK | |
+| AC-10 | Sin cambios: `BusMap.test.tsx`, E2E `:435` × 3 perfiles | OK | |
+| AC-11 | Sin cambios | OK | |
+| AC-12 | Sin cambios (`MapPage.test.tsx:235,250`, `usePositionQueries.test.tsx`) | OK | |
+| AC-13 | `MapPage.test.tsx:333`, `:352` y `:385`: solo cambia el prefijo esperado del resumen conservado | OK | Las aserciones de reintento y de datos conservados no cambian |
+| AC-14 | `e2e/map-view.spec.ts` × 3 perfiles: EN_ROUTE (es/ca), NOT_STARTED y NO_ARRIVAL, con axe | OK | 27/27 de `map-view.spec.ts`, sin reintentos ni *flaky* |
+| AC-15 | Capturas regeneradas en esta verificación (`frontend/test-results/passenger_map_view/<perfil>/`, 22:33) | OK (revisión) | `iphone/map-en-route-es`: "844 m … a 2 paradas … Cid - Josep Maestre … 5 minutos", con 2 paradas entre "Estimada" y "Tu parada". `pixel/map-en-route-ca`: "844 m … a 2 parades … Arriba en 5 minuts". `tablet-landscape/map-not-started-es`: "aún no ha salido de Avinguda del Cid. Llega a las **05:57**", con "Según horario" en la cabecera y 5 paradas hasta "Tu parada". Ya no aparece "3,4 km". Se ajusta a `docs/design.md` §5.7 |
+
+## Verificación ejecutada
+
+- `CI=1 ./init.sh verify --e2e` (puerto 4173 libre; árbol limpio salvo `qr/`, sin seguimiento y
+  ajeno a la feature) → **`verify: todo en verde`** (EXIT=0).
+
+| Paso | Resultado |
+|---|---|
+| backend: format, lint, types, architecture | OK |
+| backend: tests | 1915 passed, 9 deselected; cobertura 99,66 % |
+| frontend: format, lint, types | OK |
+| frontend: tests | 68 ficheros; 675 passed, 2 skipped |
+| frontend: build + bundle | OK; `bundle-budget` 5/5 |
+| frontend: e2e + a11y | 132 passed, 12 skipped (`driver.spec.ts` en perfiles de móvil, ajenos a la feature); `map-view.spec.ts` 27/27 |
+| harness: feature_list.json, trazabilidad AC→test | OK (AC-01…AC-15 citados) |
+
+### Reproducción de las fixtures (encargo: "salen de la API real y se pueden regenerar")
+1. Copia de la base local con `sqlite3 -readonly data/avisabus.sqlite ".backup <scratchpad>/copy.sqlite"`.
+   La copia tiene `feed_version` 2, "23-10-2026", activo, del 2026-10-16 al 2026-11-22. La base del
+   repositorio no se tocó.
+2. Extraje el script de `progress/impl_passenger_map_view.md` sin cambios y lo ejecuté desde
+   `backend/` con `PYTHONPATH=. uv run python <scratchpad>/gen.py <copia> <out>`. Las peticiones
+   van en proceso (`httpx.ASGITransport`), sin red, con `FakeClock` y el SAE en `replay`.
+3. `cmp` y SHA-256 contra el repositorio:
+
+| Fichero | `src/test/fixtures/api/` | `e2e/fixtures/` |
+|---|---|---|
+| `position-en-route.json` (`cd08433f…`) | **idéntico** | **idéntico** |
+| `position-not-started.json` (`f200f1f8…`) | **idéntico** | **idéntico** |
+| `position-no-arrival.json` (`74bdc301…`) | **idéntico** | **idéntico** |
+| `shape-93.json` (fuera de T-09) | mismo JSON (`==`), otro formato | igual que el unitario |
+
+   `shape-93.json` es semánticamente idéntico a la respuesta de la API, pero el del repositorio
+   está formateado por Prettier, con los pares de coordenadas en una línea. Es coherente con lo
+   que dice el progreso ("la API devuelve exactamente el mismo trazado") y T-09 no lo incluye.
+4. Composición: `tests.support.position.position_client` reproduce `src/avisabus/main.py:80-84`
+   (`build_stop_use_cases` + `build_position_use_cases` + `create_app`). Solo cambia que las
+   anulaciones de sentido son `{}` en lugar de `config/direction_overrides.json`, que no incluye
+   la línea 93, así que el resultado es equivalente.
+
+### Medición independiente (coherencia con `position_estimation` v1.4)
+Script propio (`<scratchpad>/measure.py`, sin código del backend). Acumula la distancia haversine
+sobre las 294 coordenadas de `shape-93.json` y proyecta en el segmento más próximo la posición y la
+parada 508. Así calcula la distancia sobre el trazado, el rumbo del segmento y las paradas que
+quedan en medio.
+
+| Fixture | API | Medido | Diferencia | Margen AC-06 (2 % o 10 m) | Rumbo API / segmento | `stops_away` / paradas en medio |
+|---|---|---|---|---|---|---|
+| `position-en-route` | 844 m | 840,5 m | +3,5 m | 16,8 m → **OK** | 100,9486° / 100,9486° | 2 / 506, 507; `next_stop` 506 ✓ |
+| `position-not-started` | 1839 m | 1835,3 m | +3,7 m | 36,7 m → **OK** | 257,3559° / 257,3559° | 5 / 495, 496, 700, 506, 507 (sin contar la 488, donde está); `next_stop` 495, la segunda (design §3) ✓ |
+| (antigua) en ruta | 3403 m | 1242,0 m | +2161 m | **FALLA** | | |
+| (antigua) sin empezar | 4251 m | 1835,3 m | +2416 m | **FALLA** | | |
+
+La posición está sobre el trazado (0,0 m) y la parada 508 queda a 4,4 m de él. Coincide con las
+cifras del progreso.
+
+### Legitimidad de los tres cambios de escenario (horario de la copia, `gtfs_stop_time`)
+- **Otro viaje en ruta (`_122` → `_023`).** El viaje `_023` pasa por 700 a las 08:38:24, por 506
+  a las 08:40:08 y por 508 a las 08:43:39. Con el SAE a "5 min" a las 08:40, el retraso es de 81 s
+  y el instante desplazado, 08:38:39. Cae entre 700 y 506, así que la próxima es la 506 y quedan 2
+  paradas (`position_estimation.AC-01/02/08`). El `_122` anterior venía de una grabación del
+  lunes por la tarde con las fechas movidas a mano. Ahora es la respuesta real del miércoles a las
+  08:40.
+- **`not-started` a las 04:40Z (05:40 en València).** El `_001` sale a las 05:29 y pasa por la 508
+  a las 05:36:40, así que ya ha pasado. El `_002` sale de la 488 a las 05:50 y llega a la 508 a las
+  05:57:40, lo que da `arrival_at` 04:57:40Z, `CLOCK_TIME` y `SCHEDULED` (no hay grabación:
+  `arrivals.fallback reason=no_recording`, sin identificadores). Es un `NOT_STARTED` legítimo
+  (`position_estimation.AC-04/10`). La explicación de por qué no puede ser a las 08:40 (frecuencia
+  de unos 7 min frente a un recorrido de unos 7 min) cuadra con el horario. "05:57" trunca los
+  segundos, igual que `formatClockTime` (caso `07:09:30Z → 09:09` de `format.test.ts`).
+- **Rumbo con todos los decimales.** Es el valor de la API (coincide con el segmento al
+  `1e-4`). Las aserciones `rotate(100.94859961754514deg)` son exactas, igual que antes.
+
+### ¿Se han debilitado los tests?
+- Los cambios en los tests sustituyen literales uno por uno. No se quita ninguna aserción ni se
+  relaja ninguna expresión: `/^El autobús está a 844 m/` sustituye a `/^El autobús está a 3,4 km/`.
+- Lo comprobé en una copia del frontend (`git archive HEAD`, `node_modules` enlazado), con las tres
+  `position-*.json` de la base. `vitest run src/features/passenger/map` da **10 failed | 95
+  passed**: `BusMap.test.tsx:94`, `MapPage.test.tsx:144,172,333,352,385` y
+  `summary.test.ts:33,39,97,151`. Con HEAD da 105/105.
+- El formato en km (`1,2 km`) ya no aparece en ningún test de la feature, pero `formatDistance`
+  lo sigue cubriendo en `src/shared/i18n/__tests__/format.test.ts:39-51` (ver N-10).
+
+## Hallazgos
+
+### Bloqueantes
+Ninguno.
+
+### No bloqueantes
+- **N-10 (nuevo) — Ningún test de la feature ejerce el resumen con distancias de 1 km o más.**
+  `summary.test.ts:26` cambia el valor por defecto de `enRoute` de 3403 a 844, y el único caso
+  explícito usa 850 (`:53`). AC-04 no fija el formato de `{distancia}`, y `formatDistance` está
+  cubierto en `format.test.ts:39-51`, así que el riesgo es bajo. *Propuesta (opcional):* añadir a
+  `summary.test.ts` un caso `enRoute(2, 1234)` que espere "1,2 km" (es/ca).
+- **N-08 — Problema de spec menor (deuda documental), sigue abierto.** `design.md` §3 v1.3 sigue
+  diciendo `badge: 'estimated' | 'scheduled'`, mientras que `summary.ts` devuelve `null` sin
+  posición (AC-05 v1.2). No requiere CP-3. Se puede recoger en la próxima revisión de la spec.
+- **N-09 — `docs/design.md` §5.7, punto 3, sigue abierto.** No dice que la insignia falta sin
+  posición. Lo decide la persona (CP-6).
+- **N-02, N-04, N-06 y N-07 siguen abiertos, sin cambios** (ver los ciclos anteriores más abajo).
+  Son la elisión valenciana ante i/u semiconsonánticas, las costuras de las teselas simuladas, la
+  preferencia de movimiento reducido leída al montar y la restauración de `panBy` sin test.
+- *(Observación, sin acción)* Para repetir la regeneración hacen falta la base local completa,
+  que no está versionada, y el script, que está en `progress/impl_passenger_map_view.md` y no como
+  fichero del repositorio. Está documentado (`feed_version` 2 "23-10-2026", reloj, grabaciones y
+  petición) y `src/test/fixtures/api/index.ts` remite al progreso. Si se reimporta otro feed, los
+  valores cambiarán, como advierte el propio progreso.
+
+### Alcance
+`git diff --stat origin/feat/driver_ui-v1.2...HEAD` toca solo las tres `position-*.json` (×2), los
+comentarios de origen de `src/test/fixtures/api/index.ts` y `e2e/fixtures/index.ts`, los textos
+esperados de `summary.test.ts`, `MapPage.test.tsx`, `PositionSummary.test.tsx`, `BusMap.test.tsx`
+y `e2e/map-view.spec.ts`, y los ficheros de orquestación y progreso (`feature_list.json`,
+`progress/*`). **No cambia código de producción** (nada fuera de `__tests__`, `test/fixtures` y
+`e2e`), ni el backend, `docs/` o `specs/`. No hay claves i18n nuevas ni variables de entorno. Los
+commits siguen Conventional Commits con el ámbito de la feature y citan la tarea
+(`test(passenger_map_view): … (T-09)`). Privacidad: sin cambios en registros. El aviso
+`arrivals.fallback` del generador solo lleva `stop_id`.
+
+---
+
+
 ## v1.2 · Ciclo 1
 Ciclo: 1 (v1.2) · Fecha: 2026-11-04 · Agente: reviewer
 Spec: `specs/passenger_map_view/` v1.2 (APPROVED, PR #33) · Rama: `feat/passenger_map_view-v1.2` (HEAD eb371e8; código en 4fef5c7) · Base: `origin/develop` (tras `git fetch`)

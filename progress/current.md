@@ -4,20 +4,22 @@
 
 **Fecha:** 2026-11-11
 **Fase:** Ajustes del bloque 4 y bloque 5 (`deployment_rpi`)
-**Feature en curso:** `passenger_map_view` v1.3 — `in_review` (T-09, rama `feat/passenger_map_view-v1.3`, apilada sobre la PR #64)
+**Feature en curso:** `deployment_rpi` v1.0 — siguiente. `passenger_map_view` v1.3 `done` (rama `feat/passenger_map_view-v1.3`)
 
 ## Último paso
-`passenger_map_view` T-09: fixtures de posición regeneradas desde la API (en ruta 844 m, sin empezar 1839 m); verify --e2e en verde.
+`passenger_map_view` v1.3 (T-09): revisión ciclo 1 APPROVED; rama subida y PR contra `develop` (apilada sobre la #64).
 
 ## Siguiente paso
 Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
-1. `passenger_map_view` T-09.
 3. `deployment_rpi` (sin exploración). `verify-deploy` con Docker en el Mac; `ship.sh`, `gtfs-update.sh` y `smoke.sh`
    **nunca** contra la Raspberry (los prueba la persona en el CP-6).
 4. `nfr_validation`: no empezar; su spec la prepara la persona.
-Hechas: `driver_codes_cli` T-05 (#61, fusionada), `driver_session` T-10 (#63), `driver_ui` T-08 (apilada sobre la #63).
+Hechas: `driver_codes_cli` T-05 (#61, fusionada), `driver_session` T-10 (#63), `driver_ui` T-08 (#64, sobre la #63), `passenger_map_view` T-09 (sobre la #64).
 
 ## Pendiente para specs futuras
+- **passenger_map_view v1.3:** N-10 ningún test de la feature comprueba el resumen con ≥ 1 km (formato cubierto en
+  `format.test.ts`) → caso `enRoute(2, 1234)` opcional. Regenerar fixtures exige la BD local y el script del fichero de
+  progreso (no versionado). Abiertos N-02, N-04, N-06…N-09.
 - **driver_ui v1.2 (persona):** P-06 con `gps = WAITING` y mientras se abre el primer socket, la cabecera dice en rojo
   "GPS desactualizado" y "Sin conexión" sin fallo (y contradice a la caja de estado): A texto neutro en AC-08; B dejar
   escrita la lectura binaria. P-07 "2 más tiempo" y "2 visión" sin plural (design §3). N-12 errores de `/driver/shift` y
@@ -53,7 +55,7 @@ Hechas: `driver_codes_cli` T-05 (#61, fusionada), `driver_session` T-10 (#63), `
   con semillas 1–20 a σ 10 m, 5/20 correlado (hasta 422 m por detrás, giros en U, se recupera solo) y 1/20
   independiente; con paradas simuladas, 12/20 y 19/20. Limitación aceptada por el reviewer; volver a medir con
   `driver_gps_simulator`. N-06 retirar "(la que fijó el progreso)" del design. Abiertos N-01, N-03, N-04, N-07…N-09.
-- **position_estimation v1.4:** N-01 fixtures del frontend con distancias infladas (3403 m frente a ~1242 m
+- **position_estimation v1.4:** ~~N-01 fixtures del frontend con distancias infladas~~ (resuelto en `passenger_map_view` T-09) (3403 m frente a ~1242 m
   reales; las capturas `map-*` muestran "3,4 km") → regenerar antes del CP-6 del bloque 4. N-02 texto residual
   en requirements (`:13-14`, AC-05). N-03 aclarar AC-06 (la 1282 difiere 339 m de la proyección). N-04/N-05
   huecos de test (horarios parciales; valores iguales del feed, D-25). N-06 `_stop_distances` es privada:
