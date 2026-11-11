@@ -1,6 +1,6 @@
 # Mapa del autobús — tasks
 
-> Feature: `passenger_map_view` · Versión: 1.2 · Estado: APPROVED
+> Feature: `passenger_map_view` · Versión: 1.3 · Estado: APPROVED
 > Requisitos: RF-13, RNF-01, RNF-03, RNF-05, RNF-14 · Casos de uso: CU-02 · Depende de: passenger_stop_view, position_estimation
 
 ## Exploración
@@ -57,6 +57,11 @@
   - AC: passenger_map_view.AC-05
   - Ficheros: `src/features/passenger/map/{summary.ts,PositionSummary.tsx}`, tests, `e2e/map-view.spec.ts`
   - Verificación: `cd frontend && npm run test -- PositionSummary summary && npm run e2e`
+
+- [ ] **T-09** — (v1.3) Regenerar las fixtures de posición del frontend (unitarias y e2e) con la
+  API actual (`distance_to_stop_m` en metros reales) y actualizar los textos esperados.
+  - Ficheros: `src/test/fixtures/api/position*.json`, `e2e/fixtures/position*.json`, tests afectados
+  - Verificación: `cd frontend && npm run test && npm run e2e`
 
 - [ ] **T-07** — Verificación completa.
   - Verificación: `./init.sh verify --e2e`

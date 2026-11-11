@@ -1,6 +1,6 @@
 # Turno del conductor — design
 
-> Feature: `driver_session` · Versión: 1.3 · Estado: APPROVED
+> Feature: `driver_session` · Versión: 1.4 · Estado: APPROVED
 > Requisitos: RF-24, RF-25, RF-26, RF-30, RNF-06, RNF-07, RNF-13 · Casos de uso: CU-08, CU-09 (posición), CU-10, CU-13 (revocación) · Depende de: gtfs_import, driver_codes_cli
 
 ## 1. Resumen

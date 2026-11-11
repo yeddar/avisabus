@@ -1,6 +1,6 @@
 # Interfaz del conductor — requirements
 
-> Feature: `driver_ui` · Versión: 1.1 · Estado: APPROVED
+> Feature: `driver_ui` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-24, RF-25, RF-26, RF-27, RF-28, RF-29, RF-30, RF-31, RNF-03, RNF-05 · Casos de uso: CU-08, CU-09, CU-10 · Depende de: frontend_i18n, driver_demand
 
 ## Contexto
@@ -41,7 +41,9 @@ posición sale del GPS de la tablet (`watchPosition`) o del simulador (`driver_g
   (lista de `GET /driver/departures` con hora, primera parada y destino; las `taken` desactivadas
   con "Ya en servicio"), con "Volver" en cada paso; al elegir la salida DEBERÁ llamar a
   `PUT …/service` y mostrar la vista de demanda; CON `409`, DEBERÁ refrescar la lista y anunciar
-  "Esa salida ya la lleva otro conductor".
+  "Esa salida ya la lleva otro conductor". (v1.2) SIN salidas en la ventana, DEBERÁ mostrar "No
+  hay salidas de esta línea y sentido en la próxima hora" con "Volver" y "Actualizar"; CON error
+  de red o `5xx` en cualquier paso, "No se han podido cargar los datos" con "Reintentar".
   *Verificación:* unit
 - **driver_ui.AC-03** — SIN token válido (ausente o `401` en cualquier llamada), las rutas del
   conductor DEBERÁN volver a `/driver`.
@@ -66,7 +68,9 @@ posición sale del GPS de la tablet (`watchPosition`) o del simulador (`driver_g
 - **driver_ui.AC-05** — LA VISTA DEBERÁ mostrar la línea y el destino de la salida y, con la
   vista recibida, las 3 primeras próximas paradas en tarjetas grandes y las 2 siguientes en
   pequeño, cada una con nombre, distancia, el número de personas esperando a este autobús en
-  grande y las necesidades con icono y texto ("1 rampa", "1 asiento", "1 más tiempo", "1 visión");
+  grande y las necesidades con icono y texto ("1 rampa", "1 asiento", "1 más tiempo", "1 visión";
+  v1.2: todos los textos con número usan el plural correcto en los dos idiomas, p. ej. "Espera 1
+  persona" / "Esperan 2 personas");
   SI no hay nadie esperando en ninguna, ENTONCES "Sin solicitudes en las próximas paradas"
   (CU-09 2b).
   *Verificación:* unit
@@ -82,7 +86,9 @@ posición sale del GPS de la tablet (`watchPosition`) o del simulador (`driver_g
   vista tras entrar o reconectar marca sus solicitudes como vistas sin tono. EL BOTÓN "Silenciar
   tono" / "Activar tono" DEBERÁ recordar la elección en el dispositivo (`avisabus.driverMute`).
   *Verificación:* unit (`AudioContext` simulado)
-- **driver_ui.AC-08** — LA VISTA DEBERÁ indicar con texto y icono: `gps = WAITING` "Esperando
+- **driver_ui.AC-08** — (v1.2) EL ESTADO de la cabecera (GPS y conexión) DEBERÁ llevar texto
+  corto visible además del icono ("GPS correcto", "GPS desactualizado", "Conectado", "Sin
+  conexión"). LA VISTA DEBERÁ indicar con texto y icono: `gps = WAITING` "Esperando
   ubicación…", `STALE` "Posición desactualizada" (manteniendo la última lista, CU-09 1a),
   `off_route` "No estás en el recorrido de esta línea" (CU-08 4b), sin conexión con el servidor
   "Sin conexión, reconectando…" (CU-09 4a) y `finished` "Fin del recorrido" con el botón "Elegir
@@ -137,3 +143,4 @@ posición sale del GPS de la tablet (`watchPosition`) o del simulador (`driver_g
 |---|---|---|---|
 | 1.0 | 2026-11-09 | Versión inicial aprobada (PR #46). | CP-1 del bloque 4. Aprobada por la persona. |
 | 1.1 | 2026-11-11 | AC-04: reenvío cada 5 s como señal de vida y `getCurrentPosition` si `watchPosition` calla 10 s; AC-08/AC-09: elegir la siguiente salida no corta posición, `wakeLock` ni socket; AC-10: foco a "Finalizar turno" al pulsar "Seguir". | CP-3 de `driver_ui` (P-01, decisión de la persona) y B-01/B-02 de la revisión del ciclo 1. Aprobada por la persona (PR #55). |
+| 1.2 | 2026-11-11 | AC-02: textos sin salidas y de error; AC-05/AC-06: plurales correctos; AC-08: estado de la cabecera con texto visible. T-08. | P-02, P-03 y P-04 de la revisión de `driver_ui` (cierre del bloque 4). Pendiente de aprobación. |

@@ -1,6 +1,6 @@
 # Interfaz del conductor — tasks
 
-> Feature: `driver_ui` · Versión: 1.1 · Estado: APPROVED
+> Feature: `driver_ui` · Versión: 1.2 · Estado: APPROVED
 > Requisitos: RF-24, RF-25, RF-26, RF-27, RF-28, RF-29, RF-30, RF-31, RNF-03, RNF-05 · Casos de uso: CU-08, CU-09, CU-10 · Depende de: frontend_i18n, driver_demand
 
 ## Exploración
@@ -39,6 +39,12 @@ No necesaria.
   - AC: driver_ui.AC-11, AC-12
   - Ficheros: `e2e/driver.spec.ts`, `e2e/fixtures/driver/*`
   - Verificación: `cd frontend && npm run e2e`
+
+- [ ] **T-08** — (v1.2) Textos sin salidas y de error en `ServicePicker`, plurales con `count` en
+  todos los textos con número (es y ca), texto visible en el estado de la cabecera.
+  - AC: driver_ui.AC-02, AC-05, AC-06, AC-08
+  - Ficheros: `src/features/driver/{ServicePicker,DemandView,StopCard,CapacityBanner,DriverStatus}.tsx`, `src/locales/**`, tests
+  - Verificación: `cd frontend && npm run test -- driver`
 
 - [ ] **T-07** — Verificación completa.
   - Verificación: `./init.sh verify --e2e`

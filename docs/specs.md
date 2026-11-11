@@ -125,7 +125,7 @@ siempre "Verificación completa" (`./init.sh verify`). Cada AC aparece en al men
 | 18 | `driver_demand` | 4 | [specs/driver_demand](../specs/driver_demand/) |
 | 19 | `driver_ui` | 4 | [specs/driver_ui](../specs/driver_ui/) |
 | 20 | `driver_gps_simulator` | 4 | [specs/driver_gps_simulator](../specs/driver_gps_simulator/) |
-| 21 | `deployment_rpi` | 5 | pendiente |
+| 21 | `deployment_rpi` | 5 | [specs/deployment_rpi](../specs/deployment_rpi/) |
 | 22 | `nfr_validation` | 5 | pendiente |
 
 El estado vivo de cada feature está en `feature_list.json` (`./init.sh status`).

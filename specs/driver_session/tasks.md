@@ -1,6 +1,6 @@
 # Turno del conductor — tasks
 
-> Feature: `driver_session` · Versión: 1.3 · Estado: APPROVED
+> Feature: `driver_session` · Versión: 1.4 · Estado: APPROVED
 > Requisitos: RF-24, RF-25, RF-26, RF-30, RNF-06, RNF-07, RNF-13 · Casos de uso: CU-08, CU-09 (posición), CU-10, CU-13 (revocación) · Depende de: gtfs_import, driver_codes_cli
 
 ## Exploración
@@ -57,6 +57,12 @@ No necesaria.
   - AC: driver_session.AC-08, AC-11, AC-13
   - Ficheros: `domain/models/driver.py`, `application/{driver_sessions,reap_driver_sessions}.py`, `adapters/outbound/persistence/sqlite_driver_sessions.py`, `tests/unit/test_driver_sessions.py`, `tests/unit/test_reap_driver_sessions.py`, `tests/integration/test_driver_api.py`
   - Verificación: `cd backend && uv run pytest -k "driver_sessions or reap_driver or driver_api"`
+
+- [ ] **T-10** — (v1.4) Test con trazados reales y ruido: semillas 1–20, criterio por percentil y
+  máximos de AC-09; informe por semilla.
+  - AC: driver_session.AC-09
+  - Ficheros: `tests/integration/test_upcoming_stops_real_shapes.py`
+  - Verificación: `cd backend && uv run pytest tests/integration/test_upcoming_stops_real_shapes.py -m slow`
 
 - [ ] **T-07** — Regenerar el contrato del frontend (`npm run gen:api`) y verificación completa.
   - Verificación: `./init.sh verify`

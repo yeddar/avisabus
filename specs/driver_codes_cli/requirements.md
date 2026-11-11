@@ -1,6 +1,6 @@
 # Códigos de conductor — requirements
 
-> Feature: `driver_codes_cli` · Versión: 1.0 · Estado: APPROVED
+> Feature: `driver_codes_cli` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-24, RF-33, RNF-06, RNF-07 · Casos de uso: CU-13 · Depende de: project_scaffold
 
 ## Contexto
@@ -40,7 +40,9 @@ Los códigos no se asocian a personas: llevan una etiqueta libre (p. ej. "Tablet
   *Verificación:* integration
 - **driver_codes_cli.AC-03** — EL *HASH* DEBERÁ ser HMAC-SHA256 del código con una clave derivada
   de `AVISABUS_STOP_TOKEN_SECRET` con separación de dominio (distinta de la del dispositivo);
-  EL CÓDIGO EN CLARO NO DEBERÁ guardarse ni aparecer en ningún log.
+  EL CÓDIGO EN CLARO NO DEBERÁ guardarse ni aparecer en ningún log ni (v1.1) en las trazas de
+  error de la CLI: la aplicación Typer fija `pretty_exceptions_show_locals=False` de forma
+  explícita, con un test que lo comprueba.
   *Verificación:* unit + integration (inspección de la tabla y de los logs capturados)
 - **driver_codes_cli.AC-04** — CUANDO se ejecuta `avisabus driver-codes list`, EL SISTEMA DEBERÁ
   mostrar una tabla con `code_id`, etiqueta, fecha de creación, estado (`activo`/`revocado`) y si
@@ -71,3 +73,4 @@ Los códigos no se asocian a personas: llevan una etiqueta libre (p. ej. "Tablet
 | Versión | Fecha | Cambio | Motivo |
 |---|---|---|---|
 | 1.0 | 2026-11-09 | Versión inicial aprobada (PR #46). | CP-1 del bloque 4. Aprobada por la persona. |
+| 1.1 | 2026-11-11 | AC-03: trazas de la CLI sin variables locales, fijado de forma explícita (no por el valor por defecto de Typer). T-05. | N-07 de la revisión de `driver_codes_cli`. Pendiente de aprobación. |
