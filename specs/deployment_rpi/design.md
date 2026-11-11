@@ -1,6 +1,6 @@
 # Despliegue en Raspberry Pi — design
 
-> Feature: `deployment_rpi` · Versión: 1.0 · Estado: DRAFT
+> Feature: `deployment_rpi` · Versión: 1.0 · Estado: APPROVED
 > Requisitos: RNF-06, RNF-07, RNF-11, RNF-13, RNF-14 · Casos de uso: — (operación) · Depende de: project_scaffold
 
 ## 1. Resumen

@@ -552,4 +552,4 @@
 - Pendientes del bloque 4 resueltos en spec: `driver_session` 1.4 (criterio por percentil, giros
   en U), `driver_ui` 1.2 (textos, plurales, estado), `driver_codes_cli` 1.1 (`show_locals`),
   `passenger_map_view` 1.3 (fixtures), CU-08 (permiso antes de la salida), IP en logs →
-  `deployment_rpi` AC-09. Pendiente de aprobación.
+  `deployment_rpi` AC-09. Aprobados por la persona en la PR #60.

@@ -1,6 +1,6 @@
 # Despliegue en Raspberry Pi — requirements
 
-> Feature: `deployment_rpi` · Versión: 1.0 · Estado: DRAFT
+> Feature: `deployment_rpi` · Versión: 1.0 · Estado: APPROVED
 > Requisitos: RNF-06, RNF-07, RNF-11, RNF-13, RNF-14 · Casos de uso: — (operación) · Depende de: project_scaffold
 
 ## Contexto
@@ -165,3 +165,9 @@ feature se podrá probar con una tablet real (pendiente del CP-6 del bloque 4).
 | RNF-13 Observabilidad | AC-09, AC-10, AC-11 |
 | RNF-14 Licencias y terceros (OSM, EMT) | AC-06, AC-07, AC-15 |
 | Operación del GTFS (caducidad) | AC-10, AC-11, AC-12 |
+
+## Historial
+
+| Versión | Fecha | Cambio | Motivo |
+|---|---|---|---|
+| 1.0 | 2026-11-11 | Versión inicial aprobada (PR #60). | CP-1 de `deployment_rpi`. Aprobada por la persona. |

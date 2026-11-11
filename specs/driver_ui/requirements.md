@@ -143,4 +143,4 @@ posición sale del GPS de la tablet (`watchPosition`) o del simulador (`driver_g
 |---|---|---|---|
 | 1.0 | 2026-11-09 | Versión inicial aprobada (PR #46). | CP-1 del bloque 4. Aprobada por la persona. |
 | 1.1 | 2026-11-11 | AC-04: reenvío cada 5 s como señal de vida y `getCurrentPosition` si `watchPosition` calla 10 s; AC-08/AC-09: elegir la siguiente salida no corta posición, `wakeLock` ni socket; AC-10: foco a "Finalizar turno" al pulsar "Seguir". | CP-3 de `driver_ui` (P-01, decisión de la persona) y B-01/B-02 de la revisión del ciclo 1. Aprobada por la persona (PR #55). |
-| 1.2 | 2026-11-11 | AC-02: textos sin salidas y de error; AC-05/AC-06: plurales correctos; AC-08: estado de la cabecera con texto visible. T-08. | P-02, P-03 y P-04 de la revisión de `driver_ui` (cierre del bloque 4). Pendiente de aprobación. |
+| 1.2 | 2026-11-11 | AC-02: textos sin salidas y de error; AC-05/AC-06: plurales correctos; AC-08: estado de la cabecera con texto visible. T-08. | P-02, P-03 y P-04 de la revisión de `driver_ui` (cierre del bloque 4). Aprobada por la persona (PR #60). |

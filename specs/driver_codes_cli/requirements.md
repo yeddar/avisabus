@@ -73,4 +73,4 @@ Los códigos no se asocian a personas: llevan una etiqueta libre (p. ej. "Tablet
 | Versión | Fecha | Cambio | Motivo |
 |---|---|---|---|
 | 1.0 | 2026-11-09 | Versión inicial aprobada (PR #46). | CP-1 del bloque 4. Aprobada por la persona. |
-| 1.1 | 2026-11-11 | AC-03: trazas de la CLI sin variables locales, fijado de forma explícita (no por el valor por defecto de Typer). T-05. | N-07 de la revisión de `driver_codes_cli`. Pendiente de aprobación. |
+| 1.1 | 2026-11-11 | AC-03: trazas de la CLI sin variables locales, fijado de forma explícita (no por el valor por defecto de Typer). T-05. | N-07 de la revisión de `driver_codes_cli`. Aprobada por la persona (PR #60). |
