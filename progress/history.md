@@ -571,3 +571,6 @@
 ## 2026-11-11 · driver_session v1.4 · implementing → spec_blocked (CP-3 P-04, T-10)
 - Test de 20 semillas: correlado cumple; independiente, semilla 16, 157,1 m por delante en una rotonda de la línea 25
   que el trazado recorre dos veces (vuelta de 139,3 m < ventana de 150 m).
+
+## 2026-11-11 · CP-3 driver_session resuelto (PR #62) · driver_session · spec_blocked → implementing (v1.5, T-10)
+- AC-09: máximo por delante de 200 m en el test real. `feat/driver_session-v1.4` actualizada con `develop`.
