@@ -4,10 +4,10 @@
 
 **Fecha:** 2026-11-11
 **Fase:** Ajustes del bloque 4 y bloque 5 (`deployment_rpi`)
-**Feature en curso:** `driver_session` v1.5 — `implementing` (T-10, rama `feat/driver_session-v1.4`, actualizada con `develop`)
+**Feature en curso:** `driver_session` v1.5 — `in_review` (T-10, rama `feat/driver_session-v1.4`)
 
 ## Último paso
-CP-3 P-04 resuelto en la PR #62 (`driver_session` 1.5: 200 m por delante en el test real). `driver_ui` T-08 en `in_review` (rama `feat/driver_ui-v1.2`).
+`driver_session` T-10 con 200 m por delante (v1.5): 3 tests reales pasan; `CI=1 ./init.sh verify --e2e` en verde.
 
 ## Siguiente paso
 Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
