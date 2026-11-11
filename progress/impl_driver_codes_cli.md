@@ -1,5 +1,75 @@
 # Implementación: driver_codes_cli
-Spec: specs/driver_codes_cli/ (v1.0, APPROVED) · Ciclo de revisión: 2 (corrige F-01 de `progress/review_driver_codes_cli.md`) · Agente: implementer · Fecha: 2026-11-09
+Spec: specs/driver_codes_cli/ (v1.1, APPROVED) · Ciclo de revisión: 0 de la v1.1 (la v1.0 terminó en el ciclo 2) · Agente: implementer · Fecha: 2026-11-11
+
+## v1.1 (ciclo de revisión 0 de la v1.1)
+
+Spec: specs/driver_codes_cli/ v1.1 (APPROVED, PR #60) · Rama: `feat/driver_codes_cli-v1.1` · Agente: implementer · Fecha: 2026-11-11
+
+### Tareas
+- [x] T-05 `pretty_exceptions_show_locals=False` explícito en `cli/main.py` y tests que lo fijan (AC-03) (commit 10eb266)
+- [x] T-04 Verificación completa: `CI=1 ./init.sh verify --e2e` en verde (commit de este fichero)
+
+### Tests nuevos (`backend/tests/integration/test_cli_driver_codes.py`, citan `driver_codes_cli.AC-03`)
+- `test_the_error_trace_does_not_show_the_code_kept_in_a_local_variable`: provoca un
+  `OperationalError` real (se borra la tabla tras componer, como en F-01) con el código
+  `48210937` en la variable local `plain_code` de `CreateDriverCode.execute`. Antes comprueba que
+  esa variable local existe en la traza, para que el test no pase sin ejercitar nada. Después
+  renderiza la traza con el *hook* que instala Typer y comprueba que no aparecen el código (junto
+  o agrupado), su *hash* ni la etiqueta.
+- `test_the_cli_sets_show_locals_off_explicitly`: el `False` está escrito en `cli/main.py` y
+  `app.pretty_exceptions_show_locals is False`.
+
+### Comprobación TDD y mutantes
+- En rojo antes del cambio: `test_the_cli_sets_show_locals_off_explicitly` fallaba (no había
+  ajuste explícito). El test de comportamiento pasaba, porque el valor por defecto de Typer 0.27.3
+  ya es `False`: es lo que la v1.1 pide dejar de dar por supuesto.
+- Mutante `pretty_exceptions_show_locals=True` en `cli/main.py`: falla el test de comportamiento.
+  La traza muestra `plain_code = '48210937'`. Mutante sin el argumento: falla el test del ajuste
+  explícito. Ambos revertidos.
+
+### Decisiones locales (v1.1)
+- **Invocar `app(...)` en lugar de `CliRunner` en el test de la traza:** `CliRunner.invoke` llama
+  al comando de Click sin pasar por `Typer.__call__`, que es quien adjunta a la excepción la
+  configuración `pretty_exceptions_*`. Sin ella, el *hook* de Typer cae a la traza estándar de
+  Python, que nunca muestra variables locales, y el mutante `True` sobrevivía (lo comprobé con
+  una primera versión del test). El test llama a `app([...], prog_name="avisabus")` como el binario
+  real y restaura con `monkeypatch` el `sys.excepthook` que Typer instala. También anula
+  `TYPER_STANDARD_TRACEBACK` y `_TYPER_STANDARD_TRACEBACK`.
+- **Test que lee el fuente de `cli/main.py`:** el comportamiento no permite distinguir un `False`
+  explícito del valor por defecto, y AC-03 v1.1 pide que sea explícito "con un test que lo
+  comprueba". Ese test es el único modo de fijarlo. Es un test de configuración, no de
+  comportamiento; el de la traza cubre el comportamiento.
+- **Dependencia de `rich`:** el test de la traza ejercita la traza de `rich`, que se usa porque
+  `rich` está instalado (dependencia de Typer). Sin `rich`, Typer usa la traza estándar, que no
+  muestra variables locales, y el test seguiría pasando.
+
+### Bloqueos (v1.1)
+
+Ninguno.
+
+### Verificación (v1.1)
+
+`CI=1 ./init.sh verify --e2e` (2026-11-11, tras el commit 10eb266, con el puerto 4173 libre):
+**exit 0, todo en verde**.
+
+| Paso | Resultado |
+|---|---|
+| backend: format / lint | OK |
+| backend: types (`mypy`) | OK — no issues found in 150 source files |
+| backend: architecture (`lint-imports`) | OK — 2 contracts kept, 0 broken |
+| backend: tests | OK — 1915 passed, 12 deselected; cobertura `domain` + `application` 99,66 % |
+| frontend: format / lint / types | OK |
+| frontend: tests | OK — 660 passed, 2 skipped |
+| frontend: build + bundle | OK — 5 passed |
+| frontend: e2e + a11y | OK — 132 passed |
+| harness: `feature_list.json` y trazabilidad AC→test | OK |
+
+Comando de la tarea: `cd backend && uv run pytest tests/integration/test_cli_driver_codes.py
+--no-cov` → 36 passed.
+
+---
+
+Histórico: implementación de la v1.0.
 
 ## Tareas
 - [x] T-01 `DriverCode`, puertos, `HmacDriverCodeHasher`, `SecretsCodeGenerator` y casos de uso (AC-01, AC-03, AC-06) (commit 6eaec64)
