@@ -577,3 +577,7 @@
 
 ## 2026-11-11 · driver_session v1.5 · in_review → changes_requested → implementing
 - B-01: el test de T-10 ya no exige `no_progress == 0` (sin autorización de la spec); mutante `firstoff15` sobrevive.
+
+## 2026-11-11 · driver_session v1.5 · implementing → in_review → done
+- T-10: 20 semillas, percentil ≥ 99,5 % a < 150 m, máx. 200 m delante y 500 m detrás, `no_progress == 0`. Ciclo 2
+  APPROVED (`firstoff15` detectado). Peor caso: 157,1 m delante en la rotonda de la línea 25 (aceptado en la v1.5).
