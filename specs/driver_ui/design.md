@@ -1,6 +1,6 @@
 # Interfaz del conductor — design
 
-> Feature: `driver_ui` · Versión: 1.0 · Estado: APPROVED
+> Feature: `driver_ui` · Versión: 1.1 · Estado: APPROVED
 > Requisitos: RF-24, RF-25, RF-26, RF-27, RF-28, RF-29, RF-30, RF-31, RNF-03, RNF-05 · Casos de uso: CU-08, CU-09, CU-10 · Depende de: frontend_i18n, driver_demand
 
 ## 1. Componentes
@@ -43,6 +43,9 @@ export function diffAlerts(seen: ReadonlySet<string>, view: DriverView, initial:
 // features/driver/useDriverPosition.ts
 export function useDriverPosition(enabled: boolean): { permission: 'prompt' | 'granted' | 'denied'; retry(): void };
 // envía { lat, lon, accuracy_m: coords.accuracy, recorded_at: new Date(position.timestamp).toISOString() }
+// v1.1: cada 5 s la última posición, aunque sea la misma (señal de vida); si watchPosition no ha
+// entregado nada en 10 s, getCurrentPosition({ enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }).
+// El hook vive en ShiftPage (no en DemandView), de modo que sigue activo en ServicePicker.
 ```
 
 ## 3. Datos (claves i18n, extracto)
