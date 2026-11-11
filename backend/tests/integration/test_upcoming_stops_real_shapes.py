@@ -10,8 +10,10 @@ errors are measured in real metres (the `shape_dist_traveled` of EMT's feed is n
 
 AC-09 v1.4 and v1.5, for each noise model over the positions of the 20 seeds: at least 99.5 %
 with the progress less than 150 m from the real one, and none more than 200 m ahead (v1.5) nor
-more than 500 m behind (v1.4). Accepted: the U-turn lag (v1.4) and, on a shape that goes twice
-round a roundabout (line 25, laps of 139 m), a lap ahead with the noise (v1.5).
+more than 500 m behind (v1.4). Every position has progress: with σ = 10 m none is more than
+150 m from the shape, the only case in which AC-09 leaves the bus without progress. Accepted:
+the U-turn lag (v1.4) and, on a shape that goes twice round a roundabout (line 25, laps of
+139 m), a lap ahead with the noise (v1.5).
 The result of every seed is printed even when the test passes, and is part of the failure
 message.
 """
@@ -249,6 +251,7 @@ async def test_progress_with_seeds_1_to_20_meets_the_percentile_and_the_maxima(
     near = sum(figures.near for figures in per_seed)
     too_far_ahead = sum(figures.too_far_ahead for figures in per_seed)
     too_far_behind = sum(figures.too_far_behind for figures in per_seed)
+    no_progress = sum(figures.no_progress for figures in per_seed)
     report = _report(
         capsys,
         [figures.line(noise) for figures in per_seed]
@@ -257,11 +260,14 @@ async def test_progress_with_seeds_1_to_20_meets_the_percentile_and_the_maxima(
             f"({100 * near / positions:.3f} %, min {100 * MIN_NEAR_SHARE:.1f} %) "
             f"max_ahead={max(f.max_ahead_m for f in per_seed):.1f} m "
             f"max_behind={max(f.max_behind_m for f in per_seed):.1f} m "
-            f"ahead>{MAX_AHEAD_M:.0f}={too_far_ahead} behind>{MAX_BEHIND_M:.0f}={too_far_behind}"
+            f"ahead>{MAX_AHEAD_M:.0f}={too_far_ahead} behind>{MAX_BEHIND_M:.0f}={too_far_behind} "
+            f"no_progress={no_progress}"
         ],
     )
 
     assert all(figures.shapes == REAL_SHAPES for figures in per_seed), report
+    # AC-09: only a position more than 150 m from the shape may leave the bus without progress.
+    assert all(figures.no_progress == 0 for figures in per_seed), report
     assert near >= MIN_NEAR_SHARE * positions, report
     assert too_far_ahead == 0, report
     assert too_far_behind == 0, report
@@ -277,4 +283,5 @@ async def test_without_noise_the_progress_follows_the_bus(
     report = _report(capsys, [figures.line(noise)])
 
     assert figures.shapes == REAL_SHAPES, report
+    assert figures.no_progress == 0, report
     assert figures.near == figures.positions, report
