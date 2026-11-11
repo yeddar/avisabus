@@ -4,10 +4,10 @@
 
 **Fecha:** 2026-11-11
 **Fase:** Ajustes del bloque 4 y bloque 5 (`deployment_rpi`)
-**Feature en curso:** `driver_ui` v1.2 — `implementing`, ciclo de revisión 1 (T-08, rama `feat/driver_ui-v1.2`, apilada sobre la PR #63)
+**Feature en curso:** `driver_ui` v1.2 — `in_review`, ciclo de revisión 2 (T-08, rama `feat/driver_ui-v1.2`, apilada sobre la PR #63)
 
 ## Último paso
-`driver_ui` v1.2: revisión ciclo 1 CHANGES_REQUESTED (B-01: test intermitente en `ShiftPage.test.tsx:238`, mismo patrón en `:168` y `:224`; viene de la v1.1). T-08 cumple la v1.2.
+`driver_ui` B-01 corregido (`findSocket()` en `ShiftPage.test.tsx`, 4 tests; carrera forzada detectada; 30/30 en verde); verify --e2e en verde.
 
 ## Siguiente paso
 Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
