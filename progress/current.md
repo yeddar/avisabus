@@ -4,14 +4,14 @@
 
 **Fecha:** 2026-11-11
 **Fase:** Implementación — Bloque 4 (conductor)
-**Feature en curso:** `driver_gps_simulator` — siguiente. `driver_ui` v1.1 `done` (rama `feat/driver_ui`, apilada sobre `feat/driver_session`)
+**Feature en curso:** `driver_gps_simulator` v1.0 — `implementing` (rama `feat/driver_gps_simulator`, apilada sobre `feat/driver_ui`, PR #57, y esta sobre la #56)
 
 ## Último paso
-`driver_ui` v1.1: revisión ciclo 2 APPROVED; rama subida y PR contra `develop` sin fusionar (apilada sobre la #56).
+`driver_ui` v1.1: revisión ciclo 2 APPROVED; PR #57 contra `develop` (apilada sobre la #56), sin fusionar.
 
 ## Siguiente paso
 1. `driver_gps_simulator`, revisión nueva y PR.
-Después, CP-6 del bloque 4 (persona).
+Después, CP-6 del bloque 4 (persona). Orden de fusión: #56, #57 y la de `driver_gps_simulator`.
 
 ## Pendiente para specs futuras
 - **driver_ui v1.1:** P-05 (CP-4, persona) el permiso de ubicación se pide ya en el primer selector (AC-04/AC-09 v1.1)

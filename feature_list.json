@@ -484,7 +484,7 @@
       "order": 20,
       "block": 4,
       "title": "Simulador de recorrido del conductor (CLI)",
-      "status": "spec_approved",
+      "status": "implementing",
       "depends_on": [
         "driver_session"
       ],
