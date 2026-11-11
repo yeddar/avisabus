@@ -1,0 +1,68 @@
+{
+  "generated_at": "2026-11-09T07:41:00Z",
+  "service": {
+    "line": "93",
+    "direction_id": 0,
+    "headsign": "Passeig Marítim - Hospital Malva-rosa",
+    "trip_id": "12345",
+    "service_date": "2026-11-09",
+    "departure_at": "2026-11-09T07:40:00Z",
+    "color": "FE0000",
+    "text_color": "FFFFFF"
+  },
+  "gps": "OK",
+  "off_route": false,
+  "finished": false,
+  "stops": [
+    {
+      "stop_id": "508",
+      "name": "Pl. de l'Ajuntament",
+      "stop_sequence": 12,
+      "distance_m": 640,
+      "waiting": 0,
+      "needs": { "RAMP": 0, "EXTRA_TIME": 0, "SEAT": 0, "VISUAL": 0 },
+      "alert_ids": []
+    },
+    {
+      "stop_id": "509",
+      "name": "Colom - Jorge Juan",
+      "stop_sequence": 13,
+      "distance_m": 980,
+      "waiting": 0,
+      "needs": { "RAMP": 0, "EXTRA_TIME": 0, "SEAT": 0, "VISUAL": 0 },
+      "alert_ids": []
+    },
+    {
+      "stop_id": "510",
+      "name": "Porta de la Mar",
+      "stop_sequence": 14,
+      "distance_m": 1340,
+      "waiting": 0,
+      "needs": { "RAMP": 0, "EXTRA_TIME": 0, "SEAT": 0, "VISUAL": 0 },
+      "alert_ids": []
+    },
+    {
+      "stop_id": "511",
+      "name": "Aragó - Blasco Ibáñez",
+      "stop_sequence": 15,
+      "distance_m": 2100,
+      "waiting": 0,
+      "needs": { "RAMP": 0, "EXTRA_TIME": 0, "SEAT": 0, "VISUAL": 0 },
+      "alert_ids": []
+    },
+    {
+      "stop_id": "512",
+      "name": "Tarongers - Universitat",
+      "stop_sequence": 16,
+      "distance_m": 3250,
+      "waiting": 0,
+      "needs": { "RAMP": 0, "EXTRA_TIME": 0, "SEAT": 0, "VISUAL": 0 },
+      "alert_ids": []
+    }
+  ],
+  "total_waiting": 0,
+  "free_places": 30,
+  "free_seats": 4,
+  "capacity_alert": false,
+  "seat_alert": false
+}

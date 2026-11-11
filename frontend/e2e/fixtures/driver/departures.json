@@ -1,0 +1,20 @@
+{
+  "departures": [
+    {
+      "trip_id": "12345",
+      "service_date": "2026-11-09",
+      "departure_at": "2026-11-09T07:40:00Z",
+      "first_stop_name": "Av. del Cid - Pl. d'Espanya",
+      "headsign": "Passeig Marítim - Hospital Malva-rosa",
+      "taken": false
+    },
+    {
+      "trip_id": "12346",
+      "service_date": "2026-11-09",
+      "departure_at": "2026-11-09T07:55:00Z",
+      "first_stop_name": "Av. del Cid - Pl. d'Espanya",
+      "headsign": "Passeig Marítim - Hospital Malva-rosa",
+      "taken": true
+    }
+  ]
+}

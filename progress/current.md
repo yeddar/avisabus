@@ -4,19 +4,25 @@
 
 **Fecha:** 2026-11-11
 **Fase:** Implementación — Bloque 4 (conductor)
-**Feature en curso:** `driver_ui` v1.1 — siguiente (ciclo 2). `driver_session` v1.3 `done` (rama `feat/driver_session`)
+**Feature en curso:** `driver_gps_simulator` — siguiente. `driver_ui` v1.1 `done` (rama `feat/driver_ui`, apilada sobre `feat/driver_session`)
 
 ## Último paso
-`driver_session` v1.3 (T-09): revisión ciclo 1 APPROVED; rama subida y PR contra `develop` sin fusionar.
+`driver_ui` v1.1: revisión ciclo 2 APPROVED; rama subida y PR contra `develop` sin fusionar (apilada sobre la #56).
 
 ## Siguiente paso
-1. `driver_ui` ciclo 2 (rama `feat/driver_ui` actualizada con `feat/driver_session`): AC-04 v1.1, B-01 y B-02, revisión nueva y PR.
-2. `driver_gps_simulator`, revisión nueva y PR.
+1. `driver_gps_simulator`, revisión nueva y PR.
 Después, CP-6 del bloque 4 (persona).
 
 ## Pendiente para specs futuras
+- **driver_ui v1.1:** P-05 (CP-4, persona) el permiso de ubicación se pide ya en el primer selector (AC-04/AC-09 v1.1)
+  y CU-08 lo pone en el paso 4, tras elegir salida: A (recomendada) actualizar CU-08; B limitar la v1.1 a la siguiente
+  salida. P-02 estado en cabecera (§5.9) sin texto; decidir en CP-6. P-03 plurales fijos ("Esperan 1 personas"). P-04
+  textos sin definir (salidas vacías, errores). N-10 una vista `service: null` tardía podría contar como la primera de la
+  salida y hacer sonar el tono por solicitudes previas (no reproducido). N-11 `useDriverShift.ts` no está en design §1.
+  N-01…N-09 en `progress/review_driver_ui.md`. Valenciano sin revisión de persona hablante y tablet real parada → CP-6.
 - **driver_session v1.3:** N-10 (CP-4, persona) `docs/architecture.md:119` sigue con `last_position_at`. N-11 design §2
-  (`:61`) declara aún `last_position_at` "renombrado a `last_fix_at`". Siguen N-01, N-03…N-08 de la v1.2.
+  (`:61`) declara aún `last_position_at` "renombrado a `last_fix_at`". `.env.example:158-161` describe aún la v1.2
+  ("sin recibir posición"). Siguen N-01, N-03…N-08 de la v1.2.
 - **driver_demand v1.0:** N-01 tests y `http/access_log.py:9` citan AC-12 para la IP; la regla es `driver_session.AC-15`.
   N-02 (spec) salida que desaparece de la red da `service = null`, sin contemplar en ninguna spec. N-03 sin test de
   que la suscripción de `/ws/driver` ocurre antes de la vista inicial (`ws/driver.py:111`). N-04 AC-11 con `FakeClock`:

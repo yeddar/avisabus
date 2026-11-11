@@ -517,6 +517,12 @@
 - Ciclo 1 CHANGES_REQUESTED (B-01: AC-08 sin tests de cierre `4429` y `1001` en `/ws/driver`); ciclo 2 APPROVED.
 - `CI=1 ./init.sh verify --e2e` en verde: 1846 backend, 563 Vitest, 126 e2e. Abiertos N-01…N-08.
 
+## 2026-11-10 · driver_demand PR #54 abierta · driver_ui · spec_approved → implementing
+
+## 2026-11-10 · driver_ui · implementing → in_review → spec_blocked
+- Ciclo 1 CHANGES_REQUESTED: B-01 (posición, `wakeLock` y socket se cortan tras fin de recorrido), B-02 (foco al cerrar el diálogo).
+- CP-3 P-01: AC-04 "enviar la última cada 5 s" frente al cálculo de `STALE` con `last_position_at`.
+
 ## 2026-11-11 · CP-3 driver_ui resuelto (PR #55) · driver_session · done → implementing (v1.3, T-09)
 - `driver_session` 1.3: `last_seen_at` (señal de vida, `IDLE`) y `last_fix_at` (fijo nuevo, `STALE`). `driver_ui` 1.1:
   reenvío cada 5 s y `getCurrentPosition` si `watchPosition` calla 10 s. `driver_ui` sigue `spec_blocked` hasta su ciclo 2.
@@ -524,3 +530,10 @@
 ## 2026-11-11 · driver_session v1.3 · implementing → in_review → done
 - T-09: `last_seen_at` (`IDLE`) y `last_fix_at` (`STALE`); reenvíos sin proyección ni aviso. Contrato HTTP sin cambios.
 - Revisión ciclo 1 de la v1.3: APPROVED (12/12 mutantes). Verify --e2e y `slow` en verde (1857 backend).
+
+## 2026-11-11 · driver_session v1.3 PR #56 abierta · driver_ui · spec_blocked → implementing (v1.1, ciclo 2)
+- `feat/driver_ui` actualizada con `feat/driver_session` (T-09 y specs v1.1). AC-04 v1.1, B-01 y B-02.
+
+## 2026-11-11 · driver_ui v1.1 · implementing → in_review → done
+- Ciclo 2 APPROVED: AC-04 v1.1 (reenvío 5 s, `getCurrentPosition` tras 10 s), B-01 (`useDriverShift`), B-02 (foco).
+  Probado contra el backend real v1.3. Verify --e2e en verde (1857 backend, 660 Vitest, 132 e2e). P-05 → CP-4 (CU-08).

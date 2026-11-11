@@ -173,5 +173,71 @@
     "clear": "Esborra les meues necessitats",
     "saved": "Necessitats guardades",
     "cleared": "Necessitats esborrades"
+  },
+  "driver": {
+    "login": {
+      "title": "Accés de conductor",
+      "code": "Codi d'accés",
+      "enter": "Entra",
+      "invalid": "Codi no vàlid",
+      "locked_one": "Massa intents. Torna-ho a intentar d'ací a {{count}} minut.",
+      "locked_other": "Massa intents. Torna-ho a intentar d'ací a {{count}} minuts."
+    },
+    "pick": {
+      "line": "Tria la línia",
+      "direction": "Tria el sentit",
+      "departure": "Tria l'eixida",
+      "lineLabel": "Línia {{line}}",
+      "taken": "Ja en servei",
+      "back": "Torna",
+      "takenNow": "Eixa eixida ja la porta un altre conductor",
+      "empty": "No hi ha eixides en este moment"
+    },
+    "shift": {
+      "title": "Torn del conductor"
+    },
+    "demand": {
+      "waiting_one": "<number>{{count}}</number> persona esperant",
+      "waiting_other": "<number>{{count}}</number> persones esperant",
+      "none": "Sense sol·licituds en les pròximes parades",
+      "new": "Nova",
+      "departure": "Eixida a les {{time}}"
+    },
+    "needs": {
+      "RAMP_one": "{{count}} rampa",
+      "RAMP_other": "{{count}} rampes",
+      "EXTRA_TIME_one": "{{count}} més temps",
+      "EXTRA_TIME_other": "{{count}} més temps",
+      "SEAT_one": "{{count}} seient",
+      "SEAT_other": "{{count}} seients",
+      "VISUAL_one": "{{count}} visió",
+      "VISUAL_other": "{{count}} visió"
+    },
+    "places": "{{places}} places lliures · {{seats}} seients",
+    "places.unknown": "Ocupació no disponible",
+    "capacity": "Esperen {{waiting}} persones i queden {{places}} places",
+    "seats": "Demanen seient {{requests}} persones i queden {{seats}} seients",
+    "gps": {
+      "waiting": "Esperant ubicació…",
+      "stale": "Posició desactualitzada",
+      "denied": "Sense permís d'ubicació: no es poden calcular les pròximes parades",
+      "retry": "Reintenta"
+    },
+    "offRoute": "No estàs en el recorregut d'esta línia",
+    "offline": "Sense connexió, reconnectant…",
+    "finished": "Fi del recorregut",
+    "nextDeparture": "Tria la següent eixida",
+    "mute": "Silencia el to",
+    "unmute": "Activa el to",
+    "end": "Finalitza el torn",
+    "end.confirm": "Vols finalitzar el torn?",
+    "end.yes": "Finalitza",
+    "end.no": "Continua",
+    "closed": {
+      "ENDED": "Torn finalitzat",
+      "IDLE": "Torn tancat per inactivitat",
+      "REVOKED": "Codi revocat",
+      "REPLACED": "Has iniciat un altre torn amb este codi"
+    }
   }
 }

@@ -13,7 +13,29 @@ const MapPage = lazy(() =>
   import('../features/passenger/map/MapPage').then((module) => ({ default: module.MapPage })),
 );
 
+/** The driver view is not part of the passenger's initial JavaScript (driver_ui design §1). */
+const DriverLayout = lazy(() =>
+  import('../features/driver/DriverLayout').then((module) => ({ default: module.DriverLayout })),
+);
+const LoginPage = lazy(() =>
+  import('../features/driver/LoginPage').then((module) => ({ default: module.LoginPage })),
+);
+const ShiftPage = lazy(() =>
+  import('../features/driver/ShiftPage').then((module) => ({ default: module.ShiftPage })),
+);
+
 export const routes: RouteObject[] = [
+  {
+    element: (
+      <Suspense fallback={null}>
+        <DriverLayout />
+      </Suspense>
+    ),
+    children: [
+      { path: '/driver', element: <LoginPage /> },
+      { path: '/driver/shift', element: <ShiftPage /> },
+    ],
+  },
   {
     element: <Layout />,
     children: [
