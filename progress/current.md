@@ -3,18 +3,28 @@
 > Fichero vivo: lo reescribe el orquestador al final de cada sesión.
 
 **Fecha:** 2026-11-11
-**Fase:** Fin del bloque 4 (conductor) — CP-6 pendiente
-**Feature en curso:** ninguna. Bloque 4 completo (`driver_gps_simulator` v1.0 `done`, rama `feat/driver_gps_simulator`)
+**Fase:** Bloque 4 cerrado (CP-6 aprobado). Bloque 5 pendiente de la persona
+**Feature en curso:** ninguna.
 
 ## Último paso
-`driver_gps_simulator`: revisión ciclo 1 APPROVED; rama subida y PR contra `develop` (apilada sobre la #57), sin fusionar.
+PR #56, #57 y #58 fusionadas. CP-6 del bloque 4 aprobado por la persona (2026-11-11) tras la demo en el Mac con
+Chrome DevTools (ubicación simulada en Sensors), con el SAE real y la línea 93.
 
 ## Siguiente paso
-1. CP-6 del bloque 4 (persona). Orden de fusión: #56, #57 y la de `driver_gps_simulator`.
-   Puntos para la demo: valenciano de `driver_ui`, tablet real parada, estado en cabecera (P-02), plurales (P-03),
-   fixtures del frontend con distancias infladas, P-05 (CU-08, CP-4) y `driver_session` N-05.
-2. Bloque 5 solo con la persona. La spec de `deployment_rpi` la escribe la persona (no lanzar spec-writer); implementer
-   y reviewer solo con su spec aprobada y si lo pide. Incluir la IP real del cliente tras NPM + nginx (limitador por IP).
+Bloque 5, solo con la persona:
+1. `deployment_rpi`: la spec la escribe la persona (no lanzar spec-writer); implementer y reviewer solo con su spec
+   aprobada y si lo pide. Incluir la IP real del cliente tras NPM + nginx (limitador por IP) y valorar la renovación del
+   GTFS (el activo caduca el 2026-11-22; hoy es manual).
+2. `nfr_validation`: depende de `deployment_rpi`; preguntar antes cómo marcar esta en `feature_list.json`.
+
+## Decisiones abiertas de la persona (tras el CP-6 del bloque 4)
+- `driver_session` N-05: umbral de 150 m (semillas 2 y 4 dejan posiciones a 342–350 m por detrás).
+- `driver_ui` P-05 (CP-4): CU-08 frente al permiso pedido ya en el primer selector.
+- IP en los logs de `/alerts` y `/ws/passenger`: en `deployment_rpi` o tarea propia.
+- Fixtures del frontend con distancias infladas (capturas e2e): regenerar ahora o más adelante.
+- Pendiente de dispositivo real (con HTTPS, tras `deployment_rpi`): tablet parada (GPS `OK` sin moverse) y salto de
+  "fuera del recorrido" en tramos largos. En la demo, un "fuera del recorrido" se debió a una longitud sin signo menos;
+  la hipótesis de horas repetidas en Chrome no se confirmó (el servidor guardó horas nuevas).
 
 ## Pendiente para specs futuras
 - **driver_gps_simulator v1.0:** N-01 `simulate.py:34,155` crea `SqliteNetworkRepository` en vez de usar `CliContainer`.
@@ -157,7 +167,7 @@
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-**CP-6 del bloque 4** (persona): demo del flujo del conductor y confirmación para pasar al bloque 5.
+Ninguno. CP-6 del bloque 4 aprobado (2026-11-11).
 
 ## Bloqueos
 Ninguno.

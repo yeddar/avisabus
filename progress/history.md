@@ -543,3 +543,7 @@
 ## 2026-11-11 · driver_gps_simulator v1.0 · implementing → in_review → done · bloque 4 completo
 - Revisión ciclo 1 APPROVED (15/17 mutantes; ejecución real contra backend local: cierre siempre, sin filtrar código
   ni token). Verify --e2e en verde (1913 backend). N-05 de `driver_session` re-medido: fallan semillas 2 y 4. CP-6 pendiente.
+
+## 2026-11-11 · PR #56, #57 y #58 fusionadas · bloque 4 · CP-6 aprobado (cierre del bloque)
+- Demo de la persona en el Mac (Chrome DevTools, SAE real, línea 93): acceso, salida, próximas paradas, solicitud y
+  entrega, fin de recorrido y siguiente salida, GPS perdido, fin de turno y simulador. Bloque 5 solo con la persona.
