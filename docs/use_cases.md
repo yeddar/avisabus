@@ -1,6 +1,6 @@
 # Casos de uso — AvisaBus
 
-> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-03: textos de botón "Solicitar"/"Cancelar solicitud" en CU-03 y CU-04, aprobada en la PR #7; v1.2 · 2026-11-04: autobús elegido en CU-03, necesidad visual en CU-05 y detección de paso por viaje en CU-07, aprobada en la PR #37; v1.3 · 2026-11-09: LIM-02 ampliada, aprobada en la PR #45; v1.4 · 2026-11-09: salida en CU-08, demanda de su autobús en CU-09 y LIM-01, aprobada en la PR #46; v1.5 · 2026-11-09: CU-08 4b con el trazado del viaje elegido, aprobada en la PR #50). Deriva de `docs/vision.md` y `docs/requirements.md`.
+> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-03: textos de botón "Solicitar"/"Cancelar solicitud" en CU-03 y CU-04, aprobada en la PR #7; v1.2 · 2026-11-04: autobús elegido en CU-03, necesidad visual en CU-05 y detección de paso por viaje en CU-07, aprobada en la PR #37; v1.3 · 2026-11-09: LIM-02 ampliada, aprobada en la PR #45; v1.4 · 2026-11-09: salida en CU-08, demanda de su autobús en CU-09 y LIM-01, aprobada en la PR #46; v1.5 · 2026-11-09: CU-08 4b con el trazado del viaje elegido, aprobada en la PR #50; v1.6 · 2026-11-11: CU-08 pide la ubicación antes de elegir la salida, aprobada en la PR #60). Deriva de `docs/vision.md` y `docs/requirements.md`.
 > Cada caso de uso referencia los requisitos que cubre. Los flujos alternativos se numeran
 > `<paso><letra>` (p. ej. `3a` es una alternativa al paso 3).
 
@@ -202,8 +202,8 @@ flowchart LR
 **Flujo principal**
 1. El conductor abre la vista de conductor e introduce su código.
 2. El sistema valida el código.
-3. El conductor selecciona línea, sentido y la salida que realiza (lista de las que salen entre 30 min antes y 60 min después de ahora).
-4. El sistema solicita permiso de geolocalización y empieza a recibir la posición del dispositivo.
+3. El sistema solicita permiso de geolocalización y empieza a recibir la posición del dispositivo, que mantiene el turno vivo mientras el conductor elige.
+4. El conductor selecciona línea, sentido y la salida que realiza (lista de las que salen entre 30 min antes y 60 min después de ahora).
 5. El sistema muestra la vista de demanda (CU-09).
 
 **Flujos alternativos**

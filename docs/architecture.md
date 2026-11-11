@@ -1,6 +1,6 @@
 # Arquitectura — AvisaBus
 
-> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-04: avisos por viaje elegido, ADR-016, aprobada en la PR #37; v1.2 · 2026-11-09: ubicación del limitador y orden de validaciones, aprobada en la PR #45; v1.3 · 2026-11-09: conductor (salida elegida, códigos con HMAC, API y eventos), ADR-017 y ADR-018, aprobada en la PR #46). Deriva de `docs/vision.md`, `docs/requirements.md`
+> Estado: **APROBADO** (v1.0 · 2026-10-31; v1.1 · 2026-11-04: avisos por viaje elegido, ADR-016, aprobada en la PR #37; v1.2 · 2026-11-09: ubicación del limitador y orden de validaciones, aprobada en la PR #45; v1.3 · 2026-11-09: conductor (salida elegida, códigos con HMAC, API y eventos), ADR-017 y ADR-018, aprobada en la PR #46; v1.4 · 2026-11-11: `last_fix_at`/`last_seen_at` y despliegue desde el Mac, aprobada en la PR #60). Deriva de `docs/vision.md`, `docs/requirements.md`
 > y `docs/use_cases.md`. Las decisiones se registran como ADR en la sección 10.
 > Los nombres de código están en inglés; ver glosario en `docs/conventions.md`.
 
@@ -52,7 +52,7 @@ flowchart LR
 - El servicio `web` se conecta a la red Docker de NPM (red externa declarada en `docker-compose.yml`, nombre configurable); `backend` solo está en la red interna del proyecto y no expone puertos.
 - **backend**: un único proceso `uvicorn` (ADR-003). Contiene API REST, WebSockets, CLI (mismo paquete, otro punto de entrada) y tareas de fondo.
 - **SQLite** en modo WAL sobre un volumen. Recomendado: almacenamiento en SSD/USB en lugar de la tarjeta SD (desgaste por escrituras).
-- Imágenes multi-arquitectura (`linux/arm64` y `linux/amd64`) para desarrollar en el Mac y desplegar en la Raspberry.
+- Imágenes `linux/arm64` construidas en el Mac (Apple Silicon, nativo) y llevadas a la Raspberry por SSH (`docker save | docker load`); sin registro de imágenes (`deployment_rpi`).
 - Configuración por variables de entorno con prefijo `AVISABUS_` (ver `.env.example`).
 
 ## 4. Backend: capas
@@ -116,7 +116,7 @@ classDiagram
   class Alert { alert_id; stop_id; line; direction_id; trip_id; service_date; stop_sequence; needs: set~Need~; device_hash; created_at; status; last_seen_at; last_arrival_at; last_delay_s; delivered_to: session_id|None }
   class Need { <<enum>> RAMP; EXTRA_TIME; SEAT; VISUAL }
   class AlertStatus { <<enum>> PENDING_DRIVER; DELIVERED; EXPIRED; CANCELLED }
-  class DriverSession { session_id; token_hash; code_id; line; direction_id; trip_id; service_date; position; progress_m; off_route; last_position_at }
+  class DriverSession { session_id; token_hash; code_id; line; direction_id; trip_id; service_date; position; progress_m; off_route; last_fix_at; last_seen_at }
   class DriverCode { code_id; code_hash; label; created_at; revoked_at }
   Alert --> Need
   Alert --> AlertStatus

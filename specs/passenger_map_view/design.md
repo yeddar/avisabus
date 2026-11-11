@@ -1,6 +1,6 @@
 # Mapa del autobús — design
 
-> Feature: `passenger_map_view` · Versión: 1.2 · Estado: APPROVED
+> Feature: `passenger_map_view` · Versión: 1.3 · Estado: APPROVED
 > Requisitos: RF-13, RNF-01, RNF-03, RNF-05, RNF-14 · Casos de uso: CU-02 · Depende de: passenger_stop_view, position_estimation
 
 ## 1. Resumen
