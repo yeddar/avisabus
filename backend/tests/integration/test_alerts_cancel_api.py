@@ -390,7 +390,7 @@ def test_main_wires_the_cancellation(tmp_path: Path) -> None:
     line = next(line for line in result.stdout.splitlines() if line.startswith("FACTS "))
     facts = json.loads(line.removeprefix("FACTS "))
     assert facts == {
-        "notifier": "NoopDriverViewNotifier",
+        "notifier": "DemandViewNotifier",
         "same_publisher": True,
         "delete": [404, "no-store", NOT_FOUND],
     }

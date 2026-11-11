@@ -12,7 +12,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, Query, Request, Response
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
-from avisabus.adapters.inbound.http.container import DriverUseCases
+from avisabus.adapters.inbound.http.container import DriverDemand, DriverUseCases
 from avisabus.adapters.inbound.http.driver_auth import current_session, driver_use_cases
 from avisabus.adapters.inbound.http.errors import (
     DEPARTURE_TAKEN_TYPE,
@@ -32,8 +32,11 @@ from avisabus.application.driver_sessions import (
     UpdateDriverPositionCommand,
 )
 from avisabus.domain.models.driver import DriverService, DriverSession, GpsState
+from avisabus.domain.models.driver_view import DriverView, StopDemand
 
 router = APIRouter(prefix="/driver", tags=["driver"])
+view_router = APIRouter(prefix="/driver", tags=["driver"])
+"""Only with `driver_demand`: `GET /sessions/current/view`."""
 
 UseCases = Annotated[DriverUseCases, Depends(driver_use_cases)]
 CurrentSession = Annotated[DriverSession, Depends(current_session)]
@@ -112,6 +115,48 @@ class SessionStateResponse(BaseModel):
     off_route: bool = Field(description="The last position is over 150 m from the shape.")
     finished: bool = Field(description="The trip has reached its last stop.")
     upcoming: list[UpcomingStopSchema] = Field(description="Next stops of the trip, up to 5.")
+
+
+class DriverServiceViewSchema(BaseModel):
+    line: str
+    direction_id: int
+    headsign: str
+    trip_id: str
+    service_date: date = Field(description="Service day of the trip (may be yesterday).")
+    departure_at: datetime = Field(description="Departure from the first stop.")
+    color: str
+    text_color: str
+
+
+class NeedCountsSchema(BaseModel):
+    RAMP: int
+    EXTRA_TIME: int
+    SEAT: int
+    VISUAL: int
+
+
+class StopDemandSchema(BaseModel):
+    stop_id: str
+    name: str
+    stop_sequence: int
+    distance_m: float = Field(description="Along the shape, from the bus.")
+    waiting: int = Field(description="Requests delivered to this shift for this stop.")
+    needs: NeedCountsSchema = Field(description="How many of those requests have each need.")
+    alert_ids: list[str]
+
+
+class DriverViewResponse(BaseModel):
+    generated_at: datetime
+    service: DriverServiceViewSchema | None = Field(description="`null` without a departure.")
+    gps: GpsState
+    off_route: bool
+    finished: bool
+    stops: list[StopDemandSchema] = Field(description="Next stops of the trip, up to 5.")
+    total_waiting: int = Field(description="Requests in the stops shown.")
+    free_places: int | None = Field(description="`null` without occupancy data.")
+    free_seats: int | None = Field(description="`null` without occupancy data.")
+    capacity_alert: bool = Field(description="More people waiting than free places.")
+    seat_alert: bool = Field(description="More requests for a seat than free seats.")
 
 
 def _problem(status: int, title: str, problem_type: str, description: str) -> dict[str, Any]:
@@ -332,6 +377,64 @@ async def get_session(session: CurrentSession, use_cases: UseCases) -> SessionSt
 async def end_session(session: CurrentSession, use_cases: UseCases) -> Response:
     await use_cases.end_session.execute(session)
     return Response(status_code=204)
+
+
+@view_router.get(
+    "/sessions/current/view",
+    response_model=DriverViewResponse,
+    responses={401: _INVALID_SESSION},
+    response_description="The same view as `/ws/driver`, while the socket does not connect.",
+)
+async def current_view(session: CurrentSession, request: Request) -> DriverViewResponse:
+    demand: DriverDemand = request.app.state.driver_demand
+    return _view_schema(await demand.build_view.execute(session))
+
+
+def _view_schema(view: DriverView) -> DriverViewResponse:
+    service = view.service
+    return DriverViewResponse(
+        generated_at=view.generated_at,
+        service=(
+            None
+            if service is None
+            else DriverServiceViewSchema(
+                line=service.line,
+                direction_id=service.direction_id,
+                headsign=service.headsign,
+                trip_id=service.trip_id,
+                service_date=service.service_date,
+                departure_at=service.departure_at,
+                color=service.color,
+                text_color=service.text_color,
+            )
+        ),
+        gps=view.gps,
+        off_route=view.off_route,
+        finished=view.finished,
+        stops=[_stop_demand_schema(stop) for stop in view.stops],
+        total_waiting=view.total_waiting,
+        free_places=view.free_places,
+        free_seats=view.free_seats,
+        capacity_alert=view.capacity_alert,
+        seat_alert=view.seat_alert,
+    )
+
+
+def _stop_demand_schema(stop: StopDemand) -> StopDemandSchema:
+    return StopDemandSchema(
+        stop_id=stop.stop_id,
+        name=stop.name,
+        stop_sequence=stop.stop_sequence,
+        distance_m=stop.distance_m,
+        waiting=stop.waiting,
+        needs=NeedCountsSchema(
+            RAMP=stop.needs.RAMP,
+            EXTRA_TIME=stop.needs.EXTRA_TIME,
+            SEAT=stop.needs.SEAT,
+            VISUAL=stop.needs.VISUAL,
+        ),
+        alert_ids=list(stop.alert_ids),
+    )
 
 
 def _state_schema(state: DriverSessionState) -> SessionStateResponse:

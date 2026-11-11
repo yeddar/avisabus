@@ -14,15 +14,21 @@ import structlog
 from sqlalchemy import Engine
 
 from avisabus.adapters.inbound.ws.connections import ConnectionRegistry
+from avisabus.adapters.inbound.ws.driver import DriverSocket
 from avisabus.adapters.inbound.ws.passenger import (
     AlertSnapshotProvider,
     EmptySnapshotProvider,
     PassengerSnapshotProvider,
     PassengerSocket,
 )
+from avisabus.adapters.outbound.drivers.demand_listener import (
+    DemandSessionListener,
+    DemandViewNotifier,
+)
 from avisabus.adapters.outbound.drivers.no_driver_directory import NoDriverDirectory
 from avisabus.adapters.outbound.drivers.noop_notifier import NoopDriverViewNotifier
 from avisabus.adapters.outbound.drivers.noop_session_listener import NoopDriverSessionListener
+from avisabus.adapters.outbound.drivers.session_directory import SessionDriverDirectory
 from avisabus.adapters.outbound.events.in_memory import InMemoryEventPublisher
 from avisabus.adapters.outbound.persistence.sqlite_alerts import SqliteAlertRepository
 from avisabus.adapters.outbound.persistence.sqlite_driver_codes import SqliteDriverCodeRepository
@@ -37,9 +43,16 @@ from avisabus.adapters.outbound.security.hmac_stop_token import HmacStopTokenSig
 from avisabus.adapters.outbound.security.sha256_session_token_hasher import (
     Sha256SessionTokenHasher,
 )
+from avisabus.application.build_driver_view import BuildDriverView
 from avisabus.application.cancel_alert import CancelAlert
 from avisabus.application.close_driver_session import CloseDriverSession
 from avisabus.application.create_alert import CreateAlert
+from avisabus.application.deliver_alerts import (
+    DeliverPendingAlerts,
+    DeliveryObservingAlerts,
+    UndeliverSessionAlerts,
+)
+from avisabus.application.demand_views import DemandViews
 from avisabus.application.direction_overrides import validate_direction_overrides
 from avisabus.application.driver_sessions import (
     AuthenticateDriverSession,
@@ -64,6 +77,7 @@ from avisabus.application.reap_driver_sessions import ReapDriverSessions
 from avisabus.application.scheduled_arrivals import ScheduledArrivalsProvider
 from avisabus.application.watch_passages import WatchPassages
 from avisabus.config import Settings
+from avisabus.domain.ports.alerts import AlertRepository
 from avisabus.domain.ports.arrivals import ArrivalsSource
 from avisabus.domain.ports.clock import Clock
 from avisabus.domain.ports.device import DeviceHasher
@@ -193,6 +207,71 @@ def build_realtime(
 
 
 @dataclass(frozen=True, slots=True)
+class DriverDemand:
+    """Delivery of the requests and views of the drivers (driver_demand design §2). `avisabus.main`
+    passes it to the alerts and the shifts, and runs `views.refresh_all` in its lifespan."""
+
+    views: DemandViews
+    build_view: BuildDriverView
+    directory: SessionDriverDirectory
+    notifier: DemandViewNotifier
+    listener: DemandSessionListener
+    socket: DriverSocket
+
+
+def build_driver_demand(
+    settings: Settings,
+    engine: Engine,
+    clock: Clock,
+    occupancy: OccupancySensor,
+    realtime: Realtime,
+    sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
+) -> DriverDemand:
+    """Built before the alerts and the shifts, which get its directory, notifier and listener; so
+    it has its own `GetDriverSession` over the same tables."""
+    sessions = SqliteDriverSessionRepository(engine)
+    alerts = SqliteAlertRepository(engine)
+    network = SqliteNetworkRepository(engine)
+    logger = structlog.get_logger(DRIVER_LOGGER)
+    publisher = realtime.publisher
+    routes = TripRoutes(network)
+    build_view = BuildDriverView(
+        sessions=sessions,
+        alerts=alerts,
+        network=network,
+        state=GetDriverSession(routes, clock, timedelta(seconds=settings.driver_gps_stale_s)),
+        occupancy=occupancy,
+        thresholds=settings.occupancy_thresholds(),
+        clock=clock,
+    )
+    views = DemandViews(build_view, publisher, clock, logger=logger, sleep=sleep)
+    undeliver = UndeliverSessionAlerts(alerts, publisher, logger)
+    return DriverDemand(
+        views=views,
+        build_view=build_view,
+        directory=SessionDriverDirectory(sessions),
+        notifier=DemandViewNotifier(views),
+        listener=DemandSessionListener(
+            views,
+            DeliverPendingAlerts(alerts, publisher, undeliver, logger),
+            undeliver,
+            routes,
+            publisher,
+        ),
+        socket=DriverSocket(
+            publisher=publisher,
+            authenticate=AuthenticateDriverSession(sessions, Sha256SessionTokenHasher()),
+            build=build_view,
+            registry=realtime.registry,
+            logger=structlog.get_logger(WS_LOGGER),
+            hello_timeout_s=settings.ws_hello_timeout_s,
+            ping_interval_s=settings.ws_ping_interval_s,
+            sleep=sleep,
+        ),
+    )
+
+
+@dataclass(frozen=True, slots=True)
 class AlertUseCases:
     """Use cases of the alert endpoints (alert_create and alert_cancel design §2)."""
 
@@ -207,19 +286,24 @@ def build_alert_use_cases(
     clock: Clock,
     stops: StopUseCases,
     publisher: EventPublisher,
+    demand: DriverDemand | None = None,
 ) -> AlertUseCases:
     """The bus is validated with the stops' `GetStopArrivals`, so it shares its SAE cache
     (AC-03); the events (confirmation and `alert.cancelled`) go through the real-time
-    publisher. Block 3 has no drivers nor driver views to refresh."""
+    publisher. `demand` delivers the alerts to the drivers (`avisabus.main` passes it); without
+    it, as in block 3, there are no drivers nor driver views to refresh."""
     window = timedelta(minutes=settings.alert_rate_window_min)
     alerts = SqliteAlertRepository(engine)
     logger = structlog.get_logger(ALERTS_LOGGER)
+    created: AlertRepository = (
+        alerts if demand is None else DeliveryObservingAlerts(alerts, demand.views.touch, logger)
+    )
     return AlertUseCases(
         create_alert=CreateAlert(
             stop_arrivals=stops.get_stop_arrivals,
             network=SqliteNetworkRepository(engine),
-            alerts=alerts,
-            drivers=NoDriverDirectory(),
+            alerts=created,
+            drivers=NoDriverDirectory() if demand is None else demand.directory,
             device_limiter=InMemoryRateLimiter(limit=settings.alert_rate_device, window=window),
             ip_limiter=InMemoryRateLimiter(limit=settings.alert_rate_ip, window=window),
             events=publisher,
@@ -229,7 +313,10 @@ def build_alert_use_cases(
         ),
         list_my_alerts=ListMyAlerts(alerts),
         cancel_alert=CancelAlert(
-            alerts=alerts, events=publisher, drivers=NoopDriverViewNotifier(), logger=logger
+            alerts=alerts,
+            events=publisher,
+            drivers=NoopDriverViewNotifier() if demand is None else demand.notifier,
+            logger=logger,
         ),
     )
 
@@ -257,16 +344,20 @@ def build_alert_expiry(
     clock: Clock,
     stops: StopUseCases,
     publisher: EventPublisher,
+    demand: DriverDemand | None = None,
 ) -> AlertExpiry:
     """The watcher reads the stops through the stops' `GetStopArrivals`, so it shares its SAE
     cache (AC-04); the ticker reads what the watcher remembers of the last observation of each
     alert (`seen_in_last_observation`). `alert.expired` goes through the real-time publisher.
-    Block 3 has no driver views to refresh."""
+    `demand` refreshes the driver views (`avisabus.main` passes it)."""
     alerts = SqliteAlertRepository(engine)
     network = SqliteNetworkRepository(engine)
     logger = structlog.get_logger(ALERTS_LOGGER)
     expire = ExpireAlert(
-        alerts=alerts, events=publisher, drivers=NoopDriverViewNotifier(), logger=logger
+        alerts=alerts,
+        events=publisher,
+        drivers=NoopDriverViewNotifier() if demand is None else demand.notifier,
+        logger=logger,
     )
     watch = WatchPassages(
         alerts=alerts,
@@ -315,7 +406,8 @@ def build_driver_use_cases(
     clock: Clock,
     listener: DriverSessionListener | None = None,
 ) -> DriverUseCases:
-    """`listener` defaults to `NoopDriverSessionListener`; `driver_demand` passes its own. The
+    """`listener` defaults to `NoopDriverSessionListener`; `avisabus.main` passes the one of
+    `build_driver_demand`. The
     code hash key derives from the stop token secret, as in the `driver-codes` commands."""
     sessions = SqliteDriverSessionRepository(engine)
     network = SqliteNetworkRepository(engine)

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Protocol
 
-from avisabus.domain.models.alert import Alert, AlertTracking
+from avisabus.domain.models.alert import Alert, AlertStatus, AlertTracking
 
 
 class AlertRepository(Protocol):
@@ -25,6 +25,18 @@ class AlertRepository(Protocol):
 
     def list_all(self) -> list[Alert]:
         """Used by `alert_expiry`."""
+        ...
+
+    def list_by_session(self, session_id: str) -> list[Alert]:
+        """Alerts delivered to that driver session, by `created_at` (driver_demand)."""
+        ...
+
+    def list_by_trip(self, trip_id: str, service_date: date) -> list[Alert]:
+        """Alerts of that bus, by `created_at` (driver_demand)."""
+        ...
+
+    def set_delivery(self, alert_id: str, status: AlertStatus, delivered_to: str | None) -> None:
+        """Change who the alert is delivered to; nothing happens if it no longer exists."""
         ...
 
     def update_tracking(self, alert_id: str, tracking: AlertTracking) -> None: ...

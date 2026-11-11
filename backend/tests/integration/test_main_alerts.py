@@ -82,7 +82,7 @@ def test_main_wires_the_alerts_with_their_configuration(tmp_path: Path) -> None:
     (line,) = [line for line in result.stdout.splitlines() if line.startswith("FACTS ")]
     facts = json.loads(line.removeprefix("FACTS "))
     assert facts == {
-        "drivers": "NoDriverDirectory",
+        "drivers": "SessionDriverDirectory",
         "limiter": "InMemoryRateLimiter",
         "max_age_s": 1200,
         "max_lead_s": 1500,
