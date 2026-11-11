@@ -4,13 +4,13 @@
 
 **Fecha:** 2026-11-11
 **Fase:** Implementación — Bloque 4 (conductor)
-**Feature en curso:** `driver_ui` v1.1 — `implementing`, ciclo de revisión 1 (rama `feat/driver_ui`, apilada sobre `feat/driver_session`, PR #56)
+**Feature en curso:** `driver_ui` v1.1 — `in_review`, ciclo de revisión 2 (rama `feat/driver_ui`, apilada sobre `feat/driver_session`, PR #56)
 
 ## Último paso
-`driver_session` v1.3 APPROVED, PR #56. `feat/driver_ui` actualizada con `feat/driver_session` (T-09 y specs v1.1).
+`driver_ui` ciclo 1 corregido (AC-04 v1.1, B-01 con `useDriverShift`, B-02); `CI=1 ./init.sh verify --e2e` en verde.
 
 ## Siguiente paso
-1. `driver_ui` ciclo 2: AC-04 v1.1, B-01 y B-02, revisión nueva y PR.
+1. `driver_ui`: revisión nueva (ciclo 2) y PR.
 2. `driver_gps_simulator`, revisión nueva y PR.
 Después, CP-6 del bloque 4 (persona).
 
