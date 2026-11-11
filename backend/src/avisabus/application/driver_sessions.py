@@ -249,7 +249,8 @@ class StartDriverSession:
             position=None,
             progress_m=None,
             off_route=False,
-            last_position_at=None,
+            last_fix_at=None,
+            last_seen_at=None,
         )
         self._sessions.add(session)
         self._log.info(DRIVER_SESSION_STARTED, session_id=session.session_id)
@@ -376,9 +377,9 @@ class GetDriverSession:
         )
 
     def _gps_state(self, session: DriverSession) -> GpsState:
-        if session.last_position_at is None:
+        if session.last_fix_at is None:
             return GpsState.WAITING
-        if self._clock.now() - session.last_position_at > self._gps_stale:
+        if self._clock.now() - session.last_fix_at > self._gps_stale:
             return GpsState.STALE
         return GpsState.OK
 
@@ -461,7 +462,11 @@ class UpdateDriverPosition:
 
     async def execute(self, command: UpdateDriverPositionCommand) -> None:
         """Keep only the last position (AC-08) and move the progress (AC-09). Raises
-        `InvalidPositionError` if it was recorded too far in the future."""
+        `InvalidPositionError` if it was recorded too far in the future.
+
+        Every valid request is a sign of life (`last_seen_at`, AC-13); only a new position (a later
+        `recorded_at`) is a GPS fix (`last_fix_at`, AC-11) and is projected. An older position or a
+        resend of the stored one only renews the sign of life (v1.3)."""
         session = command.session
         now = self._clock.now()
         try:
@@ -470,11 +475,15 @@ class UpdateDriverPosition:
             raise InvalidPositionError() from None
         if recorded_at > now + POSITION_FUTURE_TOLERANCE:
             raise InvalidPositionError()
-        if session.position is not None and recorded_at < session.position.recorded_at:
+        if session.position is not None and recorded_at <= session.position.recorded_at:
+            self._sessions.save(replace(session, last_seen_at=now))
             return
         position = DriverPosition(command.lat, command.lon, command.accuracy_m, recorded_at)
         updated = replace(
-            self._with_progress(session, position), position=position, last_position_at=now
+            self._with_progress(session, position),
+            position=position,
+            last_fix_at=now,
+            last_seen_at=now,
         )
         self._sessions.save(updated)
         self._listener.position_updated(updated)

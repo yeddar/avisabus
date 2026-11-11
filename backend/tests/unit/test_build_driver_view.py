@@ -100,7 +100,7 @@ class Harness:
 
 
 # 200 m along the shape: stops s1 (500 m) to s5 (2500 m) are ahead.
-RUNNING = {"service": SERVICE, "progress_m": 200.0, "last_position_at": NOW}
+RUNNING = {"service": SERVICE, "progress_m": 200.0, "last_fix_at": NOW}
 
 
 @pytest.fixture
@@ -179,7 +179,7 @@ async def test_the_gps_state_comes_from_the_session(harness: Harness) -> None:
     stale = NOW - timedelta(seconds=31)
 
     waiting = await build.execute(session_of(1, service=SERVICE))
-    old = await build.execute(session_of(1, service=SERVICE, last_position_at=stale))
+    old = await build.execute(session_of(1, service=SERVICE, last_fix_at=stale))
 
     assert waiting.gps is GpsState.WAITING
     assert old.gps is GpsState.STALE
@@ -188,7 +188,7 @@ async def test_the_gps_state_comes_from_the_session(harness: Harness) -> None:
 @pytest.mark.spec("driver_demand.AC-05")
 async def test_a_finished_trip_shows_no_stops(harness: Harness) -> None:
     view = await harness.build().execute(
-        session_of(1, service=SERVICE, progress_m=4000.0, last_position_at=NOW, off_route=True)
+        session_of(1, service=SERVICE, progress_m=4000.0, last_fix_at=NOW, off_route=True)
     )
 
     assert (view.finished, view.off_route) == (True, True)

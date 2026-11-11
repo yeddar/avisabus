@@ -60,9 +60,10 @@ class Harness:
         return {session.session_id for session in self.sessions.list_all()}
 
 
-def _session(number: int, last_position_ago: timedelta | None = None, **values: Any) -> Any:
-    last = None if last_position_ago is None else NOW - last_position_ago
-    return session_of(number, last_position_at=last, **values)
+def _session(number: int, last_seen_ago: timedelta | None = None, **values: Any) -> Any:
+    """A shift whose last sign of life (any valid `PUT …/position`, v1.3) was `last_seen_ago`."""
+    last = None if last_seen_ago is None else NOW - last_seen_ago
+    return session_of(number, last_seen_at=last, **values)
 
 
 @pytest.mark.spec("driver_session.AC-13")
@@ -74,11 +75,18 @@ async def test_a_session_silent_for_10_minutes_is_closed_as_idle() -> None:
 
 
 @pytest.mark.spec("driver_session.AC-13")
-async def test_a_session_with_a_recent_position_stays_open() -> None:
+async def test_a_session_with_a_recent_sign_of_life_stays_open() -> None:
     harness = Harness(_session(1, timedelta(minutes=9, seconds=59)))
     await harness.reap.tick()
     assert harness.open_ids() == {"session-1"}
     assert harness.listener.calls == []
+
+
+@pytest.mark.spec("driver_session.AC-13")
+async def test_a_resent_position_keeps_the_shift_alive_without_a_new_fix() -> None:
+    harness = Harness(_session(1, timedelta(seconds=5), last_fix_at=NOW - timedelta(minutes=20)))
+    await harness.reap.tick()
+    assert harness.open_ids() == {"session-1"}
 
 
 @pytest.mark.spec("driver_session.AC-13")

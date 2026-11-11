@@ -182,10 +182,11 @@ async def test_selecting_a_departure_resets_the_progress_and_notifies() -> None:
 @pytest.mark.spec("driver_session.AC-07")
 async def test_selecting_keeps_the_last_position() -> None:
     position = DriverPosition(39.0, -0.3, 5.0, NOW)
-    harness = Harness(session_of(1, position=position, last_position_at=NOW))
+    harness = Harness(session_of(1, position=position, last_fix_at=NOW, last_seen_at=NOW))
     await harness.select.execute(SelectDriverServiceCommand(harness.stored(), SERVICE))
     assert harness.stored().position == position
-    assert harness.stored().last_position_at == NOW
+    assert harness.stored().last_fix_at == NOW
+    assert harness.stored().last_seen_at == NOW
 
 
 @pytest.mark.spec("driver_session.AC-07")
@@ -272,7 +273,8 @@ async def test_position_is_stored_with_the_server_instant() -> None:
     assert stored.position is not None
     assert stored.position.recorded_at == recorded
     assert stored.position.accuracy_m == 5.0
-    assert stored.last_position_at == NOW
+    assert stored.last_fix_at == NOW
+    assert stored.last_seen_at == NOW
     assert harness.listener.calls == [("position_updated", "session-1")]
 
 
@@ -286,23 +288,61 @@ async def test_only_the_last_position_is_kept() -> None:
 
 
 @pytest.mark.spec("driver_session.AC-08")
-async def test_an_older_position_is_discarded() -> None:
+async def test_an_older_position_is_discarded_but_is_a_sign_of_life() -> None:
     harness = _on_service(progress_m=2000.0)
     await harness.send(2000, recorded_at=NOW)
     before = harness.stored()
     harness.clock.advance(timedelta(seconds=5))
     await harness.send(9000, recorded_at=NOW - timedelta(seconds=1))
-    assert harness.stored() == before
+    assert harness.stored() == replace(before, last_seen_at=NOW + timedelta(seconds=5))
     assert harness.listener.calls == [("position_updated", "session-1")]
 
 
 @pytest.mark.spec("driver_session.AC-08")
-async def test_a_position_with_the_same_time_is_accepted() -> None:
+async def test_a_resend_with_the_same_time_only_renews_the_sign_of_life() -> None:
+    harness = _on_service(progress_m=2000.0)
+    await harness.send(2000, recorded_at=NOW)
+    before = harness.stored()
+    harness.clock.advance(timedelta(seconds=5))
+    await harness.send(2500, recorded_at=NOW)
+    assert harness.stored() == replace(before, last_seen_at=NOW + timedelta(seconds=5))
+    assert harness.stored().last_fix_at == NOW
+    assert harness.listener.calls == [("position_updated", "session-1")]
+
+
+@pytest.mark.spec("driver_session.AC-08")
+async def test_a_resend_with_another_time_zone_is_still_the_same_position() -> None:
     harness = Harness(session_of(1))
     await harness.send(100, recorded_at=NOW)
-    await harness.send(200, recorded_at=NOW)
-    assert harness.stored().position is not None
-    assert harness.stored().position.lon == pytest.approx(lat_lon(200)[1])
+    harness.clock.advance(timedelta(seconds=5))
+    await harness.send(100, recorded_at=NOW.astimezone(timezone(timedelta(hours=1))))
+    assert harness.stored().last_fix_at == NOW
+    assert harness.stored().last_seen_at == NOW + timedelta(seconds=5)
+
+
+@pytest.mark.spec("driver_session.AC-08")
+async def test_a_newer_position_is_a_new_fix() -> None:
+    harness = Harness(session_of(1))
+    await harness.send(100, recorded_at=NOW)
+    harness.clock.advance(timedelta(seconds=5))
+    await harness.send(100, recorded_at=NOW)
+    harness.clock.advance(timedelta(seconds=5))
+    await harness.send(200, recorded_at=NOW + timedelta(seconds=9))
+    stored = harness.stored()
+    assert stored.position is not None
+    assert stored.position.lon == pytest.approx(lat_lon(200)[1])
+    assert stored.last_fix_at == NOW + timedelta(seconds=10)
+    assert stored.last_seen_at == NOW + timedelta(seconds=10)
+    assert harness.listener.calls == [("position_updated", "session-1")] * 2
+
+
+@pytest.mark.spec("driver_session.AC-08")
+async def test_an_invalid_position_is_not_a_sign_of_life() -> None:
+    harness = Harness(session_of(1))
+    with pytest.raises(InvalidPositionError):
+        await harness.send(100, recorded_at=NOW + timedelta(seconds=31))
+    assert harness.stored().last_seen_at is None
+    assert harness.stored().last_fix_at is None
 
 
 @pytest.mark.spec("driver_session.AC-08")
@@ -605,8 +645,9 @@ async def test_a_trip_gone_from_the_network_keeps_the_session_working() -> None:
 async def test_the_route_of_a_trip_is_cached() -> None:
     harness = _on_service()
     await harness.send(100)
-    await harness.send(200)
+    await harness.send(200, recorded_at=NOW + timedelta(seconds=5))
     await harness.get.execute(harness.stored())
+    assert harness.stored().progress_m == pytest.approx(200, abs=TOLERANCE_M)
     assert harness.network.shape_loads == 1
 
 
@@ -615,7 +656,7 @@ async def test_the_cache_is_dropped_with_a_new_feed_version() -> None:
     harness = _on_service()
     await harness.send(100)
     harness.network.feed = replace(FEED, version_id=2)
-    await harness.send(200)
+    await harness.send(200, recorded_at=NOW + timedelta(seconds=5))
     assert harness.network.shape_loads == 2
 
 
@@ -713,6 +754,32 @@ async def test_gps_is_stale_after_30_seconds() -> None:
     harness = Harness(session_of(1))
     await harness.send(100)
     harness.clock.advance(timedelta(seconds=30, milliseconds=1))
+    assert (await harness.get.execute(harness.stored())).progress.gps is GpsState.STALE
+
+
+@pytest.mark.spec("driver_session.AC-11")
+async def test_resending_the_same_position_does_not_keep_the_gps_ok() -> None:
+    harness = Harness(session_of(1))
+    await harness.send(100, recorded_at=NOW)
+    for _ in range(7):
+        harness.clock.advance(timedelta(seconds=5))
+        await harness.send(100, recorded_at=NOW)
+    state = await harness.get.execute(harness.stored())
+    assert state.progress.gps is GpsState.STALE
+
+
+@pytest.mark.spec("driver_session.AC-11")
+async def test_a_new_fix_brings_the_gps_back_to_ok() -> None:
+    harness = Harness(session_of(1))
+    await harness.send(100, recorded_at=NOW)
+    harness.clock.advance(timedelta(minutes=2))
+    await harness.send(100, recorded_at=NOW + timedelta(minutes=2))
+    assert (await harness.get.execute(harness.stored())).progress.gps is GpsState.OK
+
+
+@pytest.mark.spec("driver_session.AC-11")
+async def test_the_gps_state_uses_the_server_instant_of_the_last_fix() -> None:
+    harness = Harness(session_of(1, last_fix_at=NOW - timedelta(seconds=31), last_seen_at=NOW))
     assert (await harness.get.execute(harness.stored())).progress.gps is GpsState.STALE
 
 

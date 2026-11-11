@@ -2,20 +2,21 @@
 
 > Fichero vivo: lo reescribe el orquestador al final de cada sesión.
 
-**Fecha:** 2026-11-10
+**Fecha:** 2026-11-11
 **Fase:** Implementación — Bloque 4 (conductor)
-**Feature en curso:** `driver_ui` — siguiente (`driver_demand` v1.0 `done`, rama `feat/driver_demand`)
+**Feature en curso:** `driver_ui` v1.1 — siguiente (ciclo 2). `driver_session` v1.3 `done` (rama `feat/driver_session`)
 
 ## Último paso
-`driver_demand`: revisión ciclo 2 APPROVED; rama subida y PR contra `develop` sin fusionar.
+`driver_session` v1.3 (T-09): revisión ciclo 1 APPROVED; rama subida y PR contra `develop` sin fusionar.
 
 ## Siguiente paso
-Por orden, cada una con reviewer nuevo y PR contra `develop` sin fusionar:
-1. `driver_ui`.
-2. `driver_gps_simulator`.
-Después, CP-6 del bloque 4 (persona). Orden de fusión: #52, #53, `driver_demand` y luego las siguientes `driver_*`.
+1. `driver_ui` ciclo 2 (rama `feat/driver_ui` actualizada con `feat/driver_session`): AC-04 v1.1, B-01 y B-02, revisión nueva y PR.
+2. `driver_gps_simulator`, revisión nueva y PR.
+Después, CP-6 del bloque 4 (persona).
 
 ## Pendiente para specs futuras
+- **driver_session v1.3:** N-10 (CP-4, persona) `docs/architecture.md:119` sigue con `last_position_at`. N-11 design §2
+  (`:61`) declara aún `last_position_at` "renombrado a `last_fix_at`". Siguen N-01, N-03…N-08 de la v1.2.
 - **driver_demand v1.0:** N-01 tests y `http/access_log.py:9` citan AC-12 para la IP; la regla es `driver_session.AC-15`.
   N-02 (spec) salida que desaparece de la red da `service = null`, sin contemplar en ninguna spec. N-03 sin test de
   que la suscripción de `/ws/driver` ocurre antes de la vista inicial (`ws/driver.py:111`). N-04 AC-11 con `FakeClock`:
@@ -141,8 +142,7 @@ Después, CP-6 del bloque 4 (persona). Orden de fusión: #52, #53, `driver_deman
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Ninguno. CP-3 de `driver_session` (P-02, P-03) resuelto en la PR #51: `position_estimation` 1.4, `driver_session` 1.2
-(umbral 150 m), `gtfs_import` 1.4 (solo docs).
+Ninguno. CP-3 de `driver_ui` (P-01) resuelto en la PR #55.
 
 ## Bloqueos
-Ninguno. 
+Ninguno.

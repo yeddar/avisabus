@@ -1,5 +1,5 @@
 # Implementación: driver_session
-Spec: specs/driver_session/ (v1.2, APPROVED) · Ciclo de revisión: 2 (corrige F-01 de `progress/review_driver_session.md` y aplica T-08) · Agente: implementer · Fecha: 2026-11-09
+Spec: specs/driver_session/ (v1.3, APPROVED) · Ciclo de revisión: 0 de la v1.3 (T-09; antes, ciclo 2 de la v1.2: F-01 y T-08) · Agente: implementer · Fecha: 2026-11-11
 
 ## Tareas
 - [x] T-01 Modelos, puertos, errores, `SqliteDriverSessionRepository` y consulta de turno abierto para `driver-codes list/revoke` (AC-14) (commit cd4d2e0)
@@ -14,6 +14,61 @@ Spec: specs/driver_session/ (v1.2, APPROVED) · Ciclo de revisión: 2 (corrige F
 - [x] F-01 (bloqueante, AC-08): fechas fuera del calendario al pasar a UTC → `422` y no `500` (commit 8e0826d)
 - [x] N-02 (opcional): dígitos no ASCII por HTTP con el *hasher* real (commit fbf8093)
 - [x] T-08 (AC-09, AC-10): ventana `20 m/s × Δt + 50 m`, primera posición, `progress_recorded_at` (commit f34e3de, WIP) y metros reales con v1.2 (commit 587702a)
+
+### v1.3 · Ciclo de revisión 0 de la v1.3 · 2026-11-11
+- [x] T-09 (AC-08, AC-11, AC-13): señal de vida `last_seen_at` en todo `PUT …/position` válido y fijo
+  de GPS `last_fix_at` solo con `recorded_at` nuevo; `STALE` por `last_fix_at` e `IDLE` por
+  `last_seen_at` (commit 7193cd4)
+- [x] T-07 (repetida): `npm run gen:api` no cambia `openapi.json` ni `schema.d.ts` (el contrato HTTP
+  no varía en la v1.3); verificación completa en verde (sin commit: no hay cambios)
+
+#### Decisiones locales de la v1.3
+- **`last_position_at` → `last_fix_at`** en el modelo y en la tabla, como dice el design §3 y §4; la
+  columna `last_seen_at` va justo después (orden del design §4). Ambos campos sin valor por defecto en
+  `DriverSession`, para que ningún constructor los olvide.
+- **Posición más antigua (AC-08):** se descarta, pero la petición es válida (`204`), así que renueva
+  `last_seen_at` ("toda petición válida cuenta como señal de vida"; AC-13: "cualquier `PUT …/position`
+  válido"). Antes no se guardaba nada.
+- **Reenvío (mismo `recorded_at`, comparado en UTC):** solo guarda `last_seen_at`. No cambia la posición
+  guardada aunque traiga otras coordenadas, no proyecta y no mueve `progress_recorded_at`. Antes se
+  aceptaba como posición nueva.
+- **Sin aviso a `DriverSessionListener.position_updated`** en reenvíos y posiciones antiguas: no hay
+  posición nueva y nada de lo que ve el conductor cambia (`gps` depende de `last_fix_at`). Así el
+  comentario de `DemandSessionListener._differs` ("a position has just been accepted") sigue siendo
+  cierto y un reenvío con `gps = STALE` no fuerza un refresco de la vista cada 5 s.
+- **Petición inválida (`422`)** no es señal de vida (no se guarda nada).
+- **Migración:** ninguna, como dice T-09. Comprobado que `data/avisabus.sqlite` no tiene aún la tabla
+  `driver_session`; una BD con la tabla de la v1.2 fallaría al escribir hasta borrarla (datos efímeros).
+
+#### Ajustes en `driver_demand` (solo tests; sin cambios en su código)
+- `tests/unit/test_build_driver_view.py` y `tests/unit/test_demand_views.py`: `last_position_at` →
+  `last_fix_at` al construir sesiones de prueba. Es el campo del que sale `gps` (`OK`/`STALE`), que es lo
+  que esos tests ejercitan; sin el cambio no compilan (`TypeError` en `DriverSession`).
+- `tests/support/drivers.py` (`session_of`, compartido): campos `last_fix_at` y `last_seen_at` a `None`.
+
+#### Otros tests de `driver_session` adaptados
+- `test_a_position_with_the_same_time_is_accepted` → `test_a_resend_with_the_same_time_only_renews_the_sign_of_life`
+  (la v1.3 invierte el comportamiento) y `test_an_older_position_is_discarded` → `…_but_is_a_sign_of_life`.
+- `test_the_route_of_a_trip_is_cached` y `test_the_cache_is_dropped_with_a_new_feed_version` mandaban
+  dos posiciones con el mismo `recorded_at`; ahora la segunda es 5 s posterior (si no, sería un reenvío
+  y no cargaría la ruta).
+- `test_cli_driver_codes.py` y `test_driver_session_repository.py`: construcción de `DriverSession` y
+  columnas de la tabla.
+- Tests nuevos: unitarios en `test_driver_sessions.py` (AC-08, AC-11) y `test_reap_driver_sessions.py`
+  (AC-13); integración en `test_driver_api.py` (columnas `last_fix_at`/`last_seen_at`; reenvío que solo
+  renueva la señal de vida; 12 min de reenvíos cada 5 s → el *reaper* no cierra y `gps = STALE`; sin
+  señal de vida → `IDLE` a los 10 min justos). Para ello `test_driver_api.py` expone `use_cases` como
+  *fixture*.
+
+#### Bloqueos de la v1.3
+Ninguno.
+
+#### Verificación de la v1.3
+`CI=1 ./init.sh verify --e2e` (puerto 4173 libre), salida 0, "verify: todo en verde": backend 1857
+passed, 12 deselected, cobertura 99,65 %; Vitest 563 passed y 2 skipped; bundle 5 passed; Playwright +
+axe 126 passed; formato, lint, tipos, arquitectura (2 contratos), build, `feature_list.json` y
+trazabilidad en verde. `uv run pytest -m slow`: 12 passed (el aviso de cobertura < 80 % es el umbral
+global aplicado a ese subconjunto, igual que en la v1.2).
 
 ## Decisiones locales
 
@@ -42,7 +97,8 @@ reviewer pueden pedir otra cosa sin rehacer nada más.
 - **`recorded_at` futuro (AC-08):** `InvalidPositionError` (excepción de dominio nueva) → `422`
   `about:blank`, porque el design no da tipo. Una fecha sin zona se rechaza con `422` de validación.
 - **Referencias de tiempo:** `STALE` y el *reaper* usan `last_position_at` (instante del servidor, no
-  el reloj de la tablet). `STALE` si pasan más de 30 s; `IDLE` con 10 min o más.
+  el reloj de la tablet). `STALE` si pasan más de 30 s; `IDLE` con 10 min o más. (v1.3: `STALE` usa
+  `last_fix_at` e `IDLE` usa `last_seen_at`; ver la sección de la v1.3.)
 - **Sin progreso (AC-10, AC-11):** sin posición proyectada, `upcoming` vacío y `finished=false`; no se
   puede calcular "por delante del progreso".
 - **Viaje que ya no está en la red activa:** la posición se guarda, el progreso no cambia y no hay
