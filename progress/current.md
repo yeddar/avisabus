@@ -4,10 +4,10 @@
 
 **Fecha:** 2026-11-11
 **Fase:** Ajustes del bloque 4 y bloque 5 (`deployment_rpi`)
-**Feature en curso:** `driver_session` v1.4 — siguiente (T-10). `driver_codes_cli` v1.1 `done`
+**Feature en curso:** `driver_ui` v1.2 — `in_review` (T-08); `driver_session` v1.5 `done` (rama `feat/driver_session-v1.4`)
 
 ## Último paso
-`driver_codes_cli` v1.1 (T-05): revisión ciclo 1 APPROVED; rama subida y PR contra `develop`.
+`driver_session` v1.5 (T-10): revisión ciclo 2 APPROVED; rama subida y PR contra `develop`.
 
 ## Siguiente paso
 Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
@@ -17,6 +17,9 @@ Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
 6. `nfr_validation`: no empezar; su spec la prepara la persona.
 
 ## Pendiente para specs futuras
+- **driver_session v1.5:** N-15 ningún test unitario fija que la primera posición a 40–150 m del trazado reciba progreso
+  (`driver_sessions.py:502`) → test a ~100 m (progreso) y ~160 m (`off_route`). N-07 (spec menor) design §6 (`:177`) dice
+  informe "por trazado"; requirements y tasks, "por semilla". Abiertos N-01, N-03, N-04, N-06, N-08, N-11…N-14.
 - **driver_gps_simulator v1.0:** N-01 `simulate.py:34,155` crea `SqliteNetworkRepository` en vez de usar `CliContainer`.
   N-02 `uncancel()` sin test; Ctrl+C con `POST /sessions` en vuelo deja el turno abierto hasta el reaper (10 min). N-03
   AC-05 no distingue estados de GPS (sobrevive "GPS OK" fijo). N-04 (docs, persona) uso del simulador, regla de
@@ -159,7 +162,7 @@ Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Ninguno. CP-6 del bloque 4 aprobado (2026-11-11).
+Ninguno. CP-3 de `driver_session` (P-04) resuelto en la PR #62.
 
 ## Bloqueos
 Ninguno.

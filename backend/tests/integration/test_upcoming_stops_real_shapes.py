@@ -1,20 +1,28 @@
-"""AC-09 (v1.1) with every shape of the real feed (`data/gtfs/emt/`, not versioned). Slow and
+"""AC-09 (v1.5) with every shape of the real feed (`data/gtfs/emt/`, not versioned). Slow and
 manual:
 
-    cd backend && uv run pytest -m slow tests/integration/test_upcoming_stops_real_shapes.py -s
+    cd backend && uv run pytest -m slow tests/integration/test_upcoming_stops_real_shapes.py
 
 Skipped when the feed is not present. Each shape is driven at 30 km/h with a position every 5 s,
 through the real `UpdateDriverPosition` and `TripRoutes`, with a `FakeClock` and Gaussian noise of
-fixed seed. The bus moves and the errors are measured in real metres (the `shape_dist_traveled` of
-EMT's feed is not in metres). The AC fixes the bound for σ = 10 m; the lower levels keep the same
-bound and give the figures noted in `progress/impl_driver_session.md` (`-s`).
+σ = 10 m (correlated, ρ = 0.95, and independent) with the seeds 1 to 20. The bus moves and the
+errors are measured in real metres (the `shape_dist_traveled` of EMT's feed is not in metres).
+
+AC-09 v1.4 and v1.5, for each noise model over the positions of the 20 seeds: at least 99.5 %
+with the progress less than 150 m from the real one, and none more than 200 m ahead (v1.5) nor
+more than 500 m behind (v1.4). Every position has progress: with σ = 10 m none is more than
+150 m from the shape, the only case in which AC-09 leaves the bus without progress. Accepted:
+the U-turn lag (v1.4) and, on a shape that goes twice round a roundabout (line 25, laps of
+139 m), a lap ahead with the noise (v1.5).
+The result of every seed is printed even when the test passes, and is part of the failure
+message.
 """
 
 import csv
 import math
 import random
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
@@ -36,10 +44,14 @@ from tests.support.drivers import InMemorySessions, RecordingListener, session_o
 from tests.support.fake_clock import FakeClock
 
 REAL_FEED = Path(__file__).resolve().parents[3] / "data" / "gtfs" / "emt"
+REAL_SHAPES = 94
 SPEED_MPS = 30 / 3.6
 STEP_S = 5
-MAX_ERROR_M = 150.0
-SEED = 20261109
+SEEDS = range(1, 21)
+NEAR_M = 150.0  # "a menos de 150 m del real"
+MIN_NEAR_SHARE = 0.995  # "AL MENOS el 99,5 % de las posiciones"
+MAX_AHEAD_M = 200.0  # "NINGUNA … más de 200 m por delante" (v1.5)
+MAX_BEHIND_M = 500.0  # "… ni más de 500 m por detrás"
 START = datetime(2026, 11, 9, 8, 0, tzinfo=UTC)
 TRIP_ID = "trip"
 SERVICE = DriverService("93", 0, TRIP_ID, date(2026, 11, 9))
@@ -60,14 +72,55 @@ class Noise:
 
 @dataclass
 class Figures:
+    """Errors of one seed (or of the control) over every shape. Error = progress − real."""
+
+    seed: int | None
     shapes: int = 0
     positions: int = 0
+    near: int = 0
+    no_progress: int = 0
     max_ahead_m: float = 0.0
     max_behind_m: float = 0.0
-    beyond_ahead: int = 0
-    beyond_behind: int = 0
-    shapes_beyond: int = 0
-    no_progress: int = 0
+    too_far_ahead: int = 0
+    too_far_behind: int = 0
+    # shape_id → (positions not near, worst |error|)
+    shapes_not_near: dict[str, tuple[int, float]] = field(default_factory=dict)
+
+    def record(self, shape_id: str, error: float | None) -> None:
+        self.positions += 1
+        if error is None:
+            self.no_progress += 1
+            self._not_near(shape_id, math.inf)
+            return
+        self.max_ahead_m = max(self.max_ahead_m, error)
+        self.max_behind_m = max(self.max_behind_m, -error)
+        if error > MAX_AHEAD_M:
+            self.too_far_ahead += 1
+        if -error > MAX_BEHIND_M:
+            self.too_far_behind += 1
+        if abs(error) < NEAR_M:
+            self.near += 1
+        else:
+            self._not_near(shape_id, abs(error))
+
+    def _not_near(self, shape_id: str, error: float) -> None:
+        count, worst = self.shapes_not_near.get(shape_id, (0, 0.0))
+        self.shapes_not_near[shape_id] = (count + 1, max(worst, error))
+
+    def line(self, noise: Noise) -> str:
+        share = 100 * self.near / self.positions if self.positions else 0.0
+        not_near = ", ".join(
+            f"{shape_id}×{count} (máx {worst:.1f} m)"
+            for shape_id, (count, worst) in sorted(self.shapes_not_near.items())
+        )
+        return (
+            f"AC-09 real shapes [{noise.name}] seed={self.seed} shapes={self.shapes} "
+            f"positions={self.positions} near={self.near} ({share:.3f} %) "
+            f"max_ahead={self.max_ahead_m:.1f} m max_behind={self.max_behind_m:.1f} m "
+            f"ahead>{MAX_AHEAD_M:.0f}={self.too_far_ahead} "
+            f"behind>{MAX_BEHIND_M:.0f}={self.too_far_behind} "
+            f"no_progress={self.no_progress} not_near=[{not_near}]"
+        )
 
 
 class _OneShapeNetwork:
@@ -138,13 +191,12 @@ async def _drive(shape_id: str, shape: list[ShapePoint], noise: Noise, figures: 
     sessions = InMemorySessions(session_of(1, SERVICE))
     routes = TripRoutes(_OneShapeNetwork(shape))  # type: ignore[arg-type]
     update = UpdateDriverPosition(sessions, routes, RecordingListener(), clock)
-    rng = random.Random(f"{SEED}:{shape_id}:{noise.name}")  # noqa: S311 - reproducible noise
+    rng = random.Random(f"{figures.seed}:{shape_id}:{noise.name}")  # noqa: S311 - reproducible
     east = rng.gauss(0, noise.sigma_m) if noise.sigma_m else 0.0
     north = rng.gauss(0, noise.sigma_m) if noise.sigma_m else 0.0
     innovation = noise.sigma_m * math.sqrt(1 - noise.rho**2)
     total = metres[-1]
     step = 0
-    beyond = False
     while True:
         real = min(step * SPEED_MPS * STEP_S, total)
         point = point_at_distance(shape, metres, real)
@@ -159,20 +211,7 @@ async def _drive(shape_id: str, shape: list[ShapePoint], noise: Noise, figures: 
             )
         )
         progress = sessions.rows["session-1"].progress_m
-        figures.positions += 1
-        if progress is None:
-            figures.no_progress += 1
-            beyond = True
-        else:
-            error = progress - real
-            figures.max_ahead_m = max(figures.max_ahead_m, error)
-            figures.max_behind_m = max(figures.max_behind_m, -error)
-            if error > MAX_ERROR_M:
-                figures.beyond_ahead += 1
-                beyond = True
-            elif -error > MAX_ERROR_M:
-                figures.beyond_behind += 1
-                beyond = True
+        figures.record(shape_id, None if progress is None else progress - real)
         if real >= total:
             break
         step += 1
@@ -180,50 +219,69 @@ async def _drive(shape_id: str, shape: list[ShapePoint], noise: Noise, figures: 
         east = noise.rho * east + rng.gauss(0, innovation) if noise.sigma_m else 0.0
         north = noise.rho * north + rng.gauss(0, innovation) if noise.sigma_m else 0.0
     figures.shapes += 1
-    figures.shapes_beyond += beyond
 
 
-async def _figures(shapes: dict[str, list[ShapePoint]], noise: Noise) -> Figures:
-    figures = Figures()
+async def _figures(shapes: dict[str, list[ShapePoint]], noise: Noise, seed: int | None) -> Figures:
+    figures = Figures(seed)
     for shape_id in sorted(shapes):
         await _drive(shape_id, shapes[shape_id], noise, figures)
-    print(  # noqa: T201 - figures for the progress notes (`-s`)
-        f"AC-09 real shapes [{noise.name}]: shapes={figures.shapes} "
-        f"positions={figures.positions} max_ahead={figures.max_ahead_m:.1f} m "
-        f"max_behind={figures.max_behind_m:.1f} m beyond_ahead={figures.beyond_ahead} "
-        f"beyond_behind={figures.beyond_behind} shapes_beyond={figures.shapes_beyond} "
-        f"no_progress={figures.no_progress}"
-    )
     return figures
 
 
-def _assert_within(figures: Figures) -> None:
-    assert figures.shapes == 94
-    assert figures.no_progress == 0
-    assert figures.beyond_ahead == 0
-    assert figures.beyond_behind == 0
+def _report(capsys: pytest.CaptureFixture[str], lines: list[str]) -> str:
+    text = "\n".join(lines)
+    with capsys.disabled():
+        print("\n" + text)  # noqa: T201 - AC-09 v1.4: the result of every seed is reported
+    return text
 
 
-_LEVELS = [
+_NOISES = [
     Noise("sigma10_correlated", 10.0, 0.95),
     Noise("sigma10_independent", 10.0, 0.0),
-    Noise("sigma5_correlated", 5.0, 0.95),
-    Noise("sigma5_independent", 5.0, 0.0),
-    Noise("sigma3_correlated", 3.0, 0.95),
 ]
 
 
 @pytest.mark.spec("driver_session.AC-09")
-@pytest.mark.parametrize("noise", _LEVELS, ids=lambda noise: noise.name)
-async def test_progress_stays_within_150_m_of_the_real_position(
-    shapes: dict[str, list[ShapePoint]], noise: Noise
+@pytest.mark.parametrize("noise", _NOISES, ids=lambda noise: noise.name)
+async def test_progress_with_seeds_1_to_20_meets_the_percentile_and_the_maxima(
+    shapes: dict[str, list[ShapePoint]], noise: Noise, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    _assert_within(await _figures(shapes, noise))
+    per_seed = [await _figures(shapes, noise, seed) for seed in SEEDS]
+    positions = sum(figures.positions for figures in per_seed)
+    near = sum(figures.near for figures in per_seed)
+    too_far_ahead = sum(figures.too_far_ahead for figures in per_seed)
+    too_far_behind = sum(figures.too_far_behind for figures in per_seed)
+    no_progress = sum(figures.no_progress for figures in per_seed)
+    report = _report(
+        capsys,
+        [figures.line(noise) for figures in per_seed]
+        + [
+            f"AC-09 real shapes [{noise.name}] seeds 1-20: positions={positions} near={near} "
+            f"({100 * near / positions:.3f} %, min {100 * MIN_NEAR_SHARE:.1f} %) "
+            f"max_ahead={max(f.max_ahead_m for f in per_seed):.1f} m "
+            f"max_behind={max(f.max_behind_m for f in per_seed):.1f} m "
+            f"ahead>{MAX_AHEAD_M:.0f}={too_far_ahead} behind>{MAX_BEHIND_M:.0f}={too_far_behind} "
+            f"no_progress={no_progress}"
+        ],
+    )
+
+    assert all(figures.shapes == REAL_SHAPES for figures in per_seed), report
+    # AC-09: only a position more than 150 m from the shape may leave the bus without progress.
+    assert all(figures.no_progress == 0 for figures in per_seed), report
+    assert near >= MIN_NEAR_SHARE * positions, report
+    assert too_far_ahead == 0, report
+    assert too_far_behind == 0, report
 
 
 @pytest.mark.spec("driver_session.AC-09")
 async def test_without_noise_the_progress_follows_the_bus(
-    shapes: dict[str, list[ShapePoint]],
+    shapes: dict[str, list[ShapePoint]], capsys: pytest.CaptureFixture[str]
 ) -> None:
     """Control: an error here would be of the simulation, not of the noise."""
-    _assert_within(await _figures(shapes, Noise("no_noise", 0.0, 0.0)))
+    noise = Noise("no_noise", 0.0, 0.0)
+    figures = await _figures(shapes, noise, None)
+    report = _report(capsys, [figures.line(noise)])
+
+    assert figures.shapes == REAL_SHAPES, report
+    assert figures.no_progress == 0, report
+    assert figures.near == figures.positions, report
