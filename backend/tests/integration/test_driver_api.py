@@ -18,6 +18,7 @@ from structlog.testing import capture_logs
 
 from avisabus.adapters.inbound.http.access_log import ACCESS_LOGGER, DriverAddressFilter
 from avisabus.adapters.inbound.http.app import create_app
+from avisabus.adapters.inbound.http.container import DriverUseCases
 from avisabus.adapters.outbound.persistence.sqlite_driver_sessions import (
     SqliteDriverSessionRepository,
 )
@@ -92,10 +93,13 @@ def listener() -> RecordingListener:
 
 
 @pytest.fixture
-async def client(
-    engine: Engine, clock: FakeClock, listener: RecordingListener
-) -> AsyncIterator[httpx.AsyncClient]:
-    async with driver_client(driver_use_cases(engine, clock, listener)) as http:
+def use_cases(engine: Engine, clock: FakeClock, listener: RecordingListener) -> DriverUseCases:
+    return driver_use_cases(engine, clock, listener)
+
+
+@pytest.fixture
+async def client(use_cases: DriverUseCases) -> AsyncIterator[httpx.AsyncClient]:
+    async with driver_client(use_cases) as http:
         yield http
 
 
@@ -557,6 +561,30 @@ async def test_an_older_position_is_discarded_with_204(
 
 
 @pytest.mark.spec("driver_session.AC-08")
+async def test_a_position_records_the_fix_and_the_sign_of_life(
+    client: httpx.AsyncClient, auth: dict[str, str], engine: Engine
+) -> None:
+    await client.put(POSITION, json=GOOD_POSITION, headers=auth)
+    row = _rows(engine)[0]
+    assert row["last_fix_at"] == NOW.isoformat()
+    assert row["last_seen_at"] == NOW.isoformat()
+
+
+@pytest.mark.spec("driver_session.AC-08")
+async def test_a_resent_position_only_renews_the_sign_of_life(
+    client: httpx.AsyncClient, auth: dict[str, str], engine: Engine, clock: FakeClock
+) -> None:
+    await client.put(POSITION, json=GOOD_POSITION, headers=auth)
+    clock.advance(timedelta(seconds=5))
+    response = await client.put(POSITION, json=GOOD_POSITION | {"lat": 39.48}, headers=auth)
+    assert response.status_code == 204
+    row = _rows(engine)[0]
+    assert row["lat"] == 39.47
+    assert row["last_fix_at"] == NOW.isoformat()
+    assert row["last_seen_at"] == (NOW + timedelta(seconds=5)).isoformat()
+
+
+@pytest.mark.spec("driver_session.AC-08")
 @pytest.mark.parametrize(
     "change",
     [
@@ -666,6 +694,40 @@ async def test_the_gps_is_stale_after_30_seconds_without_position(
     assert (await client.get(CURRENT, headers=auth)).json()["gps"] == "OK"
     clock.advance(timedelta(seconds=1))
     assert (await client.get(CURRENT, headers=auth)).json()["gps"] == "STALE"
+
+
+@pytest.mark.spec("driver_session.AC-11")
+@pytest.mark.spec("driver_session.AC-13")
+async def test_resending_the_same_position_keeps_the_shift_but_not_the_gps(
+    client: httpx.AsyncClient, auth: dict[str, str], clock: FakeClock, use_cases: DriverUseCases
+) -> None:
+    """A bus waiting at the terminus with a lost GPS: the tablet resends its last position."""
+    await client.put(POSITION, json=GOOD_POSITION, headers=auth)
+    for _ in range(12 * 12):  # 12 minutes, one resend every 5 s
+        clock.advance(timedelta(seconds=5))
+        assert (await client.put(POSITION, json=GOOD_POSITION, headers=auth)).status_code == 204
+    await use_cases.reap.tick()
+    response = await client.get(CURRENT, headers=auth)
+    assert response.status_code == 200
+    assert response.json()["gps"] == "STALE"
+
+
+@pytest.mark.spec("driver_session.AC-13")
+async def test_without_any_sign_of_life_the_reaper_closes_the_shift(
+    client: httpx.AsyncClient,
+    auth: dict[str, str],
+    clock: FakeClock,
+    use_cases: DriverUseCases,
+    listener: RecordingListener,
+) -> None:
+    await client.put(POSITION, json=GOOD_POSITION, headers=auth)
+    clock.advance(timedelta(minutes=9, seconds=59))
+    await use_cases.reap.tick()
+    assert (await client.get(CURRENT, headers=auth)).status_code == 200
+    clock.advance(timedelta(seconds=1))
+    await use_cases.reap.tick()
+    _assert_problem(await client.get(CURRENT, headers=auth), 401, INVALID_SESSION)
+    assert listener.calls[-1][0::2] == ("session_closed", SessionCloseReason.IDLE)
 
 
 @pytest.mark.spec("driver_session.AC-11")

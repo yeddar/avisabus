@@ -22,7 +22,8 @@ def session_of(
         "position": None,
         "progress_m": None,
         "off_route": False,
-        "last_position_at": None,
+        "last_fix_at": None,
+        "last_seen_at": None,
     }
     return DriverSession(**{**fields, **values})
 

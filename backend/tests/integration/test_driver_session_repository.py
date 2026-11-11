@@ -28,7 +28,8 @@ def _session(number: int = 1, service: DriverService | None = None) -> DriverSes
         position=None,
         progress_m=None,
         off_route=False,
-        last_position_at=None,
+        last_fix_at=None,
+        last_seen_at=None,
     )
 
 
@@ -58,7 +59,8 @@ def test_table_has_the_columns_of_the_design(engine: Engine) -> None:
         "lon",
         "accuracy_m",
         "recorded_at",
-        "last_position_at",
+        "last_fix_at",
+        "last_seen_at",
         "progress_m",
         "off_route",
         "progress_recorded_at",
@@ -85,7 +87,8 @@ def test_saved_service_position_and_progress_round_trip(
         position=POSITION,
         progress_m=1234.5,
         off_route=True,
-        last_position_at=NOW,
+        last_fix_at=NOW - timedelta(seconds=5),
+        last_seen_at=NOW,
         progress_recorded_at=NOW - timedelta(seconds=1),
     )
     repo.save(updated)
@@ -125,7 +128,7 @@ def test_list_all_returns_every_open_session(repo: SqliteDriverSessionRepository
 def test_delete_removes_the_session_with_its_position(
     repo: SqliteDriverSessionRepository, engine: Engine
 ) -> None:
-    session = replace(_session(), position=POSITION, last_position_at=NOW)
+    session = replace(_session(), position=POSITION, last_fix_at=NOW, last_seen_at=NOW)
     repo.add(session)
     assert repo.delete(session.session_id) is True
     assert repo.list_all() == []

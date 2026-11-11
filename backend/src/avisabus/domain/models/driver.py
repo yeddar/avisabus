@@ -76,8 +76,12 @@ class DriverSession:
     progress_m: float | None
     """Distance along the shape of the trip."""
     off_route: bool
-    last_position_at: datetime | None
-    """Server instant of the last accepted position."""
+    last_fix_at: datetime | None
+    """Server instant of the last new GPS fix: a position with a later `recorded_at` (AC-11, v1.3).
+    Resending the same position does not renew it, so a lost GPS turns `STALE`."""
+    last_seen_at: datetime | None
+    """Server instant of the last valid `PUT …/position`, even a resend (AC-13, v1.3): the sign of
+    life that keeps the shift open."""
     progress_recorded_at: datetime | None = None
     """`recorded_at` of the last position accepted on the route (AC-09, v1.1)."""
 

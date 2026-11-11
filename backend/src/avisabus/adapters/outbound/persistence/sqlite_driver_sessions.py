@@ -45,7 +45,8 @@ driver_session = Table(
     Column("lon", Float, nullable=True),
     Column("accuracy_m", Float, nullable=True),
     Column("recorded_at", Text, nullable=True),
-    Column("last_position_at", Text, nullable=True),
+    Column("last_fix_at", Text, nullable=True),
+    Column("last_seen_at", Text, nullable=True),
     Column("progress_m", Float, nullable=True),
     Column("off_route", Integer, nullable=False),
     Column("progress_recorded_at", Text, nullable=True),
@@ -132,7 +133,8 @@ def _mutable_values(session: DriverSession) -> dict[str, Any]:
         "lon": None if position is None else position.lon,
         "accuracy_m": None if position is None else position.accuracy_m,
         "recorded_at": None if position is None else _to_text(position.recorded_at),
-        "last_position_at": _optional_text(session.last_position_at),
+        "last_fix_at": _optional_text(session.last_fix_at),
+        "last_seen_at": _optional_text(session.last_seen_at),
         "progress_m": session.progress_m,
         "off_route": int(session.off_route),
         "progress_recorded_at": _optional_text(session.progress_recorded_at),
@@ -165,17 +167,18 @@ def _to_model(row: Any) -> DriverSession:
         position=position,
         progress_m=row.progress_m,
         off_route=bool(row.off_route),
-        last_position_at=(
-            None if row.last_position_at is None else _from_text(row.last_position_at)
-        ),
-        progress_recorded_at=(
-            None if row.progress_recorded_at is None else _from_text(row.progress_recorded_at)
-        ),
+        last_fix_at=_optional_datetime(row.last_fix_at),
+        last_seen_at=_optional_datetime(row.last_seen_at),
+        progress_recorded_at=_optional_datetime(row.progress_recorded_at),
     )
 
 
 def _optional_text(value: datetime | None) -> str | None:
     return None if value is None else _to_text(value)
+
+
+def _optional_datetime(value: str | None) -> datetime | None:
+    return None if value is None else _from_text(value)
 
 
 def _to_text(value: datetime) -> str:
