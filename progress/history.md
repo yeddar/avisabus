@@ -574,3 +574,6 @@
 
 ## 2026-11-11 · CP-3 driver_session resuelto (PR #62) · driver_session · spec_blocked → implementing (v1.5, T-10)
 - AC-09: máximo por delante de 200 m en el test real. `feat/driver_session-v1.4` actualizada con `develop`.
+
+## 2026-11-11 · driver_session v1.5 · in_review → changes_requested → implementing
+- B-01: el test de T-10 ya no exige `no_progress == 0` (sin autorización de la spec); mutante `firstoff15` sobrevive.

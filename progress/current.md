@@ -4,10 +4,10 @@
 
 **Fecha:** 2026-11-11
 **Fase:** Ajustes del bloque 4 y bloque 5 (`deployment_rpi`)
-**Feature en curso:** `driver_session` v1.5 — `in_review` (T-10, rama `feat/driver_session-v1.4`)
+**Feature en curso:** `driver_session` v1.5 — `implementing`, ciclo de revisión 1 (T-10, rama `feat/driver_session-v1.4`)
 
 ## Último paso
-`driver_session` T-10 con 200 m por delante (v1.5): 3 tests reales pasan; `CI=1 ./init.sh verify --e2e` en verde.
+`driver_session` v1.5: revisión ciclo 1 CHANGES_REQUESTED (B-01: el test de T-10 perdió la aserción `no_progress == 0`; el mutante `firstoff15` sobrevive).
 
 ## Siguiente paso
 Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
