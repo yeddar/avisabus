@@ -565,3 +565,7 @@
 ## 2026-11-11 · driver_codes_cli v1.1 · implementing → in_review → done
 - T-05: `pretty_exceptions_show_locals=False` explícito y test de traza con el código en una variable local. Revisión
   ciclo 1 APPROVED (mutante `True` detectado; N-10 el test del fuente acepta un comentario). Verify --e2e en verde.
+
+## 2026-11-11 · driver_session v1.4 · spec_blocked (CP-3 P-04, T-10) · driver_ui · done → implementing (v1.2, T-08)
+- T-10: semilla 16 independiente deja 157,1 m por delante (rotonda de la línea 25 recorrida dos veces). La persona decide
+  aceptar la limitación y subir a 200 m; corrige ella la spec. Mientras, se sigue con `driver_ui` T-08.

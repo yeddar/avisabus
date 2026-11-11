@@ -4,14 +4,15 @@
 
 **Fecha:** 2026-11-11
 **Fase:** Ajustes del bloque 4 y bloque 5 (`deployment_rpi`)
-**Feature en curso:** `driver_session` v1.4 — siguiente (T-10). `driver_codes_cli` v1.1 `done`
+**Feature en curso:** `driver_ui` v1.2 — `implementing` (T-08, rama `feat/driver_ui-v1.2`, apilada sobre `feat/driver_codes_cli-v1.1`, PR #61)
 
 ## Último paso
-`driver_codes_cli` v1.1 (T-05): revisión ciclo 1 APPROVED; rama subida y PR contra `develop`.
+`driver_session` T-10 bloqueada por CP-3 P-04 (rama `feat/driver_session-v1.4`, solo local). La persona elige aceptar la limitación y subir a 200 m el máximo por delante de AC-09; corrige la spec ella.
 
 ## Siguiente paso
 Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
-1. `driver_codes_cli` T-05 · 2. `driver_session` T-10 · 3. `driver_ui` T-08 · 4. `passenger_map_view` T-09.
+1. ~~`driver_codes_cli` T-05~~ (PR #61) · 2. `driver_session` T-10 (CP-3 P-04: espera la spec con 200 m; la rama
+   `feat/driver_session-v1.4` tiene el test y el registro) · 3. `driver_ui` T-08 · 4. `passenger_map_view` T-09.
 5. `deployment_rpi` (sin exploración). `verify-deploy` con Docker en el Mac; `ship.sh`, `gtfs-update.sh` y `smoke.sh`
    **nunca** contra la Raspberry (los prueba la persona en el CP-6).
 6. `nfr_validation`: no empezar; su spec la prepara la persona.
@@ -159,7 +160,10 @@ Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Ninguno. CP-6 del bloque 4 aprobado (2026-11-11).
+**CP-3 de `driver_session` v1.4 (P-04): decidido por la persona** (aceptar y subir a 200 m el máximo por delante de
+AC-09). Falta la spec corregida, que hace la persona (sin spec-writer).
 
 ## Bloqueos
-Ninguno.
+`driver_session` T-10 espera la spec. Rotonda de la línea 25 (`1026_2253_2186`, puntos 461–466 = 477–482, vuelta de
+139,3 m): semilla 16 independiente, 157,1 m por delante; se recupera en ~20 s. Detalle en la rama `feat/driver_session-v1.4`
+(`progress/impl_driver_session.md`).
