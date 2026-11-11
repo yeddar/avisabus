@@ -1,251 +1,139 @@
 # Revisión: driver_codes_cli
-Ciclo: 2 · Fecha: 2026-11-09 · Agente: reviewer
-Spec: specs/driver_codes_cli/ v1.0 (APPROVED) · Rama: `feat/driver_codes_cli` (HEAD f70a41b), base `origin/feat/passenger_alert_ui-v1.1` · Commits del ciclo: 412e42d, 3dbc8d9
+Ciclo: 1 de la v1.1 · Fecha: 2026-11-11 · Agente: reviewer
+Spec: specs/driver_codes_cli/ v1.1 (APPROVED, PR #60) · Rama: `feat/driver_codes_cli-v1.1` (HEAD e5e2e81), base `origin/develop` · Commits revisados: 10eb266 (T-05), a396770 (T-04 y progreso)
 
 ## Veredicto: APPROVED
 
-F-01 está corregido y comprobado con el binario real. No hay hallazgos bloqueantes. Los seis AC tienen
-tests válidos, la verificación completa está en verde y los tests nuevos detectan la regresión. Quedan
-tres observaciones nuevas no bloqueantes (N-07 a N-09); la más útil es fijar `show_locals` (N-07).
+T-05 cumple AC-03 v1.1: `cli/main.py:14` fija `pretty_exceptions_show_locals=False` de forma
+explícita, y hay dos tests que lo comprueban. El de comportamiento falla de verdad si el valor
+vuelve a `True`: lo he comprobado con un mutante en una copia fuera del repositorio. La
+verificación completa está en verde, los seis AC siguen teniendo tests válidos y no hay cambios
+fuera del alcance. N-07 queda cerrado. Hay un hallazgo nuevo, no bloqueante: N-10.
 
 ## Matriz AC → evidencia
 
 `U` = `backend/tests/unit/test_driver_codes.py`, `C` = `backend/tests/integration/test_cli_driver_codes.py`,
-`R` = `backend/tests/integration/test_driver_code_repository.py`. "Mutantes" son los de este ciclo (ver
-más abajo): todos los de cada AC fueron detectados.
+`R` = `backend/tests/integration/test_driver_code_repository.py`. Entre paréntesis, el número de tests
+que citan el AC (`grep -rn 'driver_codes_cli.AC-0n"' backend/tests`).
 
 | AC | Test(s) | Resultado | Nota |
 |---|---|---|---|
-| AC-01 | 17: U `test_generator_*` (5), `test_create_stores_the_code_and_returns_the_plain_one`, `test_create_generates_another_code_when_it_already_exists`, `test_create_retries_up_to_five_times`, `test_create_gives_up_after_the_retries_without_storing_anything`; C `test_create_prints_the_code_grouped_with_its_id_and_label`, `test_create_stores_the_generated_code`, `test_create_generates_another_code_when_the_code_exists`, `test_create_fails_cleanly_when_every_retry_collides`; R `test_add_then_get_and_find_by_hash`, `test_add_rejects_*` (3) | OK | Mutantes: espacio 10^7, sin ceros a la izquierda, sin reintentos, código impreso dos veces, sin agrupar. |
-| AC-02 | 5: U `test_create_accepts_labels_of_one_to_forty_printable_characters` (ahora con `"   "`, N-02), `test_create_rejects_invalid_labels_without_storing_anything`; C `test_create_rejects_invalid_labels`, `test_create_requires_a_label`, `test_create_accepts_valid_labels` | OK | Mutantes: límite 41, sin `isprintable`, rechazar solo espacios. |
-| AC-03 | 13: U `test_hash_*` (4), `test_repr_does_not_expose_the_plain_code_nor_the_hash`, `test_create_never_stores_the_plain_code`; C `test_the_hash_uses_the_configured_server_secret`, `test_the_plain_code_is_not_in_the_table`, `test_neither_the_code_nor_its_hash_reach_the_logs`, **`test_a_failed_write_shows_neither_the_hash_nor_the_label`**; R `test_only_the_hash_is_written_to_the_table`, `test_collision_error_carries_no_stored_values`, **`test_a_failed_write_exposes_neither_the_hash_nor_the_label`** | OK | En negrita, los de F-01. Mutantes: dominio distinto, guardar en claro, registrar el código, quitar `from None`, quitar `hide_parameters` y ponerlo a `False`. |
-| AC-04 | 8: U `test_list_pairs_each_code_with_its_open_session_state`; C `test_list_shows_the_table_without_code_nor_hash`, `test_list_aligns_the_columns_with_long_labels`, `test_list_tells_when_a_code_has_an_open_shift`, `test_list_without_codes`, `test_list_as_json_has_the_same_information`, `test_list_as_json_without_codes`, `test_list_as_json_keeps_logs_out_of_stdout` | OK | Mutantes: estados invertidos, *hash* en el JSON, logs a stdout con `--json`. |
-| AC-05 | 12: U `test_revoke_marks_the_code_and_reports_the_open_session`, **`test_revoke_checks_the_open_session_before_revoking`**, `test_revoke_of_an_unknown_code_raises_and_keeps_the_id_in_an_attribute`, `test_revoke_of_a_revoked_code_changes_nothing`; C `test_revoke_marks_the_code_with_its_date`, `test_revoke_reports_the_open_shift`, `test_revoke_of_an_unknown_code_exits_with_one`, `test_revoke_of_a_revoked_code_is_harmless`, `test_revoke_of_a_revoked_code_logs_nothing_new`; R `test_revoke_stores_the_date_and_returns_the_code`, `test_revoke_of_an_unknown_code_returns_none`, `test_revoke_keeps_the_original_date` | OK | En negrita, el de N-01. Mutantes: sobrescribir la fecha, salir con 0 si no existe, consultar el turno tras revocar. |
-| AC-06 | 4: U `test_create_logs_only_the_code_id`, `test_create_logs_once_even_after_a_collision`, `test_revoke_logs_only_the_code_id`; C `test_create_and_revoke_log_the_code_id_only` | OK | Mutante: registrar la etiqueta. |
+| AC-01 (17) | Los mismos que en la v1.0: U `test_generator_*` (5), `test_create_*` (4); C `test_create_prints_the_code_grouped_with_its_id_and_label`, `test_create_stores_the_generated_code`, `test_create_generates_another_code_when_the_code_exists`, `test_create_fails_cleanly_when_every_retry_collides`; R `test_add_then_get_and_find_by_hash`, `test_add_rejects_*` (3) | OK | Sin cambios en la v1.1. Mutantes de regresión de este ciclo: sin ceros a la izquierda (4 tests fallan), salida 0 al agotar los reintentos (1 test falla). |
+| AC-02 (5) | Los mismos que en la v1.0 (U 2, C 3) | OK | Mutantes de regresión: sin `isprintable` (8 tests fallan), límite 41 (2 tests fallan). |
+| AC-03 (15) | Los 13 de la v1.0 y dos nuevos de la v1.1 en C: **`test_the_error_trace_does_not_show_the_code_kept_in_a_local_variable`** (`:345`) y **`test_the_cli_sets_show_locals_off_explicitly`** (`:383`) | OK | Detalle en la sección "T-05" de abajo. Mutantes de regresión: `hide_parameters=False` (3 tests fallan, entre ellos el nuevo de la traza), sin `from None` (1 test falla), dominio del dispositivo (6 tests fallan). |
+| AC-04 (8) | Los mismos que en la v1.0 (U 1, C 7) | OK | Mutantes de regresión: columna del turno invertida (2 tests fallan), logs a stdout con `--json` (1 test falla). |
+| AC-05 (12) | Los mismos que en la v1.0 (U 4, C 5, R 3) | OK | Mutante de regresión: salida 0 si el `code_id` no existe (1 test falla). |
+| AC-06 (4) | Los mismos que en la v1.0 (U 3, C 1) | OK | Mutantes de regresión: registrar la etiqueta en `create` (3 tests fallan) y en `revoke` (2 tests fallan). |
 
-Alcance de esta matriz: los tests nuevos del ciclo se han leído enteros. El resto se valida con los
-mutantes de este ciclo y con la revisión del ciclo 1, porque el único cambio de código de producción
-desde entonces es `db.py` (`git diff b10e283 HEAD --stat`).
+Desde la aprobación de la v1.0 (f70a41b), `driver_session` y `driver_gps_simulator` han cambiado
+ficheros de esta feature: `cli/container.py` (consulta real del turno abierto), `db.py` (tabla
+`driver_session`), `domain/models/driver.py`, `domain/ports/driver.py` y `cli/main.py` (comando
+`simulate`). También han añadido a C tres tests de `driver_session.AC-14`. Ningún test que cite
+`driver_codes_cli.AC-*` se ha quitado ni debilitado. Esos tests pasan con la consulta real del turno
+y siguen detectando los mutantes de arriba.
 
-### Mutaciones (en una copia del backend en el scratchpad; el repositorio no se ha tocado)
+### T-05 (AC-03 v1.1): la traza sin variables locales
 
-22 mutantes contra los tres ficheros de test de la feature: **21 detectados, 1 superviviente** (N-07).
+**Lo que hace el test de comportamiento** (`C:345-379`): borra la tabla después de componer, para
+que el `INSERT` lance un `OperationalError` real mientras `plain_code = "48210937"` es variable local
+de `CreateDriverCode.execute`. Antes de nada comprueba que esa variable local está en la traza
+(`:368`), así que el test no puede pasar sin ejercitar el caso. Después pasa la excepción por el
+`sys.excepthook` que Typer instala (`:372`) y comprueba cuatro cosas: que la traza muestra el
+error, y que no aparecen ni el código (junto o agrupado), ni su *hash*, ni la etiqueta.
 
-| Mutante | Resultado |
-|---|---|
-| Quitar `hide_parameters=True` de `db.py` | Detectado por los 2 tests de F-01, y solo por ellos |
-| `hide_parameters=False` | Detectado por los 2 tests de F-01 |
-| A15: consultar el turno tras revocar (N-01) | Detectado por `test_revoke_checks_the_open_session_before_revoking` |
-| M7: rechazar etiquetas solo de espacios (N-02) | Detectado por `test_create_accepts_labels_of_one_to_forty_printable_characters[   ]` |
-| 17 mutantes de AC-01 a AC-06 (ver matriz) | Detectados |
-| `pretty_exceptions_show_locals=True` en `cli/main.py` | **Sobrevive** (N-07) |
+**Mutantes en una copia del backend** (scratchpad, con el `.venv` del repositorio y
+`PYTHONPATH=<copia>/src`; antes comprobé que `cli/main.py` se importaba desde la copia). Ejecuté los
+tres ficheros de test de la feature, 93 tests. El repositorio no se ha tocado: `cmp` de todos los
+`.py` de la copia restaurada contra el repositorio sin diferencias, y la copia ya está borrada.
 
-## Verificación ejecutada
-
-`CI=1 ./init.sh verify --e2e` con el puerto 4173 libre (`lsof` sin procesos a la escucha): **exit 0, todo en verde**.
-
-| Paso | Resultado |
-|---|---|
-| backend format / lint | OK |
-| backend `mypy` | OK, 129 ficheros |
-| backend `lint-imports` | OK, 2 contratos, 0 rotos |
-| backend `pytest` (sockets desactivados) | 1413 passed, 6 deselected |
-| frontend format / lint / types | OK |
-| frontend tests | 563 passed, 2 skipped |
-| frontend build + bundle | OK, 5 passed |
-| frontend e2e + a11y | 126 passed |
-| `feature_list.json` y trazabilidad AC→test | OK |
-
-### 1. F-01 con el binario real
-
-`backend/.venv/bin/avisabus`, `AVISABUS_ENV=prod`, BD en el scratchpad y otra conexión con
-`BEGIN IMMEDIATE` retenida durante la orden. En todos los casos se busca la etiqueta, cualquier
-hexadecimal de 64 caracteres y 8 dígitos en stdout y stderr.
-
-| Escenario | Salida | Etiqueta | *Hash* | Código |
-|---|---|---|---|---|
-| `create`, BD bloqueada | 1, `database is locked`, `[SQL parameters hidden due to hide_parameters=True]` | 0 | 0 | 0 |
-| Igual, `AVISABUS_LOG_LEVEL=DEBUG` | 1, igual | 0 | 0 | 0 |
-| Igual, `TYPER_STANDARD_TRACEBACK=1` (traza estándar de Python) | 1, igual | 0 | 0 | 0 |
-| `create`, BD de solo lectura | 1, `attempt to write a readonly database` | 0 | 0 | 0 |
-| `revoke`, BD bloqueada | 1, parámetros ocultos; tampoco sale el `code_id` | 0 | 0 | 0 |
-
-Tras el fallo la tabla no tiene ninguna fila nueva, y el secreto del servidor no aparece en ninguna traza.
-
-### 2. Otras vías de salida
-
-| Vía | Comprobación | Resultado |
+| Mutante en `cli/main.py` | Test de la traza | Test del ajuste explícito |
 |---|---|---|
-| Otras excepciones de BD | `ProgrammingError` con un valor no enlazable; los errores de `sqlite3` encadenados en `__cause__` no llevan valores | Parámetros ocultos |
-| `str`, `repr`, `args` y traza de la excepción | Sin el *hash* | Limpio. `.params` conserva los valores **en memoria**; ningún módulo de `src/` lo lee |
-| `IntegrityError` | Sigue traducido con `from None` (mutante detectado) | Limpio |
-| `--json` | `list --json` con la BD bloqueada: JSON válido con `code_id`, etiqueta (la pide AC-04), fecha, estado y turno | Sin código ni *hash* |
-| Logs en `DEBUG` | `create` con el nivel `DEBUG`: una línea de log, solo `code_id`. El *logger* `sqlalchemy.engine.Engine` sigue en `WARNING` aunque la raíz esté en `DEBUG` | Limpio |
-| `echo` del motor | Nada en `src/` usa `echo` ni configura `sqlalchemy.engine`. Forzado a `DEBUG` en una prueba, sentencias con los parámetros ocultos, pero ver N-09 | Inalcanzable hoy |
-| Salida no UTF-8 | `create` con `PYTHONIOENCODING=ascii`: salida 0 y salida normal | Limpio |
-| Locales en la traza | Typer 0.27.3: `pretty_exceptions_show_locals=False`, comprobado en el `app` real | Limpio, ver N-07 |
+| M1 `pretty_exceptions_show_locals=True` | **Falla** (`AssertionError: '48210937' is contained here: … plain_code = '48210937'`) | Falla |
+| M2 sin el argumento (valor por defecto de Typer) | Pasa (es lo correcto: el comportamiento es el mismo) | **Falla** |
+| M3 sin el argumento, con `# pretty_exceptions_show_locals=False` como comentario | Pasa | **Pasa**: sobrevive (N-10) |
+| M4 `app.pretty_exceptions_show_locals = True` tras construir el `app` | **Falla** | Falla (por `is False`) |
+| M5 `show_locals=True` y `pretty_exceptions_short=False` | **Falla** | Falla |
 
-### 3. Efecto de `hide_parameters=True` en otras features
+En M1, el test de la traza falla porque en ella aparece el código en claro, no por otro motivo.
+Esto confirma que el test cubre la regresión que describía N-07.
 
-- `create_engine` de `db.py` es el único punto que crea motores, y lo usan la API (`src/avisabus/main.py:68`) y la CLI (`cli/container.py:62`).
-- Ningún módulo de `src/` lee `.params`, `.statement` ni el mensaje de un error de SQLAlchemy. `cli/gtfs.py:54-59` solo usa el tipo de la excepción, y `test_cli_gtfs.py` solo busca ese nombre.
-- Suite completa del backend en verde (1413). Sin `hide_parameters`, en la copia solo cambian de resultado los 2 tests de F-01. Otros 2 tests (`test_openapi_snapshot`, `test_env_example_documents_every_setting`) fallan en la copia con y sin el cambio, porque leen ficheros fuera de `backend/`; en el repositorio pasan.
+**Con el binario real** (`backend/.venv/bin/avisabus`, `AVISABUS_ENV=prod`, la BD en el scratchpad y
+puesta en solo lectura después de un primer `create`): `create --label EtiquetaSensible` sale con
+1, con la traza de `rich` (149 líneas con marco) y `attempt to write a readonly database`. Ni en
+stdout ni en stderr aparecen `plain_code`, ocho dígitos seguidos o agrupados, la etiqueta o un
+hexadecimal de 64 caracteres.
 
-## Hallazgos
-
-### Bloqueantes
-
-Ninguno. **F-01 queda cerrado.**
-
-### No bloqueantes (nuevos)
-
-- **N-07** — `backend/src/avisabus/adapters/inbound/cli/main.py:12`: que la traza no muestre variables locales depende solo del valor por defecto de Typer; `backend/pyproject.toml:12` no acota la versión (la fija `uv.lock`, 0.27.3) y ningún test lo cubre. Con `pretty_exceptions_show_locals=True` en la copia y una BD de solo lectura, la traza imprime `plain_code = '18186430'` y la etiqueta, que es justo lo que prohíbe AC-03. Hoy no ocurre. Conviene `pretty_exceptions_show_locals=False` explícito en `cli/main.py` (fichero de T-03) y un test que lo fije.
-- **N-08** — `backend/src/avisabus/adapters/inbound/cli/driver_codes.py:67-76`: un `OperationalError` sigue saliendo como traza, con su mensaje y el texto SQL, a diferencia de `cli/gtfs.py:54-59`, que solo muestra el tipo. No contiene valores, así que cumple el fin de `docs/conventions.md` §3, que además habla de logs y no de stderr, y es la corrección que propuso el ciclo 1. Un mensaje de error limpio sería más amable para el administrador.
-- **N-09 (informativo)** — `backend/src/avisabus/adapters/outbound/persistence/db.py:35`: `hide_parameters` oculta los parámetros, no las filas. Con el *logger* `sqlalchemy.engine` en `DEBUG` (o `echo="debug"`) se registran las filas leídas, con *hash* y etiqueta. Hoy nada lo activa y `AVISABUS_LOG_LEVEL=DEBUG` no le afecta; se anota para que no se habilite en producción.
-
-### No bloqueantes del ciclo 1
-
-| Id | Estado |
-|---|---|
-| N-01, N-02 | **Cerrados** (3dbc8d9; mutantes detectados). |
-| N-03, N-04 | Abiertos, sin cambios; siguen sin bloquear. |
-| N-05 | Abierto, corresponde al orquestador: `progress/current.md:7` dice `implementing` y `feature_list.json` dice `in_review`. |
-| N-06 | Abierto: imprecisión de spec, sin CP-3. |
-
-## Lista de comprobación (`docs/verification.md` §4)
-
-| Bloque | Resultado |
-|---|---|
-| Contrato | Sin cambios respecto al ciclo 1; coincide con los AC y con el design (salvo N-06). |
-| Arquitectura | `lint-imports` OK; sin `datetime.now()` ni `time.time()` en el código de la feature. |
-| Tests | Sin red ni sleeps; `FakeClock`; los `OperationalError` son reales (`DROP TABLE` antes del `INSERT`, sin esperar el `busy_timeout`). El bloqueo real se ha comprobado a mano con el binario. |
-| Privacidad y seguridad | F-01 corregido; sin vías de salida alcanzables (N-07 y N-09 son riesgos latentes). |
-| Frontend | No aplica: sin cambios en `frontend/`. |
-| Convenciones | Commits `fix(driver_codes_cli)` y `test(driver_codes_cli)` correctos. Sin variables nuevas en `.env.example`. |
-| Alcance | Ciclo 2: `db.py` (fichero de T-02), tres ficheros de test y progreso. La carpeta `qr/` sin versionar se ha ignorado. |
-
----
-
-Histórico: revisión del ciclo 1, sin cambios.
-
-Ciclo: 1 · Fecha: 2026-11-09 · Agente: reviewer
-Spec: specs/driver_codes_cli/ v1.0 (APPROVED) · Rama: `feat/driver_codes_cli` (HEAD b10e283), base `origin/feat/passenger_alert_ui-v1.1`
-
-## Veredicto: CHANGES_REQUESTED
-
-Un hallazgo bloqueante (F-01): si falla la escritura por algo distinto de un `IntegrityError` (p. ej.
-`database is locked`), la traza de `create` imprime el *hash* y la etiqueta. Los seis AC tienen tests
-válidos y la verificación completa está en verde.
-
-## Matriz AC → evidencia
-
-Todos los tests están en `backend/tests/`. `U` = `unit/test_driver_codes.py`, `C` =
-`integration/test_cli_driver_codes.py`, `R` = `integration/test_driver_code_repository.py`.
-
-| AC | Test(s) | Resultado | Nota |
-|---|---|---|---|
-| AC-01 | U `test_generator_*` (5), `test_create_stores_the_code_and_returns_the_plain_one`, `test_create_generates_another_code_when_it_already_exists` (activo y revocado), `test_create_retries_up_to_five_times`, `test_create_gives_up_after_the_retries_without_storing_anything`; C `test_create_prints_the_code_grouped_with_its_id_and_label`, `test_create_stores_the_generated_code`, `test_create_generates_another_code_when_the_code_exists`, `test_create_fails_cleanly_when_every_retry_collides`; R `test_add_rejects_*` | OK | Espacio completo 10^8, ceros a la izquierda, `secrets.randbelow` por defecto, una sola impresión agrupada. |
-| AC-02 | U `test_create_accepts_labels_*`, `test_create_rejects_invalid_labels_without_storing_anything`; C `test_create_rejects_invalid_labels`, `test_create_requires_a_label`, `test_create_accepts_valid_labels` | OK | Límites 1 y 40, salto de línea, CR, tabulador, ESC y U+2028. La etiqueta solo de espacios no tiene test (N-02). |
-| AC-03 | U `test_hash_*` (4), `test_create_never_stores_the_plain_code`, `test_repr_does_not_expose_the_plain_code_nor_the_hash`; C `test_the_hash_uses_the_configured_server_secret`, `test_the_plain_code_is_not_in_the_table`, `test_neither_the_code_nor_its_hash_reach_the_logs`; R `test_only_the_hash_is_written_to_the_table`, `test_collision_error_carries_no_stored_values` | OK | El literal del AC (código en claro) se cumple. F-01 afecta al *hash* y a la etiqueta, fuera del literal de este AC. |
-| AC-04 | U `test_list_pairs_each_code_with_its_open_session_state`; C `test_list_shows_the_table_without_code_nor_hash`, `test_list_aligns_the_columns_with_long_labels`, `test_list_tells_when_a_code_has_an_open_shift`, `test_list_without_codes`, `test_list_as_json_has_the_same_information`, `test_list_as_json_without_codes`, `test_list_as_json_keeps_logs_out_of_stdout` | OK | Tabla y JSON con los cinco datos, sin código ni *hash*. |
-| AC-05 | U `test_revoke_marks_the_code_and_reports_the_open_session`, `test_revoke_of_an_unknown_code_raises_and_keeps_the_id_in_an_attribute`, `test_revoke_of_a_revoked_code_changes_nothing`; C `test_revoke_marks_the_code_with_its_date`, `test_revoke_reports_the_open_shift`, `test_revoke_of_an_unknown_code_exits_with_one`, `test_revoke_of_a_revoked_code_is_harmless`, `test_revoke_of_a_revoked_code_logs_nothing_new`; R `test_revoke_*` | OK | Fecha guardada, salida 1 si no existe, salida 0 con aviso y fecha original intacta al repetir. |
-| AC-06 | U `test_create_logs_only_the_code_id`, `test_create_logs_once_even_after_a_collision`, `test_revoke_logs_only_the_code_id`; C `test_create_and_revoke_log_the_code_id_only` | OK | Comparación exacta de campos; también con el `configure_logging` real. |
-
-### Mutaciones (en una copia del backend en el scratchpad; el repositorio no se ha tocado)
-
-54 mutantes sobre *hasher*, generador, casos de uso, repositorio, CLI, composición y modelo, contra
-los tres ficheros de test: **52 detectados, 2 supervivientes**.
-
-| Superviviente | Lectura |
-|---|---|
-| A15: consultar `has_open_session` después de revocar | Hueco de test (N-01). |
-| M7: rechazar etiquetas solo de espacios | Hueco de test sobre una decisión local (N-02). |
-
-Entre los detectados: dominio igual al del dispositivo, sin derivar clave, fuente no criptográfica,
-espacio de 10^7, guardar el código en claro, registrar código/etiqueta/*hash*, imprimir el código dos
-veces, *hash* en `list` y `--json`, quitar `from None`, sobrescribir la fecha al re-revocar, logs a
-stdout con `--json`.
-
-## Verificación ejecutada
-
-`CI=1 ./init.sh verify --e2e` con el puerto 4173 libre (`lsof` sin procesos a la escucha): **exit 0, todo en verde**.
-
-| Paso | Resultado |
-|---|---|
-| backend format / lint | OK |
-| backend `mypy` | OK, 129 ficheros |
-| backend `lint-imports` | OK, 2 contratos, 0 rotos |
-| backend `pytest` (sockets desactivados) | 1409 passed, 6 deselected |
-| frontend format / lint / types | OK |
-| frontend tests | 563 passed, 2 skipped |
-| frontend build + bundle | OK, 5 passed |
-| frontend e2e + a11y | 126 passed |
-| `feature_list.json` y trazabilidad AC→test | OK |
-
-Pruebas adicionales con el binario real y BD en el scratchpad:
-
-- `AVISABUS_ENV=prod` y otra conexión con `BEGIN IMMEDIATE` durante `create`: salida 1 y traza con `[parameters: ('dc-pb6dfv', '4cafc6b0…', 'EtiquetaSensible', …)]` (F-01).
-- La misma prueba con `hide_parameters=True` en la copia: `[SQL parameters hidden due to hide_parameters=True]`, sin *hash* ni etiqueta; los 84 tests de la feature siguen pasando.
-- `create` con `AVISABUS_LOG_LEVEL=DEBUG`: una línea de log, sin código, *hash* ni etiqueta.
-
-## Hallazgos
-
-### Bloqueantes
-
-**F-01 — Una excepción de BD distinta de `IntegrityError` imprime el *hash* y la etiqueta.**
-`backend/src/avisabus/adapters/outbound/persistence/sqlite_driver_codes.py:44` solo captura
-`IntegrityError`, y `backend/src/avisabus/adapters/outbound/persistence/db.py:34` crea el motor sin
-`hide_parameters`. Un `OperationalError` en el `INSERT` (BD bloqueada más de los 5 s de
-`busy_timeout`, disco lleno, BD de solo lectura) sube sin capturar hasta Typer, que imprime por stderr
-el mensaje de SQLAlchemy con los parámetros. Reproducido con el binario real (ver arriba). La API
-escribe en la misma BD, así que el bloqueo es posible en producción, y el stderr de un proceso suele
-acabar en un registro (journal, cron).
-
-- **Incumple:** `docs/conventions.md` §3 "Excepciones en logs" (ninguna excepción no controlada con su mensaje) y el criterio de esta revisión (ningún log, `repr` o traza con el código o el *hash*). El literal de AC-03 solo cubre el código en claro, que no aparece: Typer 0.27.3 tiene `pretty_exceptions_show_locals=False` y `cli/main.py:12` no lo cambia.
-- **Corrección propuesta:** `hide_parameters=True` en `create_engine` (`db.py` está en los ficheros de T-02; validado en la copia). Alternativa equivalente: capturar `SQLAlchemyError` en `add` y relanzar sin detalles.
-- **Test necesario:** un `OperationalError` real o simulado en `add`/`create`, comprobando que el *hash* y la etiqueta no aparecen en el error ni en la salida. Hoy `test_collision_error_carries_no_stored_values` solo cubre `IntegrityError`.
-
-### No bloqueantes
-
-- **N-01** — `backend/src/avisabus/application/driver_codes.py:113-114`: el orden (consultar el turno antes de revocar) es el correcto, pero ningún test lo fija (mutante A15). Importa cuando exista el *reaper*: consultar después podría dar `False` si ya ha cerrado la sesión. Basta un `has_open_session` falso que dependa del estado del repositorio.
-- **N-02** — `backend/src/avisabus/domain/models/driver.py:30`: la etiqueta solo de espacios se acepta sin test que lo fije (mutante M7). Si se mantiene, conviene un test.
-- **N-03** — `backend/src/avisabus/adapters/inbound/cli/driver_codes.py:113-117`: el aviso va a stderr, mientras que los `AVISO:` existentes de `cli/gtfs.py:133-140` van a stdout. La spec no fija el canal y stderr es defendible; se anota por coherencia.
-- **N-04** — `backend/src/avisabus/application/driver_codes.py:108-117`: entre `get` y `revoke` no hay atomicidad. Dos `revoke` simultáneos conservan la primera fecha, pero ambos informan de "revocado" y registran `driver_code.revoked`. Sin impacto real en una CLI de administración.
-- **N-05** — `progress/current.md` dice `implementing` y `feature_list.json` dice `in_review`. Corresponde al orquestador.
-- **N-06 (imprecisión de spec, no requiere CP-3)** — `specs/driver_codes_cli/design.md` §2 dice "IntegrityError de hash → el caso de uso reintenta", y T-01 no lista `domain/errors.py`. La implementación es la única compatible con la capa de aplicación sin SQLAlchemy. Conviene ajustarlo en la próxima versión de la spec.
-
-## Decisiones locales de `progress/impl_driver_codes_cli.md`
-
-`design.md` no tiene sección de decisiones locales permitidas (`driver_session` sí, §7), así que cada una se juzga contra los AC y el design.
+### Decisiones locales de la v1.1 (`progress/impl_driver_codes_cli.md`)
 
 | Decisión | Dictamen | Motivo |
 |---|---|---|
-| Revocar uno ya revocado: excepción, aviso por stderr, salida 0, sin log | Cabe, sin CP-3 | AC-05 fija salida 0 y aviso. La firma del design no cambia y no permite distinguir el caso de otra forma. El canal no está fijado (N-03). |
-| Campos de `list --json` | Cabe, sin CP-3 | AC-04 pide "la misma información" y no fija nombres. Los cinco campos corresponden a las cinco columnas y `status` usa los valores del AC. |
-| Logs a stderr con `--json` | Cabe, sin CP-3 | Necesario para que stdout sea JSON válido (`configure_logging` escribe en stdout). Es local a `cli/driver_codes.py:50-54` y no toca `logging.py`. |
-| Reintentos agotados: 1 + 5 intentos, salida 1, sin guardar | Cabe, sin CP-3 | El design fija "hasta 5 reintentos"; lo que ocurre después solo admite fallar sin guardar. La salida 1 coincide con el otro error de la CLI. |
-| Etiqueta inválida con `str.isprintable` | Cabe, sin CP-3 | Desarrolla "imprimibles, sin saltos de línea". Rechazar ESC y separadores Unicode protege la tabla de `list`. |
-| Etiqueta solo de espacios aceptada | Cabe, sin CP-3 | Cumple el literal de AC-02. Rechazarla sería un cambio de spec, a decidir por la persona si lo quiere (N-02). |
-| Excepciones nuevas en `domain/errors.py` | Cabe, sin CP-3 | `docs/conventions.md` §3 las ubica ahí, y está por encima de la spec. `driver_session` T-01 sí lista ese fichero. Ver N-06. |
+| Invocar `app([...], prog_name="avisabus")` en lugar de `CliRunner` en el test de la traza | Correcta, sin CP-3 | Lo he comprobado en Typer 0.27.3. `CliRunner.invoke` construye el comando con `get_command(app)` (`typer/testing.py:285`) y no pasa por `Typer.__call__` (`typer/main.py:1133-1154`), que es donde se adjunta `DeveloperExceptionConfig` a la excepción. Sin esa configuración, `except_hook` (`typer/main.py:61-75`) usa la traza estándar de Python, que nunca muestra variables locales, y con `CliRunner` el mutante M1 sobreviviría. Además, el test restaura `sys.excepthook` con `monkeypatch` (`:361`) y quita las dos variables `TYPER_STANDARD_TRACEBACK`. AC-01 pide `CliRunner` para su propia verificación, no para esta. |
+| Test que lee el fuente de `cli/main.py` | Aceptable, sin CP-3 | AC-03 v1.1 pide que el valor sea explícito "con un test que lo comprueba", y ningún comportamiento distingue un `False` explícito del valor por defecto (M2). Ya hay un precedente de test sobre ficheros del repositorio (`tests/unit/test_architecture_contracts.py`). La comprobación textual tiene un hueco (M3, N-10), pero la acompaña `app.pretty_exceptions_show_locals is False`, y el test de comportamiento cubre lo que de verdad importa. |
+| Depender de `rich` en el test de la traza | Aceptable | `rich` llega como dependencia de `typer` (`uv.lock`) y está instalado. Sin `rich`, Typer usa la traza estándar, que no muestra variables locales: el test pasaría sin ejercitar `show_locals`, pero tampoco habría fuga. No es un riesgo para AC-03. |
 
-Ninguna requiere CP-3.
+## Verificación ejecutada
 
-## Revocar con un turno abierto y encaje con `driver_session`
+`CI=1 ./init.sh verify --e2e`, con el puerto 4173 libre (`lsof -iTCP:4173 -sTCP:LISTEN` sin
+resultados): **exit 0, `verify: todo en verde`**.
 
-- `_no_open_session` (`backend/src/avisabus/adapters/inbound/cli/container.py:37-39`) se inyecta en `ListDriverCodes` y `RevokeDriverCode`, como pide design §2. El caso con turno abierto se prueba con un `has_open_session` inyectado.
-- `driver_session` T-01 puede sustituirlo en `cli/container.py` (fichero listado en esa tarea) con `by_code(code_id) is not None`; `code_id` es UNIQUE en `driver_session`, y AC-14 amplía `test_cli_driver_codes.py`.
-- `find_by_hash` devuelve también los códigos revocados y `DriverCode.revoked` permite a `driver_session.AC-02` responder igual en ambos casos. El *hasher* usa el mismo secreto que tendrá la API.
-- Al repetir `revoke` no se consulta el turno, así que dentro de la ventana del *reaper* el aviso no lo menciona. AC-05 solo exige el aviso y el primer `revoke` ya informó.
-- A tener en cuenta en `driver_session`: "se cerrará en menos de 1 minuto" (design §4) depende de que `AVISABUS_DRIVER_REAPER_INTERVAL_S` siga en 60 y de que la API esté en marcha.
+| Paso | Resultado |
+|---|---|
+| backend format / lint | OK (`All checks passed!`) |
+| backend `mypy` | OK, sin problemas en 150 ficheros |
+| backend `lint-imports` | OK, 2 contratos cumplidos, 0 rotos |
+| backend `pytest` (sockets desactivados) | 1915 passed, 12 deselected; cobertura de `domain` + `application` 99,66 % |
+| frontend format / lint / types | OK |
+| frontend tests | 660 passed, 2 skipped |
+| frontend build + bundle | OK, 5 passed |
+| frontend e2e + a11y | 132 passed, 12 skipped (no hay cambios en `frontend/` en esta rama) |
+| `feature_list.json` y trazabilidad AC→test | OK |
+
+Otros comandos: los tres ficheros de test de la feature en la copia (93 passed sin mutantes), 11
+mutantes (ver arriba), la prueba con el binario real y `git diff --stat origin/develop...HEAD`.
+
+## Hallazgos
+
+### Bloqueantes
+
+Ninguno.
+
+### No bloqueantes (nuevos)
+
+- **N-10**: `backend/tests/integration/test_cli_driver_codes.py:386`. La expresión regular busca
+  `pretty_exceptions_show_locals\s*=\s*False` en todo el fichero, incluidos los comentarios. Si se
+  quita el argumento de `Typer(...)` y el texto queda en un comentario (mutante M3), el test sigue
+  pasando, y `app.pretty_exceptions_show_locals is False` también, porque es el valor por defecto
+  de Typer. Así, la parte "explícito" de AC-03 v1.1 podría perderse sin que falle ningún test. Es
+  poco probable y no expone el código: el test de comportamiento sigue cubriendo `True`. Sería más
+  robusto recorrer el AST de `cli/main.py` y comprobar que la llamada a `typer.Typer` que crea
+  `app` tiene la palabra clave `pretty_exceptions_show_locals` con el valor constante `False`.
+
+### Estado de los no bloqueantes anteriores
+
+| Id | Estado |
+|---|---|
+| N-01, N-02 | Cerrados en la v1.0 (3dbc8d9). |
+| N-03 | Abierto, sin cambios. `backend/src/avisabus/adapters/inbound/cli/driver_codes.py`: el aviso de revocar uno ya revocado va a stderr, mientras que los `AVISO:` de `cli/gtfs.py` van a stdout. La spec no fija el canal. |
+| N-04 | Abierto, sin cambios. `backend/src/avisabus/application/driver_codes.py:108-117`: entre `get` y `revoke` no hay atomicidad. Dos `revoke` simultáneos registran `driver_code.revoked` dos veces. Sin impacto real en una CLI de administración. |
+| N-05 | **Cerrado**: `progress/current.md:7` y `feature_list.json` dicen los dos `in_review`. |
+| N-06 | Abierto (imprecisión de spec, sin CP-3). `specs/driver_codes_cli/design.md` §2 sigue diciendo "IntegrityError de hash → el caso de uso reintenta", y T-01 sigue sin listar `domain/errors.py`. La v1.1 no lo ha corregido. |
+| N-07 | **Cerrado** por T-05 (10eb266): el valor es explícito y el mutante `True` hace fallar los dos tests nuevos. |
+| N-08 | Abierto, sin cambios. `backend/src/avisabus/adapters/inbound/cli/driver_codes.py:67-76`: un `OperationalError` sale como traza, con el mensaje y el SQL pero sin valores. Un mensaje de error limpio sería más amable para el administrador. |
+| N-09 | Abierto (informativo). `backend/src/avisabus/adapters/outbound/persistence/db.py:36`: `hide_parameters` oculta los parámetros, no las filas. Con `sqlalchemy.engine` en `DEBUG` se registrarían filas con *hash* y etiqueta. Hoy nada lo activa. |
 
 ## Lista de comprobación (`docs/verification.md` §4)
 
 | Bloque | Resultado |
 |---|---|
-| Contrato | Interfaces, tabla y CLI coinciden con el design, salvo la imprecisión N-06. |
-| Arquitectura | `domain/` puro (`lint-imports` OK), sin `datetime.now()` fuera de `SystemClock`, puertos respetados; la composición sigue el patrón de las demás CLI. |
-| Tests | Sin red ni sleeps; `FakeClock`; 52 de 54 mutantes detectados. |
-| Privacidad y seguridad | Solo *hash* HMAC con separación de dominio; `secrets.randbelow` en producción; `repr` sin código ni *hash*; código impreso una sola vez. **Falla F-01.** |
-| Frontend | No aplica: sin cambios en `frontend/`. |
-| Convenciones | Glosario y Conventional Commits OK. `.env.example` sin cambios: no hay variables nuevas. |
-| Alcance | Solo ficheros de T-01 a T-03, `domain/errors.py` y progreso. La carpeta `qr/` sin versionar se ha ignorado. |
+| Contrato | AC-03 v1.1 se cumple de forma literal: `False` explícito en la aplicación Typer, con un test. Los demás AC no han cambiado y su comportamiento sigue verificado. Sin cambios de interfaz respecto a `design.md`. |
+| Arquitectura | `lint-imports` OK. El cambio de código de producción es una línea en el adaptador de entrada (`cli/main.py`), sin `datetime.now()` ni `time.time()`. |
+| Tests | Sin red ni `sleep`. El `OperationalError` es real (`DROP TABLE` antes del `INSERT`). `sys.excepthook` y las variables de entorno se restauran con `monkeypatch`. Los tests no son tautológicos: M1, M2, M4 y M5 detectados; M3 sobrevive (N-10). |
+| Privacidad y seguridad | Ni la traza de `rich` ni la estándar muestran variables locales. Comprobado en el test y con el binario real, sin código, *hash* ni etiqueta. |
+| Frontend | No aplica: no hay cambios en `frontend/`. |
+| Convenciones | Commits `fix(driver_codes_cli)`, `chore(driver_codes_cli)` y `chore(progress)`, con el ámbito correcto. Nombres de test que describen el comportamiento y `@pytest.mark.spec("driver_codes_cli.AC-03")`. Código en inglés y progreso en castellano. |
+| Alcance | `git diff --stat origin/develop...HEAD`: `cli/main.py` y `test_cli_driver_codes.py` (los dos ficheros de T-05), más `feature_list.json`, `progress/current.md`, `progress/history.md` y `progress/impl_driver_codes_cli.md`. No hay cambios en `specs/` ni en `docs/`. La carpeta `qr/`, sin versionar, y `.env` no se han tocado. |
+
+---
+
+Histórico: la revisión de la v1.0 (ciclos 1 y 2, APPROVED en el ciclo 2) está en el historial de git
+de este fichero (`git log -p -- progress/review_driver_codes_cli.md`, versión anterior a esta).

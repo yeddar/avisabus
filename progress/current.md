@@ -3,28 +3,18 @@
 > Fichero vivo: lo reescribe el orquestador al final de cada sesión.
 
 **Fecha:** 2026-11-11
-**Fase:** Bloque 4 cerrado (CP-6 aprobado). Bloque 5 pendiente de la persona
-**Feature en curso:** ninguna.
+**Fase:** Ajustes del bloque 4 y bloque 5 (`deployment_rpi`)
+**Feature en curso:** `driver_session` v1.4 — siguiente (T-10). `driver_codes_cli` v1.1 `done`
 
 ## Último paso
-PR #56, #57 y #58 fusionadas. CP-6 del bloque 4 aprobado por la persona (2026-11-11) tras la demo en el Mac con
-Chrome DevTools (ubicación simulada en Sensors), con el SAE real y la línea 93.
+`driver_codes_cli` v1.1 (T-05): revisión ciclo 1 APPROVED; rama subida y PR contra `develop`.
 
 ## Siguiente paso
-Bloque 5, solo con la persona:
-1. `deployment_rpi`: la spec la escribe la persona (no lanzar spec-writer); implementer y reviewer solo con su spec
-   aprobada y si lo pide. Incluir la IP real del cliente tras NPM + nginx (limitador por IP) y valorar la renovación del
-   GTFS (el activo caduca el 2026-11-22; hoy es manual).
-2. `nfr_validation`: depende de `deployment_rpi`; preguntar antes cómo marcar esta en `feature_list.json`.
-
-## Decisiones abiertas de la persona (tras el CP-6 del bloque 4)
-- `driver_session` N-05: umbral de 150 m (semillas 2 y 4 dejan posiciones a 342–350 m por detrás).
-- `driver_ui` P-05 (CP-4): CU-08 frente al permiso pedido ya en el primer selector.
-- IP en los logs de `/alerts` y `/ws/passenger`: en `deployment_rpi` o tarea propia.
-- Fixtures del frontend con distancias infladas (capturas e2e): regenerar ahora o más adelante.
-- Pendiente de dispositivo real (con HTTPS, tras `deployment_rpi`): tablet parada (GPS `OK` sin moverse) y salto de
-  "fuera del recorrido" en tramos largos. En la demo, un "fuera del recorrido" se debió a una longitud sin signo menos;
-  la hipótesis de horas repetidas en Chrome no se confirmó (el servidor guardó horas nuevas).
+Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
+1. `driver_codes_cli` T-05 · 2. `driver_session` T-10 · 3. `driver_ui` T-08 · 4. `passenger_map_view` T-09.
+5. `deployment_rpi` (sin exploración). `verify-deploy` con Docker en el Mac; `ship.sh`, `gtfs-update.sh` y `smoke.sh`
+   **nunca** contra la Raspberry (los prueba la persona en el CP-6).
+6. `nfr_validation`: no empezar; su spec la prepara la persona.
 
 ## Pendiente para specs futuras
 - **driver_gps_simulator v1.0:** N-01 `simulate.py:34,155` crea `SqliteNetworkRepository` en vez de usar `CliContainer`.
@@ -58,7 +48,9 @@ Bloque 5, solo con la persona:
   en requirements (`:13-14`, AC-05). N-03 aclarar AC-06 (la 1282 difiere 339 m de la proyección). N-04/N-05
   huecos de test (horarios parciales; valores iguales del feed, D-25). N-06 `_stop_distances` es privada:
   `driver_session` no debe duplicar esa lógica.
-- **driver_codes_cli:** N-07 que la traza de Typer no muestre variables locales depende del valor por
+- **driver_codes_cli v1.1:** N-10 el test de `show_locals` (`test_cli_driver_codes.py:386`) acepta el texto en un
+  comentario → comprobar la llamada con el AST. N-07 cerrado (T-05).
+- **driver_codes_cli:** ~~N-07~~ que la traza de Typer no muestre variables locales depende del valor por
   defecto (`show_locals`): con `True` imprimiría `plain_code` → fijarlo a `False` y testearlo. N-08 un
   `OperationalError` sale como traza (sin valores). N-09 `hide_parameters` no oculta filas con
   `sqlalchemy.engine` en DEBUG (nada lo activa). N-03/N-04 abiertos. N-06 (spec): design §2 cita

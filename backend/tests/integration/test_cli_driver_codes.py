@@ -9,6 +9,7 @@ import hmac
 import json
 import logging
 import re
+import sys
 import traceback
 from collections.abc import Callable, Iterable, Iterator
 from dataclasses import replace
@@ -23,6 +24,7 @@ from sqlalchemy.exc import OperationalError
 from typer.testing import CliRunner, Result
 
 from avisabus.adapters.inbound.cli import driver_codes as driver_codes_cli
+from avisabus.adapters.inbound.cli import main as main_module
 from avisabus.adapters.inbound.cli.container import CliContainer, build_cli_container
 from avisabus.adapters.inbound.cli.main import app
 from avisabus.adapters.outbound.persistence.db import create_engine
@@ -333,6 +335,56 @@ def test_a_failed_write_shows_neither_the_hash_nor_the_label(
     assert _expected_hash("48210937") not in shown
     assert "EtiquetaSensible" not in shown
     assert "48210937" not in shown
+
+
+def _frame_locals(error: BaseException) -> list[dict[str, Any]]:
+    return [frame.f_locals for frame, _line in traceback.walk_tb(error.__traceback__)]
+
+
+@pytest.mark.spec("driver_codes_cli.AC-03")
+def test_the_error_trace_does_not_show_the_code_kept_in_a_local_variable(
+    customise: Callable[..., None],
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """v1.1 (T-05): the trace Typer prints when the CLI fails must not show local variables."""
+    fixed = _fixed_generator_container(["48210937"])
+
+    def drop_table_after_composing(container: CliContainer) -> dict[str, Any]:
+        with container.engine.begin() as conn:
+            conn.execute(text("DROP TABLE driver_code"))
+        return fixed(container)
+
+    customise(change=drop_table_after_composing)
+    # Call the app as the `avisabus` binary does (`CliRunner` skips `Typer.__call__`, which
+    # attaches the trace settings to the exception), and restore the hook it installs.
+    monkeypatch.setattr(sys, "excepthook", sys.excepthook)
+    monkeypatch.delenv("TYPER_STANDARD_TRACEBACK", raising=False)
+    monkeypatch.delenv("_TYPER_STANDARD_TRACEBACK", raising=False)
+    with pytest.raises(OperationalError) as raised:
+        app(["driver-codes", "create", "--label", "EtiquetaSensible"], prog_name="avisabus")
+    error = raised.value
+    # The failure happens while the plain code is still a local variable of the use case.
+    assert any(local.get("plain_code") == "48210937" for local in _frame_locals(error))
+
+    # Render the trace as the process does on exit: with the hook Typer has just installed.
+    capsys.readouterr()
+    sys.excepthook(type(error), error, error.__traceback__)
+    trace = capsys.readouterr().err
+
+    assert "OperationalError" in trace
+    assert "48210937" not in trace
+    assert "4821 0937" not in trace
+    assert _expected_hash("48210937") not in trace
+    assert "EtiquetaSensible" not in trace
+
+
+@pytest.mark.spec("driver_codes_cli.AC-03")
+def test_the_cli_sets_show_locals_off_explicitly() -> None:
+    """v1.1 (T-05): `False` is written in `cli/main.py`, not inherited from Typer's default."""
+    source = Path(main_module.__file__).read_text(encoding="utf-8")
+    assert re.search(r"pretty_exceptions_show_locals\s*=\s*False", source)
+    assert app.pretty_exceptions_show_locals is False
 
 
 @pytest.mark.spec("driver_codes_cli.AC-06")

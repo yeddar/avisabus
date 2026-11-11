@@ -557,3 +557,11 @@
   en U), `driver_ui` 1.2 (textos, plurales, estado), `driver_codes_cli` 1.1 (`show_locals`),
   `passenger_map_view` 1.3 (fixtures), CU-08 (permiso antes de la salida), IP en logs →
   `deployment_rpi` AC-09. Aprobados por la persona en la PR #60.
+
+## 2026-11-11 · PR #60 fusionada · driver_codes_cli · done → implementing (v1.1, T-05)
+- Ajustes del bloque 4 por orden (`driver_codes_cli` T-05, `driver_session` T-10, `driver_ui` T-08, `passenger_map_view`
+  T-09) y después `deployment_rpi`. `nfr_validation` la prepara la persona.
+
+## 2026-11-11 · driver_codes_cli v1.1 · implementing → in_review → done
+- T-05: `pretty_exceptions_show_locals=False` explícito y test de traza con el código en una variable local. Revisión
+  ciclo 1 APPROVED (mutante `True` detectado; N-10 el test del fuente acepta un comentario). Verify --e2e en verde.
