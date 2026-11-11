@@ -3,19 +3,26 @@
 > Fichero vivo: lo reescribe el orquestador al final de cada sesión.
 
 **Fecha:** 2026-11-11
-**Fase:** Implementación — Bloque 4 (conductor)
-**Feature en curso:** `driver_gps_simulator` v1.0 — `in_review`, ciclo de revisión 1 (rama `feat/driver_gps_simulator`, apilada sobre `feat/driver_ui`, PR #57, y esta sobre la #56)
+**Fase:** Fin del bloque 4 (conductor) — CP-6 pendiente
+**Feature en curso:** ninguna. Bloque 4 completo (`driver_gps_simulator` v1.0 `done`, rama `feat/driver_gps_simulator`)
 
 ## Último paso
-`driver_gps_simulator` T-01…T-03 implementadas; `CI=1 ./init.sh verify --e2e` y `pytest -m slow` en verde.
+`driver_gps_simulator`: revisión ciclo 1 APPROVED; rama subida y PR contra `develop` (apilada sobre la #57), sin fusionar.
 
 ## Siguiente paso
-1. `driver_gps_simulator`: revisión (ciclo 1) y PR.
-Después, CP-6 del bloque 4 (persona).
-**Bloque 5:** la spec de `deployment_rpi` la escribe la persona (no lanzar spec-writer); implementer y reviewer solo con su
-spec aprobada y si lo pide. Incluir la IP real del cliente tras NPM + nginx (limitador por IP). Orden de fusión: #56, #57 y la de `driver_gps_simulator`.
+1. CP-6 del bloque 4 (persona). Orden de fusión: #56, #57 y la de `driver_gps_simulator`.
+   Puntos para la demo: valenciano de `driver_ui`, tablet real parada, estado en cabecera (P-02), plurales (P-03),
+   fixtures del frontend con distancias infladas, P-05 (CU-08, CP-4) y `driver_session` N-05.
+2. Bloque 5 solo con la persona. La spec de `deployment_rpi` la escribe la persona (no lanzar spec-writer); implementer
+   y reviewer solo con su spec aprobada y si lo pide. Incluir la IP real del cliente tras NPM + nginx (limitador por IP).
 
 ## Pendiente para specs futuras
+- **driver_gps_simulator v1.0:** N-01 `simulate.py:34,155` crea `SqliteNetworkRepository` en vez de usar `CliContainer`.
+  N-02 `uncancel()` sin test; Ctrl+C con `POST /sessions` en vuelo deja el turno abierto hasta el reaper (10 min). N-03
+  AC-05 no distingue estados de GPS (sobrevive "GPS OK" fijo). N-04 (docs, persona) uso del simulador, regla de
+  `.env.example`, `accuracy_m=5` en la spec, logs JSON mezclados con el progreso en stdout.
+- **driver_session N-05 (re-medido 2026-11-11):** con σ 10 m correlado, semillas 1–5: fallan la 2 y la 4 (5 posiciones a
+  342–350 m por detrás). El simulador no sirve para medirlo (ruido uniforme independiente). CP-3 con la persona.
 - **driver_ui v1.1:** P-05 (CP-4, persona) el permiso de ubicación se pide ya en el primer selector (AC-04/AC-09 v1.1)
   y CU-08 lo pone en el paso 4, tras elegir salida: A (recomendada) actualizar CU-08; B limitar la v1.1 a la siguiente
   salida. P-02 estado en cabecera (§5.9) sin texto; decidir en CP-6. P-03 plurales fijos ("Esperan 1 personas"). P-04
@@ -150,7 +157,7 @@ spec aprobada y si lo pide. Incluir la IP real del cliente tras NPM + nginx (lim
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Ninguno. CP-3 de `driver_ui` (P-01) resuelto en la PR #55.
+**CP-6 del bloque 4** (persona): demo del flujo del conductor y confirmación para pasar al bloque 5.
 
 ## Bloqueos
 Ninguno.

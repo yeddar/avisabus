@@ -539,3 +539,7 @@
   Probado contra el backend real v1.3. Verify --e2e en verde (1857 backend, 660 Vitest, 132 e2e). P-05 → CP-4 (CU-08).
 
 ## 2026-11-11 · driver_ui PR #57 abierta · driver_gps_simulator · spec_approved → implementing
+
+## 2026-11-11 · driver_gps_simulator v1.0 · implementing → in_review → done · bloque 4 completo
+- Revisión ciclo 1 APPROVED (15/17 mutantes; ejecución real contra backend local: cierre siempre, sin filtrar código
+  ni token). Verify --e2e en verde (1913 backend). N-05 de `driver_session` re-medido: fallan semillas 2 y 4. CP-6 pendiente.

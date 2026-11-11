@@ -484,7 +484,7 @@
       "order": 20,
       "block": 4,
       "title": "Simulador de recorrido del conductor (CLI)",
-      "status": "in_review",
+      "status": "done",
       "depends_on": [
         "driver_session"
       ],
@@ -497,7 +497,7 @@
       "spec": "specs/driver_gps_simulator/",
       "needs_exploration": false,
       "review_cycles": 0,
-      "passes": false
+      "passes": true
     },
     {
       "id": "deployment_rpi",
