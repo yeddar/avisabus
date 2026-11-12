@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { existsSync } from 'node:fs';
+import { matchesGlob } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ManifestOptions } from 'vite-plugin-pwa';
 import { describe, expect, it } from 'vitest';
@@ -40,5 +41,33 @@ describe('PWA configuration', () => {
       .flat()
       .map((plugin) => (plugin && 'name' in plugin ? plugin.name : undefined));
     expect(pluginNames).toContain('vite-plugin-pwa');
+  });
+
+  const precached = (file: string) =>
+    (pwaOptions.workbox?.globPatterns ?? []).some((pattern) => matchesGlob(file, pattern));
+
+  it('[deployment_rpi.AC-15] precaches the woff2 files of the typeface with the app shell', () => {
+    for (const file of [
+      'assets/atkinson-hyperlegible-latin-400-normal-BrHNak5F.woff2',
+      'assets/atkinson-hyperlegible-latin-ext-700-normal-GZI4o3u0.woff2',
+      'index.html',
+      'assets/index-Ba79gKQW.js',
+      'assets/index-caiUVFBI.css',
+    ]) {
+      expect(precached(file), file).toBe(true);
+    }
+    // The woff fallback is never used by the browsers we support: not worth precaching.
+    expect(precached('assets/atkinson-hyperlegible-latin-400-normal-BbWidj28.woff')).toBe(false);
+  });
+
+  it('[deployment_rpi.AC-15] never caches OpenStreetMap tiles, /api nor /ws', () => {
+    // No runtime caching at all: tiles (another origin) and live data always go to the network.
+    expect(pwaOptions.workbox?.runtimeCaching).toBeUndefined();
+    for (const path of ['api/v1/stops/508', 'ws/passenger', 'tile.openstreetmap.org/1/0/0.png']) {
+      expect(precached(path), path).toBe(false);
+    }
+    const denylist = pwaOptions.workbox?.navigateFallbackDenylist ?? [];
+    expect(denylist.some((pattern) => pattern.test('/api/v1/health'))).toBe(true);
+    expect(denylist.some((pattern) => pattern.test('/ws/passenger'))).toBe(true);
   });
 });
