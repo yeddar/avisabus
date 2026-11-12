@@ -4,10 +4,10 @@
 
 **Fecha:** 2026-11-11
 **Fase:** Ajustes del bloque 4 y bloque 5 (`deployment_rpi`)
-**Feature en curso:** `deployment_rpi` v1.0 — `in_review` (rama `feat/deployment_rpi`, apilada sobre la PR #65)
+**Feature en curso:** `deployment_rpi` v1.0 — `implementing`, ciclo de revisión 1 (rama `feat/deployment_rpi`, apilada sobre la PR #65)
 
 ## Último paso
-`deployment_rpi` T-01…T-08 implementadas; `CI=1 ./init.sh verify --e2e` y `./init.sh verify-deploy` en verde. Nada ejecutado contra la Raspberry.
+`deployment_rpi`: revisión ciclo 1 CHANGES_REQUESTED solo en la guía (B-1: Proxy Host de NPM después de `ship.sh`; B-2: restaurar la copia de `data/` exige root). Código, imágenes y scripts cumplen AC-01…AC-15.
 
 ## Siguiente paso
 Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
@@ -17,6 +17,11 @@ Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
 Hechas: `driver_codes_cli` T-05 (#61, fusionada), `driver_session` T-10 (#63), `driver_ui` T-08 (#64, sobre la #63), `passenger_map_view` T-09 (sobre la #64).
 
 ## Pendiente para specs futuras
+- **deployment_rpi v1.0 (persona):** caché de nginx (solo `/assets/` y `workbox-*.js` inmutables; resto `no-cache`) distinta
+  del patrón de design §4 y no permitida por §10 → ratificar y actualizar el design. N-1 el error log de nginx de `web`
+  guarda `client: <IP>` y la URL con `?t=` cuando el backend no responde (choca con RNF-06). N-2 (spec) el log de acceso de
+  NPM guarda IP y `?t=` → `access_log off;` en *Advanced* del Proxy Host. N-3 comprobar en CP-6 si NPM acepta `X-Real-IP`
+  de redes privadas. N-4…N-9 menores en `progress/review_deployment_rpi.md`.
 - **passenger_map_view v1.3:** N-10 ningún test de la feature comprueba el resumen con ≥ 1 km (formato cubierto en
   `format.test.ts`) → caso `enRoute(2, 1234)` opcional. Regenerar fixtures exige la BD local y el script del fichero de
   progreso (no versionado). Abiertos N-02, N-04, N-06…N-09.
