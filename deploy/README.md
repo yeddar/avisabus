@@ -82,19 +82,11 @@ falta el contacto, o si la URL pública no empieza por `https://`; el error nomb
 chmod 600 .env.prod
 ```
 
-### 3.2. Enviar y arrancar (en el Mac)
+### 3.2. *Proxy Host* en NPM (antes del primer envío)
 
-```bash
-deploy/ship.sh
-```
-
-Construye `avisabus-backend` y `avisabus-web` con la versión `git describe --tags --always
---dirty`, las copia (`docker save | ssh docker load`), sincroniza `compose.yaml` y `nginx/`, fija
-la versión en `<RPI_DIR>/.env` (lo leen todos los `docker compose` de esa carpeta), prepara
-`data/` para el usuario del contenedor (uid 10001), arranca y ejecuta `deploy/smoke.sh`. Mientras
-no haya feed GTFS, `/api/v1/health` responde `degraded` (aviso, no error).
-
-### 3.3. *Proxy Host* en NPM
+Créalo **antes** de `deploy/ship.sh`, que termina comprobando la URL pública con
+`deploy/smoke.sh`. NPM acepta el destino `web` aunque el contenedor todavía no exista: hasta el
+primer envío, el dominio responde `502 Bad Gateway`.
 
 En la interfaz de NPM, **Hosts → Proxy Hosts → Add Proxy Host**:
 
@@ -109,7 +101,21 @@ NPM añade la IP real del cliente al final de `X-Forwarded-For`; `web` toma esa 
 (solo confía en redes privadas) y se la pasa al backend como única entrada, así que los límites
 por IP no se pueden falsear con esa cabecera. Por eso `web` nunca debe publicar puertos.
 
-Comprueba desde el Mac:
+### 3.3. Enviar y arrancar (en el Mac)
+
+```bash
+deploy/ship.sh
+```
+
+Construye `avisabus-backend` y `avisabus-web` con la versión `git describe --tags --always
+--dirty`, las copia (`docker save | ssh docker load`), sincroniza `compose.yaml` y `nginx/`, fija
+la versión en `<RPI_DIR>/.env` (lo leen todos los `docker compose` de esa carpeta), prepara
+`data/` para el usuario del contenedor (uid 10001), arranca y ejecuta `deploy/smoke.sh`. Mientras
+no haya feed GTFS, `/api/v1/health` responde `degraded` (aviso, no error).
+
+Si `ship.sh` termina con `FALLO` en las comprobaciones (por ejemplo, porque el *Proxy Host*, el
+DNS o el certificado aún no están listos), el servicio ya está arrancado en la Raspberry: corrige
+lo que indique el motivo y repite solo la comprobación, sin volver a enviar:
 
 ```bash
 deploy/smoke.sh https://<tu-dominio>
@@ -201,7 +207,7 @@ deploy/ship.sh --rollback <versión>                  # en el Mac
 
 Cambia la versión fijada en `<RPI_DIR>/.env`, arranca esas imágenes y ejecuta `smoke.sh`. La base
 de datos no se toca: si la versión nueva hubiera cambiado su estructura, restaura también la
-copia (sección 9).
+copia (sección 9, «Restaurar una copia»).
 
 Para liberar espacio, borra las versiones que ya no quieras (nunca la que está en uso):
 
@@ -234,7 +240,35 @@ cp data/avisabus.sqlite "avisabus-$(date +%Y%m%d-%H%M).sqlite"
 docker compose start backend web
 ```
 
-Para restaurarla: `docker compose stop web backend`, copia el fichero sobre
-`data/avisabus.sqlite` (borra `data/avisabus.sqlite-wal` y `data/avisabus.sqlite-shm` si existen)
-y `docker compose start backend web`. Guarda también `.env.prod` en un lugar seguro: sin el mismo
-secreto, los QR impresos dejan de valer.
+Guarda también `.env.prod` en un lugar seguro: sin el mismo secreto, los QR impresos dejan de
+valer.
+
+### Restaurar una copia
+
+`data/` y la base de datos son del usuario del contenedor (uid 10001), así que el usuario de SSH
+no puede sobrescribirlas: un `cp` o un `rm` directos dan *Permission denied*. Restaura con un
+contenedor como root, que además deja los ficheros otra vez con el propietario 10001:
+
+```bash
+ssh <RPI_HOST>
+cd <RPI_DIR>
+COPIA=avisabus-AAAAMMDD-HHMM.sqlite    # la copia que quieres restaurar, en <RPI_DIR>
+docker compose stop web backend
+docker compose run --rm --no-deps -T --user 0 -v "$PWD/$COPIA:/restore.sqlite:ro" \
+  --entrypoint sh backend -c '
+    cp /restore.sqlite /data/avisabus.sqlite &&
+    rm -f /data/avisabus.sqlite-wal /data/avisabus.sqlite-shm &&
+    chown 10001:10001 /data /data/avisabus.sqlite &&
+    chmod 644 /data/avisabus.sqlite'
+docker compose start backend web
+docker compose ps                      # backend debe quedar «healthy»
+```
+
+Si prefieres `sudo` en la Raspberry, los pasos son los mismos con el servicio parado:
+
+```bash
+sudo cp "$COPIA" data/avisabus.sqlite
+sudo rm -f data/avisabus.sqlite-wal data/avisabus.sqlite-shm
+sudo chown 10001:10001 data data/avisabus.sqlite
+sudo chmod 644 data/avisabus.sqlite
+```
