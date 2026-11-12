@@ -26,6 +26,7 @@ Proyecto académico (TFM) desarrollado con **Spec Driven Development (spec first
 | [`AGENTS.md`](AGENTS.md) | Roles de los agentes y flujo de trabajo |
 | [`CHECKPOINTS.md`](CHECKPOINTS.md) | Puntos de control humanos |
 | [`feature_list.json`](feature_list.json) | Estado de cada feature |
+| [`deploy/README.md`](deploy/README.md) | Despliegue en la Raspberry Pi: primer despliegue, actualizaciones, GTFS, logs |
 
 ## Estructura
 
@@ -40,7 +41,7 @@ Proyecto académico (TFM) desarrollado con **Spec Driven Development (spec first
 ├── init.sh                  # setup · verify · dev · status
 ├── backend/                 # Python 3.12 · FastAPI · SQLite (hexagonal)
 ├── frontend/                # React · TypeScript · Vite · PWA
-├── deploy/                  # docker compose · nginx (web)
+├── deploy/                  # docker compose · nginx (web) · scripts y guía de despliegue
 └── data/                    # (git-ignored) feed GTFS real, base de datos local
 ```
 
@@ -51,7 +52,10 @@ Proyecto académico (TFM) desarrollado con **Spec Driven Development (spec first
 ./init.sh status    # estado de las features
 ./init.sh verify    # lint + tipos + tests + arquitectura (lo mismo que exige la revisión)
 ./init.sh dev       # backend en :8000 y frontend en :5173
+./init.sh verify-deploy  # construye e inspecciona las imágenes de producción (requiere Docker)
 ```
+
+Despliegue en la Raspberry Pi: [`deploy/README.md`](deploy/README.md).
 
 Coloca el feed GTFS de EMT descomprimido en `data/gtfs/emt/` (no se versiona).
 
