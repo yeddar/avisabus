@@ -608,3 +608,5 @@
 ## 2026-11-12 · deployment_rpi · implementing → in_review → done
 - Ciclo 2 APPROVED: B-1 y B-2 de la guía corregidos y probados en una Raspberry simulada en Colima. `verify-deploy` y
   `verify --e2e` en verde (1969 backend, 677 Vitest, 135 e2e). Pruebas en la Raspberry real: persona (CP-6).
+
+- **2026-11-12 · deployment_rpi · CP-6 en curso (Raspberry).** 502 por choque de nombres en la red de NPM y GTFS sin importar; la persona renombra los servicios a `avisabus-*` en la Raspberry. Acordada una v1.1 de la spec (persona): renombrado, Cloudflare (IP real y caché de `sw.js`) y descarga automática del GTFS.

@@ -24,6 +24,12 @@
   NPM guarda IP y `?t=` → `access_log off;` en *Advanced* del Proxy Host. N-3 comprobar en CP-6 si NPM acepta `X-Real-IP`
   de redes privadas. N-4…N-9 menores en `progress/review_deployment_rpi.md`. N-10 `smoke.sh:68` con `set -e` corta en la
   segunda petición si la URL no conecta (sin resumen). N-11 §7 de la guía da por hecha una copia previa que §4 no pide.
+- **deployment_rpi v1.1 (persona, acordado en CP-6 el 2026-11-12):** (a) renombrar los servicios a `avisabus-backend` y
+  `avisabus-web` (los nombres genéricos chocan en la red compartida de NPM: `web` tomaba un `backend` de otro stack,
+  172.19.0.4) en `compose.yaml`, `web.conf` (va dentro de la imagen), `ship.sh`, `gtfs-update.sh`, guía de NPM y
+  `verify-deploy`; (b) Cloudflare delante de NPM: IP real desde `CF-Connecting-IP` (AC-05) y `/sw.js` sale con
+  `max-age=14400` por el *Browser Cache TTL* de Cloudflare (AC-06); (c) descarga automática del GTFS (en `gtfs-update.sh`
+  o como opción de la CLI en `gtfs_import`), con la URL oficial que fije la persona.
 - **passenger_map_view v1.3:** N-10 ningún test de la feature comprueba el resumen con ≥ 1 km (formato cubierto en
   `format.test.ts`) → caso `enRoute(2, 1234)` opcional. Regenerar fixtures exige la BD local y el script del fichero de
   progreso (no versionado). Abiertos N-02, N-04, N-06…N-09.
