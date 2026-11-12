@@ -104,7 +104,7 @@ describe('BusMap', () => {
       Number(region.querySelector<HTMLElement>(selector)?.style.zIndex || 400);
     expect(zIndex('.leaflet-route-pane')).toBeLessThan(zIndex('.leaflet-overlay-pane'));
     const bus = region.querySelector('.leaflet-marker-pane [data-bus-arrow]');
-    expect(bus?.getAttribute('style')).toContain('rotate(90.9deg)');
+    expect(bus?.getAttribute('style')).toContain('rotate(100.94859961754514deg)');
   });
 
   it("[passenger_map_view.AC-05] [passenger_map_view.AC-07] labels the passenger's stop and the bus with visible text, without a legend", () => {

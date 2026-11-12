@@ -23,7 +23,7 @@ function summarize(
   return { ...summary, plain: summaryPlainText(summary.text) };
 }
 
-function enRoute(stopsAway: number, distance = 3403): PositionResponse {
+function enRoute(stopsAway: number, distance = 844): PositionResponse {
   const p = POSITION_EN_ROUTE();
   p.position = { ...p.position!, stops_away: stopsAway, distance_to_stop_m: distance };
   return p;
@@ -32,13 +32,13 @@ function enRoute(stopsAway: number, distance = 3403): PositionResponse {
 describe('buildSummary', () => {
   it('[passenger_map_view.AC-04] EN_ROUTE: distance, stops away, next stop and minutes', () => {
     expect(summarize(POSITION_EN_ROUTE()).plain).toBe(
-      'El autobús está a 3,4 km de tu parada, a 3 paradas. Próxima parada: Cid - Hospital General. Llega en 5 minutos.',
+      'El autobús está a 844 m de tu parada, a 2 paradas. Próxima parada: Cid - Josep Maestre. Llega en 5 minutos.',
     );
   });
 
   it('[passenger_map_view.AC-04] EN_ROUTE in Valencian', () => {
     expect(summarize(POSITION_EN_ROUTE(), { lang: 'ca' }).plain).toBe(
-      "L'autobús està a 3,4 km de la teua parada, a 3 parades. Pròxima parada: Cid - Hospital General. Arriba en 5 minuts.",
+      "L'autobús està a 844 m de la teua parada, a 2 parades. Pròxima parada: Cid - Josep Maestre. Arriba en 5 minuts.",
     );
   });
 
@@ -98,10 +98,10 @@ describe('buildSummary', () => {
     const p = POSITION_NOT_STARTED(); // next_stop is the second stop, "Cid - Marconi"
 
     expect(summarize(p).plain).toBe(
-      'El autobús aún no ha salido de Avinguda del Cid. Llega a las 08:58.',
+      'El autobús aún no ha salido de Avinguda del Cid. Llega a las 05:57.',
     );
     expect(summarize(p, { lang: 'ca' }).plain).toBe(
-      "L'autobús encara no ha eixit d'Avinguda del Cid. Arriba a les 08:58.",
+      "L'autobús encara no ha eixit d'Avinguda del Cid. Arriba a les 05:57.",
     );
   });
 
@@ -152,12 +152,12 @@ describe('buildSummary', () => {
     const parts = summaryParts(summarize(POSITION_EN_ROUTE()).text);
 
     expect(parts.filter((part) => part.kind === 'strong').map((part) => part.text)).toEqual([
-      '3,4 km',
-      'a 3 paradas',
+      '844 m',
+      'a 2 paradas',
       '5 minutos',
     ]);
     expect(parts.filter((part) => part.kind === 'name').map((part) => part.text)).toEqual([
-      'Cid - Hospital General',
+      'Cid - Josep Maestre',
     ]);
   });
 

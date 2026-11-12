@@ -592,3 +592,9 @@
 ## 2026-11-11 · driver_ui v1.2 · implementing → in_review → done
 - T-08: textos del selector, plurales con `count` y estado visible en la cabecera. Ciclo 2 APPROVED (B-01 test
   intermitente corregido con `findSocket()`). Abiertos para la persona: P-06 (cabecera al empezar) y P-07 (plurales).
+
+## 2026-11-11 · driver_ui PR #64 abierta · passenger_map_view · done → implementing (v1.3, T-09)
+
+## 2026-11-11 · passenger_map_view v1.3 · implementing → in_review → done
+- T-09: fixtures de posición regeneradas desde la API (en ruta 844 m, sin empezar 1839 m; antes 3403/4251). Revisión
+  ciclo 1 APPROVED (regeneradas byte a byte; distancias a ≤ 4 m de la medida independiente).

@@ -7,7 +7,7 @@ import { PositionSummary } from '../PositionSummary';
 import type { Summary } from '../summary';
 
 const EN_ROUTE: Summary = {
-  text: 'El autobús está a <strong>3,4 km</strong> de tu parada, <strong>a 3 paradas</strong>. Próxima parada: <name>Cid - Hospital General</name>. Llega en <strong>5 minutos</strong>.',
+  text: 'El autobús está a <strong>844 m</strong> de tu parada, <strong>a 2 paradas</strong>. Próxima parada: <name>Cid - Josep Maestre</name>. Llega en <strong>5 minutos</strong>.',
   badge: 'estimated',
 };
 
@@ -25,7 +25,7 @@ describe('PositionSummary', () => {
       'Dónde está el autobús',
     );
     expect(within(region).getByText(/^El autobús/)).toHaveTextContent(
-      'El autobús está a 3,4 km de tu parada, a 3 paradas. Próxima parada: Cid - Hospital General. Llega en 5 minutos.',
+      'El autobús está a 844 m de tu parada, a 2 paradas. Próxima parada: Cid - Josep Maestre. Llega en 5 minutos.',
     );
   });
 
@@ -34,11 +34,11 @@ describe('PositionSummary', () => {
 
     const bold = screen.getByRole('region').querySelectorAll('p strong');
     expect([...bold].map((node) => node.textContent)).toEqual([
-      '3,4 km',
-      'a 3 paradas',
+      '844 m',
+      'a 2 paradas',
       '5 minutos',
     ]);
-    expect(screen.getByText('Cid - Hospital General')).toHaveAttribute('lang', 'ca-ES-valencia');
+    expect(screen.getByText('Cid - Josep Maestre')).toHaveAttribute('lang', 'ca-ES-valencia');
   });
 
   it('[passenger_map_view.AC-06] is not a live region: refreshes are not read out', () => {
