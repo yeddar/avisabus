@@ -6,6 +6,7 @@ data/
 
 # Configuración de producción (plantilla en deploy/.env.prod.example)
 deploy/.env.prod
+deploy/ship.env
 
 # Bases de datos SQLite
 *.sqlite
