@@ -1,5 +1,5 @@
 # Implementación: deployment_rpi
-Spec: specs/deployment_rpi/ (v1.0, APPROVED, PR #60) · Ciclo de revisión: 0 · Rama: `feat/deployment_rpi`
+Spec: specs/deployment_rpi/ (v1.0, APPROVED, PR #60) · Ciclo de revisión: 1 · Rama: `feat/deployment_rpi`
 (apilada sobre `feat/passenger_map_view-v1.3`, PR #65). Exploración: no necesaria (`tasks.md`).
 
 ## Estado
@@ -7,6 +7,40 @@ T-01 a T-08 terminadas. `CI=1 ./init.sh verify --e2e` y `./init.sh verify-deploy
 "Verificación"). Quedan para el CP-6, en la Raspberry, las verificaciones manuales de AC-04 (1 h
 de WebSocket), AC-05, AC-06, AC-12, AC-13, AC-14 y AC-16: no se ha ejecutado nada contra la
 Raspberry ni por SSH.
+
+## Ciclo 1 (CHANGES_REQUESTED de `progress/review_deployment_rpi.md`)
+Solo cambia la guía `deploy/README.md`. `ship.sh` no cambia, así que no hacía falta repetir el
+despliegue ni `--rollback`. Los no bloqueantes N-1 a N-9 y la ratificación de la caché de nginx
+quedan para la persona, sin tocar.
+
+- [x] **B-1** — El *Proxy Host* de NPM pasa a §3.2, **antes** del primer `deploy/ship.sh`
+  (§3.3). Se avisa de que el dominio da `502` hasta el primer envío. §3.3 explica qué hacer si
+  `smoke.sh` falla al final de `ship.sh` (Proxy Host, DNS o certificado aún no listos): el
+  servicio ya está arrancado, así que se corrige y se repite solo `deploy/smoke.sh <url>`.
+- [x] **B-2** — §9 tiene un apartado nuevo, «Restaurar una copia». Explica por qué el usuario de
+  SSH no puede sobrescribir `data/` (es del uid 10001). El procedimiento principal: parar `web` y
+  `backend`; `docker compose run --rm --no-deps -T --user 0 -v "$PWD/$COPIA:/restore.sqlite:ro"
+  --entrypoint sh backend -c '…'`, que copia, borra `-wal`/`-shm` y deja `data/` y la base con
+  `chown 10001:10001` (y `chmod 644` la base); arrancar y comprobar `healthy`. Se añade la
+  alternativa equivalente con `sudo`. §7 remite a ese apartado.
+  - **Prueba local (sin SSH):** la "Raspberry" era un directorio propio de la VM de Colima
+    (`/tmp/avisabus-fix1`, permisos Linux reales), con `data/` montado ahí mediante un override de
+    compose. El usuario de SSH lo simulaba un contenedor con uid 1000. Pasos:
+    1. *chown* de `ship.sh`, importación de `gtfs_mini` y backend `healthy`.
+    2. Copia de la base con el servicio parado (como uid 1000: funciona; tras una parada limpia
+       no queda `-wal`). Después se creó un código de conductor (dato posterior a la copia).
+    3. B-2 reproducido: `cp` sobre `data/avisabus.sqlite` como uid 1000 da *Permission denied*.
+    4. Procedimiento de la guía (mismo comando, con la ruta absoluta de la VM en lugar de
+       `$PWD`): código de salida 0, ficheros del uid 10001, backend `healthy` y `/health` en `ok`;
+       `driver-codes list` → «No hay códigos de conductor» (copia restaurada); crear un código
+       después funciona (el backend escribe).
+  - **Limpieza:** se borraron el proyecto compose, su red interna, la red `npm` de prueba y el
+    directorio de la VM. Los contenedores de otro proyecto no se tocaron.
+- Commit: 6da13ee. Verificación del ciclo 1 (solo cambia la guía):
+  - `./init.sh verify`: verde. Backend 1969 passed (cobertura 99,66 %); frontend 677 passed,
+    2 skipped; build + bundle; trazabilidad.
+  - `./init.sh verify-deploy`: los 8 pasos en verde, código 0 (imágenes `6da13ee-dirty`: el
+    árbol solo tenía este fichero de progreso sin commit).
 
 ## Tareas
 - [x] T-01 — Validación de producción en `Settings` y `deploy/.env.prod.example` (commit ad92ef5)
