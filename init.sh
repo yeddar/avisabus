@@ -89,7 +89,8 @@ cmd_verify_deploy() {  # deployment_rpi design §8: not part of `verify` (it nee
   docker info >/dev/null 2>&1 || { fail "Docker no responde (¿está arrancado?)"; exit 1; }
   local deploy="$ROOT/deploy" tmp version
   tmp="$(mktemp -d)"
-  trap 'rm -rf "$tmp"' EXIT
+  # shellcheck disable=SC2064 # expanded now: `tmp` is local and gone when the trap runs
+  trap "rm -rf '$tmp'" EXIT
   version="$(git -C "$ROOT" describe --tags --always --dirty)"
   # A throwaway production configuration, from the template, only to validate and build.
   sed -e "s|^AVISABUS_STOP_TOKEN_SECRET=.*|AVISABUS_STOP_TOKEN_SECRET=$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')|" \
