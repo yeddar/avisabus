@@ -610,3 +610,4 @@
   `verify --e2e` en verde (1969 backend, 677 Vitest, 135 e2e). Pruebas en la Raspberry real: persona (CP-6).
 
 - **2026-11-12 · deployment_rpi · CP-6 en curso (Raspberry).** 502 por choque de nombres en la red de NPM y GTFS sin importar; la persona renombra los servicios a `avisabus-*` en la Raspberry. Acordada una v1.1 de la spec (persona): renombrado, Cloudflare (IP real y caché de `sw.js`) y descarga automática del GTFS.
+- **2026-11-12 · SAE (EMT) · bloqueo externo.** `QR.php` responde 404 desde el Mac y la Raspberry: sin tiempo real, las paradas usan el horario. La persona vuelve a probar mañana; si persiste, exploración de la nueva fuente.

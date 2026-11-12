@@ -187,4 +187,8 @@
 Ninguno. CP-3 de `driver_session` (P-04) resuelto en la PR #62.
 
 ## Bloqueos
-Ninguno.
+- **SAE de EMT caído o retirado (2026-11-12):** `https://www.emtvalencia.es/QR.php?sec=est&p=<parada>` responde
+  `404` (16 B, típico de `File not found.` de PHP) desde el Mac y desde la Raspberry, con cualquier User-Agent probado.
+  Sin tiempo real: las paradas caen al horario del GTFS ("Sin datos en tiempo real"). La persona vuelve a probar el
+  2026-11-13; si sigue, propuesta: explorer (solo lectura) → `progress/explore_sae_v2.md` (nuevo destino de los QR,
+  qué consulta la web/app de EMT, API o GTFS-RT y condiciones) y nueva versión de la spec del adaptador del SAE.
