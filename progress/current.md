@@ -4,10 +4,10 @@
 
 **Fecha:** 2026-11-11
 **Fase:** Ajustes del bloque 4 y bloque 5 (`deployment_rpi`)
-**Feature en curso:** `deployment_rpi` v1.0 — `implementing` (T-01…T-04 primero; rama `feat/deployment_rpi`, apilada sobre `feat/passenger_map_view-v1.3`, PR #65)
+**Feature en curso:** `deployment_rpi` v1.0 — `in_review` (rama `feat/deployment_rpi`, apilada sobre la PR #65)
 
 ## Último paso
-`passenger_map_view` v1.3 APPROVED; PR #65 (apilada sobre la #64). Docker en el Mac no disponible: Colima parado y sin plugins `compose`/`buildx` (lo prepara la persona).
+`deployment_rpi` T-01…T-08 implementadas; `CI=1 ./init.sh verify --e2e` y `./init.sh verify-deploy` en verde. Nada ejecutado contra la Raspberry.
 
 ## Siguiente paso
 Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
