@@ -1,0 +1,22 @@
+# Build context of frontend/Dockerfile (the repository root, deploy/compose.yaml): only
+# frontend/ (without its local artefacts) and deploy/nginx/ are used.
+**/node_modules
+**/.venv
+**/__pycache__
+**/.env*
+**/data/
+**/dist/
+**/dev-dist/
+**/e2e-captures/
+**/test-results/
+**/playwright-report/
+**/blob-report/
+**/coverage/
+.git
+backend/
+qr/
+progress/
+specs/
+docs/
+deploy/*
+!deploy/nginx/

@@ -1,0 +1,11 @@
+# frontend/Dockerfile is built from the repository root (see the root .dockerignore); this file
+# applies if frontend/ is ever used as the context.
+node_modules
+dist
+dev-dist
+e2e-captures
+test-results
+playwright-report
+blob-report
+coverage
+.env*
