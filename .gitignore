@@ -4,6 +4,10 @@ data/
 # Configuración local (las variables se documentan en .env.example)
 .env
 
+# Configuración de producción (plantilla en deploy/.env.prod.example)
+deploy/.env.prod
+deploy/ship.env
+
 # Bases de datos SQLite
 *.sqlite
 *.sqlite-*

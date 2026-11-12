@@ -33,6 +33,7 @@ def test_environment_variables_with_prefix_override_defaults(
     monkeypatch.setenv("AVISABUS_ENV", "prod")
     monkeypatch.setenv("AVISABUS_LOG_LEVEL", "WARNING")
     monkeypatch.setenv("AVISABUS_STOP_TOKEN_SECRET", "x" * 32)  # required in prod
+    monkeypatch.setenv("AVISABUS_SAE_CONTACT", "ops@example.org")  # deployment_rpi AC-07
     monkeypatch.setenv("AVISABUS_DATABASE_URL", "sqlite:////srv/avisabus.sqlite")
     monkeypatch.setenv("AVISABUS_PUBLIC_BASE_URL", "https://avisabus.example")
     settings = Settings()

@@ -1,0 +1,56 @@
+# AvisaBus on the Raspberry Pi (deployment_rpi design §3). Built on the Mac (linux/arm64) and run
+# on the Raspberry Pi behind Nginx Proxy Manager (NPM). See deploy/README.md.
+#
+#   AVISABUS_VERSION   image tag (ship.sh: `git describe --tags --always --dirty`); also `latest`
+#   NPM_NETWORK        external Docker network of NPM (default npm_default)
+#   AVISABUS_ENV_FILE  production configuration (default .env.prod, next to this file; never
+#                      versioned). ship.sh and verify-deploy point it to a template to build.
+name: avisabus
+
+x-logging: &logging
+  driver: json-file
+  options: { max-size: 10m, max-file: "3" }
+
+services:
+  backend:
+    image: avisabus-backend:${AVISABUS_VERSION:-latest}
+    build:
+      context: ../backend
+      platforms: [linux/arm64]
+      tags: ["avisabus-backend:latest"]
+    platform: linux/arm64
+    env_file:
+      - path: ${AVISABUS_ENV_FILE:-.env.prod}
+        required: true
+    volumes: ["./data:/data"]
+    networks: [internal]
+    # No `ports`: only `web` reaches the backend, through the internal network.
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health', timeout=3).status == 200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging: *logging
+
+  web:
+    image: avisabus-web:${AVISABUS_VERSION:-latest}
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
+      platforms: [linux/arm64]
+      tags: ["avisabus-web:latest"]
+    platform: linux/arm64
+    depends_on:
+      backend: { condition: service_healthy }
+    networks: [internal, npm]
+    # No `ports` either: NPM reaches `web:80` through its own network (NPM_NETWORK).
+    restart: unless-stopped
+    logging: *logging
+
+networks:
+  internal: {}
+  npm:
+    external: true
+    name: ${NPM_NETWORK:-npm_default}

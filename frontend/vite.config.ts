@@ -29,7 +29,11 @@ export const pwaOptions: Partial<VitePWAOptions> = {
     ],
   },
   workbox: {
+    // App shell plus the woff2 files of the self-hosted typeface, so the PWA keeps its font
+    // offline (deployment_rpi AC-15). The woff fallbacks are not needed by supported browsers.
+    globPatterns: ['**/*.{js,css,html,woff2}'],
     // The API and WebSocket are always live data: never served from the service worker cache.
+    // There is no runtime caching: OpenStreetMap tiles always come from their servers.
     navigateFallbackDenylist: [/^\/api\//, /^\/ws/],
   },
 };

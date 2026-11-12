@@ -43,6 +43,9 @@ def test_prod_accepts_a_secret_of_at_least_32_bytes(
 ) -> None:
     monkeypatch.setenv("AVISABUS_ENV", "prod")
     monkeypatch.setenv("AVISABUS_STOP_TOKEN_SECRET", secret)
+    # Also required in prod (deployment_rpi AC-07).
+    monkeypatch.setenv("AVISABUS_SAE_CONTACT", "ops@example.org")
+    monkeypatch.setenv("AVISABUS_PUBLIC_BASE_URL", "https://avisabus.example")
     with capture_logs() as logs:
         settings = Settings()
     assert settings.stop_token_secret_bytes() == secret.encode()

@@ -8,14 +8,12 @@ from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
 
 import avisabus
-from avisabus.adapters.inbound.http.access_log import (
-    mask_driver_addresses,
-    mask_driver_socket_addresses,
-)
+from avisabus.adapters.inbound.http.access_log import mask_client_addresses
 from avisabus.adapters.inbound.http.container import (
     AlertUseCases,
     DriverDemand,
     DriverUseCases,
+    GtfsStatus,
     PositionUseCases,
     Realtime,
     StopUseCases,
@@ -51,6 +49,7 @@ def create_app(
     alerts: AlertUseCases | None = None,
     drivers: DriverUseCases | None = None,
     demand: DriverDemand | None = None,
+    gtfs: GtfsStatus | None = None,
     *,
     schema_only: bool = False,
 ) -> FastAPI:
@@ -63,7 +62,8 @@ def create_app(
     for the device header and the events, and answers them with `Cache-Control: no-store`;
     `drivers` adds the driver endpoints (driver_session), also with `no-store`; `demand` adds
     `/ws/driver` and `GET /driver/sessions/current/view` (driver_demand), which need `realtime` and
-    `drivers`.
+    `drivers`; `gtfs` lets `/health` report the active feed (deployment_rpi AC-10): without it,
+    there is no feed to report and the status is `degraded`.
 
     With `schema_only`, every router is registered without its dependencies, so the app can only
     describe itself (`openapi_document`); its endpoints must not be called."""
@@ -71,13 +71,14 @@ def create_app(
         lifespan = _with_connections(lifespan, realtime.registry)
     app = FastAPI(title="AvisaBus", version=avisabus.__version__, lifespan=lifespan)
     app.state.settings = settings
+    mask_client_addresses()  # deployment_rpi AC-09: no address nor query in access logs
     app.add_middleware(GZipMiddleware, minimum_size=GZIP_MINIMUM_SIZE)
     if alerts is not None:
         app.add_middleware(NoStoreMiddleware, path=f"{API_PREFIX}/alerts")
     if drivers is not None:
         app.add_middleware(NoStoreMiddleware, path=f"{API_PREFIX}/driver")
-        mask_driver_addresses(f"{API_PREFIX}/driver")
     register_error_handlers(app)
+    app.state.gtfs_status = gtfs
     app.include_router(health.router, prefix=API_PREFIX)
     if stops is not None:
         app.state.stop_use_cases = stops
@@ -104,7 +105,6 @@ def create_app(
         app.state.driver_demand = demand
         app.state.driver_socket = demand.socket
         app.include_router(driver_socket.router)  # no /api/v1 (docs/architecture.md §7)
-        mask_driver_socket_addresses(driver_socket.DRIVER_ENDPOINT)
     if demand is not None or schema_only:
         app.include_router(driver_routes.view_router, prefix=API_PREFIX)
     return app

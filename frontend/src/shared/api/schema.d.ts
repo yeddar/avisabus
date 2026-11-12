@@ -534,6 +534,25 @@ export interface components {
      * @enum {string}
      */
     GpsState: 'WAITING' | 'OK' | 'STALE';
+    /** GtfsHealth */
+    GtfsHealth: {
+      /**
+       * Days Left
+       * @description Days from today (Europe/Madrid) to `feed_end_date`; negative once expired.
+       */
+      days_left: number;
+      /**
+       * Feed End Date
+       * Format: date
+       * @description Last valid day of the active feed (inclusive).
+       */
+      feed_end_date: string;
+      /**
+       * Feed Version
+       * @description `feed_version` of the active feed, if any.
+       */
+      feed_version: string | null;
+    };
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
@@ -541,11 +560,13 @@ export interface components {
     };
     /** HealthResponse */
     HealthResponse: {
+      /** @description Active GTFS feed; `null` when there is none. */
+      gtfs: components['schemas']['GtfsHealth'] | null;
       /**
        * Status
-       * @constant
+       * @enum {string}
        */
-      status: 'ok';
+      status: 'ok' | 'degraded';
       /** Version */
       version: string;
     };

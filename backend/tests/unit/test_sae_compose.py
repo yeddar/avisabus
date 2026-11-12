@@ -47,7 +47,13 @@ class Transport:
     ("env", "expected"), [("test", "replay"), ("dev", "http"), ("prod", "http")]
 )
 def test_default_source_depends_on_the_environment(env: str, expected: str) -> None:
-    settings = _settings(env=env, stop_token_secret=SECRET)
+    # In prod the http source needs a contact and an https URL (deployment_rpi AC-07).
+    settings = _settings(
+        env=env,
+        stop_token_secret=SECRET,
+        sae_contact="ops@example.org",
+        public_base_url="https://avisabus.example",
+    )
     assert settings.arrivals_source is None
     assert settings.resolved_arrivals_source() == expected
 

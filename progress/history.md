@@ -598,3 +598,13 @@
 ## 2026-11-11 · passenger_map_view v1.3 · implementing → in_review → done
 - T-09: fixtures de posición regeneradas desde la API (en ruta 844 m, sin empezar 1839 m; antes 3403/4251). Revisión
   ciclo 1 APPROVED (regeneradas byte a byte; distancias a ≤ 4 m de la medida independiente).
+
+## 2026-11-11 · passenger_map_view PR #65 abierta · deployment_rpi · spec_approved → implementing
+- Sin exploración (tasks.md). T-01…T-04 primero; T-05 y T-08 esperan a Docker en el Mac (Colima parado, sin `compose`/`buildx`).
+
+## 2026-11-12 · deployment_rpi · implementing → in_review → changes_requested → implementing
+- Ciclo 1: AC-01…AC-15 cumplen (verify-deploy detecta mutantes; IP real llega al limitador). B-1 y B-2 en la guía (AC-16).
+
+## 2026-11-12 · deployment_rpi · implementing → in_review → done
+- Ciclo 2 APPROVED: B-1 y B-2 de la guía corregidos y probados en una Raspberry simulada en Colima. `verify-deploy` y
+  `verify --e2e` en verde (1969 backend, 677 Vitest, 135 e2e). Pruebas en la Raspberry real: persona (CP-6).

@@ -65,6 +65,9 @@ def test_process_environment_takes_precedence_over_both_dotenv_files(
     monkeypatch.setenv("AVISABUS_LOG_LEVEL", "ERROR")
     monkeypatch.setenv("AVISABUS_ENV", "prod")
     monkeypatch.setenv("AVISABUS_STOP_TOKEN_SECRET", "x" * 32)  # required in prod
+    # Also required in prod (deployment_rpi AC-07).
+    monkeypatch.setenv("AVISABUS_SAE_CONTACT", "ops@example.org")
+    monkeypatch.setenv("AVISABUS_PUBLIC_BASE_URL", "https://avisabus.example")
     settings = Settings()
     assert settings.log_level == "ERROR"
     assert settings.env == "prod"
