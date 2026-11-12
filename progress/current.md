@@ -3,25 +3,27 @@
 > Fichero vivo: lo reescribe el orquestador al final de cada sesión.
 
 **Fecha:** 2026-11-11
-**Fase:** Ajustes del bloque 4 y bloque 5 (`deployment_rpi`)
-**Feature en curso:** `deployment_rpi` v1.0 — `in_review`, ciclo de revisión 2 (rama `feat/deployment_rpi`, apilada sobre la PR #65)
+**Fase:** Bloque 5 — `deployment_rpi` implementada; pruebas en la Raspberry y `nfr_validation` de la persona
+**Feature en curso:** ninguna. `deployment_rpi` v1.0 `done` (rama `feat/deployment_rpi`, apilada sobre la PR #65)
 
 ## Último paso
-`deployment_rpi` B-1 y B-2 corregidos en la guía (Proxy Host antes de `ship.sh`; §9 restaurar copia como root); `verify` y `verify-deploy` en verde.
+`deployment_rpi`: revisión ciclo 2 APPROVED; rama subida y PR contra `develop` (apilada sobre la #65), sin fusionar.
 
 ## Siguiente paso
-Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
-3. `deployment_rpi` (sin exploración). `verify-deploy` con Docker en el Mac; `ship.sh`, `gtfs-update.sh` y `smoke.sh`
-   **nunca** contra la Raspberry (los prueba la persona en el CP-6).
-4. `nfr_validation`: no empezar; su spec la prepara la persona.
-Hechas: `driver_codes_cli` T-05 (#61, fusionada), `driver_session` T-10 (#63), `driver_ui` T-08 (#64, sobre la #63), `passenger_map_view` T-09 (sobre la #64).
+1. La persona fusiona por orden: #63 (`driver_session` T-10), #64 (`driver_ui` T-08), #65 (`passenger_map_view` T-09) y la
+   de `deployment_rpi`.
+2. La persona prueba en la Raspberry (CP-6 de `deployment_rpi`): `ship.sh` (y `--rollback`), `gtfs-update.sh`, `smoke.sh`,
+   WebSocket 1 h (AC-04), limitador por IP tras NPM (AC-05), cabeceras con HTTPS (AC-06), guía (AC-16). Los agentes nunca
+   ejecutan esos scripts contra la Raspberry.
+3. `nfr_validation`: no empezar; su spec la prepara la persona. CP-6 del bloque 5 cuando ambas estén en `done`.
 
 ## Pendiente para specs futuras
 - **deployment_rpi v1.0 (persona):** caché de nginx (solo `/assets/` y `workbox-*.js` inmutables; resto `no-cache`) distinta
   del patrón de design §4 y no permitida por §10 → ratificar y actualizar el design. N-1 el error log de nginx de `web`
   guarda `client: <IP>` y la URL con `?t=` cuando el backend no responde (choca con RNF-06). N-2 (spec) el log de acceso de
   NPM guarda IP y `?t=` → `access_log off;` en *Advanced* del Proxy Host. N-3 comprobar en CP-6 si NPM acepta `X-Real-IP`
-  de redes privadas. N-4…N-9 menores en `progress/review_deployment_rpi.md`.
+  de redes privadas. N-4…N-9 menores en `progress/review_deployment_rpi.md`. N-10 `smoke.sh:68` con `set -e` corta en la
+  segunda petición si la URL no conecta (sin resumen). N-11 §7 de la guía da por hecha una copia previa que §4 no pide.
 - **passenger_map_view v1.3:** N-10 ningún test de la feature comprueba el resumen con ≥ 1 km (formato cubierto en
   `format.test.ts`) → caso `enRoute(2, 1234)` opcional. Regenerar fixtures exige la BD local y el script del fichero de
   progreso (no versionado). Abiertos N-02, N-04, N-06…N-09.

@@ -504,7 +504,7 @@
       "order": 21,
       "block": 5,
       "title": "Despliegue en Raspberry Pi: compose, contenedor web, imágenes multiarquitectura",
-      "status": "in_review",
+      "status": "done",
       "depends_on": [
         "project_scaffold"
       ],
@@ -516,7 +516,7 @@
       "spec": "specs/deployment_rpi/",
       "needs_exploration": false,
       "review_cycles": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "nfr_validation",

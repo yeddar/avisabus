@@ -604,3 +604,7 @@
 
 ## 2026-11-12 · deployment_rpi · implementing → in_review → changes_requested → implementing
 - Ciclo 1: AC-01…AC-15 cumplen (verify-deploy detecta mutantes; IP real llega al limitador). B-1 y B-2 en la guía (AC-16).
+
+## 2026-11-12 · deployment_rpi · implementing → in_review → done
+- Ciclo 2 APPROVED: B-1 y B-2 de la guía corregidos y probados en una Raspberry simulada en Colima. `verify-deploy` y
+  `verify --e2e` en verde (1969 backend, 677 Vitest, 135 e2e). Pruebas en la Raspberry real: persona (CP-6).
