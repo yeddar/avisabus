@@ -4,10 +4,10 @@
 
 **Fecha:** 2026-11-11
 **Fase:** Ajustes del bloque 4 y bloque 5 (`deployment_rpi`)
-**Feature en curso:** `deployment_rpi` v1.0 — `implementing`, ciclo de revisión 1 (rama `feat/deployment_rpi`, apilada sobre la PR #65)
+**Feature en curso:** `deployment_rpi` v1.0 — `in_review`, ciclo de revisión 2 (rama `feat/deployment_rpi`, apilada sobre la PR #65)
 
 ## Último paso
-`deployment_rpi`: revisión ciclo 1 CHANGES_REQUESTED solo en la guía (B-1: Proxy Host de NPM después de `ship.sh`; B-2: restaurar la copia de `data/` exige root). Código, imágenes y scripts cumplen AC-01…AC-15.
+`deployment_rpi` B-1 y B-2 corregidos en la guía (Proxy Host antes de `ship.sh`; §9 restaurar copia como root); `verify` y `verify-deploy` en verde.
 
 ## Siguiente paso
 Cada una con reviewer nuevo y PR contra `develop` sin fusionar, ramas apiladas:
