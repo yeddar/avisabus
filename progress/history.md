@@ -611,3 +611,4 @@
 
 - **2026-11-12 · deployment_rpi · CP-6 en curso (Raspberry).** 502 por choque de nombres en la red de NPM y GTFS sin importar; la persona renombra los servicios a `avisabus-*` en la Raspberry. Acordada una v1.1 de la spec (persona): renombrado, Cloudflare (IP real y caché de `sw.js`) y descarga automática del GTFS.
 - **2026-11-12 · SAE (EMT) · bloqueo externo.** `QR.php` responde 404 desde el Mac y la Raspberry: sin tiempo real, las paradas usan el horario. La persona vuelve a probar mañana; si persiste, exploración de la nueva fuente.
+- **2026-11-16 · sae_arrivals_source · exploración `sae_v2` → CP-3.** EMT ha retirado `QR.php`; no hay fuente de tiempo real legítima que la sustituya (`getSAE` cerrado, app con WSSE, sin API abierta ni GTFS-RT). Decide la persona entre configuración, spec 1.5 con fuente `none` o esperar autorización de EMT.

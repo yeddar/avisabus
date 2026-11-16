@@ -1,0 +1,2 @@
+// Extracto de https://geoportal.emtvalencia.es/main.d95692a529c1bafc.js (2026-11-16). Se omite el bloque emt_services (credenciales embebidas).
+bus_stop:{baseUrl:"",endpoints:{estimates:"/EMT/mapfunctions/MapUtilsPetitions.php"}},line_bus:{baseUrl:"https://geoportal.emtvalencia.es/ciudadano",endpoints:{lines_bus:"/servicios/info_lineas_v2.xml",icon_generator:"/icongenerator/create-line-image.php"}}},

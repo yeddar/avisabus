@@ -1,0 +1,6 @@
+url=https://servicios.emtvalencia.es/estimaciones/estimacion.php?parada=508&idioma=es&adaptados=false
+code=401
+ct=text/xml; charset=utf-8
+size=0
+time=0.110668
+ts=20261116T153533Z
