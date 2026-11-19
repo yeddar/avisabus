@@ -27,6 +27,7 @@ sin una especificación aprobada antes por una persona.
 
 - [Funcionalidades](#funcionalidades)
 - [Uso en producción](#uso-en-producción)
+- [Capturas](#capturas)
 - [Arquitectura](#arquitectura)
 - [Stack tecnológico](#stack-tecnológico)
 - [Requisitos previos](#requisitos-previos)
@@ -78,6 +79,8 @@ sin una especificación aprobada antes por una persona.
 | `avisabus occupancy override` | Forzar el nivel de ocupación de una línea (demostraciones) |
 | `avisabus openapi export` | Exportar el contrato OpenAPI con el que se generan los tipos del frontend |
 
+Guía completa de cada comando, con opciones y ejemplos: [`docs/cli.md`](docs/cli.md).
+
 ### Transversales
 
 - **Accesibilidad (WCAG 2.1 AA):** comprobada con axe en los tests end-to-end. Zonas táctiles de
@@ -126,6 +129,8 @@ Es un código de demostración: se revocará cuando termine la evaluación.
    <https://avisabus.yeddarpi.com/p/496?t=Ax0NYP3h21fhTXhh-qMiJw>.
    Sin un enlace firmado (`?t=…`), la parada no se abre: así nadie puede recorrer las paradas a
    ciegas.
+   Hay más paradas de ejemplo, con sus QR para escanear desde la pantalla, en
+   [`docs/qr/`](docs/qr/README.md).
 2. **Consulta las llegadas.** Cada fila indica la línea, el destino, cuánto falta y lo lleno que
    viene el autobús. La vista se actualiza sola.
 3. **Mira dónde está el autobús** con *Ver en el mapa*. Muestra el trazado de la línea, tu parada
@@ -179,6 +184,34 @@ ordenador con Chrome para el conductor y un móvil (u otra ventana) para el pasa
      esperando, con rampa.
    - **Pasajero:** el mensaje cambia a "El conductor ha recibido tu solicitud".
    - Si el pasajero cancela, la solicitud desaparece de la vista del conductor.
+
+## Capturas
+
+Capturas de la interfaz tomadas por los tests end-to-end (Playwright), con datos de prueba
+que incluyen tiempo real. Las del pasajero son de un iPhone 14 y las del conductor, de una tablet
+en horizontal. Las de los dos idiomas y los demás estados (sin conexión, errores, parada no
+encontrada…) se generan en `frontend/test-results/` con `./init.sh verify --e2e`.
+
+### Pasajero
+
+| Llegadas de la parada | Mapa del recorrido | Solicitar parada |
+|---|---|---|
+| <img src="docs/screenshots/pasajero/01-parada.png" width="250" alt="Vista de parada con las próximas llegadas, el tiempo que falta y la ocupación de cada autobús"> | <img src="docs/screenshots/pasajero/02-mapa.png" width="250" alt="Mapa con el trazado de la línea 93, la parada y la posición estimada del autobús"> | <img src="docs/screenshots/pasajero/03-solicitar-parada.png" width="250" alt="Diálogo para solicitar parada con las necesidades al subir"> |
+| **Parada solicitada** | **Mis necesidades** | **En valenciano** |
+| <img src="docs/screenshots/pasajero/04-parada-solicitada.png" width="250" alt="Llegada con la parada solicitada, a la espera de conductor, y botón para cancelar"> | <img src="docs/screenshots/pasajero/05-mis-necesidades.png" width="250" alt="Página Mis necesidades para guardar el perfil en el dispositivo"> | <img src="docs/screenshots/pasajero/07-parada-valenciano.png" width="250" alt="Vista de parada con la interfaz en valenciano"> |
+
+Sin tiempo real, la parada muestra el horario programado con un aviso:
+[captura](docs/screenshots/pasajero/06-sin-tiempo-real.png).
+
+### Conductor
+
+| Acceso con código | Elección de la salida |
+|---|---|
+| <img src="docs/screenshots/conductor/01-acceso.png" width="420" alt="Pantalla de acceso del conductor con el campo del código"> | <img src="docs/screenshots/conductor/02-eleccion-salida.png" width="420" alt="Elección de la salida de la línea y sentido"> |
+| **Solicitud nueva en las próximas paradas** | **Alerta de capacidad** |
+| <img src="docs/screenshots/conductor/03-solicitud-nueva.png" width="420" alt="Vista de demanda con dos personas esperando en la siguiente parada, una con rampa y otra con asiento"> | <img src="docs/screenshots/conductor/04-alerta-capacidad.png" width="420" alt="Alerta de que no caben todas las personas que esperan"> |
+
+Al llegar a la última parada: [Fin del recorrido](docs/screenshots/conductor/05-fin-recorrido.png).
 
 ## Arquitectura
 
@@ -387,6 +420,7 @@ pending → spec_draft →(aprobación humana)→ spec_approved → exploring �
 | [`docs/design.md`](docs/design.md) | Guía visual: tipografía, color, componentes y textos |
 | [`docs/specs.md`](docs/specs.md) | Formato de las specs e índice de features |
 | [`docs/verification.md`](docs/verification.md) | Definición de terminado y proceso de revisión |
+| [`docs/cli.md`](docs/cli.md) | Guía de la CLI de administración `avisabus` |
 | [`AGENTS.md`](AGENTS.md) | Roles de los agentes, ciclo de vida y protocolo de sesión |
 
 ## Limitaciones conocidas
