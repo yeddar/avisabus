@@ -184,6 +184,8 @@
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
+- **Tras la evaluación del TFM:** revocar el código de demostración BigSchool publicado en el README
+  (`docker compose run --rm -T avisabus-backend avisabus driver-codes revoke dc-ndb68f` en la Raspberry).
 - **CP-3 `sae_arrivals_source` (2026-11-16):** EMT ha retirado `QR.php` (404 `File not found.` en todas las paradas y en
   un `.php` inventado; la web es ahora WordPress). Sin sustituta legítima: `getSAE` del geoportal sigue cerrado a terceros
   y la API de la app exige WSSE (401). Sin API abierta ni GTFS-RT. Ver `progress/explore_sae_v2.md`. Decide la persona:
