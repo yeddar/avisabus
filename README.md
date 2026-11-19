@@ -14,14 +14,6 @@ Es un proyecto académico (Trabajo Fin de Máster) desarrollado con **Spec Drive
 (spec first)** y agentes de IA (Claude Code). Ninguna línea de código de producción se ha escrito
 sin una especificación aprobada antes por una persona.
 
-> **Estado (noviembre de 2026).** 21 de las 22 features están terminadas, revisadas y
-> desplegadas. Falta `nfr_validation`: pruebas de carga, accesibilidad y tiempos de respuesta.
-> **EMT retiró el 12 de noviembre de 2026 la página pública `QR.php`** de la que AvisaBus leía
-> los tiempos de llegada en tiempo real. Desde entonces la aplicación usa el horario del GTFS e
-> indica "Sin datos en tiempo real", que es el comportamiento de respaldo previsto (RF-09). Para
-> demostrar el tiempo real se usa una sesión real grabada (`AVISABUS_ARRIVALS_SOURCE=replay`, ver
-> [Tiempo real](#tiempo-real-sae-y-modo-replay)). El análisis está en
-> [`progress/explore_sae_v2.md`](progress/explore_sae_v2.md).
 
 ## Contenido
 
