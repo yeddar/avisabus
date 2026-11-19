@@ -1,0 +1,11 @@
+HTTP/1.1 401 Unauthorized
+Date: Mon, 16 Nov 2026 15:35:33 GMT
+Server: Apache
+X-Permitted-Cross-Domain-Policies: none
+X-XSS-Protection: 1; mode=block
+X-Content-Type-Options: nosniff
+Cache-Control: private
+referrer-Policy: no-referrer
+Content-Length: 0
+Content-Type: text/xml; charset=utf-8
+

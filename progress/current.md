@@ -184,7 +184,12 @@
 - Node local v26 (convención: 22 LTS, fijada en `.nvmrc`); todo pasa.
 
 ## Checkpoints pendientes
-Ninguno. CP-3 de `driver_session` (P-04) resuelto en la PR #62.
+- **CP-3 `sae_arrivals_source` (2026-11-16):** EMT ha retirado `QR.php` (404 `File not found.` en todas las paradas y en
+  un `.php` inventado; la web es ahora WordPress). Sin sustituta legítima: `getSAE` del geoportal sigue cerrado a terceros
+  y la API de la app exige WSSE (401). Sin API abierta ni GTFS-RT. Ver `progress/explore_sae_v2.md`. Decide la persona:
+  (1) sin código: `AVISABUS_SAE_ERROR_TTL_S=300` en producción y, para demos, `replay`; (2) spec 1.5 con
+  `AVISABUS_ARRIVALS_SOURCE=none` (sin red, motivo `disabled`) y nota de la retirada; docs: R-01 materializado y ADR-015;
+  (3) solo con autorización de EMT: parser `getsae_xml` (nueva exploración con muestras).
 
 ## Bloqueos
 - **SAE de EMT caído o retirado (2026-11-12):** `https://www.emtvalencia.es/QR.php?sec=est&p=<parada>` responde

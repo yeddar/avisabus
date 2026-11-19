@@ -1,0 +1,12 @@
+HTTP/1.1 200 OK
+Date: Mon, 16 Nov 2026 15:37:40 GMT
+Server: Apache/2.4.37 (centos) OpenSSL/1.1.1k
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept
+Access-Control-Allow-Methods: POST, GET, OPTIONS, PUT
+Last-Modified: Thu, 20 Nov 2025 10:30:20 GMT
+ETag: "359b-644042f09e700"
+Accept-Ranges: bytes
+Content-Length: 13723
+Content-Type: text/html; charset=UTF-8
+
