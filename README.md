@@ -36,6 +36,8 @@ sin una especificación aprobada antes por una persona.
 
 ### Pasajero (móvil, a través del QR de la parada)
 
+* Consulta los requisitos funcionales y no funcionales en ./docs/requirements
+
 | Funcionalidad | Requisitos |
 |---|---|
 | Vista de parada por QR firmado (HMAC): nombre de la parada y líneas que pasan | RF-05, RF-06 |
