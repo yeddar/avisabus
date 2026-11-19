@@ -26,6 +26,7 @@ sin una especificación aprobada antes por una persona.
 ## Contenido
 
 - [Funcionalidades](#funcionalidades)
+- [Uso en producción](#uso-en-producción)
 - [Arquitectura](#arquitectura)
 - [Stack tecnológico](#stack-tecnológico)
 - [Requisitos previos](#requisitos-previos)
@@ -90,6 +91,89 @@ sin una especificación aprobada antes por una persona.
   ni identificadores.
 - **Seguridad:** HTTPS, tokens de parada firmados, límite de peticiones por dispositivo e IP y
   bloqueo tras varios códigos de conductor erróneos.
+
+## Uso en producción
+
+AvisaBus está publicada en **<https://avisabus.yeddarpi.com>**, sobre la red real de EMT València
+(GTFS) y desplegada en una Raspberry Pi.
+
+Hay dos papeles, y cada uno se usa en su propio dispositivo o ventana del navegador:
+
+| Papel | Dónde | Cómo se entra |
+|---|---|---|
+| **Pasajero** | Móvil (o cualquier navegador) | Escaneando el QR de una parada, o abriendo su enlace |
+| **Conductor** | Tablet u ordenador con ubicación | `https://avisabus.yeddarpi.com/driver` con un código de conductor |
+
+Los QR de todas las paradas y el código de conductor ya están generados en el servidor.
+**El código de conductor no se publica en este repositorio**, que es público: se entrega aparte,
+junto con la memoria.
+
+> **Tiempo real.** EMT retiró en noviembre de 2026 la página de la que AvisaBus leía las llegadas
+> en tiempo real (ver [Limitaciones conocidas](#limitaciones-conocidas)). Por eso las paradas
+> muestran el aviso **"Sin datos en tiempo real"** y las horas del horario programado. Todo lo
+> demás funciona igual con esas horas: el mapa, la ocupación, las solicitudes de parada y la
+> vista del conductor.
+
+### Pasajero
+
+1. **Abre una parada.** Escanea su QR o abre su enlace. Por ejemplo, la parada 496 *Cid - Casa
+   de la Misericòrdia*, la tercera de la línea 93 hacia Passeig Marítim:
+   <https://avisabus.yeddarpi.com/p/496?t=Ax0NYP3h21fhTXhh-qMiJw>.
+   Sin un enlace firmado (`?t=…`), la parada no se abre: así nadie puede recorrer las paradas a
+   ciegas.
+2. **Consulta las llegadas.** Cada fila indica la línea, el destino, cuánto falta y lo lleno que
+   viene el autobús. La vista se actualiza sola.
+3. **Mira dónde está el autobús** con *Ver en el mapa*. Muestra el trazado de la línea, tu parada
+   y la posición estimada del autobús, con un resumen en texto para lectores de pantalla.
+4. **Solicita parada.** Pulsa *Solicitar* en el autobús que quieres coger, marca si necesitas
+   algo al subir (rampa, más tiempo, asiento, discapacidad visual) y confirma con *Solicitar
+   parada*.
+   - Si no hay conductor en ese autobús, verás "Parada solicitada. Aún no hay conductor conectado
+     en esta línea".
+   - Cuando el conductor la recibe, el mensaje cambia a "El conductor ha recibido tu solicitud".
+5. **Cancela** cuando quieras con *Cancelar solicitud*. Si no, la solicitud caduca sola cuando el
+   autobús pasa o, como mucho, a los 30 minutos.
+
+En cualquier pantalla puedes cambiar entre castellano y valenciano. En *Mis necesidades*, enlazado
+desde la portada, guardas tu perfil, solo en tu dispositivo, para que aparezca marcado en cada
+solicitud.
+
+### Conductor
+
+1. **Entra** en <https://avisabus.yeddarpi.com/driver> con el código de conductor.
+2. **Elige la línea, el sentido y la salida** (la hora a la que sale de cabecera). Las salidas
+   que ya lleva otro conductor aparecen como "Ya en servicio".
+3. **Permite la ubicación.** La tablet envía su GPS y el sistema calcula las próximas paradas. En
+   la cabecera se ve el estado: "GPS correcto" o "GPS desactualizado", "Conectado" o "Sin
+   conexión".
+4. **Atiende la demanda.** Se ven las 3 próximas paradas con cuántas personas esperan y qué
+   necesitan, actualizadas al momento. Si no van a caber todas, aparece una alerta de capacidad.
+5. **Finaliza el turno** con *Finalizar turno*. Se borran la sesión y la posición. Al llegar a la
+   última parada, la vista muestra "Fin del recorrido".
+
+### Recorrido de prueba sin salir a la calle
+
+Para ver una solicitud llegar al conductor no hace falta estar en la parada. Basta con un
+ordenador con Chrome para el conductor y un móvil (u otra ventana) para el pasajero.
+
+1. **Conductor, en Chrome del ordenador:**
+   - Abre las herramientas de desarrollo (`F12`), menú `⋮` → *More tools* → *Sensors* y, en
+     *Location*, elige *Other…*. Escribe la posición de la primera parada de la línea 93,
+     *Avinguda del Cid*: latitud `39.469711`, longitud `-0.416108`. Usa punto decimal y no olvides
+     el signo menos de la longitud.
+   - Entra en `/driver`, elige la **línea 93**, el sentido **Passeig Marítim - Hospital
+     Malva-rosa** y la **primera salida** de la lista.
+   - Debe salir "GPS correcto". Las próximas paradas serán las siguientes a *Avinguda del Cid*.
+2. **Pasajero, en el móvil:**
+   - Abre el enlace de la parada 496 del paso 1 de [Pasajero](#pasajero).
+   - En las llegadas de la línea 93 hacia Passeig Marítim, solicita parada en el autobús cuya hora
+     corresponde a la salida que eligió el conductor: unos minutos después de la hora de salida.
+     Marca, por ejemplo, *Necesito la rampa*.
+3. **Comprueba:**
+   - **Conductor:** en pocos segundos, la parada *Cid - Casa de la Misericòrdia* muestra 1 persona
+     esperando, con rampa.
+   - **Pasajero:** el mensaje cambia a "El conductor ha recibido tu solicitud".
+   - Si el pasajero cancela, la solicitud desaparece de la vista del conductor.
 
 ## Arquitectura
 
