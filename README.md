@@ -172,12 +172,14 @@ ordenador con Chrome para el conductor y un móvil (u otra ventana) para el pasa
      *Avinguda del Cid*: latitud `39.469711`, longitud `-0.416108`. Usa punto decimal y no olvides
      el signo menos de la longitud.
    - Entra en `/driver`, elige la **línea 93**, el sentido **Passeig Marítim - Hospital
-     Malva-rosa** y la **primera salida** de la lista.
+     Malva-rosa** y la **primera salida cuya hora aún no ha pasado**. La lista incluye también
+     las salidas de la última media hora. Deja abiertas las herramientas de desarrollo: al
+     cerrarlas, Chrome deja de simular la ubicación.
    - Debe salir "GPS correcto". Las próximas paradas serán las siguientes a *Avinguda del Cid*.
 2. **Pasajero, en el móvil:**
    - Abre el enlace de la parada 496 del paso 1 de [Pasajero](#pasajero).
    - En las llegadas de la línea 93 hacia Passeig Marítim, solicita parada en el autobús cuya hora
-     corresponde a la salida que eligió el conductor: unos minutos después de la hora de salida.
+     corresponde a la salida que eligió el conductor: unos 4 minutos después de la hora de salida.
      Marca, por ejemplo, *Necesito la rampa*.
 3. **Comprueba:**
    - **Conductor:** en pocos segundos, la parada *Cid - Casa de la Misericòrdia* muestra 1 persona
