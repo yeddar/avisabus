@@ -104,9 +104,14 @@ Hay dos papeles, y cada uno se usa en su propio dispositivo o ventana del navega
 | **Pasajero** | Móvil (o cualquier navegador) | Escaneando el QR de una parada, o abriendo su enlace |
 | **Conductor** | Tablet u ordenador con ubicación | `https://avisabus.yeddarpi.com/driver` con un código de conductor |
 
-Los QR de todas las paradas y el código de conductor ya están generados en el servidor.
-**El código de conductor no se publica en este repositorio**, que es público: se entrega aparte,
-junto con la memoria.
+Los QR de todas las paradas ya están generados en el servidor. Para probar la vista del
+conductor hay un código de demostración, **BigSchool**:
+
+| Código de acceso | Uso |
+|---|---|
+| **`5177 6655`** | Escríbelo en `/driver`, con o sin el espacio |
+
+Es un código de demostración: se revocará cuando termine la evaluación.
 
 > **Tiempo real.** EMT retiró en noviembre de 2026 la página de la que AvisaBus leía las llegadas
 > en tiempo real (ver [Limitaciones conocidas](#limitaciones-conocidas)). Por eso las paradas
