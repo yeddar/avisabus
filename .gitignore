@@ -33,3 +33,8 @@ blob-report/
 
 # Sistema
 .DS_Store
+
+# QR generados con `avisabus qr generate` (salida por defecto: qr/) y su versión para imprimir.
+# Anclados a la raíz: el adaptador backend/src/avisabus/adapters/outbound/qr/ sí se versiona.
+/qr/
+/qr-impresion/
